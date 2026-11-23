@@ -4693,31 +4693,68 @@ class CPUCountTests(unittest.TestCase):
         elif base_count < 2:
             self.skipTest("require at least 2 CPU cores to test")
 
-        # TODO test setting the period too
-        # TODO test nested cgroups
-        for setting, expected in [
+        def get_systemd_args(
+            num_cpus,
+            cpu_period_ms=None,
+            python_code="import os; print(os.process_cpu_count())"
+        ):
+            result = [
+                "systemd-run",
+                "--user",
+                # Technically only necessary for nested systemd-run, where we
+                # get the same auto-generat()ed unit name:
+                f"--unit=python-tests-{os.urandom(16).hex()}",
+                "--scope",
+                "--quiet",
+                "--property",
+                f"CPUQuota={int(100 * num_cpus)}%",
+            ]
+            if cpu_period_ms is not None:
+                result.extend([
+                    "--property",
+                    f"CPUQuotaPeriodSec={cpu_period_ms}ms"
+                ])
+            result.extend([
+                "--",
+                sys.executable,
+                "-c",
+                python_code,
+            ])
+            return result
+
+        def run_and_get_int(command_args):
+            return int(
+                subprocess.check_output(command_args, encoding="utf-8").strip()
+            )
+
+        for set_num_cpus, expected in [
             (0.01, 1),
             (0.5, 1),
             (1, 1),
             (1.5, 2),
             (base_count - 1, base_count - 1),
         ]:
-            result = int(
-                subprocess.check_output(
-                    [
-                        "systemd-run",
-                        "--user",
-                        "--scope",
-                        "--quiet",
-                        "--property",
-                        f"CPUQuota={int(100 * setting)}%",
-                        "--",
-                        sys.executable,
-                        "-c",
-                        "import os; print(os.process_cpu_count())",
-                    ],
-                    encoding="utf-8",
-                ).strip()
+            result = run_and_get_int(get_systemd_args(set_num_cpus))
+            self.assertEqual(result, expected)
+
+        # Changes to the quota's period are taken into account:
+        result = run_and_get_int(get_systemd_args(1, 30))
+        self.assertEqual(result, 1)
+
+        # Result is minimum of sched affinity and quota:
+        for affinity_cores, cgroups_cores, expected in [
+            (1, 2, 1),
+            (2, 1, 1),
+            (2, 2, 2),
+        ]:
+            code = f"""\
+import os
+mask = os.sched_getaffinity(0)
+os.sched_setaffinity(0, list(mask)[:{affinity_cores}])
+print(os.process_cpu_count())
+"""
+            result = run_and_get_int(
+                get_systemd_args(cgroups_cores, python_code=code)
             )
             self.assertEqual(result, expected)
 
