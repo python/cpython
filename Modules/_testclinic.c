@@ -26,7 +26,6 @@ custom_converter(PyObject *obj, custom_t *val)
 static PyTypeObject VcNew_Type;
 static PyTypeObject VcNewBase_Type;
 static PyTypeObject VcKwOnly_Type;
-static PyTypeObject VcKwds_Type;
 #include "clinic/_testclinic.c.h"
 
 
@@ -2675,7 +2674,7 @@ static PyTypeObject VcKwOnly_Type = {
 /* VcKwds: @vectorcall + **kwargs.  __new__ returns the parsed arguments. */
 
 /*[clinic input]
-class _testclinic.VcKwds "PyObject *" "&VcKwds_Type"
+class _testclinic.VcKwds "PyObject *" ""
 @classmethod
 @vectorcall
 _testclinic.VcKwds.__new__ as vc_kwds_new
@@ -2688,18 +2687,21 @@ _testclinic.VcKwds.__new__ as vc_kwds_new
 static PyObject *
 vc_kwds_new_impl(PyTypeObject *type, PyObject *a, PyObject *b,
                  PyObject *kwds)
-/*[clinic end generated code: output=481e680d2e76fdbd input=1c27337c5efd9a79]*/
+/*[clinic end generated code: output=481e680d2e76fdbd input=3d8e5218fd593383]*/
 {
     return pack_arguments_newref(3, a, b, kwds);
 }
 
-static PyTypeObject VcKwds_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "_testclinic.VcKwds",
-    .tp_basicsize = sizeof(PyObject),
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_new = vc_kwds_new,
-    .tp_vectorcall = vc_kwds_vectorcall,
+static PyType_Slot VcKwds_slots[] = {
+    {Py_tp_new, vc_kwds_new},
+    {Py_tp_vectorcall, vc_kwds_vectorcall},
+    {0, NULL},
+};
+static PyType_Spec VcKwds_spec = {
+    .name = "_testclinic.VcKwds",
+    .basicsize = sizeof(PyObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .slots = VcKwds_slots,
 };
 
 
@@ -2918,7 +2920,6 @@ _testclinic_exec(PyObject *m)
 {
     PyTypeObject *static_types[] = {
         &TestClass, &VcNew_Type, &VcNewBase_Type, &VcKwOnly_Type,
-        &VcKwds_Type,
     };
     for (size_t i = 0; i < Py_ARRAY_LENGTH(static_types); i++) {
         if (PyModule_AddType(m, static_types[i]) < 0) {
@@ -2930,7 +2931,7 @@ _testclinic_exec(PyObject *m)
         &HeapTestClass_spec,
         &DeprStarNew_spec, &DeprStarInit_spec, &DeprStarInitNoInline_spec,
         &DeprKwdNew_spec, &DeprKwdInit_spec, &DeprKwdInitNoInline_spec,
-        &VcInit_spec,
+        &VcInit_spec, &VcKwds_spec,
     };
     for (size_t i = 0; i < Py_ARRAY_LENGTH(heap_specs); i++) {
         PyObject *type = PyType_FromModuleAndSpec(m, heap_specs[i], NULL);
