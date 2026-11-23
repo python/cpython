@@ -716,8 +716,9 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
             2**63 - 1, 2**63,
             (timedelta.max.days + 1) * us_per_day - 1,
         ):
-            td = timedelta(microseconds=value)
-            self.assertEqual(td // timedelta.resolution, value)
+            with self.subTest(value=value):
+                td = timedelta(microseconds=value)
+                self.assertEqual(td // timedelta.resolution, value)
 
     def test_carries(self):
         t1 = timedelta(days=100,
