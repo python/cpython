@@ -12,43 +12,56 @@ indirectly through functionality provided by a library, such as
 :class:`concurrent.futures.ThreadPoolExecutor`.  Each thread runs its own
 function :term:`concurrently <concurrency>` with the others.
 
-Threads are useful in two ways.  One thread can wait on a blocking call, such
-as reading a file or querying a database, while the others keep working.
-:mod:`asyncio` does the same job for code written with ``async`` and
-``await``; threads do it for ordinary blocking functions.
+Using threads allows a program's execution to proceed when it is necessary to
+do work that might take a long time to complete or might never complete. For
+example, a GUI application must remain responsive to user input and must not
+appear to freeze because it is doing other work and cannot check for user
+input. When a function makes its caller wait for an arbitrarily long time, it
+is called a *blocking call*. Reading a file and querying a database are
+examples of blocking calls. :mod:`asyncio` does the same job for code written
+with ``async`` and ``await``; threads do it for ordinary functions that may
+block.
 
 Threads can also divide work between CPU cores.  In the default build of
 CPython, :term:`parallelism` between threads is only possible while an
 operation releases the :term:`global interpreter lock` (GIL), as blocking I/O
 and many functions implemented in :term:`native code` do.  In the
 :term:`free-threaded build` the GIL is disabled, and threads can also run
-Python code in parallel.
+Python code in parallel, assuming some other lock or coordination does not
+hinder parallelism.
 
-All the threads in a program share the same modules, globals and objects.
-Threads can work on the same data directly, which avoids the costs that
+All the threads in a program share the same modules and globals. Objects can
+also be shared between threads, allowing multiple threads to simultaneously
+access the the same data directly. This can avoid the costs that
 :mod:`multiprocessing` pays to start processes and to copy data between
-them.
+processes.
 
-Sharing is also where the bugs come from.  An :mod:`asyncio` task only gives
-up control at an ``await``, but a thread can be interrupted at any point so
-that another can run, and two threads can even be using the same objects at
+Sharing objects between threads also introduces the possibility of bugs that
+cannot occur in single-threaded programs.  An :mod:`asyncio` task only
+gives up control at an ``await``, but a thread can be interrupted at any point
+so that another can run, and two threads can even be using the same objects at
 the same instant.  Code that is correct when one thread runs it can therefore
 give wrong answers when several threads run it, and it may only do so
 occasionally.  Such a bug is called a :term:`race condition`.
 
-This guide is about writing :term:`thread-safe` code, which stays correct in
-that situation.  After reading it you should be able to answer these
-questions:
+Code that behaves correctly when several threads use it concurrently is called
+thread-safe. The rest of the guide explains how to recognize code that is not
+thread-safe and how to fix it. After reading the guide, you should be able to
+answer these questions:
 
-- Should this program use threads at all?
-- Why does my threaded program give different results from run to run?
-- Which operations on lists and dicts are safe to use from several threads?
-- When is a :term:`lock` the right fix, and what does it cost?
-- How do I share a cache between threads without locking every read?
+- Should my program use threads or a different form of concurrency?
+- Why does my threaded program give different results from run to run and how
+  do I make my program deterministic?
+- Which objects can my program safely share between threads?
+- What are my options for protecting shared data, and what does each option cost?
+- How do I coordinate work between the threads in my program?
 
-Every strategy described here is a trade-off between safety, performance and
-how simple the code stays.  Each section describes what a strategy costs as
-well as what it buys.
+This HOWTO describes several strategies for making code thread-safe. Working
+with threads requires a trade-off between safety, performance and code
+simplicity. Each section describes the costs of a strategy as well as its
+benefits. Hopefully you can use the examples below to write and update
+real-world Python code to use threads or fix issues seen when executing in
+multiple threads.
 
 .. TODO: adjust the list of questions to match the sections once they are
    written.
