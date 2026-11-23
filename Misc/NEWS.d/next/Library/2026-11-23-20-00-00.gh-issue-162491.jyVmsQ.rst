@@ -1,0 +1,2 @@
+The pure-Python :func:`decimal.localcontext` now accepts a list of signals
+for its *flags* and *traps* arguments, like the C implementation.

@@ -3851,6 +3851,19 @@ class ContextWithStatement:
             self.assertEqual(ctx.capitals, 0)
             self.assertEqual(ctx.clamp, 1)
 
+        # gh-162491: flags and traps also accept a list of signals.
+        Overflow = self.decimal.Overflow
+        with self.decimal.localcontext(
+            flags=[self.decimal.Inexact], traps=[Overflow]
+        ) as ctx:
+            self.assertTrue(ctx.flags[self.decimal.Inexact])
+            self.assertFalse(ctx.flags[Overflow])
+            self.assertTrue(ctx.traps[Overflow])
+            self.assertFalse(ctx.traps[self.decimal.DivisionByZero])
+        with self.decimal.localcontext(traps=[]) as ctx:
+            self.assertFalse(any(ctx.traps.values()))
+        self.assertRaises(KeyError, self.decimal.localcontext, traps=[ValueError])
+
         self.assertRaises(TypeError, self.decimal.localcontext, precision=10)
 
         self.assertRaises(ValueError, self.decimal.localcontext, Emin=1)
