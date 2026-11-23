@@ -517,6 +517,11 @@ class Trace:
         Adds information about who called who to the self._callers dict.
         """
         if why == 'call':
+            filename = frame.f_globals.get('__file__')
+            if filename:
+                modulename = _modname(filename)
+                if self.ignore.names(filename, modulename):
+                    return
             # XXX Should do a better job of identifying methods
             this_func = self.file_module_function_of(frame)
             parent_func = self.file_module_function_of(frame.f_back)
@@ -528,6 +533,11 @@ class Trace:
         Adds (filename, modulename, funcname) to the self._calledfuncs dict.
         """
         if why == 'call':
+            filename = frame.f_globals.get('__file__')
+            if filename:
+                modulename = _modname(filename)
+                if self.ignore.names(filename, modulename):
+                    return
             this_func = self.file_module_function_of(frame)
             self._calledfuncs[this_func] = 1
 
