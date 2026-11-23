@@ -1,0 +1,2 @@
+Ensure concurrent accesses to a lazy import binding call its custom import
+hook only once and observe the same resolved object.

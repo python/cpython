@@ -13,6 +13,7 @@ import os
 import contextlib
 
 from test import support
+from test.support import threading_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 try:
@@ -2311,6 +2312,29 @@ class ImportStateAtReificationTests(LazyImportTestCase):
 class ThreadSafetyTests(LazyImportTestCase):
     """Tests for thread-safety of lazy imports."""
 
+    def _run_concurrently(self, functions):
+        barrier = threading.Barrier(len(functions))
+        results = [None] * len(functions)
+        errors = []
+
+        def run(index, function):
+            try:
+                barrier.wait()
+                results[index] = function()
+            except Exception as exc:
+                errors.append((index, exc))
+
+        threads = [
+            threading.Thread(
+                target=run, args=(index, function), daemon=True)
+            for index, function in enumerate(functions)
+        ]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            threading_helper.join_thread(thread)
+        return results, errors
+
     def test_concurrent_lazy_import_reification(self):
         """Multiple threads racing to reify the same lazy import should succeed."""
         from test.test_lazy_import.data import basic_unused
@@ -2343,6 +2367,225 @@ class ThreadSafetyTests(LazyImportTestCase):
         first_module = results[0]
         for r in results[1:]:
             self.assertIs(r, first_module)
+
+    def test_concurrent_custom_import_hook_reification(self):
+        """A custom import hook should run once for a shared lazy binding."""
+        import builtins
+
+        owner = types.ModuleType("lazy_import_owner")
+        calls = []
+        call_lock = threading.Lock()
+        num_threads = 4
+        hook_barrier = threading.Barrier(num_threads)
+
+        def import_hook(name, globals=None, locals=None, fromlist=(), level=0):
+            with call_lock:
+                token = len(calls)
+                calls.append(token)
+            try:
+                hook_barrier.wait(timeout=1)
+            except threading.BrokenBarrierError:
+                pass
+            module = types.ModuleType(name)
+            module.token = token
+            return module
+
+        owner.__dict__["__builtins__"] = dict(
+            vars(builtins), __import__=import_hook)
+        exec("lazy import concurrent_target as target", owner.__dict__)
+
+        results, errors = self._run_concurrently(
+            [lambda: owner.target.token] * num_threads)
+
+        self.assertEqual(errors, [])
+        self.assertEqual(calls, [0])
+        self.assertEqual(results, [0] * num_threads)
+        self.assertEqual(owner.target.token, 0)
+
+    def test_concurrent_custom_hooks_for_same_name(self):
+        """Independent bindings for the same name should resolve in parallel."""
+        import builtins
+
+        hook_barrier = threading.Barrier(2)
+        owners = []
+        calls = [0, 0]
+
+        for index in range(2):
+            owner = types.ModuleType(f"lazy_import_owner_{index}")
+
+            def import_hook(name, *args, index=index):
+                calls[index] += 1
+                hook_barrier.wait(timeout=support.SHORT_TIMEOUT)
+                module = types.ModuleType(name)
+                module.owner = index
+                return module
+
+            owner.__dict__["__builtins__"] = dict(
+                vars(builtins), __import__=import_hook)
+            exec("lazy import same_target as target", owner.__dict__)
+            owners.append(owner)
+
+        results, errors = self._run_concurrently([
+            lambda owner=owner: owner.target for owner in owners
+        ])
+
+        self.assertEqual(errors, [])
+        self.assertEqual(calls, [1, 1])
+        self.assertEqual([result.owner for result in results], [0, 1])
+
+    def test_concurrent_custom_hook_cycle(self):
+        """A cycle between bindings should not resolve either binding twice."""
+        import builtins
+
+        owner = types.ModuleType("lazy_import_owner")
+        hook_barrier = threading.Barrier(2)
+        call_lock = threading.Lock()
+        calls = []
+
+        def import_hook(name, *args):
+            with call_lock:
+                calls.append(name)
+            hook_barrier.wait(timeout=support.SHORT_TIMEOUT)
+            try:
+                getattr(owner, "b" if name == "target_a" else "a")
+            except ImportCycleError:
+                pass
+            return types.ModuleType(name)
+
+        owner.__dict__["__builtins__"] = dict(
+            vars(builtins), __import__=import_hook)
+        exec(
+            "lazy import target_a as a\n"
+            "lazy import target_b as b",
+            owner.__dict__,
+        )
+
+        results, errors = self._run_concurrently([
+            lambda name=name: getattr(owner, name) for name in ("a", "b")
+        ])
+
+        self.assertEqual(errors, [])
+        self.assertEqual(sorted(calls), ["target_a", "target_b"])
+        self.assertIs(results[0], owner.__dict__["a"])
+        self.assertIs(results[1], owner.__dict__["b"])
+
+    def test_concurrent_custom_hook_module_lock_cycle(self):
+        """An import lock cycle should raise the public cycle error."""
+        import builtins
+        import importlib._bootstrap as bootstrap
+
+        owner = types.ModuleType("lazy_import_owner")
+        auxiliary_lock = bootstrap._get_module_lock("auxiliary")
+        auxiliary_held = threading.Event()
+        hook_entered = threading.Event()
+        release_hook = threading.Event()
+        waiter_ident = []
+        calls = []
+        errors = []
+
+        def import_hook(name, *args):
+            calls.append(threading.current_thread().name)
+            hook_entered.set()
+            if not release_hook.wait(support.SHORT_TIMEOUT):
+                raise AssertionError("hook was not released")
+            auxiliary_lock.acquire()
+            try:
+                return types.ModuleType(name)
+            finally:
+                auxiliary_lock.release()
+
+        owner.__dict__["__builtins__"] = dict(
+            vars(builtins), __import__=import_hook)
+        exec("lazy import target", owner.__dict__)
+
+        def access_lazy_import(label):
+            try:
+                owner.target
+            except BaseException as exc:
+                errors.append((label, type(exc)))
+
+        def wait_for_lazy_import():
+            waiter_ident.append(threading.get_ident())
+            auxiliary_lock.acquire()
+            try:
+                auxiliary_held.set()
+                if not hook_entered.wait(support.SHORT_TIMEOUT):
+                    raise AssertionError("hook did not start")
+                access_lazy_import("waiter")
+            finally:
+                auxiliary_lock.release()
+
+        waiter = threading.Thread(
+            target=wait_for_lazy_import, name="waiter", daemon=True)
+        resolver = threading.Thread(
+            target=lambda: access_lazy_import("resolver"),
+            name="resolver", daemon=True)
+        waiter.start()
+        self.assertTrue(auxiliary_held.wait(support.SHORT_TIMEOUT))
+        resolver.start()
+        try:
+            self.assertTrue(hook_entered.wait(support.SHORT_TIMEOUT))
+            for _ in support.sleeping_retry(
+                    support.SHORT_TIMEOUT, error=False):
+                if bootstrap._blocking_on.get(waiter_ident[0], ()):
+                    break
+            else:
+                self.fail("waiter did not block on the lazy binding")
+        finally:
+            release_hook.set()
+            threading_helper.join_thread(resolver)
+            threading_helper.join_thread(waiter)
+
+        self.assertEqual(calls, ["resolver", "waiter"])
+        self.assertEqual(errors, [("resolver", ImportCycleError)])
+
+    def test_concurrent_replacement_with_lazy_binding(self):
+        """A replacement lazy binding should also be reified."""
+        import builtins
+        import importlib._bootstrap as bootstrap
+
+        calls = []
+
+        def import_hook(name, *args):
+            calls.append(name)
+            return types.ModuleType(name)
+
+        lazy_builtins = dict(vars(builtins), __import__=import_hook)
+        owner = types.ModuleType("lazy_import_owner")
+        owner.__dict__["__builtins__"] = lazy_builtins
+        exec("lazy import old_target as target", owner.__dict__)
+        replacement = {"__builtins__": lazy_builtins}
+        exec("lazy import new_target as target", replacement)
+
+        placeholder = owner.__dict__["target"]
+        lock = bootstrap._get_module_lock(placeholder)
+        lock.acquire()
+        results = []
+        errors = []
+
+        def access_lazy_import():
+            try:
+                results.append(owner.target)
+            except Exception as exc:
+                errors.append(exc)
+
+        thread = threading.Thread(target=access_lazy_import, daemon=True)
+        try:
+            thread.start()
+            for _ in support.sleeping_retry(
+                    support.SHORT_TIMEOUT, error=False):
+                if bootstrap._blocking_on.get(thread.ident, ()):
+                    break
+            else:
+                self.fail("thread did not block on the lazy binding")
+            owner.__dict__["target"] = replacement["target"]
+        finally:
+            lock.release()
+        threading_helper.join_thread(thread)
+
+        self.assertEqual(errors, [])
+        self.assertEqual(calls, ["new_target"])
+        self.assertIs(results[0], owner.__dict__["target"])
 
     def test_concurrent_reification_multiple_modules(self):
         """Multiple threads reifying different lazy imports concurrently."""
@@ -2886,6 +3129,30 @@ class LazyImportFinalizationTests(unittest.TestCase):
                     write(1, type(ns.json).__name__.encode())
 
             contextvars.ContextVar("v").set(Canary())
+        """)
+        self.assertEqual(assert_python_ok("-c", code).out, b"module")
+
+    def test_resolve_in_subinterpreter(self):
+        sub_code = textwrap.dedent("""
+            import importlib._bootstrap as bootstrap
+            import json, os, types
+
+            def safe_import(name, *args, allowed={"json": json}):
+                return allowed[name]
+
+            ns = types.ModuleType("ns")
+            ns.json = __lazy_import__(
+                "json", {"__builtins__": {"__import__": safe_import}})
+
+            class Canary:
+                def __del__(self, write=os.write, type=type, ns=ns):
+                    write(1, type(ns.json).__name__.encode())
+
+            bootstrap.canary = Canary()
+        """)
+        code = textwrap.dedent(f"""
+            import _testcapi
+            assert _testcapi.run_in_subinterp({sub_code!r}) == 0
         """)
         self.assertEqual(assert_python_ok("-c", code).out, b"module")
 
