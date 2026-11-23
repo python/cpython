@@ -994,19 +994,20 @@ class _contextvars.ContextVar "PyContextVar *" "&PyContextVar_Type"
 #define _PyContextVar_CAST(op)  ((PyContextVar *)(op))
 
 
+/*[clinic input]
+@vectorcall
+@classmethod
+_contextvars.ContextVar.__new__ as contextvar_tp_new
+    name: object
+    /
+    *
+    default as def: object = NULL
+[clinic start generated code]*/
+
 static PyObject *
-contextvar_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+contextvar_tp_new_impl(PyTypeObject *type, PyObject *name, PyObject *def)
+/*[clinic end generated code: output=1c8af17a14fc9dc2 input=d5e8cf845a1ddc27]*/
 {
-    static char *kwlist[] = {"", "default", NULL};
-    PyObject *name;
-    PyObject *def = NULL;
-
-    if (!PyArg_ParseTupleAndKeywords(
-            args, kwds, "O|$O:ContextVar", kwlist, &name, &def))
-    {
-        return NULL;
-    }
-
     return (PyObject *)contextvar_new(name, def);
 }
 
@@ -1200,6 +1201,7 @@ PyTypeObject PyContextVar_Type = {
     .tp_traverse = contextvar_tp_traverse,
     .tp_clear = contextvar_tp_clear,
     .tp_new = contextvar_tp_new,
+    .tp_vectorcall = contextvar_tp_vectorcall,
     .tp_free = PyObject_GC_Del,
     .tp_hash = contextvar_tp_hash,
     .tp_repr = contextvar_tp_repr,
