@@ -942,6 +942,28 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             del l['__builtins__']
         self.assertEqual((g, l), ({'a': 1}, {'b': 2}))
 
+    def test_huge_index_item_assignment_typeerror(self):
+        # gh-162466: types without item assignment/deletion must raise
+        # TypeError even when the index is too large for Py_ssize_t.
+        huge = 2**63
+        for obj, stmt in [(set(), "s[IDX] = 0"),
+                          (frozenset(), "s[IDX] = 0"),
+                          ((1, 2), "s[IDX] = 0"),
+                          ("ab", "s[IDX] = 0"),
+                          (b"ab", "s[IDX] = 0"),
+                          (range(2), "s[IDX] = 0")]:
+            with self.subTest(type=type(obj).__name__, stmt="set"):
+                code = stmt.replace("IDX", repr(huge))
+                with self.assertRaises(TypeError):
+                    exec(code, {"s": obj})
+        for obj in [(1, 2), "ab", b"ab", range(2), set(), frozenset()]:
+            with self.subTest(type=type(obj).__name__, stmt="del"):
+                with self.assertRaises(TypeError):
+                    exec("del s[%d]" % huge, {"s": obj})
+        # sanity: a small index still gives TypeError on these types
+        with self.assertRaises(TypeError):
+            exec("s[0] = 0", {"s": set()})
+
     def test_exec_frozendict(self):
         ns = frozendict(x=1, data=[], __builtins__=__builtins__)
         exec("data.append(x)", ns, ns)

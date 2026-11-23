@@ -248,7 +248,9 @@ PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
         return res;
     }
 
-    if (Py_TYPE(o)->tp_as_sequence) {
+    if (Py_TYPE(o)->tp_as_sequence &&
+        Py_TYPE(o)->tp_as_sequence->sq_ass_item)
+    {
         if (_PyIndex_Check(key)) {
             Py_ssize_t key_value;
             key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
@@ -256,7 +258,7 @@ PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
                 return -1;
             return PySequence_SetItem(o, key_value, value);
         }
-        else if (Py_TYPE(o)->tp_as_sequence->sq_ass_item) {
+        else {
             type_error("sequence index must be "
                        "integer, not '%.200s'", key);
             return -1;
@@ -282,7 +284,9 @@ PyObject_DelItem(PyObject *o, PyObject *key)
         return res;
     }
 
-    if (Py_TYPE(o)->tp_as_sequence) {
+    if (Py_TYPE(o)->tp_as_sequence &&
+        Py_TYPE(o)->tp_as_sequence->sq_ass_item)
+    {
         if (_PyIndex_Check(key)) {
             Py_ssize_t key_value;
             key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
@@ -290,7 +294,7 @@ PyObject_DelItem(PyObject *o, PyObject *key)
                 return -1;
             return PySequence_DelItem(o, key_value);
         }
-        else if (Py_TYPE(o)->tp_as_sequence->sq_ass_item) {
+        else {
             type_error("sequence index must be "
                        "integer, not '%.200s'", key);
             return -1;

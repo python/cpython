@@ -1,0 +1,5 @@
+Fix :func:`TypeError` not being raised for item assignment or deletion on
+types that do not support it (such as :class:`set`, :class:`tuple`,
+:class:`str`, :class:`bytes`, :class:`range` and :class:`frozenset`) when
+the index is too large to fit in a :c:type:`Py_ssize_t`.  Previously an
+incorrect :exc:`IndexError` was raised.  Patch by TINGyu123644.
