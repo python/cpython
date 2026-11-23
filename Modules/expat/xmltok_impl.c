@@ -1729,7 +1729,7 @@ PREFIX(nameMatchesAscii)(const ENCODING *enc, const char *ptr1,
   return ptr1 == end1;
 }
 
-static int
+static size_t
 PREFIX(nameLength)(const ENCODING *enc, const char *ptr) {
   const char *start = ptr;
   for (;;) {
@@ -1754,7 +1754,7 @@ PREFIX(nameLength)(const ENCODING *enc, const char *ptr) {
       ptr += MINBPC(enc);
       break;
     default:
-      return (int)(ptr - start);
+      return ptr - start;
     }
   }
 }
