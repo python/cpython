@@ -815,7 +815,7 @@ not have to be) the original ``STACK[-2]``.
 
 **Coroutine opcodes**
 
-.. opcode:: GET_AWAITABLE (where)
+.. opcode:: GET_AWAITABLE (flags)
 
    Replaces ``STACK[-1]`` with ``get_awaitable(STACK[-1])``, ``NULL`` and
    ``None``, ready for :opcode:`SEND`. ``get_awaitable(o)``
@@ -823,11 +823,26 @@ not have to be) the original ``STACK[-2]``.
    the :data:`~inspect.CO_ITERABLE_COROUTINE` flag, or resolves
    ``o.__await__``.
 
-    If the ``where`` operand is nonzero, it indicates where the instruction
-    occurs:
+   The low two bits of *flags*, if nonzero, indicate where the instruction
+   occurs:
 
-    * ``1``: After a call to ``__aenter__``
-    * ``2``: After a call to ``__aexit__``
+   * ``1``: After a call to ``__aenter__``
+   * ``2``: After a call to ``__aexit__``
+
+   If bit ``4`` of *flags* is set, the instruction follows a call whose
+   result is awaited right away (``await f()``, and the calls of
+   :meth:`~object.__aenter__` and :meth:`~object.__aexit__` in
+   :keyword:`async with`). The compiler pushes an extra ``NULL``, the
+   *lazy outcome*, below the callable of such a call, and the call may run
+   the body of a coroutine function without creating the coroutine object,
+   reporting in the lazy outcome, ``STACK[-2]``, how the body ended.
+   If the lazy outcome is ``NULL``, it is removed and the instruction
+   proceeds as described above. If the body returned, it is removed and
+   execution continues after the :opcode:`END_SEND` of the following
+   :opcode:`SEND` loop. If the body suspended, the coroutine object is
+   created and execution continues at the :opcode:`YIELD_VALUE` of that
+   loop, with ``STACK[-3:]`` set to the coroutine, ``NULL`` and the yielded
+   value.
 
    .. versionadded:: 3.5
 
@@ -836,28 +851,7 @@ not have to be) the original ``STACK[-2]``.
 
    .. versionchanged:: next
       Also pushes ``NULL`` and ``None``, which were previously pushed by
-      separate instructions.
-
-
-.. opcode:: END_AWAITED_CALL (delta)
-
-   Follows a call whose result is awaited right away (``await f()``, and the
-   calls of :meth:`~object.__aenter__` and :meth:`~object.__aexit__` in
-   :keyword:`async with`).
-   The compiler pushes an extra ``NULL``, the *lazy outcome*, below the
-   callable of such a call, and the call may run the body of a coroutine
-   function without creating the coroutine object, reporting in the lazy
-   outcome how the body ended.
-
-   If the lazy outcome is ``NULL``, it is removed and execution continues with
-   :opcode:`GET_AWAITABLE`. If the body returned, it is removed and
-   execution continues after the :opcode:`END_SEND` of the following
-   :opcode:`SEND` loop. If the body suspended, the coroutine object is
-   created and the bytecode counter is incremented by *delta*, to the
-   :opcode:`YIELD_VALUE` of that loop, with ``STACK[-3:]`` set to the
-   coroutine, ``NULL`` and the yielded value.
-
-   .. versionadded:: 3.16
+      separate instructions. Added the awaited call flag.
 
 
 .. opcode:: GET_AITER

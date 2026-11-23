@@ -157,8 +157,11 @@
 #endif
 
 /* Tier one only, after next_instr has skipped the call's inline cache.
- * END_AWAITED_CALL is never instrumented or specialized. */
-#define IS_AWAITED_CALL() (next_instr->op.code == END_AWAITED_CALL)
+ * GET_AWAITABLE is never specialized, and never instrumented after an
+ * awaited call. */
+#define IS_AWAITED_CALL() \
+    (next_instr->op.code == GET_AWAITABLE && \
+     (next_instr->op.arg & GET_AWAITABLE_AWAITED_CALL))
 
 /* The JIT recorder expects the regular path, and coroutine origin tracking
  * captures the origin when the object is created. */

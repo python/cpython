@@ -1755,7 +1755,9 @@ static bool
 is_awaited_coroutine_call(_Py_CODEUNIT *instr, int cache_entries,
                           PyCodeObject *code)
 {
-    return (instr[1 + cache_entries].op.code == END_AWAITED_CALL &&
+    _Py_CODEUNIT next = instr[1 + cache_entries];
+    return (next.op.code == GET_AWAITABLE &&
+            (next.op.arg & GET_AWAITABLE_AWAITED_CALL) &&
             (code->co_flags & CO_COROUTINE));
 }
 

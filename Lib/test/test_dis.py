@@ -618,8 +618,7 @@ dis_asyncwith = """\
                 SWAP                     2
                 LOAD_SPECIAL             2 (__aenter__)
                 CALL                     0
-                END_AWAITED_CALL         3 (to L3)
-                GET_AWAITABLE            1
+                GET_AWAITABLE            5
         L2:     SEND                     4 (to L5)
         L3:     YIELD_VALUE              1
         L4:     RESUME                   3
@@ -634,8 +633,7 @@ dis_asyncwith = """\
                 LOAD_COMMON_CONSTANT     7 (None)
                 LOAD_COMMON_CONSTANT     7 (None)
                 CALL                     3
-                END_AWAITED_CALL         3 (to L9)
-                GET_AWAITABLE            2
+                GET_AWAITABLE            6
         L8:     SEND                     4 (to L11)
         L9:     YIELD_VALUE              1
        L10:     RESUME                   3
@@ -649,7 +647,7 @@ dis_asyncwith = """\
                 RETURN_VALUE
 
 %4d   L12:     CLEANUP_THROW
-       L13:     JUMP_BACKWARD_NO_INTERRUPT 27 (to L5)
+       L13:     JUMP_BACKWARD_NO_INTERRUPT 26 (to L5)
        L14:     CLEANUP_THROW
        L15:     JUMP_BACKWARD_NO_INTERRUPT 10 (to L11)
        L16:     PUSH_EXC_INFO
@@ -1323,14 +1321,13 @@ class DisTests(DisTestBase):
 
         instrs = list(dis.get_instructions(afunc))
         names = [i.opname for i in instrs]
-        start = names.index('END_AWAITED_CALL')
-        self.assertEqual(names[start - 2:start + 5], [
-            'LOAD_SMALL_INT', 'CALL', 'END_AWAITED_CALL', 'GET_AWAITABLE',
+        start = names.index('GET_AWAITABLE')
+        self.assertEqual(names[start - 2:start + 4], [
+            'LOAD_SMALL_INT', 'CALL', 'GET_AWAITABLE',
             'SEND', 'YIELD_VALUE', 'RESUME'])
-        self.assertEqual(instrs[start].jump_target,
-                         instrs[start + 3].offset)
-        # Only `await <call>` gets END_AWAITED_CALL.
-        self.assertEqual(names.count('END_AWAITED_CALL'), 1)
+        # Only `await <call>` sets the awaited call flag.
+        self.assertEqual([i.arg for i in instrs if i.opname == 'GET_AWAITABLE'],
+                         [4, 0])
 
 
     @staticmethod

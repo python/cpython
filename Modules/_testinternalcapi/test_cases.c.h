@@ -6928,81 +6928,6 @@
             DISPATCH();
         }
 
-        TARGET(END_AWAITED_CALL) {
-            #if _Py_TAIL_CALL_INTERP
-            int opcode = END_AWAITED_CALL;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(END_AWAITED_CALL);
-            _PyStackRef lazy_outcome;
-            _PyStackRef res;
-            _PyStackRef value;
-            // _END_AWAITED_CALL
-            {
-                res = stack_pointer[-1];
-                lazy_outcome = stack_pointer[-2];
-                if (PyStackRef_IsTaggedInt(lazy_outcome)) {
-                    lazy_outcome = PyStackRef_NULL;
-                    _Py_CODEUNIT *send = next_instr + oparg - 1 - INLINE_CACHE_ENTRIES_SEND;
-                    stack_pointer[-2] = lazy_outcome;
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    _PyFrame_StackPointerValidate(frame);
-                    assert(_Py_GetBaseCodeUnit(_PyFrame_GetCode(frame),
-                           (int)(send - _PyFrame_GetBytecode(frame))).op.code == SEND);
-                    _PyFrame_StackPointerInvalidate(frame);
-                    _Py_CODEUNIT *end_send = next_instr + oparg + send->op.arg;
-                    if (end_send->op.code != END_SEND) {
-                        assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                        _PyFrame_StackPointerValidate(frame);
-                        int err = monitor_stop_iteration(tstate, frame, end_send,
-                            PyStackRef_AsPyObjectBorrow(res));
-                        _PyFrame_StackPointerInvalidate(frame);
-                        if (err) {
-                            JUMP_TO_LABEL(error);
-                        }
-                    }
-                    JUMPBY(oparg + send->op.arg + 1);
-                }
-                else if (!PyStackRef_IsNull(lazy_outcome)) {
-                    _PyInterpreterFrame *lazy_frame = PyStackRef_Unwrap(lazy_outcome);
-                    lazy_outcome = PyStackRef_NULL;
-                    stack_pointer[-2] = lazy_outcome;
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    _PyFrame_StackPointerValidate(frame);
-                    PyGenObject *gen = _PyEval_MaterializeLazyCoro(tstate, lazy_frame);
-                    _PyFrame_StackPointerInvalidate(frame);
-                    _PyStackRef v = res;
-                    if (gen == NULL) {
-                        stack_pointer[-1] = PyStackRef_NULL;
-                        assert(stack_pointer == _PyFrame_GetStackPointer(frame));
-                        _PyFrame_StackPointerValidate(frame);
-                        frame = _PyEval_ThrowIntoLazyCoro(tstate, lazy_frame, v);
-                        _PyFrame_StackPointerInvalidate(frame);
-                        next_instr = frame->instr_ptr;
-                        LOAD_SP();
-                        JUMP_TO_LABEL(error);
-                    }
-                    stack_pointer[-2] = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
-                    stack_pointer[-1] = PyStackRef_NULL;
-                    stack_pointer[0] = v;
-                    stack_pointer += 1;
-                    JUMPBY(oparg);
-                    DISPATCH();
-                }
-            }
-            // _POP_LAZY_OUTCOME
-            {
-                assert(PyStackRef_IsNull(lazy_outcome));
-                value = res;
-            }
-            stack_pointer[-2] = value;
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            DISPATCH();
-        }
-
         TARGET(END_FOR) {
             #if _Py_TAIL_CALL_INTERP
             int opcode = END_FOR;
@@ -7712,27 +7637,100 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_AWAITABLE);
+            _PyStackRef *lazy_outcome;
+            _PyStackRef res;
+            _PyStackRef value;
             _PyStackRef iterable;
             _PyStackRef iter;
             _PyStackRef null;
             _PyStackRef none;
-            iterable = stack_pointer[-1];
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyFrame_StackPointerValidate(frame);
-            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable), oparg);
-            _PyFrame_StackPointerInvalidate(frame);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyFrame_StackPointerValidate(frame);
-            PyStackRef_CLOSE(iterable);
-            _PyFrame_StackPointerInvalidate(frame);
-            if (iter_o == NULL) {
-                JUMP_TO_LABEL(error);
+            // _LAZY_CALL_OUTCOME
+            {
+                res = stack_pointer[-1];
+                lazy_outcome = &stack_pointer[-1 - ((oparg >> 2) & 1)];
+                if (oparg & GET_AWAITABLE_AWAITED_CALL) {
+                    _PyStackRef outcome = lazy_outcome[0];
+                    if (PyStackRef_IsTaggedInt(outcome)) {
+                        lazy_outcome[0] = PyStackRef_NULL;
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        _PyFrame_StackPointerValidate(frame);
+                        assert(_Py_GetBaseCodeUnit(_PyFrame_GetCode(frame),
+                               (int)(next_instr - _PyFrame_GetBytecode(frame))).op.code == SEND);
+                        _PyFrame_StackPointerInvalidate(frame);
+                        _Py_CODEUNIT *end_send = next_instr + 1 + INLINE_CACHE_ENTRIES_SEND + next_instr->op.arg;
+                        if (end_send->op.code != END_SEND) {
+                            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                            _PyFrame_StackPointerValidate(frame);
+                            int err = monitor_stop_iteration(tstate, frame, end_send,
+                                PyStackRef_AsPyObjectBorrow(res));
+                            _PyFrame_StackPointerInvalidate(frame);
+                            if (err) {
+                                JUMP_TO_LABEL(error);
+                            }
+                        }
+                        _PyStackRef v = res;
+                        stack_pointer[-2] = v;
+                        stack_pointer -= 1;
+                        next_instr = end_send + 1;
+                        DISPATCH();
+                    }
+                    else if (!PyStackRef_IsNull(outcome)) {
+                        _PyInterpreterFrame *lazy_frame = PyStackRef_Unwrap(outcome);
+                        lazy_outcome[0] = PyStackRef_NULL;
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        _PyFrame_StackPointerValidate(frame);
+                        PyGenObject *gen = _PyEval_MaterializeLazyCoro(tstate, lazy_frame);
+                        _PyFrame_StackPointerInvalidate(frame);
+                        _PyStackRef v = res;
+                        if (gen == NULL) {
+                            stack_pointer[-1] = PyStackRef_NULL;
+                            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                            _PyFrame_StackPointerValidate(frame);
+                            frame = _PyEval_ThrowIntoLazyCoro(tstate, lazy_frame, v);
+                            _PyFrame_StackPointerInvalidate(frame);
+                            next_instr = frame->instr_ptr;
+                            LOAD_SP();
+                            JUMP_TO_LABEL(error);
+                        }
+                        stack_pointer[-2] = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
+                        stack_pointer[-1] = PyStackRef_NULL;
+                        stack_pointer[0] = v;
+                        stack_pointer += 1;
+                        next_instr += 1 + INLINE_CACHE_ENTRIES_SEND;
+                        DISPATCH();
+                    }
+                }
             }
-            iter = PyStackRef_FromPyObjectSteal(iter_o);
-            null = PyStackRef_NULL;
-            none = PyStackRef_None;
+            // _POP_LAZY_OUTCOME
+            {
+                assert(!(oparg & GET_AWAITABLE_AWAITED_CALL) ||
+                   PyStackRef_IsNull(lazy_outcome[0]));
+                value = res;
+            }
+            // _GET_AWAITABLE
+            {
+                iterable = value;
+                stack_pointer[-1 - ((oparg >> 2) & 1)] = iterable;
+                stack_pointer += -((oparg >> 2) & 1);
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable),
+                    oparg & GET_AWAITABLE_WHERE_MASK);
+                _PyFrame_StackPointerInvalidate(frame);
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                PyStackRef_CLOSE(iterable);
+                _PyFrame_StackPointerInvalidate(frame);
+                if (iter_o == NULL) {
+                    JUMP_TO_LABEL(error);
+                }
+                iter = PyStackRef_FromPyObjectSteal(iter_o);
+                null = PyStackRef_NULL;
+                none = PyStackRef_None;
+            }
             stack_pointer[0] = iter;
             stack_pointer[1] = null;
             stack_pointer[2] = none;
@@ -9256,7 +9254,7 @@
                     Py_ssize_t i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
                     assert(i >= 0 && i <= INT_MAX);
                     int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), (int)i).op.code;
-                    assert(offset == 0 ? opcode == END_AWAITED_CALL
+                    assert(offset == 0 ? opcode == GET_AWAITABLE
                     : (opcode == SEND || opcode == FOR_ITER));
                 }
                 #endif
@@ -14565,7 +14563,7 @@
                     Py_ssize_t i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
                     assert(i >= 0 && i <= INT_MAX);
                     int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), (int)i).op.code;
-                    assert(offset == 0 ? opcode == END_AWAITED_CALL
+                    assert(offset == 0 ? opcode == GET_AWAITABLE
                     : (opcode == SEND || opcode == FOR_ITER));
                 }
                 #endif

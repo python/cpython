@@ -49,13 +49,14 @@ which time its frame is destroyed).
 
 There is one exception: a coroutine function called by an awaited call
 (`await f()` or the calls of `__aenter__` and `__aexit__` in `async with`: a
-`CALL`, `CALL_KW` or `CALL_FUNCTION_EX` followed by `END_AWAITED_CALL`, see
+`CALL`, `CALL_KW` or `CALL_FUNCTION_EX` followed by `GET_AWAITABLE` with the
+`GET_AWAITABLE_AWAITED_CALL` flag, see
 `IS_AWAITED_CALL()`) sets `lazy_coro` to
 `LAZY_CORO_REQUESTED` on its frame (see `MAYBE_START_LAZY_CORO()`). The
 specializer gives such a call of a coroutine function an `*_AWAITED` form,
 which does the same. `RETURN_GENERATOR` then pushes the body's own
 `_PyErr_StackItem` on the data stack right after the frame, sets `lazy_coro`
-to `LAZY_CORO_RUNNING`, moves the caller to its `END_AWAITED_CALL` (which has
+to `LAZY_CORO_RUNNING`, moves the caller to its `GET_AWAITABLE` (which has
 the location of the `await`, like `SEND`) and keeps running the body in that
 frame, so that a
 body that returns or raises without suspending never creates a coroutine
@@ -63,23 +64,24 @@ object. A frame that unwinds before `RETURN_GENERATOR` (for example on
 `RecursionError`) is cleared like any other.
 
 The compiler pushes an extra `NULL`, the `lazy_outcome`, below the callable of
-an awaited call and follows the call with `END_AWAITED_CALL`, whose oparg jumps
-to the `YIELD_VALUE` of the `SEND` loop for the await. A lazily run body reports
-in `lazy_outcome` how it ended:
+an awaited call and follows the call with `GET_AWAITABLE` with the
+`GET_AWAITABLE_AWAITED_CALL` flag set in its oparg. The `SEND` loop for the
+await starts right after it. A lazily run body reports in `lazy_outcome` how it
+ended:
 
 - It returned: `clear_thread_frame()` stores the tagged int
-  `LAZY_CORO_RETURNED`, and `END_AWAITED_CALL` skips the `SEND` loop, jumping
+  `LAZY_CORO_RETURNED`, and `GET_AWAITABLE` skips the `SEND` loop, jumping
   past the `END_SEND` that the `SEND` right before `YIELD_VALUE` jumps to.
 - It suspended: `YIELD_VALUE` leaves the frame and its `_PyErr_StackItem` on the
-  data stack and stores a pointer to the frame. `END_AWAITED_CALL` creates the
+  data stack and stores a pointer to the frame. `GET_AWAITABLE` creates the
   coroutine object, moves the frame and the exception state into it (see
   `_PyEval_MaterializeLazyCoro()`) and jumps to `YIELD_VALUE` with the
   coroutine, `NULL` and the yielded value on the stack, as `SEND` would have
   left them.
-- It raised: the exception is raised from the caller's `END_AWAITED_CALL`.
+- It raised: the exception is raised from the caller's `GET_AWAITABLE`.
 
-Otherwise `lazy_outcome` stays `NULL`, and `END_AWAITED_CALL` pops it and goes
-on to `GET_AWAITABLE`.
+Otherwise `lazy_outcome` stays `NULL`, and `GET_AWAITABLE` pops it and gets
+the awaitable as usual.
 
 When the generator is next resumed by
 [`gen_send_ex2()`](../Objects/genobject.c), `_PyEval_EvalFrame()` is called

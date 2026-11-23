@@ -497,8 +497,7 @@ codegen_call_exit_with_nones(compiler *c, location loc)
 }
 
 static int
-codegen_add_yield_from_impl(compiler *c, location loc, int await,
-                            jump_target_label yield)
+codegen_add_yield_from(compiler *c, location loc, int await)
 {
     NEW_JUMP_TARGET_LABEL(c, send);
     NEW_JUMP_TARGET_LABEL(c, fail);
@@ -509,9 +508,6 @@ codegen_add_yield_from_impl(compiler *c, location loc, int await,
     // Set up a virtual try/except to handle when StopIteration is raised during
     // a close or throw call. The only way YIELD_VALUE raises if they do!
     ADDOP_JUMP(c, loc, SETUP_FINALLY, fail);
-    if (IS_JUMP_TARGET_LABEL(yield)) {
-        USE_LABEL(c, yield);
-    }
     ADDOP_I(c, loc, YIELD_VALUE, 1);
     ADDOP(c, NO_LOCATION, POP_BLOCK);
     ADDOP_I(c, loc, RESUME, await ? RESUME_AFTER_AWAIT : RESUME_AFTER_YIELD_FROM);
@@ -526,18 +522,10 @@ codegen_add_yield_from_impl(compiler *c, location loc, int await,
 }
 
 static int
-codegen_add_yield_from(compiler *c, location loc, int await)
+codegen_await_call_result(compiler *c, location loc, int where)
 {
-    return codegen_add_yield_from_impl(c, loc, await, NO_LABEL);
-}
-
-static int
-codegen_await_call_result(compiler *c, location loc, int oparg)
-{
-    NEW_JUMP_TARGET_LABEL(c, yield);
-    ADDOP_JUMP(c, loc, END_AWAITED_CALL, yield);
-    ADDOP_I(c, loc, GET_AWAITABLE, oparg);
-    return codegen_add_yield_from_impl(c, loc, 1, yield);
+    ADDOP_I(c, loc, GET_AWAITABLE, GET_AWAITABLE_AWAITED_CALL | where);
+    return codegen_add_yield_from(c, loc, 1);
 }
 
 static int

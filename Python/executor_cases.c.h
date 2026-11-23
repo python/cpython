@@ -8923,7 +8923,8 @@
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
-            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable), oparg);
+            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable),
+                oparg & GET_AWAITABLE_WHERE_MASK);
             _PyFrame_StackPointerInvalidate(frame);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -8946,22 +8947,24 @@
             break;
         }
 
-        /* _END_AWAITED_CALL is not a viable micro-op for tier 2 because it is replaced */
+        /* _LAZY_CALL_OUTCOME is not a viable micro-op for tier 2 because it is replaced */
 
-        case _POP_LAZY_OUTCOME_r01: {
-            CHECK_CURRENT_CACHED_VALUES(0);
+        case _GUARD_LAZY_OUTCOME_NULL_r11: {
+            CHECK_CURRENT_CACHED_VALUES(1);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            _PyStackRef res;
-            _PyStackRef lazy_outcome;
-            _PyStackRef value;
-            res = stack_pointer[-1];
-            lazy_outcome = stack_pointer[-2];
-            assert(PyStackRef_IsNull(lazy_outcome));
-            value = res;
-            _tos_cache0 = value;
+            _PyStackRef *lazy_outcome;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            oparg = CURRENT_OPARG();
+            lazy_outcome = &stack_pointer[-((oparg >> 2) & 1)];
+            if ((oparg & GET_AWAITABLE_AWAITED_CALL) &&
+                    !PyStackRef_IsNull(lazy_outcome[0])) {
+                UOP_STAT_INC(uopcode, miss);
+                _tos_cache0 = _stack_item_0;
+                SET_CURRENT_CACHED_VALUES(1);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             break;
         }
@@ -8970,55 +8973,19 @@
             CHECK_CURRENT_CACHED_VALUES(1);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             _PyStackRef res;
-            _PyStackRef lazy_outcome;
+            _PyStackRef *lazy_outcome;
             _PyStackRef value;
             _PyStackRef _stack_item_0 = _tos_cache0;
+            oparg = CURRENT_OPARG();
             res = _stack_item_0;
-            lazy_outcome = stack_pointer[-1];
-            assert(PyStackRef_IsNull(lazy_outcome));
+            lazy_outcome = &stack_pointer[-((oparg >> 2) & 1)];
+            assert(!(oparg & GET_AWAITABLE_AWAITED_CALL) ||
+                   PyStackRef_IsNull(lazy_outcome[0]));
             value = res;
             _tos_cache0 = value;
             SET_CURRENT_CACHED_VALUES(1);
-            stack_pointer += -1;
+            stack_pointer += -((oparg >> 2) & 1);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            break;
-        }
-
-        case _POP_LAZY_OUTCOME_r21: {
-            CHECK_CURRENT_CACHED_VALUES(2);
-            ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            _PyStackRef res;
-            _PyStackRef lazy_outcome;
-            _PyStackRef value;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            _PyStackRef _stack_item_1 = _tos_cache1;
-            res = _stack_item_1;
-            lazy_outcome = _stack_item_0;
-            assert(PyStackRef_IsNull(lazy_outcome));
-            value = res;
-            _tos_cache0 = value;
-            SET_CURRENT_CACHED_VALUES(1);
-            ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            break;
-        }
-
-        case _POP_LAZY_OUTCOME_r32: {
-            CHECK_CURRENT_CACHED_VALUES(3);
-            ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            _PyStackRef res;
-            _PyStackRef lazy_outcome;
-            _PyStackRef value;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            _PyStackRef _stack_item_1 = _tos_cache1;
-            _PyStackRef _stack_item_2 = _tos_cache2;
-            res = _stack_item_2;
-            lazy_outcome = _stack_item_1;
-            assert(PyStackRef_IsNull(lazy_outcome));
-            value = res;
-            _tos_cache1 = value;
-            _tos_cache0 = _stack_item_0;
-            SET_CURRENT_CACHED_VALUES(2);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             break;
         }
@@ -9684,7 +9651,7 @@
                 Py_ssize_t i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
                 assert(i >= 0 && i <= INT_MAX);
                 int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), (int)i).op.code;
-                assert(offset == 0 ? opcode == END_AWAITED_CALL
+                assert(offset == 0 ? opcode == GET_AWAITABLE
                 : (opcode == SEND || opcode == FOR_ITER));
             }
             #endif

@@ -189,7 +189,7 @@ class TestUops(unittest.TestCase):
         self.guard_is_false, self.guard_is_true = get_bool_guard_ops()
 
     def test_awaited_call_jump_not_traced(self):
-        # Tier two runs only END_AWAITED_CALL's fall-through: no trace may
+        # Tier two runs only GET_AWAITABLE's fall-through: no trace may
         # continue past END_SEND after a lazily started coroutine returned.
         async def body():
             t = 0
@@ -210,7 +210,7 @@ class TestUops(unittest.TestCase):
             return "suspended"
 
         offset = next(i.offset for i in dis.get_instructions(main)
-                      if i.opname == "END_AWAITED_CALL")
+                      if i.opname == "GET_AWAITABLE" and i.arg & 4)
         enter_executor = dis.opmap["ENTER_EXECUTOR"]
         for _ in range(30_000):  # Long enough to chain side exits.
             self.assertEqual(run(), 2)

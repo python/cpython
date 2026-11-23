@@ -3338,7 +3338,7 @@ class LazyCoroutineTest(unittest.TestCase):
             run_async(outer())
 
     def test_line_events_at_awaited_call_jump_target(self):
-        # The list(genexpr) fast path jumps to END_AWAITED_CALL.
+        # The list(genexpr) fast path jumps to GET_AWAITABLE.
         async def list(arg):
             await AsyncYield("suspended")
             return "done"
@@ -3506,7 +3506,7 @@ class LazyCoroutineTest(unittest.TestCase):
         self.assertEqual(lazy, eager)
 
     def test_instrumentation_enabled_before_first_suspension(self):
-        # END_AWAITED_CALL must run right after the body suspends, before
+        # GET_AWAITABLE must run right after the body suspends, before
         # anything else, even if LINE or INSTRUCTION events get enabled
         # while the body runs.
         E = sys.monitoring.events

@@ -3715,7 +3715,7 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
 }
 
 /* Suspend the lazy coroutine running in frame, leaving the frame and its
- * exception state on the data stack for the caller's END_AWAITED_CALL. */
+ * exception state on the data stack for the caller's GET_AWAITABLE. */
 _PyInterpreterFrame *
 _PyEval_SuspendLazyCoro(PyThreadState *tstate, _PyInterpreterFrame *frame)
 {

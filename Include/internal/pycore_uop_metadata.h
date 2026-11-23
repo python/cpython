@@ -168,7 +168,8 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GET_AITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ANEXT] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GET_AWAITABLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_POP_LAZY_OUTCOME] = 0,
+    [_GUARD_LAZY_OUTCOME_NULL] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
+    [_POP_LAZY_OUTCOME] = HAS_ARG_FLAG,
     [_SEND_GEN_FRAME] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_GUARD_TOS_IS_NONE] = HAS_EXIT_FLAG,
     [_GUARD_NOS_NOT_NULL] = HAS_EXIT_FLAG,
@@ -1646,13 +1647,22 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
         },
     },
-    [_POP_LAZY_OUTCOME] = {
-        .best = { 0, 1, 2, 3 },
+    [_GUARD_LAZY_OUTCOME_NULL] = {
+        .best = { 1, 1, 1, 1 },
         .entries = {
-            { 1, 0, _POP_LAZY_OUTCOME_r01 },
+            { -1, -1, -1 },
+            { 1, 1, _GUARD_LAZY_OUTCOME_NULL_r11 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_POP_LAZY_OUTCOME] = {
+        .best = { 1, 1, 1, 1 },
+        .entries = {
+            { -1, -1, -1 },
             { 1, 1, _POP_LAZY_OUTCOME_r11 },
-            { 1, 2, _POP_LAZY_OUTCOME_r21 },
-            { 2, 3, _POP_LAZY_OUTCOME_r32 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
         },
     },
     [_SEND_GEN_FRAME] = {
@@ -4305,10 +4315,8 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GET_AITER_r11] = _GET_AITER,
     [_GET_ANEXT_r13] = _GET_ANEXT,
     [_GET_AWAITABLE_r13] = _GET_AWAITABLE,
-    [_POP_LAZY_OUTCOME_r01] = _POP_LAZY_OUTCOME,
+    [_GUARD_LAZY_OUTCOME_NULL_r11] = _GUARD_LAZY_OUTCOME_NULL,
     [_POP_LAZY_OUTCOME_r11] = _POP_LAZY_OUTCOME,
-    [_POP_LAZY_OUTCOME_r21] = _POP_LAZY_OUTCOME,
-    [_POP_LAZY_OUTCOME_r32] = _POP_LAZY_OUTCOME,
     [_SEND_GEN_FRAME_r33] = _SEND_GEN_FRAME,
     [_GUARD_TOS_IS_NONE_r01] = _GUARD_TOS_IS_NONE,
     [_GUARD_TOS_IS_NONE_r11] = _GUARD_TOS_IS_NONE,
@@ -5473,6 +5481,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_ITER_VIRTUAL_r11] = "_GUARD_ITER_VIRTUAL_r11",
     [_GUARD_ITER_VIRTUAL_r22] = "_GUARD_ITER_VIRTUAL_r22",
     [_GUARD_ITER_VIRTUAL_r33] = "_GUARD_ITER_VIRTUAL_r33",
+    [_GUARD_LAZY_OUTCOME_NULL] = "_GUARD_LAZY_OUTCOME_NULL",
+    [_GUARD_LAZY_OUTCOME_NULL_r11] = "_GUARD_LAZY_OUTCOME_NULL_r11",
     [_GUARD_LOAD_SUPER_ATTR_METHOD] = "_GUARD_LOAD_SUPER_ATTR_METHOD",
     [_GUARD_LOAD_SUPER_ATTR_METHOD_r03] = "_GUARD_LOAD_SUPER_ATTR_METHOD_r03",
     [_GUARD_LOAD_SUPER_ATTR_METHOD_r13] = "_GUARD_LOAD_SUPER_ATTR_METHOD_r13",
@@ -5962,10 +5972,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_POP_ITER] = "_POP_ITER",
     [_POP_ITER_r20] = "_POP_ITER_r20",
     [_POP_LAZY_OUTCOME] = "_POP_LAZY_OUTCOME",
-    [_POP_LAZY_OUTCOME_r01] = "_POP_LAZY_OUTCOME_r01",
     [_POP_LAZY_OUTCOME_r11] = "_POP_LAZY_OUTCOME_r11",
-    [_POP_LAZY_OUTCOME_r21] = "_POP_LAZY_OUTCOME_r21",
-    [_POP_LAZY_OUTCOME_r32] = "_POP_LAZY_OUTCOME_r32",
     [_POP_TOP] = "_POP_TOP",
     [_POP_TOP_r10] = "_POP_TOP_r10",
     [_POP_TOP_FLOAT] = "_POP_TOP_FLOAT",
@@ -6502,8 +6509,10 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _GET_AWAITABLE:
             return 1;
+        case _GUARD_LAZY_OUTCOME_NULL:
+            return 0;
         case _POP_LAZY_OUTCOME:
-            return 2;
+            return 1 + ((oparg >> 2) & 1);
         case _SEND_GEN_FRAME:
             return 1;
         case _GUARD_TOS_IS_NONE:

@@ -1908,14 +1908,18 @@
             break;
         }
 
-        /* _END_AWAITED_CALL is not a viable micro-op for tier 2 */
+        /* _LAZY_CALL_OUTCOME is not a viable micro-op for tier 2 */
+
+        case _GUARD_LAZY_OUTCOME_NULL: {
+            break;
+        }
 
         case _POP_LAZY_OUTCOME: {
             JitOptRef value;
             value = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-2] = value;
-            stack_pointer += -1;
+            CHECK_STACK_BOUNDS(-((oparg >> 2) & 1));
+            stack_pointer[-1 - ((oparg >> 2) & 1)] = value;
+            stack_pointer += -((oparg >> 2) & 1);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }

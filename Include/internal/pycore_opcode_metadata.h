@@ -202,8 +202,6 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 2 + (oparg - 1);
         case END_ASYNC_FOR:
             return 2;
-        case END_AWAITED_CALL:
-            return 2;
         case END_FOR:
             return 1;
         case END_SEND:
@@ -235,7 +233,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case GET_ANEXT:
             return 1;
         case GET_AWAITABLE:
-            return 1;
+            return 1 + ((oparg >> 2) & 1);
         case GET_ITER:
             return 1;
         case GET_ITER_SELF:
@@ -711,8 +709,6 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 1 + (oparg - 1);
         case END_ASYNC_FOR:
             return 0;
-        case END_AWAITED_CALL:
-            return 1;
         case END_FOR:
             return 0;
         case END_SEND:
@@ -1210,7 +1206,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [DICT_MERGE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [DICT_UPDATE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [END_ASYNC_FOR] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_UNPREDICTABLE_JUMP_FLAG | HAS_NEEDS_GUARD_IP_FLAG },
-    [END_AWAITED_CALL] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [END_FOR] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG | HAS_NO_SAVE_IP_FLAG },
     [END_SEND] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG | HAS_PURE_FLAG },
     [ENTER_EXECUTOR] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1466,7 +1461,6 @@ _PyOpcode_macro_expansion[256] = {
     [DELETE_SUBSCR] = { .nuops = 1, .uops = { { _DELETE_SUBSCR, OPARG_SIMPLE, 0 } } },
     [DICT_MERGE] = { .nuops = 2, .uops = { { _DICT_MERGE, OPARG_SIMPLE, 0 }, { _POP_TOP, OPARG_SIMPLE, 0 } } },
     [DICT_UPDATE] = { .nuops = 2, .uops = { { _DICT_UPDATE, OPARG_SIMPLE, 0 }, { _POP_TOP, OPARG_SIMPLE, 0 } } },
-    [END_AWAITED_CALL] = { .nuops = 2, .uops = { { _END_AWAITED_CALL, OPARG_REPLACED, 0 }, { _POP_LAZY_OUTCOME, OPARG_SIMPLE, 0 } } },
     [END_FOR] = { .nuops = 1, .uops = { { _END_FOR, OPARG_SIMPLE, 0 } } },
     [END_SEND] = { .nuops = 1, .uops = { { _END_SEND, OPARG_SIMPLE, 0 } } },
     [EXIT_INIT_CHECK] = { .nuops = 1, .uops = { { _EXIT_INIT_CHECK, OPARG_SIMPLE, 0 } } },
@@ -1480,7 +1474,7 @@ _PyOpcode_macro_expansion[256] = {
     [FOR_ITER_VIRTUAL] = { .nuops = 2, .uops = { { _GUARD_TOS_NOT_NULL, OPARG_SIMPLE, 1 }, { _FOR_ITER_VIRTUAL, OPARG_REPLACED, 1 } } },
     [GET_AITER] = { .nuops = 1, .uops = { { _GET_AITER, OPARG_SIMPLE, 0 } } },
     [GET_ANEXT] = { .nuops = 1, .uops = { { _GET_ANEXT, OPARG_SIMPLE, 0 } } },
-    [GET_AWAITABLE] = { .nuops = 1, .uops = { { _GET_AWAITABLE, OPARG_SIMPLE, 0 } } },
+    [GET_AWAITABLE] = { .nuops = 3, .uops = { { _LAZY_CALL_OUTCOME, OPARG_REPLACED, 0 }, { _POP_LAZY_OUTCOME, OPARG_SIMPLE, 0 }, { _GET_AWAITABLE, OPARG_SIMPLE, 0 } } },
     [GET_ITER] = { .nuops = 2, .uops = { { _RECORD_TOS_TYPE, OPARG_SIMPLE, 0 }, { _GET_ITER, OPARG_SIMPLE, 0 } } },
     [GET_ITER_SELF] = { .nuops = 3, .uops = { { _RECORD_TOS_TYPE, OPARG_SIMPLE, 0 }, { _GUARD_ITERATOR, OPARG_SIMPLE, 1 }, { _PUSH_NULL, OPARG_SIMPLE, 1 } } },
     [GET_ITER_VIRTUAL] = { .nuops = 3, .uops = { { _RECORD_TOS_TYPE, OPARG_SIMPLE, 0 }, { _GUARD_ITER_VIRTUAL, OPARG_SIMPLE, 1 }, { _PUSH_TAGGED_ZERO, OPARG_SIMPLE, 1 } } },
@@ -1677,7 +1671,6 @@ const char *_PyOpcode_OpName[267] = {
     [DICT_MERGE] = "DICT_MERGE",
     [DICT_UPDATE] = "DICT_UPDATE",
     [END_ASYNC_FOR] = "END_ASYNC_FOR",
-    [END_AWAITED_CALL] = "END_AWAITED_CALL",
     [END_FOR] = "END_FOR",
     [END_SEND] = "END_SEND",
     [ENTER_EXECUTOR] = "ENTER_EXECUTOR",
@@ -1877,6 +1870,7 @@ const uint8_t _PyOpcode_Caches[256] = {
 PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
+    [117] = 117,
     [118] = 118,
     [119] = 119,
     [120] = 120,
@@ -1977,7 +1971,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [DICT_MERGE] = DICT_MERGE,
     [DICT_UPDATE] = DICT_UPDATE,
     [END_ASYNC_FOR] = END_ASYNC_FOR,
-    [END_AWAITED_CALL] = END_AWAITED_CALL,
     [END_FOR] = END_FOR,
     [END_SEND] = END_SEND,
     [ENTER_EXECUTOR] = ENTER_EXECUTOR,
@@ -2138,6 +2131,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
+    case 117: \
     case 118: \
     case 119: \
     case 120: \

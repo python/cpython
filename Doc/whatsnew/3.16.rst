@@ -1528,9 +1528,9 @@ CPython bytecode changes
 * ``await <call>`` and the calls of :meth:`~object.__aenter__` and
   :meth:`~object.__aexit__` in :keyword:`async with` now push an extra
   ``NULL`` below the callable and
-  follow the call with the new :opcode:`END_AWAITED_CALL` instruction,
-  which either goes on to :opcode:`GET_AWAITABLE`, skips the
-  :opcode:`SEND` loop, or jumps to its :opcode:`YIELD_VALUE`.
+  follow the call with :opcode:`GET_AWAITABLE` with a new flag in its oparg.
+  It then also either skips the :opcode:`SEND` loop or jumps to its
+  :opcode:`YIELD_VALUE`.
   (Contributed by Andrew Svetlov in :gh:`161170`.)
 
 

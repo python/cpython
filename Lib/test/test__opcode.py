@@ -67,6 +67,9 @@ class StackEffectTests(unittest.TestCase):
         self.assertEqual(stack_effect(dis.opmap['POP_TOP']), -1)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 2), -1)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 3), -2)
+        # After an awaited call, GET_AWAITABLE also pops the lazy outcome.
+        self.assertEqual(stack_effect(dis.opmap['GET_AWAITABLE'], 1), 2)
+        self.assertEqual(stack_effect(dis.opmap['GET_AWAITABLE'], 4 | 1), 1)
         self.assertRaises(ValueError, stack_effect, 30000)
         # All defined opcodes
         has_arg = dis.hasarg
@@ -91,10 +94,6 @@ class StackEffectTests(unittest.TestCase):
         self.assertEqual(stack_effect(JUMP_FORWARD, 0), 0)
         self.assertEqual(stack_effect(JUMP_FORWARD, 0, jump=True), 0)
         self.assertEqual(stack_effect(JUMP_FORWARD, 0, jump=False), 0)
-        END_AWAITED_CALL = dis.opmap['END_AWAITED_CALL']
-        self.assertEqual(stack_effect(END_AWAITED_CALL, 0), 1)
-        self.assertEqual(stack_effect(END_AWAITED_CALL, 0, jump=True), 1)
-        self.assertEqual(stack_effect(END_AWAITED_CALL, 0, jump=False), -1)
         # All defined opcodes
         has_arg = dis.hasarg
         has_exc = dis.hasexc

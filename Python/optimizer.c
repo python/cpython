@@ -502,7 +502,7 @@ _PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_LOAD_BYTECODE] = _NOP,
     [_SEND_VIRTUAL] = _SEND_VIRTUAL_TIER_TWO,
     [_SEND_ASYNC_GEN] = _SEND_ASYNC_GEN_TIER_TWO,
-    [_END_AWAITED_CALL] = _GUARD_NOS_NULL,
+    [_LAZY_CALL_OUTCOME] = _GUARD_LAZY_OUTCOME_NULL,
     [_MAYBE_LAZY_CORO] = _NOP,
     [_START_LAZY_CORO] = _NOP,
     [_CHECK_LAZY_CORO] = _GUARD_NOT_LAZY_CORO,
@@ -735,9 +735,9 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 
     // Strange control-flow
-    // Tier two only runs END_AWAITED_CALL's fall-through.
+    // Tier two only runs GET_AWAITABLE's fall-through.
     bool has_dynamic_jump_taken =
-        (OPCODE_HAS_UNPREDICTABLE_JUMP(opcode) || opcode == END_AWAITED_CALL) &&
+        (OPCODE_HAS_UNPREDICTABLE_JUMP(opcode) || opcode == GET_AWAITABLE) &&
         (next_instr != this_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]]);
 
     /* Special case the first instruction,
@@ -972,7 +972,7 @@ _PyJit_translate_single_bytecode_to_trace(
                                 target = next_inst;
                             }
                         }
-                        else if (uop == _GUARD_NOS_NULL ||
+                        else if (uop == _GUARD_LAZY_OUTCOME_NULL ||
                                  uop == _NOP || uop == _GUARD_NOT_LAZY_CORO) {
                             // These don't jump.
                         }
@@ -1146,9 +1146,9 @@ _PyJit_TryInitializeTracing(
     if (oparg > 0xFFFF) {
         return 0;
     }
-    // IS_AWAITED_CALL() needs END_AWAITED_CALL in the bytecode, so no
+    // IS_AWAITED_CALL() needs GET_AWAITABLE in the bytecode, so no
     // ENTER_EXECUTOR may replace it.
-    if (start_instr->op.code == END_AWAITED_CALL) {
+    if (start_instr->op.code == GET_AWAITABLE) {
         return 0;
     }
     PyObject *func = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);

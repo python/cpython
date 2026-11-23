@@ -64,7 +64,6 @@ static void *opcode_targets_table[256] = {
     &&TARGET_DICT_MERGE,
     &&TARGET_DICT_UPDATE,
     &&TARGET_END_ASYNC_FOR,
-    &&TARGET_END_AWAITED_CALL,
     &&TARGET_EXTENDED_ARG,
     &&TARGET_FOR_ITER,
     &&TARGET_GET_AWAITABLE,
@@ -118,6 +117,7 @@ static void *opcode_targets_table[256] = {
     &&TARGET_UNPACK_EX,
     &&TARGET_UNPACK_SEQUENCE,
     &&TARGET_YIELD_VALUE,
+    &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
@@ -376,7 +376,7 @@ static void *opcode_tracing_targets_table[256] = {
     &&TARGET_TRACE_RECORD,
     &&TARGET_TRACE_RECORD,
     &&TARGET_TRACE_RECORD,
-    &&TARGET_TRACE_RECORD,
+    &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
@@ -613,7 +613,6 @@ static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_DELETE_SUBSCR(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_DICT_MERGE(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_DICT_UPDATE(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_END_ASYNC_FOR(TAIL_CALL_PARAMS);
-static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_END_AWAITED_CALL(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_END_FOR(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_END_SEND(TAIL_CALL_PARAMS);
 static PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_ENTER_EXECUTOR(TAIL_CALL_PARAMS);
@@ -863,7 +862,6 @@ static py_tail_call_funcptr instruction_funcptr_handler_table[256] = {
     [DICT_MERGE] = _TAIL_CALL_DICT_MERGE,
     [DICT_UPDATE] = _TAIL_CALL_DICT_UPDATE,
     [END_ASYNC_FOR] = _TAIL_CALL_END_ASYNC_FOR,
-    [END_AWAITED_CALL] = _TAIL_CALL_END_AWAITED_CALL,
     [END_FOR] = _TAIL_CALL_END_FOR,
     [END_SEND] = _TAIL_CALL_END_SEND,
     [ENTER_EXECUTOR] = _TAIL_CALL_ENTER_EXECUTOR,
@@ -1019,6 +1017,7 @@ static py_tail_call_funcptr instruction_funcptr_handler_table[256] = {
     [UNPACK_SEQUENCE_TWO_TUPLE] = _TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE,
     [WITH_EXCEPT_START] = _TAIL_CALL_WITH_EXCEPT_START,
     [YIELD_VALUE] = _TAIL_CALL_YIELD_VALUE,
+    [117] = _TAIL_CALL_UNKNOWN_OPCODE,
     [118] = _TAIL_CALL_UNKNOWN_OPCODE,
     [119] = _TAIL_CALL_UNKNOWN_OPCODE,
     [120] = _TAIL_CALL_UNKNOWN_OPCODE,
@@ -1121,7 +1120,6 @@ static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {
     [DICT_MERGE] = _TAIL_CALL_TRACE_RECORD,
     [DICT_UPDATE] = _TAIL_CALL_TRACE_RECORD,
     [END_ASYNC_FOR] = _TAIL_CALL_TRACE_RECORD,
-    [END_AWAITED_CALL] = _TAIL_CALL_TRACE_RECORD,
     [END_FOR] = _TAIL_CALL_TRACE_RECORD,
     [END_SEND] = _TAIL_CALL_TRACE_RECORD,
     [ENTER_EXECUTOR] = _TAIL_CALL_TRACE_RECORD,
@@ -1277,6 +1275,7 @@ static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {
     [UNPACK_SEQUENCE_TWO_TUPLE] = _TAIL_CALL_TRACE_RECORD,
     [WITH_EXCEPT_START] = _TAIL_CALL_TRACE_RECORD,
     [YIELD_VALUE] = _TAIL_CALL_TRACE_RECORD,
+    [117] = _TAIL_CALL_UNKNOWN_OPCODE,
     [118] = _TAIL_CALL_UNKNOWN_OPCODE,
     [119] = _TAIL_CALL_UNKNOWN_OPCODE,
     [120] = _TAIL_CALL_UNKNOWN_OPCODE,

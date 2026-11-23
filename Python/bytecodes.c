@@ -1651,8 +1651,9 @@ dummy_func(
             none = PyStackRef_None;
         }
 
-        inst(GET_AWAITABLE, (iterable -- iter, null, none)) {
-            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable), oparg);
+        op(_GET_AWAITABLE, (iterable -- iter, null, none)) {
+            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable),
+                                                    oparg & GET_AWAITABLE_WHERE_MASK);
             PyStackRef_CLOSE(iterable);
             ERROR_IF(iter_o == NULL);
             iter = PyStackRef_FromPyObjectSteal(iter_o);
@@ -1660,52 +1661,66 @@ dummy_func(
             none = PyStackRef_None;
         }
 
-        replaced op(_END_AWAITED_CALL, (lazy_outcome, res -- lazy_outcome, res)) {
-            if (PyStackRef_IsTaggedInt(lazy_outcome)) {
-                lazy_outcome = PyStackRef_NULL;
-                _Py_CODEUNIT *send = next_instr + oparg - 1 - INLINE_CACHE_ENTRIES_SEND;
-                assert(_Py_GetBaseCodeUnit(_PyFrame_GetCode(frame),
-                                           (int)(send - _PyFrame_GetBytecode(frame))).op.code == SEND);
-                _Py_CODEUNIT *end_send = next_instr + oparg + send->op.arg;
-                if (end_send->op.code != END_SEND) {
-                    // Emulate the monitoring event of INSTRUMENTED_END_SEND.
-                    int err = monitor_stop_iteration(tstate, frame, end_send,
-                                                     PyStackRef_AsPyObjectBorrow(res));
-                    ERROR_IF(err);
+        // After an awaited call, the SEND loop starts right after
+        // GET_AWAITABLE: SEND is at next_instr and YIELD_VALUE follows its cache.
+        replaced op(_LAZY_CALL_OUTCOME, (lazy_outcome[(oparg >> 2) & 1], res -- lazy_outcome[(oparg >> 2) & 1], res)) {
+            if (oparg & GET_AWAITABLE_AWAITED_CALL) {
+                _PyStackRef outcome = lazy_outcome[0];
+                if (PyStackRef_IsTaggedInt(outcome)) {
+                    lazy_outcome[0] = PyStackRef_NULL;
+                    assert(_Py_GetBaseCodeUnit(_PyFrame_GetCode(frame),
+                                               (int)(next_instr - _PyFrame_GetBytecode(frame))).op.code == SEND);
+                    _Py_CODEUNIT *end_send = next_instr + 1 + INLINE_CACHE_ENTRIES_SEND + next_instr->op.arg;
+                    if (end_send->op.code != END_SEND) {
+                        // Emulate the monitoring event of INSTRUMENTED_END_SEND.
+                        int err = monitor_stop_iteration(tstate, frame, end_send,
+                                                         PyStackRef_AsPyObjectBorrow(res));
+                        ERROR_IF(err);
+                    }
+                    _PyStackRef v = res;
+                    DEAD(res);
+                    stack_pointer[-2] = v;
+                    stack_pointer -= 1;
+                    next_instr = end_send + 1;
+                    DISPATCH();
                 }
-                JUMPBY(oparg + send->op.arg + 1);
-            }
-            else if (!PyStackRef_IsNull(lazy_outcome)) {
-                _PyInterpreterFrame *lazy_frame = PyStackRef_Unwrap(lazy_outcome);
-                lazy_outcome = PyStackRef_NULL;
-                PyGenObject *gen = _PyEval_MaterializeLazyCoro(tstate, lazy_frame);
-                _PyStackRef v = res;
-                DEAD(res);
-                DEAD(lazy_outcome);
-                if (gen == NULL) {
+                else if (!PyStackRef_IsNull(outcome)) {
+                    _PyInterpreterFrame *lazy_frame = PyStackRef_Unwrap(outcome);
+                    lazy_outcome[0] = PyStackRef_NULL;
+                    PyGenObject *gen = _PyEval_MaterializeLazyCoro(tstate, lazy_frame);
+                    _PyStackRef v = res;
+                    DEAD(res);
+                    if (gen == NULL) {
+                        stack_pointer[-1] = PyStackRef_NULL;
+                        frame = _PyEval_ThrowIntoLazyCoro(tstate, lazy_frame, v);
+                        next_instr = frame->instr_ptr;
+                        LOAD_SP();
+                        goto error;
+                    }
+                    stack_pointer[-2] = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
                     stack_pointer[-1] = PyStackRef_NULL;
-                    frame = _PyEval_ThrowIntoLazyCoro(tstate, lazy_frame, v);
-                    next_instr = frame->instr_ptr;
-                    LOAD_SP();
-                    goto error;
+                    stack_pointer[0] = v;
+                    stack_pointer += 1;
+                    next_instr += 1 + INLINE_CACHE_ENTRIES_SEND;
+                    DISPATCH();
                 }
-                stack_pointer[-2] = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
-                stack_pointer[-1] = PyStackRef_NULL;
-                stack_pointer[0] = v;
-                stack_pointer += 1;
-                JUMPBY(oparg);
-                DISPATCH();
             }
         }
 
-        op(_POP_LAZY_OUTCOME, (lazy_outcome, res -- value)) {
-            assert(PyStackRef_IsNull(lazy_outcome));
+        tier2 op(_GUARD_LAZY_OUTCOME_NULL, (lazy_outcome[(oparg >> 2) & 1], unused -- lazy_outcome[(oparg >> 2) & 1], unused)) {
+            EXIT_IF((oparg & GET_AWAITABLE_AWAITED_CALL) &&
+                    !PyStackRef_IsNull(lazy_outcome[0]));
+        }
+
+        op(_POP_LAZY_OUTCOME, (lazy_outcome[(oparg >> 2) & 1], res -- value)) {
+            assert(!(oparg & GET_AWAITABLE_AWAITED_CALL) ||
+                   PyStackRef_IsNull(lazy_outcome[0]));
             DEAD(lazy_outcome);
             value = res;
             DEAD(res);
         }
 
-        macro(END_AWAITED_CALL) = _END_AWAITED_CALL + _POP_LAZY_OUTCOME;
+        macro(GET_AWAITABLE) = _LAZY_CALL_OUTCOME + _POP_LAZY_OUTCOME + _GET_AWAITABLE;
 
         family(SEND, INLINE_CACHE_ENTRIES_SEND) = {
             SEND_GEN,
@@ -1921,7 +1936,7 @@ dummy_func(
             DTRACE_FUNCTION_RETURN();
             int offset = 1 + INLINE_CACHE_ENTRIES_SEND;
             if (frame->lazy_coro == LAZY_CORO_RUNNING) {
-                // The caller's END_AWAITED_CALL creates the coroutine. It is
+                // The caller's GET_AWAITABLE creates the coroutine. It is
                 // never instrumented, so nothing runs in between.
                 assert(oparg == 1);
                 frame = _PyEval_SuspendLazyCoro(tstate, frame);
@@ -1946,7 +1961,7 @@ dummy_func(
                 Py_ssize_t i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
                 assert(i >= 0 && i <= INT_MAX);
                 int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), (int)i).op.code;
-                assert(offset == 0 ? opcode == END_AWAITED_CALL
+                assert(offset == 0 ? opcode == GET_AWAITABLE
                                    : (opcode == SEND || opcode == FOR_ITER));
             }
             #endif

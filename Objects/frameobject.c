@@ -13,6 +13,7 @@
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
+#include "pycore_opcode_utils.h"   // GET_AWAITABLE_AWAITED_CALL
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateDependency()
 #include "pycore_tuple.h"         // _PyTuple_FromPair
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
@@ -1453,19 +1454,27 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[j] = next_stack;
                     stacks[next_i] = next_stack;
                     break;
-                case END_AWAITED_CALL:
+                case GET_AWAITABLE:
                 {
-                    /* (lazy_outcome, res) -- res, or jump to YIELD_VALUE
-                     * with (coroutine, NULL, res) as left by SEND */
-                    next_stack = pop_value(pop_value(next_stack));
-                    int64_t target_stack = push_value(next_stack, Object);
-                    target_stack = push_value(target_stack, Object);
-                    target_stack = push_value(target_stack, Object);
-                    j = next_i + oparg;
-                    assert(j < len);
-                    assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
-                    stacks[j] = target_stack;
-                    stacks[next_i] = push_value(next_stack, Object);
+                    /* (lazy_outcome, res) after an awaited call, else (res);
+                     * pushes (iter, NULL, None). After an awaited call it may
+                     * also jump to YIELD_VALUE with (coroutine, NULL, res),
+                     * as left by SEND. */
+                    int awaited_call = oparg & GET_AWAITABLE_AWAITED_CALL;
+                    next_stack = pop_value(next_stack);
+                    if (awaited_call) {
+                        next_stack = pop_value(next_stack);
+                    }
+                    next_stack = push_value(next_stack, Object);
+                    next_stack = push_value(next_stack, Object);
+                    next_stack = push_value(next_stack, Object);
+                    if (awaited_call) {
+                        j = next_i + 1 + INLINE_CACHE_ENTRIES_SEND;
+                        assert(j < len);
+                        assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
+                        stacks[j] = next_stack;
+                    }
+                    stacks[next_i] = next_stack;
                     break;
                 }
                 case JUMP_FORWARD:
