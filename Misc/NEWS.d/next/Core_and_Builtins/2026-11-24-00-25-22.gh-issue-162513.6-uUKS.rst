@@ -1,0 +1,2 @@
+Speed up :class:`memoryview` equality comparisons for contiguous buffers
+with matching byte formats.
