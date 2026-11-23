@@ -147,6 +147,8 @@ class TaskGroup:
             # collected task errors silently.  Report them instead of
             # losing them.  See gh-135736.
             for suppressed_exc in self._errors:
+                if suppressed_exc is self._base_error:
+                    continue
                 self._loop.call_exception_handler({
                     'message': 'TaskGroup task exception was not '
                                'propagated because the TaskGroup body '
