@@ -289,7 +289,7 @@ _PyFrame_StackAssertInvalid(_PyInterpreterFrame *frame)
  * NOTE: We allow racy accesses to the instruction pointer
  * from other threads for sys._current_frames() and similar APIs.
  */
-static inline bool _Py_NO_SANITIZE_THREAD
+static inline bool _Py_NO_SANITIZE_THREAD _Py_NO_SANITIZE_MEMORY
 _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
 {
     if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
