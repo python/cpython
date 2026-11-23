@@ -210,7 +210,7 @@ typevar_has_default(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(paramspecargs_new__doc__,
-"paramspecargs(origin)\n"
+"ParamSpecArgs(origin)\n"
 "--\n"
 "\n"
 "Create a ParamSpecArgs object.");
@@ -246,7 +246,7 @@ paramspecargs_new_helper(PyTypeObject *type, PyObject *const *args,
     static const char * const _keywords[] = {"origin", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "paramspecargs",
+        .fname = "ParamSpecArgs",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -299,7 +299,7 @@ paramspecargs_vectorcall(PyObject *type, PyObject *const *args,
 }
 
 PyDoc_STRVAR(paramspeckwargs_new__doc__,
-"paramspeckwargs(origin)\n"
+"ParamSpecKwargs(origin)\n"
 "--\n"
 "\n"
 "Create a ParamSpecKwargs object.");
@@ -335,7 +335,7 @@ paramspeckwargs_new_helper(PyTypeObject *type, PyObject *const *args,
     static const char * const _keywords[] = {"origin", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "paramspeckwargs",
+        .fname = "ParamSpecKwargs",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -791,7 +791,7 @@ typealias_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(typealias_new__doc__,
-"typealias(name, value, *, type_params=(), qualname=None)\n"
+"TypeAliasType(name, value, *, type_params=(), qualname=None)\n"
 "--\n"
 "\n"
 "Create a TypeAliasType.");
@@ -828,7 +828,7 @@ typealias_new_helper(PyTypeObject *type, PyObject *const *args,
     static const char * const _keywords[] = {"name", "value", "type_params", "qualname", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "typealias",
+        .fname = "TypeAliasType",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -846,7 +846,7 @@ typealias_new_helper(PyTypeObject *type, PyObject *const *args,
         goto exit;
     }
     if (!PyUnicode_Check(fastargs[0])) {
-        _PyArg_BadArgument("typealias", "argument 'name'", "str", fastargs[0]);
+        _PyArg_BadArgument("TypeAliasType", "argument 'name'", "str", fastargs[0]);
         goto exit;
     }
     name = fastargs[0];
@@ -891,4 +891,4 @@ typealias_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=87b75f9eb5c613f1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7d4d841a5402ebbe input=a9049054013a1b77]*/
