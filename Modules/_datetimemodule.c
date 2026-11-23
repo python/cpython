@@ -2833,6 +2833,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
 }
 
 /*[clinic input]
+@vectorcall
 @classmethod
 datetime.timedelta.__new__ as delta_new
 
@@ -2854,7 +2855,7 @@ static PyObject *
 delta_new_impl(PyTypeObject *type, PyObject *days, PyObject *seconds,
                PyObject *microseconds, PyObject *milliseconds,
                PyObject *minutes, PyObject *hours, PyObject *weeks)
-/*[clinic end generated code: output=61d7e02a92a97700 input=e8cd54819295d34b]*/
+/*[clinic end generated code: output=61d7e02a92a97700 input=8aebc4cdef360d1f]*/
 {
     PyObject *self = NULL;
 
@@ -3181,6 +3182,7 @@ static PyTypeObject PyDateTime_DeltaType = {
     0,                                                  /* tp_init */
     0,                                                  /* tp_alloc */
     delta_new,                                          /* tp_new */
+    .tp_vectorcall = delta_vectorcall,
     0,                                                  /* tp_free */
 };
 
@@ -4385,6 +4387,7 @@ static PyTypeObject PyDateTime_TZInfoType = {
 };
 
 /*[clinic input]
+@vectorcall
 @classmethod
 datetime.timezone.__new__ as timezone_new
 
@@ -4396,7 +4399,7 @@ Fixed offset from UTC implementation of tzinfo.
 
 static PyObject *
 timezone_new_impl(PyTypeObject *type, PyObject *offset, PyObject *name)
-/*[clinic end generated code: output=41a2dda500424187 input=d51255afe60382cd]*/
+/*[clinic end generated code: output=41a2dda500424187 input=8901a8befbc52561]*/
 {
     return new_timezone(offset, name);
 }
@@ -4641,6 +4644,7 @@ static PyTypeObject PyDateTime_TimeZoneType = {
     0,                                /* tp_init */
     0,                                /* tp_alloc */
     timezone_new,                     /* tp_new */
+    .tp_vectorcall = timezone_vectorcall,
 };
 
 // XXX Can we make this const?
