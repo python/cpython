@@ -817,7 +817,8 @@ not have to be) the original ``STACK[-2]``.
 
 .. opcode:: GET_AWAITABLE (where)
 
-   Implements ``STACK[-1] = get_awaitable(STACK[-1])``, where ``get_awaitable(o)``
+   Replaces ``STACK[-1]`` with ``get_awaitable(STACK[-1])``, ``NULL`` and
+   ``None``, ready for :opcode:`SEND`. ``get_awaitable(o)``
    returns ``o`` if ``o`` is a coroutine object or a generator object with
    the :data:`~inspect.CO_ITERABLE_COROUTINE` flag, or resolves
    ``o.__await__``.
@@ -833,6 +834,10 @@ not have to be) the original ``STACK[-2]``.
    .. versionchanged:: 3.11
       Previously, this instruction did not have an oparg.
 
+   .. versionchanged:: next
+      Also pushes ``NULL`` and ``None``, which were previously pushed by
+      separate instructions.
+
 
 .. opcode:: GET_AITER
 
@@ -846,10 +851,15 @@ not have to be) the original ``STACK[-2]``.
 
 .. opcode:: GET_ANEXT
 
-   Implement ``STACK.append(get_awaitable(STACK[-1].__anext__()))`` to the stack.
+   Implement ``STACK.append(get_awaitable(STACK[-1].__anext__()))`` to the stack,
+   then push ``NULL`` and ``None``, ready for :opcode:`SEND`.
    See ``GET_AWAITABLE`` for details about ``get_awaitable``.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: next
+      Also pushes ``NULL`` and ``None``, which were previously pushed by
+      separate instructions.
 
 
 .. opcode:: END_ASYNC_FOR

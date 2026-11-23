@@ -1,4 +1,3 @@
-#
 # turtle.py: a Tkinter based turtle graphics module for Python
 # Version 1.1b - 4. 5. 2009
 #
@@ -115,7 +114,7 @@ def config_dict(filename):
         try:
             key, value = line.split("=")
         except ValueError:
-            print("Bad line in config-file %s:\n%s" % (filename,line))
+            print(f"Bad line in config-file {filename}:\n{line}")
             continue
         key = key.strip()
         value = value.strip()
@@ -226,7 +225,7 @@ class Vec2D(tuple):
 ### May be replaced by an interface to some different graphics toolkit     ###
 ##############################################################################
 
-## helper functions for Scrolled Canvas, to forward Canvas-methods
+## Helper functions for Scrolled Canvas, to forward Canvas-methods
 ## to ScrolledCanvas class
 
 def __methodDict(cls, _dict):
@@ -271,11 +270,12 @@ def __forwardmethods(fromClass, toClass, toPart, exclude = ()):
 
 
 class ScrolledCanvas(TK.Frame):
-    """Modeled after the scrolled canvas class from Grayons's Tkinter book.
+    """Modeled after the scrolled canvas class from Grayson's Tkinter book.
 
     Used as the default canvas, which pops up automatically when
     using turtle graphics functions or the Turtle class.
     """
+
     def __init__(self, master, width=500, height=350,
                                           canvwidth=600, canvheight=500):
         TK.Frame.__init__(self, master, width=width, height=height)
@@ -367,6 +367,7 @@ __forwardmethods(ScrolledCanvas, TK.Canvas, '_canvas')
 
 class _Root(TK.Tk):
     """Root class for Screen based on Tkinter."""
+
     def __init__(self):
         TK.Tk.__init__(self)
 
@@ -394,10 +395,10 @@ Canvas = TK.Canvas
 
 class TurtleScreenBase:
     """Provide the basic graphics functionality.
-       Interface between Tkinter and turtle.py.
+    Interface between Tkinter and turtle.py.
 
-       To port turtle.py to some different graphics toolkit
-       a corresponding TurtleScreenBase class has to be implemented.
+    To port turtle.py to a different graphics toolkit,
+    a corresponding TurtleScreenBase class must be implemented.
     """
 
     def _blankimage(self):
@@ -551,22 +552,19 @@ class TurtleScreenBase:
         num, the number of the mouse-button defaults to 1
         """
         if fun is None:
-            self.cv.tag_unbind(item, "<Button-%s>" % num)
+            self.cv.tag_unbind(item, f"<Button-{num}>")
         else:
             def eventfun(event):
                 x, y = (self.cv.canvasx(event.x)/self.xscale,
                         -self.cv.canvasy(event.y)/self.yscale)
                 fun(x, y)
-            self.cv.tag_bind(item, "<Button-%s>" % num, eventfun, add)
+            self.cv.tag_bind(item, f"<Button-{num}>", eventfun, add)
 
     def _onrelease(self, item, fun, num=1, add=None):
         """Bind fun to mouse-button-release event on turtle.
         fun must be a function with two arguments, the coordinates
         of the point on the canvas where mouse button is released.
         num, the number of the mouse-button defaults to 1
-
-        If a turtle is clicked, first _onclick-event will be performed,
-        then _onscreensclick-event.
         """
         if fun is None:
             self.cv.tag_unbind(item, f"<Button{num}-ButtonRelease>")
@@ -606,7 +604,7 @@ class TurtleScreenBase:
         num, the number of the mouse-button defaults to 1
 
         If a turtle is clicked, first _onclick-event will be performed,
-        then _onscreensclick-event.
+        then _onscreenclick-event.
         """
         if fun is None:
             self.cv.unbind(f"<Button-{num}>")
@@ -734,7 +732,7 @@ class TurtleScreenBase:
         return width, height
 
     def mainloop(self):
-        """Start the event loop by calling Tkinter's mainloop function.
+        """Start the event loop by calling Tkinter's mainloop method.
 
         Must be the last statement in a turtle graphics program. Must not
         be used if a script is run from within IDLE in -n mode (no
@@ -764,10 +762,10 @@ class TurtleScreenBase:
         title is the title of the dialog window and prompt is a text
         describing what numerical information to input. default is the
         default value, minval and maxval are the minimum and maximum
-        values for input. If these are given, the number entered must be
-        between minval and maxval. If not, a hint is issued and the dialog
-        remains open for correction. Return the number entered.
-        If the dialog is canceled, return None.
+        values for input. If these are given and the number entered is not
+        between minval and maxval, a hint is issued and the dialog remains
+        open for correction. Return the number entered. If the dialog is
+        canceled, return None.
 
         Arguments:
             title -- a string
@@ -811,6 +809,7 @@ class Shape:
     "compound" None, as a compound shape is built up using the
     addcomponent method.
     """
+
     def __init__(self, type_, data=None):
         self._type = type_
         if type_ == "polygon":
@@ -821,7 +820,7 @@ class Shape:
         elif type_ == "compound":
             data = []
         else:
-            raise TurtleGraphicsError("There is no shape type %s" % type_)
+            raise TurtleGraphicsError(f"There is no shape type {type_!r}")
         self._data = data
 
     def addcomponent(self, poly, fill, outline=None):
@@ -843,8 +842,8 @@ class Shape:
             >>> # ... add more components and then use register_shape()
         """
         if self._type != "compound":
-            raise TurtleGraphicsError("Cannot add component to %s Shape"
-                                                                % self._type)
+            raise TurtleGraphicsError(f"Cannot add component to {self._type!r} Shape")
+
         if outline is None:
             outline = fill
         self._data.append([poly, fill, outline])
@@ -902,14 +901,14 @@ class Tbuffer:
         return str(self.buffer) + " " + str(self.ptr)
 
 
-
 class TurtleScreen(TurtleScreenBase):
-    """Provides screen oriented methods like bgcolor etc.
+    """Provides the screen-oriented methods, such as bgcolor().
 
     Only relies upon the methods of TurtleScreenBase and not upon
     components of the underlying graphics toolkit, which is Tkinter
     in this case.
     """
+
     _RUNNING = True
 
     def __init__(self, cv, mode=_CFG["mode"],
@@ -1152,7 +1151,7 @@ class TurtleScreen(TurtleScreenBase):
             >>> turtle.pencolor(240, 160, 80)
             Traceback (most recent call last):
                  ...
-            TurtleGraphicsError: bad color sequence: (240, 160, 80)
+            turtle.TurtleGraphicsError: bad color sequence: (240, 160, 80)
             >>> screen.colormode()
             1.0
             >>> screen.colormode(255)
@@ -1311,7 +1310,10 @@ class TurtleScreen(TurtleScreenBase):
             self._updatecounter %= self._tracing
 
     def update(self):
-        """Perform a TurtleScreen update."""
+        """Perform a TurtleScreen update.
+
+        To be used when tracer() is turned off.
+        """
         tracing = self._tracing
         self._tracing = True
         for t in self.turtles():
@@ -1366,7 +1368,7 @@ class TurtleScreen(TurtleScreenBase):
         canvas. If fun is None, existing bindings are removed. btn is the
         number of the mouse button and defaults to 1, the left mouse
         button. If add is True, a new binding is added, otherwise it
-        replaces a former binding. As a function, this method is only
+        replaces a previous binding. As a function, this method is only
         available under the name onscreenclick. The function onclick is
         derived from the Turtle method onclick.
 
@@ -1517,7 +1519,7 @@ class TurtleScreen(TurtleScreenBase):
         Arguments:
             canvwidth -- a positive integer or None
             canvheight -- a positive integer or None
-            bg -- a colorstring or a color tuple or None
+            bg -- a colorstring or None
 
         Example (for a TurtleScreen instance named screen):
             >>> screen.screensize()
@@ -1572,11 +1574,13 @@ class TurtleScreen(TurtleScreenBase):
     addshape = register_shape
     onkeyrelease = onkey
 
+
 class TNavigator:
     """The navigation part of RawTurtle.
 
     Implements methods for turtle movement.
     """
+
     START_ORIENTATION = {
         "standard": Vec2D(1.0, 0.0),
         "world"   : Vec2D(1.0, 0.0),
@@ -1817,7 +1821,7 @@ class TNavigator:
         """Return the turtle's y coordinate.
 
         Example (for a Turtle instance named turtle):
-            >>> reset()
+            >>> turtle.home()
             >>> turtle.left(60)
             >>> turtle.forward(100)
             >>> print(round(turtle.ycor(), 5))
@@ -2169,7 +2173,6 @@ class TPen:
             return self._pensize
         self.pen(pensize=width)
 
-
     def penup(self):
         """Lift the pen.
 
@@ -2209,9 +2212,9 @@ class TPen:
         """Return or set the turtle's speed.
 
         If speed is not given, return the current speed. Otherwise set the
-        turtle's speed to an integer from 0 to 10. If speed is a number
-        greater than 10 or smaller than 0.5, the speed is set to 0. You
-        can also use these names instead of numbers:
+        turtle's speed to an integer from 0 to 10. A number above 0.5 and
+        below 10.5 is rounded to the nearest integer. Any other number sets
+        the speed to 0. You can also use these names instead of numbers:
 
             "fastest": 0
             "fast": 10
@@ -2618,7 +2621,7 @@ class RawTurtle(TPen, TNavigator):
                 self.screen = TurtleScreen(canvas)
                 RawTurtle.screens.append(self.screen)
         else:
-            raise TurtleGraphicsError("bad canvas argument %s" % canvas)
+            raise TurtleGraphicsError(f"Bad canvas argument {canvas!r}")
 
         screen = self.screen
         TNavigator.__init__(self, screen.mode())
@@ -2685,8 +2688,8 @@ class RawTurtle(TPen, TNavigator):
         """Return the number of entries in the undo buffer.
 
         Example (for a Turtle instance named turtle):
-            >>> while undobufferentries():
-            ...     undo()
+            >>> while turtle.undobufferentries():
+            ...     turtle.undo()
         """
         if self.undobuffer is None:
             return 0
@@ -2852,7 +2855,7 @@ class RawTurtle(TPen, TNavigator):
         """Set the turtle shape to the named shape.
 
         If name is not given, return the name of the current shape. The
-        shape must exist in the TurtleScreen's shape dictionary. Initially
+        shape must exist in the TurtleScreen's shape list. Initially
         there are the following shapes: "arrow", "turtle", "circle",
         "square", "triangle" and "classic". To add shapes, see the Screen
         method register_shape().
@@ -2976,12 +2979,12 @@ class RawTurtle(TPen, TNavigator):
             >>> turtle.tiltangle(45)
             >>> turtle.tiltangle()
             45.0
-            >>> turtle.stamp()
+            >>> stamp_id = turtle.stamp()
             >>> turtle.fd(50)
             >>> turtle.tiltangle(-45)
             >>> turtle.tiltangle()
             315.0
-            >>> turtle.stamp()
+            >>> stamp_id = turtle.stamp()
             >>> turtle.fd(50)
         """
         if angle is None:
@@ -3018,9 +3021,9 @@ class RawTurtle(TPen, TNavigator):
         tilt angle of the turtle shape into four numbers: t11 and t12 form
         its first row, t21 and t22 its second. If none of them are given,
         return the current matrix as a tuple of four numbers. Otherwise
-        set the given elements and update stretch factors, shear factor and
-        tilt angle accordingly. t11 * t22 - t12 * t21 must not be zero,
-        otherwise an error is raised.
+        set the given elements and update the stretch factors, shear
+        factor and tilt angle accordingly. t11 * t22 - t12 * t21 must not
+        be zero, otherwise an error is raised.
 
         Arguments:
             t11 -- a number or None
@@ -3071,8 +3074,8 @@ class RawTurtle(TPen, TNavigator):
         """Return the points that form the outline of the current turtle shape
         as a tuple of (x, y) coordinate pairs.
 
-        This can be used to define a new shape or components of a compound
-        shape.
+        These points can be used to define a new shape or parts of a
+        compound shape.
 
         Example (for a Turtle instance named turtle):
             >>> turtle.shape("square")
@@ -3362,7 +3365,7 @@ class RawTurtle(TPen, TNavigator):
         self._update() #count=True)
 
     def _rotate(self, angle):
-        """Turns pen clockwise by angle."""
+        """Turn the turtle counterclockwise by angle."""
         if self.undobuffer:
             self.undobuffer.push(("rot", angle, self._degreesPerAU))
         angle *= self._degreesPerAU
@@ -3654,7 +3657,7 @@ class RawTurtle(TPen, TNavigator):
         canvas. If fun is None, existing bindings are removed. btn is the
         number of the mouse button and defaults to 1, the left mouse
         button. If add is True, a new binding is added, otherwise it
-        replaces a former binding.
+        replaces a previous binding.
 
         Arguments:
             fun -- a function with two arguments or None
@@ -3672,47 +3675,57 @@ class RawTurtle(TPen, TNavigator):
         self._update()
 
     def onrelease(self, fun, btn=1, add=None):
-        """Bind fun to mouse-button-release event on this turtle on canvas.
+        """Bind fun to mouse-button-release events on this turtle.
+
+        fun is called with the coordinates of the point on the canvas
+        where the mouse button is released. If fun is None, existing
+        bindings are removed. btn is the number of the mouse button and
+        defaults to 1, the left mouse button. If add is True, a new
+        binding is added, otherwise it replaces a previous binding.
 
         Arguments:
-        fun -- a function with two arguments, to which will be assigned
-                the coordinates of the clicked point on the canvas.
-        btn --  number of the mouse-button defaults to 1 (left mouse button).
+            fun -- a function with two arguments or None
+            btn -- an integer
+            add -- a boolean or None
 
         Example (for a MyTurtle instance named joe):
-        >>> class MyTurtle(Turtle):
-        ...     def glow(self,x,y):
-        ...             self.fillcolor("red")
-        ...     def unglow(self,x,y):
-        ...             self.fillcolor("")
-        ...
-        >>> joe = MyTurtle()
-        >>> joe.onclick(joe.glow)
-        >>> joe.onrelease(joe.unglow)
+            >>> class MyTurtle(Turtle):
+            ...     def glow(self,x,y):
+            ...         self.fillcolor("red")
+            ...
+            ...     def unglow(self,x,y):
+            ...         self.fillcolor("")
+            ...
+            >>> joe = MyTurtle()
+            >>> joe.onclick(joe.glow)
+            >>> joe.onrelease(joe.unglow)
 
-        Clicking on joe turns fillcolor red, unclicking turns it to
-        transparent.
+        Clicking on joe turns its fill color red, releasing the mouse button
+        turns it transparent again.
         """
         self.screen._onrelease(self.turtle._item, fun, btn, add)
         self._update()
 
     def ondrag(self, fun, btn=1, add=None):
-        """Bind fun to mouse-move event on this turtle on canvas.
+        """Bind fun to mouse-move events on this turtle.
+
+        fun is called with the coordinates of the mouse pointer on the
+        canvas. If fun is None, existing bindings are removed. btn is the
+        number of the mouse button and defaults to 1, the left mouse
+        button. If add is True, a new binding is added, otherwise it
+        replaces a previous binding. Every sequence of mouse-move events on
+        a turtle is preceded by a mouse-click event on that turtle.
 
         Arguments:
-        fun -- a function with two arguments, to which will be assigned
-               the coordinates of the clicked point on the canvas.
-        btn -- number of the mouse-button defaults to 1 (left mouse button).
-
-        Every sequence of mouse-move-events on a turtle is preceded by a
-        mouse-click event on that turtle.
+            fun -- a function with two arguments or None
+            btn -- an integer
+            add -- a boolean or None
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.ondrag(turtle.goto)
+            >>> turtle.ondrag(turtle.goto)
 
-        Subsequently clicking and dragging a Turtle will move it
-        across the screen thereby producing handdrawings (if pen is
-        down).
+        Clicking and dragging the turtle then moves it across the screen,
+        drawing by hand if the pen is down.
         """
         self.screen._ondrag(self.turtle._item, fun, btn, add)
 
@@ -3752,21 +3765,19 @@ class RawTurtle(TPen, TNavigator):
             self.undobuffer.pop()
 
     def undo(self):
-        """undo (repeatedly) the last turtle action.
+        """Undo the last turtle action.
 
-        No argument.
-
-        undo (repeatedly) the last turtle action.
-        Number of available undo actions is determined by the size of
-        the undobuffer.
+        Calling undo() repeatedly undoes one action at a time. The number
+        of actions that can be undone is set by the size of the undo
+        buffer, see setundobuffer().
 
         Example (for a Turtle instance named turtle):
-        >>> for i in range(4):
-        ...     turtle.fd(50); turtle.lt(80)
-        ...
-        >>> for i in range(8):
-        ...     turtle.undo()
-        ...
+            >>> for i in range(4):
+            ...     turtle.fd(50); turtle.lt(80)
+            ...
+            >>> for i in range(8):
+            ...     turtle.undo()
+            ...
         """
         if self.undobuffer is None:
             return
@@ -3820,28 +3831,32 @@ class _Screen(TurtleScreen):
 
     def setup(self, width=_CFG["width"], height=_CFG["height"],
               startx=_CFG["leftright"], starty=_CFG["topbottom"]):
-        """ Set the size and position of the main window.
+        """Set the size and position of the main window.
+
+        width and height are the size of the window. As integers they are
+        sizes in pixels, as floats they are fractions of the screen, so
+        0.5 is half the screen. The defaults are 50% of the screen width
+        and 75% of its height.
+
+        startx and starty are the position of the window. If positive,
+        they are the distance in pixels from the left and top edges of the
+        screen, if negative from the right and bottom edges. If None, the
+        window is centered in that direction.
+
+        The default values of all arguments are stored in the
+        configuration dictionary and can be changed with a turtle.cfg file.
 
         Arguments:
-        width: as integer a size in pixels, as float a fraction of the screen.
-          Default is 50% of screen.
-        height: as integer the height in pixels, as float a fraction of the
-          screen. Default is 75% of screen.
-        startx: if positive, starting position in pixels from the left
-          edge of the screen, if negative from the right edge
-          Default, startx=None is to center window horizontally.
-        starty: if positive, starting position in pixels from the top
-          edge of the screen, if negative from the bottom edge
-          Default, starty=None is to center window vertically.
+            width -- an integer or a float
+            height -- an integer or a float
+            startx -- an integer or None
+            starty -- an integer or None
 
-        Examples (for a Screen instance named screen):
-        >>> screen.setup (width=200, height=200, startx=0, starty=0)
-
-        sets window to 200x200 pixels, in upper left of screen
-
-        >>> screen.setup(width=.75, height=0.5, startx=None, starty=None)
-
-        sets window to 75% of screen by 50% of screen and centers
+        Example (for a Screen instance named screen):
+            >>> screen.setup(width=200, height=200, startx=0, starty=0)
+            >>> # sets window to 200x200 pixels, in upper left of screen
+            >>> screen.setup(width=0.75, height=0.5)
+            >>> # sets window to 75% of screen by 50% of screen and centers
         """
         if not hasattr(self._root, "set_geometry"):
             return
@@ -3890,19 +3905,14 @@ class _Screen(TurtleScreen):
         self._destroy()
 
     def exitonclick(self):
-        """Go into mainloop until the mouse is clicked.
+        """Bind bye() to mouse clicks on the screen and start the event loop.
 
-        No arguments.
+        Clicking on the screen then closes the turtle graphics window. If
+        the configuration value using_IDLE is True, the event loop is not
+        started, see mainloop().
 
-        Bind bye() method to mouseclick on TurtleScreen.
-        If "using_IDLE" - value in configuration dictionary is False
-        (default value), enter mainloop.
-        If IDLE with -n switch (no subprocess) is used, this value should be
-        set to True in turtle.cfg. In this case IDLE's mainloop
-        is active also for the client script.
-
-        This is a method of the Screen-class and not available for
-        TurtleScreen instances.
+        This is a method of the Screen class. It is not available for
+        TurtleScreen objects.
         """
         def exitGracefully(x, y):
             """Screen.bye() with two dummy-parameters"""
@@ -3938,16 +3948,15 @@ class Turtle(RawTurtle):
 Pen = Turtle
 
 def write_docstringdict(filename="turtle_docstringdict"):
-    """Create and write docstring-dictionary to file.
+    """Write the docstring dictionary to a Python script.
 
-    Optional argument:
-    filename -- a string, used as filename
-                default value is turtle_docstringdict
+    The dictionary is written to the file filename.py. It is intended to
+    serve as a template for translating the docstrings into different
+    languages. This function has to be called explicitly. It is not used
+    by the turtle graphics classes.
 
-    Has to be called explicitly, (not used by the turtle-graphics classes)
-    The docstring dictionary will be written to the Python script <filename>.py
-    It is intended to serve as a template for translation of the docstrings
-    into different languages.
+    Argument:
+        filename -- a string
     """
     docsdict = {}
 
@@ -4007,10 +4016,10 @@ except Exception:
 
 
 def getmethparlist(ob):
-    """Get strings describing the arguments for the given object
+    """Get strings describing the arguments for the given object.
 
     Returns a pair of strings representing function parameter lists
-    including parenthesis.  The first string is suitable for use in
+    including parentheses.  The first string is suitable for use in
     function definition and the second is suitable for use in function
     call.  The "self" parameter is not included.
     """

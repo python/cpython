@@ -520,7 +520,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_CURSES_WATTR_GET)
+#if defined(_Py_HAVE_CURSES_WATTR_GET)
 
 PyDoc_STRVAR(_curses_window_attr_get__doc__,
 "attr_get($self, /)\n"
@@ -540,9 +540,9 @@ _curses_window_attr_get(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _curses_window_attr_get_impl((PyCursesWindowObject *)self);
 }
 
-#endif /* defined(HAVE_CURSES_WATTR_GET) */
+#endif /* defined(_Py_HAVE_CURSES_WATTR_GET) */
 
-#if defined(HAVE_CURSES_WATTR_SET)
+#if defined(_Py_HAVE_CURSES_WATTR_SET)
 
 PyDoc_STRVAR(_curses_window_attr_set__doc__,
 "attr_set($self, attr, pair=0, /)\n"
@@ -583,9 +583,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CURSES_WATTR_SET) */
+#endif /* defined(_Py_HAVE_CURSES_WATTR_SET) */
 
-#if defined(HAVE_CURSES_WATTR_ON)
+#if defined(_Py_HAVE_CURSES_WATTR_ON)
 
 PyDoc_STRVAR(_curses_window_attr_on__doc__,
 "attr_on($self, attr, /)\n"
@@ -614,9 +614,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CURSES_WATTR_ON) */
+#endif /* defined(_Py_HAVE_CURSES_WATTR_ON) */
 
-#if defined(HAVE_CURSES_WATTR_OFF)
+#if defined(_Py_HAVE_CURSES_WATTR_OFF)
 
 PyDoc_STRVAR(_curses_window_attr_off__doc__,
 "attr_off($self, attr, /)\n"
@@ -645,9 +645,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CURSES_WATTR_OFF) */
+#endif /* defined(_Py_HAVE_CURSES_WATTR_OFF) */
 
-#if defined(HAVE_CURSES_WCOLOR_SET)
+#if defined(_Py_HAVE_CURSES_WCOLOR_SET)
 
 PyDoc_STRVAR(_curses_window_color_set__doc__,
 "color_set($self, pair, /)\n"
@@ -676,7 +676,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CURSES_WCOLOR_SET) */
+#endif /* defined(_Py_HAVE_CURSES_WCOLOR_SET) */
 
 PyDoc_STRVAR(_curses_window_getattrs__doc__,
 "getattrs($self, /)\n"
@@ -2867,7 +2867,7 @@ _curses_filter(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_CURSES_FILTER) */
 
-#if defined(HAVE_CURSES_NOFILTER)
+#if defined(_Py_HAVE_CURSES_NOFILTER)
 
 PyDoc_STRVAR(_curses_nofilter__doc__,
 "nofilter($module, /)\n"
@@ -2891,7 +2891,7 @@ _curses_nofilter(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_nofilter_impl(module);
 }
 
-#endif /* defined(HAVE_CURSES_NOFILTER) */
+#endif /* defined(_Py_HAVE_CURSES_NOFILTER) */
 
 PyDoc_STRVAR(_curses_baudrate__doc__,
 "baudrate($module, /)\n"
@@ -3566,7 +3566,7 @@ PyDoc_STRVAR(_curses_getwin__doc__,
 #define _CURSES_GETWIN_METHODDEF    \
     {"getwin", (PyCFunction)_curses_getwin, METH_O, _curses_getwin__doc__},
 
-#if defined(HAVE_CURSES_SCR_DUMP)
+#if defined(_Py_HAVE_CURSES_SCR_DUMP)
 
 PyDoc_STRVAR(_curses_scr_dump__doc__,
 "scr_dump($module, filename, /)\n"
@@ -3583,9 +3583,9 @@ PyDoc_STRVAR(_curses_scr_dump__doc__,
 #define _CURSES_SCR_DUMP_METHODDEF    \
     {"scr_dump", (PyCFunction)_curses_scr_dump, METH_O, _curses_scr_dump__doc__},
 
-#endif /* defined(HAVE_CURSES_SCR_DUMP) */
+#endif /* defined(_Py_HAVE_CURSES_SCR_DUMP) */
 
-#if defined(HAVE_CURSES_SCR_DUMP)
+#if defined(_Py_HAVE_CURSES_SCR_DUMP)
 
 PyDoc_STRVAR(_curses_scr_restore__doc__,
 "scr_restore($module, filename, /)\n"
@@ -3602,9 +3602,9 @@ PyDoc_STRVAR(_curses_scr_restore__doc__,
 #define _CURSES_SCR_RESTORE_METHODDEF    \
     {"scr_restore", (PyCFunction)_curses_scr_restore, METH_O, _curses_scr_restore__doc__},
 
-#endif /* defined(HAVE_CURSES_SCR_DUMP) */
+#endif /* defined(_Py_HAVE_CURSES_SCR_DUMP) */
 
-#if defined(HAVE_CURSES_SCR_DUMP)
+#if defined(_Py_HAVE_CURSES_SCR_DUMP)
 
 PyDoc_STRVAR(_curses_scr_init__doc__,
 "scr_init($module, filename, /)\n"
@@ -3621,9 +3621,9 @@ PyDoc_STRVAR(_curses_scr_init__doc__,
 #define _CURSES_SCR_INIT_METHODDEF    \
     {"scr_init", (PyCFunction)_curses_scr_init, METH_O, _curses_scr_init__doc__},
 
-#endif /* defined(HAVE_CURSES_SCR_DUMP) */
+#endif /* defined(_Py_HAVE_CURSES_SCR_DUMP) */
 
-#if defined(HAVE_CURSES_SCR_DUMP) && defined(HAVE_CURSES_SCR_SET)
+#if defined(_Py_HAVE_CURSES_SCR_DUMP) && defined(_Py_HAVE_CURSES_SCR_SET)
 
 PyDoc_STRVAR(_curses_scr_set__doc__,
 "scr_set($module, filename, /)\n"
@@ -3639,7 +3639,7 @@ PyDoc_STRVAR(_curses_scr_set__doc__,
 #define _CURSES_SCR_SET_METHODDEF    \
     {"scr_set", (PyCFunction)_curses_scr_set, METH_O, _curses_scr_set__doc__},
 
-#endif /* defined(HAVE_CURSES_SCR_DUMP) && defined(HAVE_CURSES_SCR_SET) */
+#endif /* defined(_Py_HAVE_CURSES_SCR_DUMP) && defined(_Py_HAVE_CURSES_SCR_SET) */
 
 PyDoc_STRVAR(_curses_halfdelay__doc__,
 "halfdelay($module, tenths, /)\n"
@@ -3778,7 +3778,7 @@ exit:
 
 #endif /* defined(HAVE_CURSES_HAS_KEY) */
 
-#if defined(HAVE_CURSES_DEFINE_KEY)
+#if defined(_Py_HAVE_CURSES_DEFINE_KEY)
 
 PyDoc_STRVAR(_curses_define_key__doc__,
 "define_key($module, definition, keycode, /)\n"
@@ -3834,9 +3834,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CURSES_DEFINE_KEY) */
+#endif /* defined(_Py_HAVE_CURSES_DEFINE_KEY) */
 
-#if defined(HAVE_CURSES_KEY_DEFINED)
+#if defined(_Py_HAVE_CURSES_KEY_DEFINED)
 
 PyDoc_STRVAR(_curses_key_defined__doc__,
 "key_defined($module, definition, /)\n"
@@ -3876,9 +3876,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CURSES_KEY_DEFINED) */
+#endif /* defined(_Py_HAVE_CURSES_KEY_DEFINED) */
 
-#if defined(HAVE_CURSES_KEYOK)
+#if defined(_Py_HAVE_CURSES_KEYOK)
 
 PyDoc_STRVAR(_curses_keyok__doc__,
 "keyok($module, keycode, enable, /)\n"
@@ -3921,7 +3921,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CURSES_KEYOK) */
+#endif /* defined(_Py_HAVE_CURSES_KEYOK) */
 
 PyDoc_STRVAR(_curses_init_color__doc__,
 "init_color($module, color_number, r, g, b, /)\n"
@@ -4364,7 +4364,7 @@ PyDoc_STRVAR(_curses_set_term__doc__,
 #define _CURSES_SET_TERM_METHODDEF    \
     {"set_term", (PyCFunction)_curses_set_term, METH_O, _curses_set_term__doc__},
 
-#if defined(HAVE_CURSES_NEW_PRESCR)
+#if defined(_Py_HAVE_CURSES_NEW_PRESCR)
 
 PyDoc_STRVAR(_curses_new_prescr__doc__,
 "new_prescr($module, /)\n"
@@ -4387,7 +4387,7 @@ _curses_new_prescr(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_new_prescr_impl(module);
 }
 
-#endif /* defined(HAVE_CURSES_NEW_PRESCR) */
+#endif /* defined(_Py_HAVE_CURSES_NEW_PRESCR) */
 
 #if defined(HAVE_CURSES_ESCDELAY)
 
@@ -4731,7 +4731,7 @@ exit:
     return return_value;
 }
 
-#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) && (defined(HAVE_CURSES_HAS_MOUSE) || defined(PDCURSES))
+#if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) && (defined(_Py_HAVE_CURSES_HAS_MOUSE) || defined(PDCURSES))
 
 PyDoc_STRVAR(_curses_has_mouse__doc__,
 "has_mouse($module, /)\n"
@@ -4751,7 +4751,7 @@ _curses_has_mouse(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_has_mouse_impl(module);
 }
 
-#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) && (defined(HAVE_CURSES_HAS_MOUSE) || defined(PDCURSES)) */
+#endif /* (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)) && (defined(_Py_HAVE_CURSES_HAS_MOUSE) || defined(PDCURSES)) */
 
 #if (defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES))
 
@@ -5645,7 +5645,7 @@ _curses_termattrs(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_termattrs_impl(module);
 }
 
-#if defined(HAVE_CURSES_TERM_ATTRS)
+#if defined(_Py_HAVE_CURSES_TERM_ATTRS)
 
 PyDoc_STRVAR(_curses_term_attrs__doc__,
 "term_attrs($module, /)\n"
@@ -5668,7 +5668,7 @@ _curses_term_attrs(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _curses_term_attrs_impl(module);
 }
 
-#endif /* defined(HAVE_CURSES_TERM_ATTRS) */
+#endif /* defined(_Py_HAVE_CURSES_TERM_ATTRS) */
 
 PyDoc_STRVAR(_curses_termname__doc__,
 "termname($module, /)\n"
@@ -6244,7 +6244,7 @@ _curses_slk_attr(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* (defined(NCURSES_EXT_FUNCS) || defined(PDCURSES)) */
 
-#if defined(HAVE_CURSES_SLK_ATTR_ON)
+#if defined(_Py_HAVE_CURSES_SLK_ATTR_ON)
 
 PyDoc_STRVAR(_curses_slk_attr_on__doc__,
 "slk_attr_on($module, attr, /)\n"
@@ -6273,9 +6273,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CURSES_SLK_ATTR_ON) */
+#endif /* defined(_Py_HAVE_CURSES_SLK_ATTR_ON) */
 
-#if defined(HAVE_CURSES_SLK_ATTR_OFF)
+#if defined(_Py_HAVE_CURSES_SLK_ATTR_OFF)
 
 PyDoc_STRVAR(_curses_slk_attr_off__doc__,
 "slk_attr_off($module, attr, /)\n"
@@ -6304,9 +6304,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CURSES_SLK_ATTR_OFF) */
+#endif /* defined(_Py_HAVE_CURSES_SLK_ATTR_OFF) */
 
-#if defined(HAVE_CURSES_SLK_ATTR_SET)
+#if defined(_Py_HAVE_CURSES_SLK_ATTR_SET)
 
 PyDoc_STRVAR(_curses_slk_attr_set__doc__,
 "slk_attr_set($module, attr, pair=0, /)\n"
@@ -6346,9 +6346,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CURSES_SLK_ATTR_SET) */
+#endif /* defined(_Py_HAVE_CURSES_SLK_ATTR_SET) */
 
-#if defined(HAVE_CURSES_SLK_COLOR)
+#if defined(_Py_HAVE_CURSES_SLK_COLOR)
 
 PyDoc_STRVAR(_curses_slk_color__doc__,
 "slk_color($module, pair, /)\n"
@@ -6377,7 +6377,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_CURSES_SLK_COLOR) */
+#endif /* defined(_Py_HAVE_CURSES_SLK_COLOR) */
 
 #if defined(HAVE_CURSES_USE_ENV)
 
@@ -6715,4 +6715,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
     #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=422461e62cb86010 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=417ad397dfaa96ce input=a9049054013a1b77]*/

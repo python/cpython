@@ -2100,10 +2100,10 @@ to speed up repeated connections from the same clients.
 
       NPN has been superseded by ALPN
 
-.. method:: SSLContext.set_outer_alpn_protocols(protocols)
+.. method:: SSLContext.set_outer_alpn_protocols(alpn_protocols)
 
    Specify which protocols the socket should advertise during the TLS
-   handshake in the outer ClientHello when ECH is used. The *protocols*
+   handshake in the outer ClientHello when ECH is used. The *alpn_protocols*
    argument accepts the same values as for
    :meth:`~SSLContext.set_alpn_protocols`.
 
