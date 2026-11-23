@@ -254,6 +254,8 @@ class XMLRPCTestCase(unittest.TestCase):
 
     def test_loads_nested_scalars(self):
         template = '<params><param><value>%s</value></param></params>'
+        # CDATA splits 'ab' into two fragments so that joining them again
+        # would allocate another string. str.join() can reuse a single fragment.
         data = template % '<string><string>a<![CDATA[b]]></string></string>'
         values, _ = xmlrpclib.loads(data)
         self.assertEqual(values, ('ab', ''))
