@@ -163,8 +163,14 @@ if sys.platform == 'win32':
         encoding = encoding.lower()
         if not encoding.startswith('cp'):
             return None
+        # The codec registry caches results by name.
+        code_page = encoding[2:]
+        if not code_page.isascii() or not code_page.isdecimal():
+            return None
+        if code_page != '0' and code_page.startswith('0'):
+            return None
         try:
-            cp = int(encoding[2:])
+            cp = int(code_page)
         except ValueError:
             return None
         # Test if the code page is supported

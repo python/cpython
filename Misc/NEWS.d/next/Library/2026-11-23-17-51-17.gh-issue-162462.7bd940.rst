@@ -1,0 +1,2 @@
+Reject noncanonical ``cpXXX`` codec names in the Windows code page lookup,
+including numbers with leading zeros, signs, or underscores.

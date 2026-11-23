@@ -1618,7 +1618,9 @@ This module implements the following functions:
 
 .. function:: win32_code_page_search_function(encoding)
 
-   Search for a Windows code page encoding *encoding* of the form ``cpXXXX``.
+   Search for a Windows code page encoding *encoding* of the form ``cpXXXX``,
+   where ``XXXX`` is a non-negative integer written in ASCII decimal digits
+   without leading zeros.
 
    If the code page is valid and supported, return a :class:`codecs.CodecInfo`
    object for it.
