@@ -2154,8 +2154,11 @@ diff_to_bool(int diff, int op)
 /* Convert a timedelta to a number of us,
  *      (24*3600*self.days + self.seconds)*1000000 + self.microseconds
  * as a Python int.
- * Whole seconds always fit in int64_t.  Reserve one second at the limit
- * so adding the microsecond field cannot overflow.
+ * The number of whole seconds always fits in int64_t, and so does the
+ * number of microseconds unless the delta is very large, so compute it
+ * in C when possible and fall back to Python int arithmetic otherwise.
+ * One second is reserved at the limit so that adding the microseconds
+ * field cannot overflow.
  */
 static PyObject *
 delta_to_microseconds(PyDateTime_Delta *self)
