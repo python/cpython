@@ -568,6 +568,7 @@ class BytesMemoryviewTest(unittest.TestCase,
                 spaced = memoryview(b'axb').cast(fmt)[::2]
                 self.assertEqual(packed, spaced)
                 self.assertEqual(spaced, packed)
+                self.assertEqual(packed, memoryview(bytearray(b'ab')).cast(fmt))
                 self.assertNotEqual(packed, memoryview(b'ax').cast(fmt))
 
     def test_comparison_release_during_buffer_callback(self):
