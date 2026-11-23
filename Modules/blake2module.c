@@ -51,6 +51,13 @@
 #  undef _Py_HACL_CAN_COMPILE_VEC256
 #endif
 
+#ifndef _Py_HACL_CAN_COMPILE_VEC128
+#  define _Py_HACL_CAN_COMPILE_VEC128 0
+#endif
+#ifndef _Py_HACL_CAN_COMPILE_VEC256
+#  define _Py_HACL_CAN_COMPILE_VEC256 0
+#endif
+
 // HACL* expects HACL_CAN_COMPILE_VEC* macros to be set in order to enable
 // the corresponding SIMD instructions so we need to "forward" the values
 // we just deduced above.
@@ -89,7 +96,7 @@ blake2_get_state(PyObject *module)
     return (Blake2State *)state;
 }
 
-#if defined(_Py_HACL_CAN_COMPILE_VEC128) || defined(_Py_HACL_CAN_COMPILE_VEC256)
+#if _Py_HACL_CAN_COMPILE_VEC128 || _Py_HACL_CAN_COMPILE_VEC256
 static inline Blake2State *
 blake2_get_state_from_type(PyTypeObject *module)
 {
@@ -334,7 +341,7 @@ is_blake2s(blake2_impl impl)
 static inline blake2_impl
 type_to_impl(PyTypeObject *type)
 {
-#if defined(_Py_HACL_CAN_COMPILE_VEC128) || defined(_Py_HACL_CAN_COMPILE_VEC256)
+#if _Py_HACL_CAN_COMPILE_VEC128 || _Py_HACL_CAN_COMPILE_VEC256
     Blake2State *st = blake2_get_state_from_type(type);
 #endif
     if (!strcmp(type->tp_name, blake2b_type_spec.name)) {
