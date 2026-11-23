@@ -159,7 +159,8 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
               PyObject *kwdefaults);
 
 static PyObject *
-func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+func_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -191,8 +192,7 @@ func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[6];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 2;
+    Py_ssize_t noptargs = nargs + nkw - 2;
     PyCodeObject *code;
     PyObject *globals;
     PyObject *name = Py_None;
@@ -200,7 +200,7 @@ func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *closure = Py_None;
     PyObject *kwdefaults = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 6, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -243,10 +243,74 @@ skip_optional_pos:
 exit:
     return return_value;
 }
+
+static PyObject *
+func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return func_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+func_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyCodeObject *code;
+    PyObject *globals;
+    PyObject *name = Py_None;
+    PyObject *defaults = Py_None;
+    PyObject *closure = Py_None;
+    PyObject *kwdefaults = Py_None;
+
+    assert(_PyType_CAST(type)->tp_new == func_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs < 2 || nargs > 6) {
+        return func_new_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    if (!PyObject_TypeCheck(args[0], &PyCode_Type)) {
+        _PyArg_BadArgument("function", "argument 'code'", (&PyCode_Type)->tp_name, args[0]);
+        goto exit;
+    }
+    code = (PyCodeObject *)args[0];
+    if (!PyDict_Check(args[1])) {
+        _PyArg_BadArgument("function", "argument 'globals'", "dict", args[1]);
+        goto exit;
+    }
+    globals = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    name = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    defaults = args[3];
+    if (nargs < 5) {
+        goto skip_optional;
+    }
+    closure = args[4];
+    if (nargs < 6) {
+        goto skip_optional;
+    }
+    kwdefaults = args[5];
+skip_optional:
+    return_value = func_new_impl(_PyType_CAST(type), code, globals, name, defaults, closure, kwdefaults);
+
+exit:
+    return return_value;
+}
 #define FUNCTION___ANNOTATE___GETSETDEF {"__annotate__", (getter)function___annotate___get, (setter)function___annotate___set, function___annotate____doc__},
 
 #define FUNCTION___ANNOTATIONS___GETSETDEF {"__annotations__", (getter)function___annotations___get, (setter)function___annotations___set, function___annotations____doc__},
 
 #define FUNCTION___TYPE_PARAMS___GETSETDEF {"__type_params__", (getter)function___type_params___get, (setter)function___type_params___set, function___type_params____doc__},
 
-/*[clinic end generated code: output=b722bea4e9d8b8be input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3cd73f64e8bd846e input=a9049054013a1b77]*/

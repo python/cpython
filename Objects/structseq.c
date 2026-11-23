@@ -424,9 +424,10 @@ structseq___replace___impl(PyStructSequence *self, PyObject *changes)
     // We do not support types with unnamed fields, so we can iterate over
     // i >= n_visible_fields case without slicing with (i - n_unnamed_fields).
     for (i = 0; i < n_fields; ++i) {
-        PyObject *ob;
-        if (PyDict_PopString(changes, Py_TYPE(self)->tp_members[i].name,
-                             &ob) < 0) {
+        PyObject *ob = NULL;
+        if (changes != NULL
+            && PyDict_PopString(changes, Py_TYPE(self)->tp_members[i].name,
+                                &ob) < 0) {
             goto error;
         }
         if (ob == NULL) {
@@ -435,7 +436,7 @@ structseq___replace___impl(PyStructSequence *self, PyObject *changes)
         result->ob_item[i] = ob;
     }
     // Check if there are any unexpected fields.
-    if (PyDict_GET_SIZE(changes) > 0) {
+    if (changes != NULL && PyDict_GET_SIZE(changes) > 0) {
         PyObject *names = PyDict_Keys(changes);
         if (names) {
             PyErr_Format(PyExc_TypeError, "Got unexpected field name(s): %R", names);

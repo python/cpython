@@ -1,7 +1,7 @@
 #!/bin/bash
 set +e
 
-export CFLAGS="-O2 -fPIC -DWASM_BIGINT"
+export CFLAGS="-O2 -fPIC"
 export CXXFLAGS="$CFLAGS"
 
 # Build paths

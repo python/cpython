@@ -1,2 +1,0 @@
-Fix :func:`asyncio.as_completed` to continue yielding every awaitable after
-a pending iteration step is cancelled.

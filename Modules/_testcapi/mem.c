@@ -13,6 +13,8 @@
 #    include <libproc.h>            // proc_pidinfo(), PROC_PIDTASKINFO
 #    include <sys/proc_info.h>      // struct proc_taskinfo
 #  endif
+#else
+#  define TARGET_OS_OSX 0
 #endif
 
 #ifdef __FreeBSD__

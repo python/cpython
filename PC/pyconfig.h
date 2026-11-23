@@ -98,16 +98,14 @@ WIN32 is still required for the locale module.
 #endif
 
 /* Define to 1 when compiling for experimental free-threaded builds */
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) && Py_GIL_DISABLED == 0
 /* We undefine if it was set to zero because all later checks are #ifdef.
  * Note that non-Windows builds do not do this, and so every effort should
  * be made to avoid defining the variable at all when not desired. However,
  * sysconfig.get_config_var always returns a 1 or a 0, and so it seems likely
  * that a build backend will define it with the value.
  */
-#if Py_GIL_DISABLED == 0
 #undef Py_GIL_DISABLED
-#endif
 #endif
 
 /* Compiler specific defines */
@@ -506,8 +504,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have the putenv function.  */
 #define HAVE_PUTENV
 
-/* Define if  you can safely include both <sys/select.h> and <sys/time.h>
-   (which you can't on SCO ODT 3.0). */
+/* Define if  you can safely include both <sys/select.h> and <sys/time.h> */
 /* #undef SYS_SELECT_WITH_SYS_TIME */
 
 /* Define if you want build the _decimal module using a coroutine-local rather

@@ -606,14 +606,14 @@ _PyLong_##NAME##_Converter(PyObject *obj, void *ptr)                \
     return 1;                                                       \
 }
 
-#if defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
+#if defined(_Py_HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
 # ifdef MS_WINDOWS
     UNSIGNED_INT_CONVERTER(NetIfindex, NET_IFINDEX)
 # else
 #   define _PyLong_NetIfindex_Converter _PyLong_UnsignedInt_Converter
 #   define NET_IFINDEX unsigned int
 # endif
-#endif // defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
+#endif // defined(_Py_HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
 
 /*[python input]
 class NET_IFINDEX_converter(CConverter):
@@ -7018,6 +7018,7 @@ _socket_getaddrinfo_impl(PyObject *module, PyObject *hobj, PyObject *pobj,
     struct addrinfo *res0 = NULL;
     PyObject *pstr = NULL;
     const char *hptr, *pptr;
+    Py_ssize_t hlen = 0, plen = 0;
     int error;
     PyObject *all = (PyObject *)NULL;
     PyObject *idna = NULL;
@@ -7030,12 +7031,19 @@ _socket_getaddrinfo_impl(PyObject *module, PyObject *hobj, PyObject *pobj,
             return NULL;
         assert(PyBytes_Check(idna));
         hptr = PyBytes_AS_STRING(idna);
+        hlen = PyBytes_GET_SIZE(idna);
     } else if (PyBytes_Check(hobj)) {
-        hptr = PyBytes_AsString(hobj);
+        hptr = PyBytes_AS_STRING(hobj);
+        hlen = PyBytes_GET_SIZE(hobj);
     } else {
         PyErr_SetString(PyExc_TypeError,
                         "getaddrinfo() argument 1 must be string or None");
         return NULL;
+    }
+    if (hptr != NULL && strlen(hptr) != (size_t)hlen) {
+        PyErr_SetString(PyExc_ValueError,
+                        "getaddrinfo() host must not contain null characters");
+        goto err;
     }
     if (PyIndex_Check(pobj)) {
         pstr = PyNumber_Index(pobj);
@@ -7046,19 +7054,25 @@ _socket_getaddrinfo_impl(PyObject *module, PyObject *hobj, PyObject *pobj,
         if (pstr == NULL)
             goto err;
         assert(PyUnicode_Check(pstr));
-        pptr = PyUnicode_AsUTF8(pstr);
+        pptr = PyUnicode_AsUTF8AndSize(pstr, &plen);
         if (pptr == NULL)
             goto err;
     } else if (PyUnicode_Check(pobj)) {
-        pptr = PyUnicode_AsUTF8(pobj);
+        pptr = PyUnicode_AsUTF8AndSize(pobj, &plen);
         if (pptr == NULL)
             goto err;
     } else if (PyBytes_Check(pobj)) {
         pptr = PyBytes_AS_STRING(pobj);
+        plen = PyBytes_GET_SIZE(pobj);
     } else if (pobj == Py_None) {
         pptr = (char *)NULL;
     } else {
         PyErr_SetString(PyExc_OSError, "Int or String expected");
+        goto err;
+    }
+    if (pptr != NULL && strlen(pptr) != (size_t)plen) {
+        PyErr_SetString(PyExc_ValueError,
+                        "getaddrinfo() port must not contain null characters");
         goto err;
     }
 #if defined(__APPLE__) && defined(AI_NUMERICSERV)
@@ -7389,7 +7403,7 @@ _socket_if_nameindex_impl(PyObject *module)
 
 #endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS_DESKTOP)
 
-#if defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP)
+#if defined(_Py_HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP)
 
 /*[clinic input]
 _socket.if_nametoindex
@@ -7419,9 +7433,9 @@ _socket_if_nametoindex_impl(PyObject *module, PyObject *oname)
     return PyLong_FromUnsignedLong(index);
 }
 
-#endif // defined(HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP)
+#endif // defined(_Py_HAVE_IF_NAMETOINDEX) || defined(MS_WINDOWS_DESKTOP)
 
-#if defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
+#if defined(_Py_HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
 
 /*[clinic input]
 @permit_long_summary
@@ -7446,7 +7460,7 @@ _socket_if_indextoname_impl(PyObject *module, NET_IFINDEX index)
     return PyUnicode_DecodeFSDefault(name);
 }
 
-#endif // defined(HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
+#endif // defined(_Py_HAVE_IF_INDEXTONAME) || defined(MS_WINDOWS_DESKTOP)
 
 
 #ifdef CMSG_LEN

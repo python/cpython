@@ -201,6 +201,24 @@ class TestFail:
                              '%s: line 1 column %d (char %d)' %
                              (msg, idx + 1, idx))
 
+    def test_invalid_escape_position(self):
+        # The position points to the backslash of the invalid escape.
+        test_cases = [
+            ('"\\a"', 1),
+            ('"ab\\x"', 3),
+            ('["\\\'"]', 2),
+            ('{"k": "v\\ "}', 8),
+        ]
+        for data, idx in test_cases:
+            with self.subTest(data=data):
+                with self.assertRaises(self.JSONDecodeError) as cm:
+                    self.loads(data)
+                err = cm.exception
+                self.assertStartsWith(err.msg, 'Invalid \\escape')
+                self.assertEqual(err.pos, idx)
+                self.assertEqual(err.lineno, 1)
+                self.assertEqual(err.colno, idx + 1)
+
     def test_extra_data(self):
         test_cases = [
             ('[]]', 'Extra data', 2),
