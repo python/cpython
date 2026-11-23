@@ -1,0 +1,2 @@
+Speed up writes to floating-point and complex :class:`array.array` objects.
+Patch by Maurycy Pawłowski-Wieroński.
