@@ -4451,6 +4451,40 @@ class FastWaitTestCase(BaseTestCase):
         self.assertFalse(m.called)
 
     @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
+    def test_wait_timeout_not_shortened_in_reap_race(self):
+        # gh-162438: when the fast wait reports an exit but the first
+        # waitpid(WNOHANG) cannot reap the child yet, _wait() falls back
+        # to busy polling.  It used to subtract the elapsed time from an
+        # already-absolute deadline, which made wait(timeout=T) expire
+        # as soon as more than half of T had elapsed before the fallback,
+        # losing the child's exit status.
+        p = subprocess.Popen(ZERO_RETURN_CMD)
+        real_try_wait = p._try_wait
+        ncalls = 0
+
+        def racy_try_wait(flags):
+            nonlocal ncalls
+            ncalls += 1
+            if ncalls <= 2:
+                # poll()/kqueue() reported the exit, but the child is
+                # still not reapable on the first two attempts.
+                return (0, 0)
+            return real_try_wait(flags)
+
+        def exit_reported_late(self, timeout):
+            # Simulate the fast wait noticing the exit after most of
+            # the caller's timeout has already elapsed.
+            time.sleep(0.25)
+            return True
+
+        with mock.patch.object(subprocess.Popen, "_wait_pidfd",
+                               exit_reported_late), \
+             mock.patch.object(subprocess.Popen, "_wait_kqueue",
+                               exit_reported_late), \
+             mock.patch.object(p, "_try_wait", racy_try_wait):
+            self.assertEqual(p.wait(timeout=0.4), 0)
+
+    @unittest.skipIf(mswindows, "requires the POSIX wait implementation")
     def test_wait_huge_timeout(self):
         # gh-154836: very large timeout values used to overflow the C
         # timestamp conversion in poll() / kqueue.control() and raise

@@ -1,0 +1,4 @@
+Fix :meth:`subprocess.Popen.wait` raising :exc:`subprocess.TimeoutExpired`
+early, and losing the child's exit status, when the pidfd or kqueue fast
+path reports an exit but the first non-blocking ``waitpid()`` cannot reap
+the child yet.

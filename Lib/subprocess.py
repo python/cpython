@@ -2380,8 +2380,9 @@ class Popen:
                         # even though poll() / kqueue() said so. Very
                         # rare and mostly theoretical. Fallback to busy
                         # polling.
-                        elapsed = _time() - started
-                        endtime -= elapsed
+                        # endtime is an absolute deadline; do not
+                        # subtract the time already spent here, or the
+                        # wait can expire early (gh-162438).
 
                 # Enter a busy loop if we have a timeout.  This busy loop was
                 # cribbed from Lib/threading.py in Thread.wait() at r71065.
