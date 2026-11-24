@@ -1716,7 +1716,13 @@ class PathTest(PurePathTest):
         target = base / 'FILEA'
         if target.exists():
             self.skipTest('requires a case-sensitive filesystem')
-        target.hardlink_to(source)
+        try:
+            target.hardlink_to(source)
+        except FileExistsError:
+            # Some filesystems (e.g. on the iOS simulator) look up names
+            # case-sensitively, but compare them case-insensitively when
+            # creating a link.
+            self.skipTest('requires a case-sensitive filesystem')
         self.assertRaises(OSError, source.move, target)
         self.assertTrue(source.exists())
         self.assertTrue(target.exists())
