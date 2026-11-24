@@ -1534,24 +1534,26 @@ copy_small_table(setentry *dest, setentry *src)
 #endif
 }
 
-/* set_replace_body() replaces the contents of dst with those of src,
-   moving dst's old contents into src for proper cleanup on Py_DECREF.
+/* set_replace_body_lock_held() replaces the contents of dst with those of
+   src, moving dst's old contents into src for proper cleanup on Py_DECREF.
 
-   The caller guarantees that src is a uniquely-referenced temporary set
-   that will be discarded immediately afterward.  This allows us to skip
-   atomic operations and shared-marking on src's fields, and to skip the
-   frozenset hash swap (neither argument is ever a frozenset here).
+   The caller holds the critical section on dst and guarantees that src is
+   a uniquely-referenced temporary set that will be discarded immediately
+   afterward.  This allows us to skip atomic operations and shared-marking
+   on src's fields, and to skip the frozenset hash swap (neither argument
+   is ever a frozenset here).
 
    The function always succeeds and it leaves both objects in a stable state.
 */
 
 static void
-set_replace_body(PySetObject *dst, PySetObject *src)
+set_replace_body_lock_held(PySetObject *dst, PySetObject *src)
 {
     Py_ssize_t t;
     setentry *u;
     setentry tab[PySet_MINSIZE];
 
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(dst);
     assert(PySet_Check((PyObject *)dst));
     assert(PySet_Check((PyObject *)src));
     assert(_PyObject_IsUniquelyReferenced((PyObject *)src));
@@ -1870,7 +1872,7 @@ set_intersection_update(PySetObject *so, PyObject *other)
     tmp = set_intersection(so, other);
     if (tmp == NULL)
         return NULL;
-    set_replace_body(so, (PySetObject *)tmp);
+    set_replace_body_lock_held(so, (PySetObject *)tmp);
     Py_DECREF(tmp);
     Py_RETURN_NONE;
 }
@@ -1894,7 +1896,7 @@ set_intersection_update_multi_impl(PySetObject *so, PyObject * const *others,
     if (tmp == NULL)
         return NULL;
     Py_BEGIN_CRITICAL_SECTION(so);
-    set_replace_body(so, (PySetObject *)tmp);
+    set_replace_body_lock_held(so, (PySetObject *)tmp);
     Py_END_CRITICAL_SECTION();
     Py_DECREF(tmp);
     Py_RETURN_NONE;
