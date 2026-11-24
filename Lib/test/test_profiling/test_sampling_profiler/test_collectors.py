@@ -741,6 +741,51 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertGreater(stack_table["length"], 0)
         self.assertGreater(len(stack_table["frame"]), 0)
 
+    def test_gecko_collector_preserves_source_file_paths(self):
+        """Test that GeckoCollector preserves source file paths and distinguishes
+        files with the same basename in different directories."""
+        collector = GeckoCollector(1000)
+        file_a = os.path.join("pkg_a", "__init__.py")
+        file_b = os.path.join("pkg_b", "__init__.py")
+
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo(file_a, 10, "func_a"),
+                            MockFrameInfo(file_b, 20, "func_b"),
+                        ],
+                        status=THREAD_STATUS_MAIN_THREAD,
+                    )
+                ],
+            )
+        ]
+        collector.collect(test_frames)
+        profile_data = collector._build_profile()
+
+        string_array = profile_data["shared"]["stringArray"]
+        func_table = profile_data["threads"][0]["funcTable"]
+
+        self.assertEqual(func_table["length"], 2)
+
+        funcs_by_name = {
+            string_array[func_table["name"][i]]: (
+                func_table["fileName"][i],
+                string_array[func_table["fileName"][i]],
+            )
+            for i in range(func_table["length"])
+        }
+
+        file_idx_a, resolved_file_a = funcs_by_name["func_a"]
+        file_idx_b, resolved_file_b = funcs_by_name["func_b"]
+
+        self.assertEqual(resolved_file_a, file_a)
+        self.assertEqual(resolved_file_b, file_b)
+        self.assertNotEqual(file_idx_a, file_idx_b)
+
     def test_gecko_collector_async_aware(self):
         collector = GeckoCollector(1000)
 
