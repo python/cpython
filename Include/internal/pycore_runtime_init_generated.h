@@ -1709,11 +1709,13 @@ extern "C" {
     INIT_ID(default), \
     INIT_ID(defaultaction), \
     INIT_ID(delete), \
+    INIT_ID(delimiter), \
     INIT_ID(depth), \
     INIT_ID(desired_access), \
     INIT_ID(detect_types), \
     INIT_ID(deterministic), \
     INIT_ID(device), \
+    INIT_ID(dialect), \
     INIT_ID(dict), \
     INIT_ID(difference_update), \
     INIT_ID(digest), \
@@ -1727,6 +1729,7 @@ extern "C" {
     INIT_ID(doc), \
     INIT_ID(done), \
     INIT_ID(dont_inherit), \
+    INIT_ID(doublequote), \
     INIT_ID(dst), \
     INIT_ID(dst_dir_fd), \
     INIT_ID(duration_sec), \
@@ -1745,6 +1748,7 @@ extern "C" {
     INIT_ID(env), \
     INIT_ID(error_rate), \
     INIT_ID(errors), \
+    INIT_ID(escapechar), \
     INIT_ID(event), \
     INIT_ID(eventmask), \
     INIT_ID(exc), \
@@ -1905,6 +1909,7 @@ extern "C" {
     INIT_ID(line), \
     INIT_ID(line_buffering), \
     INIT_ID(lineno), \
+    INIT_ID(lineterminator), \
     INIT_ID(little), \
     INIT_ID(lo), \
     INIT_ID(locale), \
@@ -2036,7 +2041,9 @@ extern "C" {
     INIT_ID(qualname), \
     INIT_ID(query), \
     INIT_ID(queuetype), \
+    INIT_ID(quotechar), \
     INIT_ID(quotetabs), \
+    INIT_ID(quoting), \
     INIT_ID(random_func), \
     INIT_ID(raw), \
     INIT_ID(read), \
@@ -2102,6 +2109,7 @@ extern "C" {
     INIT_ID(sizehint), \
     INIT_ID(skip_file_prefixes), \
     INIT_ID(skip_non_matching_threads), \
+    INIT_ID(skipinitialspace), \
     INIT_ID(sleep), \
     INIT_ID(sock), \
     INIT_ID(sort), \
