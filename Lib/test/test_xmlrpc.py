@@ -252,6 +252,13 @@ class XMLRPCTestCase(unittest.TestCase):
                 '</struct></value></param></params>')
         self.assertRaises(ResponseError, xmlrpclib.loads, data)
 
+    def test_loads_malformed_struct(self):
+        ResponseError = xmlrpclib.ResponseError
+        data = ('<params><param><value><struct>'
+                '<member><name>k</name></member>'
+                '</struct></value></param></params>')
+        self.assertRaises(ResponseError, xmlrpclib.loads, data)
+
     def check_loads(self, s, value, **kwargs):
         dump = '<params><param><value>%s</value></param></params>' % s
         result, m = xmlrpclib.loads(dump, **kwargs)
