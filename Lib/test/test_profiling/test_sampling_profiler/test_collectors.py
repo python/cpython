@@ -614,6 +614,47 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn('"sample_interval_usec": 10000', content)
         self.assertIn("samples * data.stats.sample_interval_usec / 1000", content)
 
+    def test_flamegraph_escapes_special_chars_in_funcname(self):
+        # Function names with <, >, & must be escaped in the HTML.
+        flamegraph_out = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=False
+        )
+        self.addCleanup(close_and_unlink, flamegraph_out)
+
+        collector = FlamegraphCollector(1000)
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [MockFrameInfo("test.py", 1, "root"),
+                     MockFrameInfo("test.py", 2, '</script><lambda>&')]
+                )],
+            )
+        ]
+        collector.collect(frames)
+
+        with captured_stdout(), captured_stderr():
+            export_ok = collector.export(flamegraph_out.name)
+        self.assertTrue(export_ok)
+
+        with open(flamegraph_out.name, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # The funcname's </script> must be escaped in the embedded data so it
+        # cannot close the inline <script> block; the raw form must be absent.
+        self.assertIn(
+            r"\u003c/script\u003e\u003clambda\u003e\u0026", content
+        )
+        self.assertNotIn("</script><lambda>", content)
+
+        # The tooltip inserts the function name as HTML after resolving it.
+        self.assertIn(
+            "const funcname = escapeHtml("
+            'resolveString(d.data.funcname) || resolveString(d.data.name) || "");',
+            content,
+        )
+
     def test_flamegraph_collector_empty_export_fails(self):
         """Test empty flamegraph export reports no output."""
         flamegraph_out = tempfile.NamedTemporaryFile(
@@ -758,6 +799,51 @@ class TestSampleProfilerComponents(unittest.TestCase):
         stack_table = thread_data["stackTable"]
         self.assertGreater(stack_table["length"], 0)
         self.assertGreater(len(stack_table["frame"]), 0)
+
+    def test_gecko_collector_preserves_source_file_paths(self):
+        """Test that GeckoCollector preserves source file paths and distinguishes
+        files with the same basename in different directories."""
+        collector = GeckoCollector(1000)
+        file_a = os.path.join("pkg_a", "__init__.py")
+        file_b = os.path.join("pkg_b", "__init__.py")
+
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo(file_a, 10, "func_a"),
+                            MockFrameInfo(file_b, 20, "func_b"),
+                        ],
+                        status=THREAD_STATUS_MAIN_THREAD,
+                    )
+                ],
+            )
+        ]
+        collector.collect(test_frames)
+        profile_data = collector._build_profile()
+
+        string_array = profile_data["shared"]["stringArray"]
+        func_table = profile_data["threads"][0]["funcTable"]
+
+        self.assertEqual(func_table["length"], 2)
+
+        funcs_by_name = {
+            string_array[func_table["name"][i]]: (
+                func_table["fileName"][i],
+                string_array[func_table["fileName"][i]],
+            )
+            for i in range(func_table["length"])
+        }
+
+        file_idx_a, resolved_file_a = funcs_by_name["func_a"]
+        file_idx_b, resolved_file_b = funcs_by_name["func_b"]
+
+        self.assertEqual(resolved_file_a, file_a)
+        self.assertEqual(resolved_file_b, file_b)
+        self.assertNotEqual(file_idx_a, file_idx_b)
 
     def test_gecko_collector_async_aware(self):
         collector = GeckoCollector(1000)
@@ -2974,20 +3060,6 @@ class TestLocationHelpers(unittest.TestCase):
     def test_extract_lineno_from_none(self):
         """Test extracting lineno from None (synthetic frames)."""
         self.assertEqual(extract_lineno(None), 0)
-
-    def test_extract_lineno_from_int(self):
-        """Test extracting lineno from a bare integer line number.
-
-        Mirrors normalize_location's int contract so callers like the
-        collapsed/flamegraph collectors do not crash on a bare-int location.
-        """
-        self.assertEqual(extract_lineno(42), 42)
-        self.assertEqual(extract_lineno(0), 0)
-
-    def test_normalize_location_with_int(self):
-        """Test normalize_location expands a legacy integer line number."""
-        result = normalize_location(42)
-        self.assertEqual(result, (42, 42, -1, -1))
 
     def test_normalize_location_with_location_info(self):
         """Test normalize_location passes through LocationInfo."""

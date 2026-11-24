@@ -935,7 +935,7 @@ use them.
              PY_SSIZE_T_MIN
 
    The limit values (largest positive one and smallest negative one,
-   respecitvely) of type :c:type:`Py_ssize_t`.
+   respectively) of type :c:type:`Py_ssize_t`.
 
 
 .. c:macro:: PY_DWORD_MAX

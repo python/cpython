@@ -88,3 +88,24 @@ xcsncmp(const XML_Char *a, const XML_Char *b, size_t len) {
   return strncmp(a, b, len);
 #endif
 }
+
+// A port of `strnstr(3bsd)` to `XML_Char`
+const XML_Char *
+xcsnstr(const XML_Char *haystack, const XML_Char *needle, size_t maxLen) {
+  // NOTE: We are not calling `xcsnlen(haystack, maxLen)` because
+  //       `haystack` could be long and `xcsnlen` could be used in a loop
+  //       and we need to avoid quadratic runtime behavior.
+  if (! *needle)
+    return haystack; // i.e. empty needle is always a match
+  const size_t needleLen = xcslen(needle);
+  if (needleLen > maxLen)
+    return NULL;
+  const size_t maxTries = (maxLen - needleLen) + 1;
+  for (size_t i = 0; i < maxTries && haystack[i]; i++) {
+    if (haystack[i] == needle[0]
+        && xcsncmp(haystack + i, needle, needleLen) == 0) {
+      return haystack + i;
+    }
+  }
+  return NULL;
+}

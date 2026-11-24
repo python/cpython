@@ -36,7 +36,7 @@ def get_pager() -> Pager:
         return lambda text, title='': tempfile_pager(plain(text), 'more <')
     if hasattr(os, 'system') and os.system('(pager) 2>/dev/null') == 0:
         return lambda text, title='': pipe_pager(text, 'pager', title)
-    if hasattr(os, 'system') and os.system('(less) 2>/dev/null') == 0:
+    if hasattr(os, 'system') and os.system('(less -V) >/dev/null 2>&1') == 0:
         return lambda text, title='': pipe_pager(text, 'less', title)
 
     import tempfile

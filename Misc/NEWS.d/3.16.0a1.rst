@@ -349,16 +349,10 @@ Fix a crash in a debug build when copying an empty :class:`dict` fails with
 .. section: Core and Builtins
 
 Fix the output of :mod:`marshal` for compiled code, and so the content of
-``.pyc`` files, depending on what was imported or compiled before in the
-process.  A :class:`frozenset` constant (or, in the :term:`free-threaded
-build`, a :class:`slice` constant) used by several functions of a module was
-copied for each of them when one of its strings was equal to a string which
-was already interned.  The compiler now replaces the strings of the
-constants by the interned ones before the code objects are created, while
-equal constants are still one object.  Which strings are interned does not
-change, except for the strings of :class:`slice` constants made only of
-ASCII letters, digits and underscores, which are now interned in the default
-build like those of other constants.
+``.pyc`` files, varying with what was imported or compiled earlier in the
+process.  Strings in :class:`slice` constants made only of ASCII letters,
+digits and underscores are now interned in the default build, like those of
+other constants.
 
 ..
 
@@ -2674,16 +2668,10 @@ modified while its elements are serialized, for example by the
 .. nonce: mRsh1x
 .. section: Library
 
-The output of :func:`marshal.dumps` and :func:`marshal.dump`, and so the
-content of :file:`.pyc` files, no longer depends on the reference counts of
-the serialized objects: it is no longer changed by unrelated references to
-them held elsewhere in the process nor, in the :term:`free-threaded build`,
-by whether they have been used by other threads.  An object is now written
-in a form that can be referenced later in the data if and only if it occurs
-more than once in the serialized value; this also applies to interned
-strings, which were always written in that form.  The format is unchanged
-and the data can be read by previous Python versions that support the format
-version, but it is not byte-for-byte identical to the data written by them.
+Make the output of :func:`marshal.dumps` and :func:`marshal.dump`, and so
+the content of :file:`.pyc` files, independent of the reference counts of
+the serialized objects.  The format is unchanged, but the data is not
+byte-for-byte identical to that written by previous Python versions.
 
 ..
 
@@ -11337,10 +11325,8 @@ PS1 is no longer exported by venv activate script
 .. nonce: Wq3nTb
 .. section: C API
 
-:c:func:`PyMarshal_WriteObjectToFile` now builds the marshalled data in
-memory before writing it to the file, instead of writing it piece by piece
-using a buffer of constant size.  Nothing is written any more if the object
-cannot be marshalled.
+Make :c:func:`PyMarshal_WriteObjectToFile` write nothing to the file if the
+object cannot be marshalled, instead of partial data.
 
 ..
 

@@ -107,7 +107,7 @@ static const char PyCursesVersion[] = "2.2";
 #define CURSES_MODULE
 #include "py_curses.h"
 
-#if defined(HAVE_TERM_H) || defined(__sgi)
+#ifdef HAVE_TERM_H
 /* For termname, longname, putp, tigetflag, tigetnum, tigetstr, tparm
    which are not declared in SysV curses and for setupterm. */
 #include <term.h>
@@ -120,7 +120,7 @@ static const char PyCursesVersion[] = "2.2";
 #include <langinfo.h>
 #endif
 
-#if !defined(NCURSES_VERSION) && (defined(sgi) || defined(__sun) || defined(SCO5))
+#if !defined(NCURSES_VERSION) && defined(__sun)
 #define STRICT_SYSV_CURSES       /* Don't use ncurses extensions */
 typedef chtype attr_t;           /* No attr_t type is available */
 #endif
@@ -1936,10 +1936,10 @@ Window_NoArgTrueFalseFunction(is_scrollok)
 Window_NoArgTrueFalseFunction(is_subwin)
 Window_NoArgTrueFalseFunction(is_syncok)
 #endif
-#if defined(HAVE_CURSES_IS_KEYPAD) || defined(PDCURSES)
+#if defined(_Py__Py_HAVE_CURSES_IS_KEYPAD) || defined(PDCURSES)
 Window_NoArgTrueFalseFunction(is_keypad)
 #endif
-#if defined(HAVE_CURSES_IS_LEAVEOK) || defined(PDCURSES)
+#if defined(_Py_HAVE_CURSES_IS_LEAVEOK) || defined(PDCURSES)
 Window_NoArgTrueFalseFunction(is_leaveok)
 #endif
 #if defined(HAVE_CURSES_IS_PAD) || defined(PDCURSES)
@@ -2199,7 +2199,7 @@ static int
 curses_wattr_save(PyCursesWindowObject *self, attr_t *attrs, int *pair,
                   const char *funcname)
 {
-#if defined(HAVE_CURSES_WATTR_GET) && defined(HAVE_CURSES_WATTR_SET)
+#if defined(_Py_HAVE_CURSES_WATTR_GET) && defined(_Py_HAVE_CURSES_WATTR_SET)
     int rtn;
 #if _NCURSES_EXTENDED_COLOR_FUNCS
     short legacy_pair;
@@ -2222,7 +2222,7 @@ curses_wattr_save(PyCursesWindowObject *self, attr_t *attrs, int *pair,
 
 /* Put the rendition back.  The name of the curses function used is
    _CURSES_WATTR_RESTORE_FUNC, for the caller to name it in an error. */
-#if defined(HAVE_CURSES_WATTR_GET) && defined(HAVE_CURSES_WATTR_SET)
+#if defined(_Py_HAVE_CURSES_WATTR_GET) && defined(_Py_HAVE_CURSES_WATTR_SET)
 #define _CURSES_WATTR_RESTORE_FUNC      "wattr_set"
 #else
 #define _CURSES_WATTR_RESTORE_FUNC      "wattrset"
@@ -2231,7 +2231,7 @@ curses_wattr_save(PyCursesWindowObject *self, attr_t *attrs, int *pair,
 static int
 curses_wattr_restore(PyCursesWindowObject *self, attr_t attrs, int pair)
 {
-#if defined(HAVE_CURSES_WATTR_GET) && defined(HAVE_CURSES_WATTR_SET)
+#if defined(_Py_HAVE_CURSES_WATTR_GET) && defined(_Py_HAVE_CURSES_WATTR_SET)
 #if _NCURSES_EXTENDED_COLOR_FUNCS
     return wattr_set(self->win, attrs, 0, &pair);
 #else
@@ -2558,7 +2558,7 @@ _curses_window_attrset_impl(PyCursesWindowObject *self, attr_t attr)
     return curses_window_check_err(self, rtn, "wattrset", "attrset");
 }
 
-#ifdef HAVE_CURSES_WATTR_GET
+#ifdef _Py_HAVE_CURSES_WATTR_GET
 /*[clinic input]
 _curses.window.attr_get
 
@@ -2584,9 +2584,9 @@ _curses_window_attr_get_impl(PyCursesWindowObject *self)
     }
     return Py_BuildValue("(ki)", (unsigned long)attrs, (int)pair);
 }
-#endif /* HAVE_CURSES_WATTR_GET */
+#endif /* _Py_HAVE_CURSES_WATTR_GET */
 
-#ifdef HAVE_CURSES_WATTR_SET
+#ifdef _Py_HAVE_CURSES_WATTR_SET
 /*[clinic input]
 _curses.window.attr_set
 
@@ -2610,9 +2610,9 @@ _curses_window_attr_set_impl(PyCursesWindowObject *self, attr_t attr,
 #endif
     return curses_window_check_err(self, rtn, "wattr_set", "attr_set");
 }
-#endif /* HAVE_CURSES_WATTR_SET */
+#endif /* _Py_HAVE_CURSES_WATTR_SET */
 
-#ifdef HAVE_CURSES_WATTR_ON
+#ifdef _Py_HAVE_CURSES_WATTR_ON
 /*[clinic input]
 _curses.window.attr_on
 
@@ -2629,9 +2629,9 @@ _curses_window_attr_on_impl(PyCursesWindowObject *self, attr_t attr)
     int rtn = wattr_on(self->win, attr, NULL);
     return curses_window_check_err(self, rtn, "wattr_on", "attr_on");
 }
-#endif /* HAVE_CURSES_WATTR_ON */
+#endif /* _Py_HAVE_CURSES_WATTR_ON */
 
-#ifdef HAVE_CURSES_WATTR_OFF
+#ifdef _Py_HAVE_CURSES_WATTR_OFF
 /*[clinic input]
 _curses.window.attr_off
 
@@ -2648,9 +2648,9 @@ _curses_window_attr_off_impl(PyCursesWindowObject *self, attr_t attr)
     int rtn = wattr_off(self->win, attr, NULL);
     return curses_window_check_err(self, rtn, "wattr_off", "attr_off");
 }
-#endif /* HAVE_CURSES_WATTR_OFF */
+#endif /* _Py_HAVE_CURSES_WATTR_OFF */
 
-#ifdef HAVE_CURSES_WCOLOR_SET
+#ifdef _Py_HAVE_CURSES_WCOLOR_SET
 /*[clinic input]
 _curses.window.color_set
 
@@ -2672,7 +2672,7 @@ _curses_window_color_set_impl(PyCursesWindowObject *self, int pair)
 #endif
     return curses_window_check_err(self, rtn, "wcolor_set", "color_set");
 }
-#endif /* HAVE_CURSES_WCOLOR_SET */
+#endif /* _Py_HAVE_CURSES_WCOLOR_SET */
 
 /*[clinic input]
 _curses.window.getattrs
@@ -5035,7 +5035,7 @@ static PyType_Spec PyCursesComplexStr_Type_spec = {
 };
 #undef clinic_state
 
-#if defined(HAVE_CURSES_USE_SCREEN) || defined(HAVE_CURSES_USE_WINDOW)
+#if defined(_Py_HAVE_CURSES_USE_SCREEN) || defined(_Py_HAVE_CURSES_USE_WINDOW)
 /* Shared trampoline for window.use()/screen.use(): call
    func(obj, *extra, **kwargs) and store the result (NULL on exception) in
    data->result. */
@@ -5085,7 +5085,7 @@ curses_use_parse(PyObject *args, PyObject **func, PyObject **extra)
 }
 #endif
 
-#ifdef HAVE_CURSES_USE_WINDOW
+#ifdef _Py_HAVE_CURSES_USE_WINDOW
 static int
 curses_use_window_cb(WINDOW *Py_UNUSED(win), void *data)
 {
@@ -5111,7 +5111,7 @@ PyCursesWindow_use(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_DECREF(extra);
     return data.result;
 }
-#endif /* HAVE_CURSES_USE_WINDOW */
+#endif /* _Py_HAVE_CURSES_USE_WINDOW */
 
 static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_ADDCH_METHODDEF
@@ -5250,12 +5250,12 @@ static PyMethodDef PyCursesWindow_methods[] = {
      "is_syncok($self, /)\n--\n\n"
      "Return the current value set by syncok()."},
 #endif
-#if defined(HAVE_CURSES_IS_KEYPAD) || defined(PDCURSES)
+#if defined(_Py__Py_HAVE_CURSES_IS_KEYPAD) || defined(PDCURSES)
     {"is_keypad", PyCursesWindow_is_keypad, METH_NOARGS,
      "is_keypad($self, /)\n--\n\n"
      "Return the current value set by keypad()."},
 #endif
-#if defined(HAVE_CURSES_IS_LEAVEOK) || defined(PDCURSES)
+#if defined(_Py_HAVE_CURSES_IS_LEAVEOK) || defined(PDCURSES)
     {"is_leaveok", PyCursesWindow_is_leaveok, METH_NOARGS,
      "is_leaveok($self, /)\n--\n\n"
      "Return the current value set by leaveok()."},
@@ -5336,7 +5336,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
      "untouchwin($self, /)\n--\n\n"
      "Mark all lines in the window as unchanged since last refresh()."},
     _CURSES_WINDOW_VLINE_METHODDEF
-#ifdef HAVE_CURSES_USE_WINDOW
+#ifdef _Py_HAVE_CURSES_USE_WINDOW
     {"use", _PyCFunction_CAST(PyCursesWindow_use),
      METH_VARARGS | METH_KEYWORDS, PyCursesWindow_use__doc__},
 #endif
@@ -5478,7 +5478,7 @@ static PyGetSetDef PyCursesScreen_getsets[] = {
     {NULL, NULL, NULL, NULL, NULL}  /* sentinel */
 };
 
-#ifdef HAVE_CURSES_USE_SCREEN
+#ifdef _Py_HAVE_CURSES_USE_SCREEN
 static int
 curses_use_screen_cb(SCREEN *Py_UNUSED(sp), void *data)
 {
@@ -5533,7 +5533,7 @@ PyCursesScreen_use(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     return data.result;
 }
-#endif /* HAVE_CURSES_USE_SCREEN */
+#endif /* _Py_HAVE_CURSES_USE_SCREEN */
 
 PyDoc_STRVAR(PyCursesScreen_close__doc__,
 "close($self, /)\n--\n\n"
@@ -5552,7 +5552,7 @@ PyCursesScreen_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 static PyMethodDef PyCursesScreen_methods[] = {
     {"close", PyCursesScreen_close, METH_NOARGS,
      PyCursesScreen_close__doc__},
-#ifdef HAVE_CURSES_USE_SCREEN
+#ifdef _Py_HAVE_CURSES_USE_SCREEN
     {"use", _PyCFunction_CAST(PyCursesScreen_use),
      METH_VARARGS | METH_KEYWORDS, PyCursesScreen_use__doc__},
 #endif
@@ -5704,7 +5704,7 @@ _curses_filter_impl(PyObject *module)
 }
 #endif
 
-#ifdef HAVE_CURSES_NOFILTER
+#ifdef _Py_HAVE_CURSES_NOFILTER
 /*[clinic input]
 _curses.nofilter
 
@@ -6269,7 +6269,7 @@ error:
     return res;
 }
 
-#ifdef HAVE_CURSES_SCR_DUMP
+#ifdef _Py_HAVE_CURSES_SCR_DUMP
 /*[clinic input]
 _curses.scr_dump
 
@@ -6324,7 +6324,7 @@ _curses_scr_init(PyObject *module, PyObject *filename)
 /*[clinic end generated code: output=2e861d381d710419 input=81c45e4702124ef6]*/
 ScreenDumpFunctionBody(scr_init)
 
-#ifdef HAVE_CURSES_SCR_SET
+#ifdef _Py_HAVE_CURSES_SCR_SET
 /*[clinic input]
 _curses.scr_set
 
@@ -6341,8 +6341,8 @@ static PyObject *
 _curses_scr_set(PyObject *module, PyObject *filename)
 /*[clinic end generated code: output=6056fdec12c5935f input=d248c20543cc289b]*/
 ScreenDumpFunctionBody(scr_set)
-#endif /* HAVE_CURSES_SCR_SET */
-#endif /* HAVE_CURSES_SCR_DUMP */
+#endif /* _Py_HAVE_CURSES_SCR_SET */
+#endif /* _Py_HAVE_CURSES_SCR_DUMP */
 
 /*[clinic input]
 _curses.halfdelay
@@ -6421,7 +6421,7 @@ _curses_has_key_impl(PyObject *module, int key)
 }
 #endif
 
-#ifdef HAVE_CURSES_DEFINE_KEY
+#ifdef _Py_HAVE_CURSES_DEFINE_KEY
 /*[clinic input]
 _curses.define_key
 
@@ -6447,9 +6447,9 @@ _curses_define_key_impl(PyObject *module, const char *definition,
     return curses_check_err(module, define_key(definition, keycode),
                             "define_key", NULL);
 }
-#endif /* HAVE_CURSES_DEFINE_KEY */
+#endif /* _Py_HAVE_CURSES_DEFINE_KEY */
 
-#ifdef HAVE_CURSES_KEY_DEFINED
+#ifdef _Py_HAVE_CURSES_KEY_DEFINED
 /*[clinic input]
 _curses.key_defined
 
@@ -6471,9 +6471,9 @@ _curses_key_defined_impl(PyObject *module, const char *definition)
 
     return PyLong_FromLong(key_defined(definition));
 }
-#endif /* HAVE_CURSES_KEY_DEFINED */
+#endif /* _Py_HAVE_CURSES_KEY_DEFINED */
 
-#ifdef HAVE_CURSES_KEYOK
+#ifdef _Py_HAVE_CURSES_KEYOK
 /*[clinic input]
 _curses.keyok
 
@@ -6494,7 +6494,7 @@ _curses_keyok_impl(PyObject *module, int keycode, int enable)
 
     return curses_check_err(module, keyok(keycode, enable), "keyok", NULL);
 }
-#endif /* HAVE_CURSES_KEYOK */
+#endif /* _Py_HAVE_CURSES_KEYOK */
 
 /*[clinic input]
 _curses.init_color
@@ -7283,7 +7283,7 @@ _curses_set_term(PyObject *module, PyObject *screen)
     return prev != NULL ? prev : Py_NewRef(Py_None);
 }
 
-#ifdef HAVE_CURSES_NEW_PRESCR
+#ifdef _Py_HAVE_CURSES_NEW_PRESCR
 /*[clinic input]
 _curses.new_prescr
 
@@ -7317,7 +7317,7 @@ _curses_new_prescr_impl(PyObject *module)
     state->prescreen = Py_NewRef(screenobj);
     return screenobj;
 }
-#endif /* HAVE_CURSES_NEW_PRESCR */
+#endif /* _Py_HAVE_CURSES_NEW_PRESCR */
 
 #ifdef HAVE_CURSES_ESCDELAY
 /*[clinic input]
@@ -7573,7 +7573,7 @@ _curses_meta_impl(PyObject *module, int yes)
 }
 
 #if defined(HAVE_CURSES_GETMOUSE) || defined(PDCURSES)
-#if defined(HAVE_CURSES_HAS_MOUSE) || defined(PDCURSES)
+#if defined(_Py_HAVE_CURSES_HAS_MOUSE) || defined(PDCURSES)
 /*[clinic input]
 _curses.has_mouse
 
@@ -7588,7 +7588,7 @@ _curses_has_mouse_impl(PyObject *module)
 
     return PyBool_FromLong(has_mouse());
 }
-#endif /* HAVE_CURSES_HAS_MOUSE || PDCURSES */
+#endif /* _Py_HAVE_CURSES_HAS_MOUSE || PDCURSES */
 
 /*[clinic input]
 _curses.mouseinterval
@@ -8272,7 +8272,7 @@ _curses_termattrs_impl(PyObject *module)
     return PyLong_FromUnsignedLong((unsigned long)(chtype)termattrs());
 }
 
-#ifdef HAVE_CURSES_TERM_ATTRS
+#ifdef _Py_HAVE_CURSES_TERM_ATTRS
 /*[clinic input]
 _curses.term_attrs
 
@@ -8290,7 +8290,7 @@ _curses_term_attrs_impl(PyObject *module)
 
     return PyLong_FromUnsignedLongLong(term_attrs());
 }
-#endif /* HAVE_CURSES_TERM_ATTRS */
+#endif /* _Py_HAVE_CURSES_TERM_ATTRS */
 
 /*[clinic input]
 @permit_long_summary
@@ -8374,35 +8374,155 @@ _curses_tigetstr_impl(PyObject *module, const char *capname)
     return PyBytes_FromString( capname );
 }
 
+#ifndef NCURSES_TPARM_ARG
+#  define NCURSES_TPARM_ARG long
+#endif
+
+/* Return a bit mask of the parameters of a terminfo string that curses takes
+   as strings: those that %s or %l follows directly after %p, as in ncurses'
+   _nc_tparm_analyze().  The others are numbers. */
+static unsigned int
+curses_tparm_string_params(const char *str)
+{
+    unsigned int mask = 0;
+    int last = 0;               /* the parameter pushed last, or 0 */
+
+    while (*str) {
+        if (*str++ != '%') {
+            continue;
+        }
+        /* Skip the flags, width and precision of a conversion. */
+        int allowminus = 0;
+        while (*str) {
+            if (*str == ':') {
+                allowminus = 1;
+            }
+            else if (!(*str == '#' || *str == ' ' || *str == '.'
+                       || Py_ISDIGIT(*str) || (*str == '-' && allowminus)))
+            {
+                break;
+            }
+            str++;
+        }
+        switch (*str) {
+        case 'p':
+            if (str[1] >= '1' && str[1] <= '9') {
+                last = str[1] - '0';
+            }
+            str++;
+            break;
+        case 's':
+        case 'l':
+            if (last > 0) {
+                mask |= 1u << (last - 1);
+            }
+            break;
+        case 'd': case 'o': case 'x': case 'X': case 'c':
+        case '+': case '-': case '*': case '/': case 'm':
+        case '&': case '|': case '^': case '=': case '<': case '>':
+        case 'A': case 'O': case '!': case '~':
+            last = 0;
+            break;
+        case '\'':
+            str += 2;
+            last = 0;
+            break;
+        case '\0':
+            return mask;
+        default:
+            /* %P, %g, %{, %i, %?, %t, %e, %; and %% keep it. */
+            break;
+        }
+        str++;
+    }
+    return mask;
+}
+
+/* Convert a tparm() parameter: a string for those that the terminfo string
+   takes as strings (passing a number there would crash curses), otherwise a
+   number.  An omitted one is 0, or NULL, which curses takes as "". */
+static int
+curses_tparm_param(PyObject *arg, int argnum, int is_string,
+                   NCURSES_TPARM_ARG *result)
+{
+    if (arg == NULL) {
+        *result = 0;
+        return 0;
+    }
+    if (is_string) {
+        if (!PyBytes_Check(arg)) {
+            PyErr_Format(PyExc_TypeError,
+                         "tparm() argument %d must be bytes, not %T",
+                         argnum, arg);
+            return -1;
+        }
+        const char *value = PyBytes_AS_STRING(arg);
+        if (strlen(value) != (size_t)PyBytes_GET_SIZE(arg)) {
+            PyErr_SetString(PyExc_ValueError, "embedded null byte");
+            return -1;
+        }
+        *result = (NCURSES_TPARM_ARG)(intptr_t)value;
+        return 0;
+    }
+    if (PyBytes_Check(arg)) {
+        PyErr_Format(PyExc_TypeError,
+                     "tparm() argument %d must be int, not bytes", argnum);
+        return -1;
+    }
+    int value = PyLong_AsInt(arg);
+    if (value == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    *result = value;
+    return 0;
+}
+
 /*[clinic input]
 _curses.tparm
 
-    str: str(accept={robuffer})
+    str as string: object
         Parameterized byte string obtained from the terminfo database.
-    i1: int = 0
-    i2: int = 0
-    i3: int = 0
-    i4: int = 0
-    i5: int = 0
-    i6: int = 0
-    i7: int = 0
-    i8: int = 0
-    i9: int = 0
     /
+    *params: tuple
+        Up to nine parameters.
 
 Instantiate the specified byte string with the supplied parameters.
+
+The parameters are integers, except in a few cases where they must be
+bytes objects.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_tparm_impl(PyObject *module, const char *str, int i1, int i2, int i3,
-                   int i4, int i5, int i6, int i7, int i8, int i9)
-/*[clinic end generated code: output=599f62b615c667ff input=5e30b15786f032aa]*/
+_curses_tparm_impl(PyObject *module, PyObject *string, PyObject *params)
+/*[clinic end generated code: output=3439bb1b37a13d5b input=4889c0e3a5eab5b5]*/
 {
     char* result = NULL;
+    NCURSES_TPARM_ARG values[9];
+    Py_ssize_t count = PyTuple_GET_SIZE(params);
+    const char *str;
 
+    if (!PyArg_Parse(string, "y:tparm", &str)) {
+        return NULL;
+    }
+
+    if (count > 9) {
+        PyErr_Format(PyExc_TypeError,
+                     "tparm() takes at most 9 parameters (%zd given)", count);
+        return NULL;
+    }
     PyCursesStatefulSetupTermCalled(module);
 
-    result = tparm((char *)str,i1,i2,i3,i4,i5,i6,i7,i8,i9);
+    unsigned int strings = curses_tparm_string_params(str);
+    for (int i = 0; i < 9; i++) {
+        PyObject *arg = i < count ? PyTuple_GET_ITEM(params, i) : NULL;
+        if (curses_tparm_param(arg, i + 2, strings & (1u << i),
+                               &values[i]) < 0)
+        {
+            return NULL;
+        }
+    }
+    result = tparm((char *)str, values[0], values[1], values[2], values[3],
+                   values[4], values[5], values[6], values[7], values[8]);
     if (!result) {
         curses_set_null_error(module, "tparm", NULL);
         return NULL;
@@ -8877,7 +8997,7 @@ _curses_slk_attr_impl(PyObject *module)
 }
 #endif
 
-#ifdef HAVE_CURSES_SLK_ATTR_ON
+#ifdef _Py_HAVE_CURSES_SLK_ATTR_ON
 /*[clinic input]
 _curses.slk_attr_on
 
@@ -8895,9 +9015,9 @@ _curses_slk_attr_on_impl(PyObject *module, attr_t attr)
     return curses_check_err(module, slk_attr_on(attr, NULL),
                             "slk_attr_on", NULL);
 }
-#endif /* HAVE_CURSES_SLK_ATTR_ON */
+#endif /* _Py_HAVE_CURSES_SLK_ATTR_ON */
 
-#ifdef HAVE_CURSES_SLK_ATTR_OFF
+#ifdef _Py_HAVE_CURSES_SLK_ATTR_OFF
 /*[clinic input]
 _curses.slk_attr_off
 
@@ -8915,9 +9035,9 @@ _curses_slk_attr_off_impl(PyObject *module, attr_t attr)
     return curses_check_err(module, slk_attr_off(attr, NULL),
                             "slk_attr_off", NULL);
 }
-#endif /* HAVE_CURSES_SLK_ATTR_OFF */
+#endif /* _Py_HAVE_CURSES_SLK_ATTR_OFF */
 
-#ifdef HAVE_CURSES_SLK_ATTR_SET
+#ifdef _Py_HAVE_CURSES_SLK_ATTR_SET
 /*[clinic input]
 _curses.slk_attr_set
 
@@ -8941,9 +9061,9 @@ _curses_slk_attr_set_impl(PyObject *module, attr_t attr, int pair)
 #endif
     return curses_check_err(module, rtn, "slk_attr_set", NULL);
 }
-#endif /* HAVE_CURSES_SLK_ATTR_SET */
+#endif /* _Py_HAVE_CURSES_SLK_ATTR_SET */
 
-#ifdef HAVE_CURSES_SLK_COLOR
+#ifdef _Py_HAVE_CURSES_SLK_COLOR
 /*[clinic input]
 _curses.slk_color
 
@@ -8966,7 +9086,7 @@ _curses_slk_color_impl(PyObject *module, int pair)
 #endif
     return curses_check_err(module, rtn, "slk_color", NULL);
 }
-#endif /* HAVE_CURSES_SLK_COLOR */
+#endif /* _Py_HAVE_CURSES_SLK_COLOR */
 
 #ifdef HAVE_CURSES_USE_ENV
 /*[clinic input]
@@ -9178,7 +9298,7 @@ static PyMethodDef cursesmodule_methods[] = {
     _CURSES_NEWPAD_METHODDEF
     _CURSES_NEWTERM_METHODDEF
     _CURSES_NEWWIN_METHODDEF
-#ifdef HAVE_CURSES_NEW_PRESCR
+#ifdef _Py_HAVE_CURSES_NEW_PRESCR
     _CURSES_NEW_PRESCR_METHODDEF
 #endif
     _CURSES_NL_METHODDEF

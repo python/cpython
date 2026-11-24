@@ -856,7 +856,7 @@ The :class:`PyZipFile` constructor takes the same parameters as the
       in ``test`` directories or start with the string ``test_``, we can use a
       *filterfunc* to exclude them::
 
-          >>> zf = PyZipFile('myprog.zip')
+          >>> zf = PyZipFile('myprog.zip', 'w')
           >>> def notests(s):
           ...     fn = os.path.basename(s)
           ...     return (not (fn == 'test' or fn.startswith('test_')))

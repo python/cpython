@@ -10,6 +10,7 @@ import gc
 import io
 import _pyio as pyio
 import pickle
+import struct
 import sys
 import weakref
 
@@ -984,6 +985,21 @@ class CBytesIOTest(PyBytesIOTest):
             finally:
                 size.result.release()
 
+        # Sizes above 2**31 - 1 must work where C long is 32-bit.
+        if sys.maxsize > 2**31:
+            stream = self.ioclass(b'abc')
+            self.assertEqual(stream.truncate(2**31), 2**31)
+            self.assertEqual(stream.getvalue(), b'abc')
+
+    def test_write_overflow(self):
+        # gh-160781: overallocation at a position near sys.maxsize
+        # must raise OverflowError, not SystemError.
+        memio = self.ioclass()
+        memio.seek(sys.maxsize - 1)
+        self.assertRaises(OverflowError, memio.write, b"x")
+        self.assertEqual(memio.getvalue(), b"")
+        self.assertEqual(memio.tell(), sys.maxsize - 1)
+
     def test_readinto_overlapping_buffer(self):
         with self.ioclass(b'abcd') as stream:
             with stream.getbuffer()[1:] as target:
@@ -1022,11 +1038,13 @@ class CBytesIOTest(PyBytesIOTest):
     @support.cpython_only
     def test_sizeof(self):
         if support.Py_GIL_DISABLED:
-            basesize = support.calcobjsize('P2n2Pni')
+            basesize = support.calcobjsize('P2nni')
         else:
-            basesize = support.calcobjsize('P2n2Pn')
+            basesize = support.calcobjsize('P2nn')
         check = self.check_sizeof
         self.assertEqual(object.__sizeof__(io.BytesIO()), basesize)
+        # sys.getsizeof() includes the managed dict and weakref pre-header
+        basesize += 2 * struct.calcsize('P')
         check(io.BytesIO(), basesize )
         n = 1000  # use a variable to prevent constant folding
         check(io.BytesIO(b'a' * n), basesize + sys.getsizeof(b'a' * n))
@@ -1138,6 +1156,24 @@ class CStringIOTest(PyStringIOTest):
     ioclass = io.StringIO
     UnsupportedOperation = io.UnsupportedOperation
 
+    def test_truncate_size_closes_stream(self):
+        stream = self.ioclass()
+        stream.write("abc")
+
+        class Size:
+            def __index__(self):
+                stream.close()
+                return 0
+
+        with self.assertRaises(ValueError):
+            stream.truncate(Size())
+
+        # Sizes above 2**31 - 1 must work where C long is 32-bit.
+        if sys.maxsize > 2**31:
+            stream = self.ioclass("abc")
+            self.assertEqual(stream.truncate(2**31), 2**31)
+            self.assertEqual(stream.getvalue(), "abc")
+
     # XXX: For the Python version of io.StringIO, this is highly
     # dependent on the encoding used for the underlying buffer.
     def test_widechar(self):
@@ -1203,6 +1239,39 @@ class CStringIOTest(PyStringIOTest):
         memio2.write(MyStr("hello "))
         memio2.write(MyStr("world"))
         self.assertEqual(memio2.getvalue(), "hello world")
+
+    @support.nomemtest
+    def test_memory_error_consistent_state(self):
+        # A MemoryError while copying the accumulated writes into the
+        # internal buffer must leave the size of the stream consistent with
+        # the buffer, so that using the object again does not read or write
+        # outside it.
+        piece = "0123456789" * 10
+        text = piece * 50
+        calls = [("readline",), ("read", 5), ("read",), ("getvalue",),
+                 ("truncate", 3), ("write", "ab"), ("__next__",)]
+        for name, *args in calls:
+            for n in range(3):
+                with self.subTest(method=name, n=n):
+                    memio = self.ioclass()
+                    for _ in range(50):
+                        memio.write(piece)
+                    memio.seek(0)
+                    method = getattr(memio, name)
+                    try:
+                        with support.inject_memory_error_cm(n, n + 1):
+                            method(*args)
+                    except MemoryError:
+                        pass
+                    else:
+                        continue
+                    # The contents are unchanged.
+                    self.assertEqual(memio.getvalue(), text)
+                    self.assertEqual(memio.seek(0, 2), len(text))
+                    memio.seek(0)
+                    self.assertEqual(memio.readline(), text)
+                    memio.write("!")
+                    self.assertEqual(memio.getvalue(), text + "!")
 
 
 class CStringIOPickleTest(PyStringIOPickleTest):
