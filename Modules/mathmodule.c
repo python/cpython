@@ -1211,6 +1211,8 @@ math_ceil(PyObject *module, PyObject *number)
     return PyLong_FromDouble(ceil(x));
 }
 
+/* gh-153144: Ignore copysign errno on purpose since IEEE Std 754-2019 requires
+ *            it to operate on bit strings and to signal no exception. */
 FUNC2NE(copysign, copysign,
       "copysign($module, x, y, /)\n--\n\n"
        "Return a float with the magnitude (absolute value) of x but the sign of y.\n\n"
