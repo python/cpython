@@ -186,85 +186,6 @@ typedef struct PyVarObject PyVarObject;
 PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
-#if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
-PyAPI_FUNC(uintptr_t) _Py_GetThreadLocal_Addr(void);
-
-static inline uintptr_t
-_Py_ThreadId(void)
-{
-    uintptr_t tid;
-#if defined(_MSC_VER) && defined(_M_X64)
-    tid = __readgsqword(48);
-#elif defined(_MSC_VER) && defined(_M_IX86)
-    tid = __readfsdword(24);
-#elif defined(_MSC_VER) && defined(_M_ARM64)
-    tid = __getReg(18);
-#elif defined(__MINGW32__) && defined(_M_X64)
-    tid = __readgsqword(48);
-#elif defined(__MINGW32__) && defined(_M_IX86)
-    tid = __readfsdword(24);
-#elif defined(__MINGW32__) && defined(_M_ARM64)
-    tid = __getReg(18);
-#elif defined(__i386__)
-    __asm__("{movl %%gs:0, %0|mov %0, dword ptr gs:[0]}" : "=r" (tid));  // 32-bit always uses GS
-#elif defined(__MACH__) && defined(__x86_64__)
-    __asm__("{movq %%gs:0, %0|mov %0, qword ptr gs:[0]}" : "=r" (tid));  // x86_64 macOSX uses GS
-#elif defined(__x86_64__)
-    __asm__("{movq %%fs:0, %0|mov %0, qword ptr fs:[0]}" : "=r" (tid));  // x86_64 Linux, BSD uses FS
-#elif defined(__arm__) && __ARM_ARCH >= 7
-    __asm__ ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tid));
-#elif defined(__aarch64__) && defined(__APPLE__)
-    __asm__ ("mrs %0, tpidrro_el0" : "=r" (tid));
-#elif defined(__aarch64__)
-    __asm__ ("mrs %0, tpidr_el0" : "=r" (tid));
-#elif defined(__powerpc64__)
-    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
-    tid = (uintptr_t)__builtin_thread_pointer();
-    #else
-    // r13 is reserved for use as system thread ID by the Power 64-bit ABI.
-    register uintptr_t tp __asm__ ("r13");
-    __asm__("" : "=r" (tp));
-    tid = tp;
-    #endif
-#elif defined(__powerpc__)
-    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
-    tid = (uintptr_t)__builtin_thread_pointer();
-    #else
-    // r2 is reserved for use as system thread ID by the Power 32-bit ABI.
-    register uintptr_t tp __asm__ ("r2");
-    __asm__ ("" : "=r" (tp));
-    tid = tp;
-    #endif
-#elif defined(__s390__) && defined(__GNUC__)
-    // Both GCC and Clang have supported __builtin_thread_pointer
-    // for s390 from long time ago.
-    tid = (uintptr_t)__builtin_thread_pointer();
-#elif defined(__riscv)
-    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
-    tid = (uintptr_t)__builtin_thread_pointer();
-    #else
-    // tp is Thread Pointer provided by the RISC-V ABI.
-    __asm__ ("mv %0, tp" : "=r" (tid));
-    #endif
-#else
-    // Fallback to a portable implementation if we do not have a faster
-    // platform-specific implementation.
-    tid = _Py_GetThreadLocal_Addr();
-#endif
-  return tid;
-}
-
-static inline Py_ALWAYS_INLINE int
-_Py_IsOwnedByCurrentThread(PyObject *ob)
-{
-#ifdef _Py_THREAD_SANITIZER
-    return _Py_atomic_load_uintptr_relaxed(&ob->ob_tid) == _Py_ThreadId();
-#else
-    return ob->ob_tid == _Py_ThreadId();
-#endif
-}
-#endif
-
 PyAPI_DATA(PyTypeObject) PyLong_Type;
 PyAPI_DATA(PyTypeObject) PyBool_Type;
 
@@ -385,13 +306,18 @@ typedef Py_hash_t (*hashfunc)(PyObject *);
 typedef PyObject *(*richcmpfunc) (PyObject *, PyObject *, int);
 typedef PyObject *(*getiterfunc) (PyObject *);
 typedef PyObject *(*iternextfunc) (PyObject *);
+typedef struct {
+    PyObject *object;
+    Py_ssize_t index;
+} _PyObjectIndexPair;
+typedef _PyObjectIndexPair (*_Py_iteritemfunc) (PyObject *, Py_ssize_t index);
 typedef PyObject *(*descrgetfunc) (PyObject *, PyObject *, PyObject *);
 typedef int (*descrsetfunc) (PyObject *, PyObject *, PyObject *);
 typedef int (*initproc)(PyObject *, PyObject *, PyObject *);
 typedef PyObject *(*newfunc)(PyTypeObject *, PyObject *, PyObject *);
 typedef PyObject *(*allocfunc)(PyTypeObject *, Py_ssize_t);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030c0000 // 3.12
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 12) // 3.12
 typedef PyObject *(*vectorcallfunc)(PyObject *callable, PyObject *const *args,
                                     size_t nargsf, PyObject *kwnames);
 #endif
@@ -421,22 +347,25 @@ PyAPI_FUNC(PyObject*) PyType_FromModuleAndSpec(PyObject *, PyType_Spec *, PyObje
 PyAPI_FUNC(PyObject *) PyType_GetModule(PyTypeObject *);
 PyAPI_FUNC(void *) PyType_GetModuleState(PyTypeObject *);
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 11)
 PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
 PyAPI_FUNC(PyObject *) PyType_GetQualName(PyTypeObject *);
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(PyObject *) PyType_GetFullyQualifiedName(PyTypeObject *type);
 PyAPI_FUNC(PyObject *) PyType_GetModuleName(PyTypeObject *type);
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 12)
 PyAPI_FUNC(PyObject *) PyType_FromMetaclass(PyTypeObject*, PyObject*, PyType_Spec*, PyObject*);
 PyAPI_FUNC(void *) PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls);
 PyAPI_FUNC(Py_ssize_t) PyType_GetTypeDataSize(PyTypeObject *cls);
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
 PyAPI_FUNC(int) PyType_GetBaseByToken(PyTypeObject *, void *, PyTypeObject **);
 #define Py_TP_USE_SPEC NULL
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+PyAPI_FUNC(PyObject *) PyType_FromSlots(struct PySlot *slots);
 #endif
 
 /* Generic type check */
@@ -445,7 +374,7 @@ PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
 static inline int PyObject_TypeCheck(PyObject *ob, PyTypeObject *type) {
     return Py_IS_TYPE(ob, type) || PyType_IsSubtype(Py_TYPE(ob), type);
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
 #  define PyObject_TypeCheck(ob, type) PyObject_TypeCheck(_PyObject_CAST(ob), (type))
 #endif
 
@@ -474,14 +403,14 @@ PyAPI_FUNC(int) PyObject_SetAttrString(PyObject *, const char *, PyObject *);
 PyAPI_FUNC(int) PyObject_DelAttrString(PyObject *v, const char *name);
 PyAPI_FUNC(int) PyObject_HasAttrString(PyObject *, const char *);
 PyAPI_FUNC(PyObject *) PyObject_GetAttr(PyObject *, PyObject *);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(int) PyObject_GetOptionalAttr(PyObject *, PyObject *, PyObject **);
 PyAPI_FUNC(int) PyObject_GetOptionalAttrString(PyObject *, const char *, PyObject **);
 #endif
 PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_DelAttr(PyObject *v, PyObject *name);
 PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(int) PyObject_HasAttrWithError(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_HasAttrStringWithError(PyObject *, const char *);
 #endif
@@ -561,7 +490,7 @@ given type object has a specified feature.
 #define Py_TPFLAGS_SEQUENCE (1 << 5)
 /* Set if instances of the type object are treated as mappings for pattern matching */
 #define Py_TPFLAGS_MAPPING (1 << 6)
-#endif
+#endif  // Py_LIMITED_API
 
 /* Disallow creating instances of the type: set tp_new to NULL and don't create
  * the "__new__" key in the type dictionary. */
@@ -577,7 +506,7 @@ given type object has a specified feature.
 #define Py_TPFLAGS_BASETYPE (1UL << 10)
 
 /* Set if the type implements the vectorcall protocol (PEP 590) */
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 12)
 #define Py_TPFLAGS_HAVE_VECTORCALL (1UL << 11)
 #ifndef Py_LIMITED_API
 // Backwards compatibility alias for API that was provisional in Python 3.8
@@ -652,8 +581,10 @@ given type object has a specified feature.
 #define _Py_IMMORTAL_FLAGS (1 << 0)
 #define _Py_LEGACY_ABI_CHECK_FLAG (1 << 1) /* see PyModuleDef_Init() */
 #define _Py_STATICALLY_ALLOCATED_FLAG (1 << 2)
-#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG)
-#define _Py_TYPE_REVEALED_FLAG (1 << 3)
+#if !defined(Py_LIMITED_API)
+#  if defined(Py_GIL_DISABLED) && defined(Py_DEBUG)
+#    define _Py_TYPE_REVEALED_FLAG (1 << 3)
+#  endif
 #endif
 
 #define Py_CONSTANT_NONE 0
@@ -667,7 +598,7 @@ given type object has a specified feature.
 #define Py_CONSTANT_EMPTY_BYTES 8
 #define Py_CONSTANT_EMPTY_TUPLE 9
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(PyObject*) Py_GetConstant(unsigned int constant_id);
 PyAPI_FUNC(PyObject*) Py_GetConstantBorrowed(unsigned int constant_id);
 #endif
@@ -679,7 +610,7 @@ where NULL (nil) is not suitable (since NULL often means 'error').
 */
 PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
 
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 #  define Py_None Py_GetConstantBorrowed(Py_CONSTANT_NONE)
 #else
 #  define Py_None (&_Py_NoneStruct)
@@ -691,7 +622,7 @@ PyAPI_FUNC(int) Py_IsNone(PyObject *x);
 
 /* Macro for returning Py_None from a function.
  * Only treat Py_None as immortal in the limited C API 3.12 and newer. */
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030c0000
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 12)
 #  define Py_RETURN_NONE return Py_NewRef(Py_None)
 #else
 #  define Py_RETURN_NONE return Py_None
@@ -703,7 +634,7 @@ not implemented for a given type combination.
 */
 PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 #  define Py_NotImplemented Py_GetConstantBorrowed(Py_CONSTANT_NOT_IMPLEMENTED)
 #else
 #  define Py_NotImplemented (&_Py_NotImplementedStruct)
@@ -711,7 +642,7 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 
 /* Macro for returning Py_NotImplemented from a function. Only treat
  * Py_NotImplemented as immortal in the limited C API 3.12 and newer. */
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030c0000
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 12)
 #  define Py_RETURN_NOTIMPLEMENTED return Py_NewRef(Py_NotImplemented)
 #else
 #  define Py_RETURN_NOTIMPLEMENTED return Py_NotImplemented
@@ -725,7 +656,7 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_GT 4
 #define Py_GE 5
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 10)
 /* Result of calling PyIter_Send */
 typedef enum {
     PYGEN_RETURN = 0,
@@ -831,7 +762,7 @@ PyType_HasFeature(PyTypeObject *type, unsigned long feature)
 static inline int PyType_Check(PyObject *op) {
     return PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_TYPE_SUBCLASS);
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
 #  define PyType_Check(op) PyType_Check(_PyObject_CAST(op))
 #endif
 
@@ -841,21 +772,30 @@ static inline int PyType_Check(PyObject *op) {
 static inline int PyType_CheckExact(PyObject *op) {
     return Py_IS_TYPE(op, &PyType_Type);
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
 #  define PyType_CheckExact(op) PyType_CheckExact(_PyObject_CAST(op))
 #endif
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
 #endif
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
 PyAPI_FUNC(int) PyType_Freeze(PyTypeObject *type);
 #endif
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+PyAPI_FUNC(int) PyObject_CallFinalizerFromDealloc(PyObject *);
 PyAPI_FUNC(PyObject *) PyType_GetModuleByToken(PyTypeObject *type,
                                                const void *token);
+PyAPI_FUNC(void *) PyObject_GetTypeData_DuringGC(PyObject *obj,
+                                                 PyTypeObject *cls);
+PyAPI_FUNC(void *) PyType_GetModuleState_DuringGC(PyTypeObject *);
+PyAPI_FUNC(int) PyType_GetBaseByToken_DuringGC(PyTypeObject *,
+                                               void *, PyTypeObject **);
+PyAPI_FUNC(PyObject *) PyType_GetModule_DuringGC(PyTypeObject *);
+PyAPI_FUNC(PyObject *) PyType_GetModuleByToken_DuringGC(PyTypeObject *type,
+                                                        const void *token);
 #endif
 
 #ifdef __cplusplus

@@ -31,6 +31,9 @@ class WeirdNum(float, Enum):
     neg_inf = NEG_INF
     nan = NAN
 
+class StringEnum(str, Enum):
+    COLOR = "color"
+
 class TestEnum:
 
     def test_floats(self):
@@ -115,6 +118,12 @@ class TestEnum:
         self.assertEqual(nd['i'], INF)
         self.assertEqual(nd['j'], NEG_INF)
         self.assertTrue(isnan(nd['n']))
+
+    def test_str_enum(self):
+        obj = StringEnum.COLOR
+        self.assertEqual(self.dumps(obj), '"color"')
+        self.assertEqual(self.dumps([obj]), '["color"]')
+        self.assertEqual(self.dumps({'key': obj}), '{"key": "color"}')
 
 class TestPyEnum(TestEnum, PyTest): pass
 class TestCEnum(TestEnum, CTest): pass

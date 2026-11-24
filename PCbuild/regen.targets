@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <_PegenSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\Tokens" />
-    <_PegenOutputs Include="$(PySourcePath)Parser\parser.c" />
+    <_PegenSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\invalid.gram;$(PySourcePath)Grammar\Tokens" />
+    <_PegenOutputs Include="$(PySourcePath)Parser\parser.c;$(PySourcePath)Parser\parser_invalid.c" />
     <_ASTSources Include="$(PySourcePath)Parser\Python.asdl" />
     <_ASTOutputs Include="$(PySourcePath)Include\internal\pycore_ast.h">
       <Argument>-H</Argument>
@@ -26,7 +26,7 @@
     <_TokenOutputs Include="$(PySourcePath)Lib\token.py">
       <Format>py</Format>
     </_TokenOutputs>
-    <_KeywordSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\Tokens" />
+    <_KeywordSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\invalid.gram;$(PySourcePath)Grammar\Tokens" />
     <_KeywordOutputs Include="$(PySourcePath)Lib\keyword.py" />
     <!-- Taken from _Target._compute_digest in Tools\jit\_targets.py: -->
     <_JITSources Include="$(PySourcePath)Python\executor_cases.c.h;$(PySourcePath)PC\pyconfig.h;$(PySourcePath)Tools\jit\**"/>
@@ -35,6 +35,9 @@
     <_JITOutputs Include="$(GeneratedJitStencilsDir)jit_stencils-aarch64-pc-windows-msvc.h" Condition="$(Platform) == 'ARM64'"/>
     <_JITOutputs Include="$(GeneratedJitStencilsDir)jit_stencils-i686-pc-windows-msvc.h" Condition="$(Platform) == 'Win32'"/>
     <_JITOutputs Include="$(GeneratedJitStencilsDir)jit_stencils-x86_64-pc-windows-msvc.h" Condition="$(Platform) == 'x64'"/>
+    <_JITOutputs Include="$(GeneratedJitStencilsDir)jit_shim-aarch64-pc-windows-msvc.o" Condition="$(Platform) == 'ARM64'"/>
+    <_JITOutputs Include="$(GeneratedJitStencilsDir)jit_shim-i686-pc-windows-msvc.o" Condition="$(Platform) == 'Win32'"/>
+    <_JITOutputs Include="$(GeneratedJitStencilsDir)jit_shim-x86_64-pc-windows-msvc.o" Condition="$(Platform) == 'x64'"/>
     <_CasesSources Include="$(PySourcePath)Python\bytecodes.c;$(PySourcePath)Python\optimizer_bytecodes.c;"/>
     <_CasesOutputs Include="$(PySourcePath)Python\generated_cases.c.h;$(PySourcePath)Include\opcode_ids.h;$(PySourcePath)Include\internal\pycore_uop_ids.h;$(PySourcePath)Python\opcode_targets.h;$(PySourcePath)Include\internal\pycore_opcode_metadata.h;$(PySourcePath)Include\internal\pycore_uop_metadata.h;$(PySourcePath)Python\optimizer_cases.c.h;$(PySourcePath)Lib\_opcode_metadata.py"/>
     <_SbomSources Include="$(PySourcePath)PCbuild\get_externals.bat" />
@@ -129,7 +132,7 @@
       <JITArgs Condition="$(Platform) == 'x64'">x86_64-pc-windows-msvc</JITArgs>
       <JITArgs Condition="$(Configuration) == 'Debug'">$(JITArgs) --debug</JITArgs>
     </PropertyGroup>
-    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs) --output-dir "$(GeneratedJitStencilsDir)" --pyconfig-dir "$(PySourcePath)PC"'/>
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs) --output-dir "$(GeneratedJitStencilsDir.TrimEnd(`\`))" --pyconfig-dir "$(PySourcePath)PC" --llvm-version="$(LLVM_VERSION)" --llvm-tools-install-dir="$(LLVM_TOOLS_INSTALL_DIR)"'/>
   </Target>
   <Target Name="_CleanJIT" AfterTargets="Clean">
     <Delete Files="@(_JITOutputs)"/>

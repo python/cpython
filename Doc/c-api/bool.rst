@@ -25,8 +25,7 @@ are available, however.
 
 .. c:var:: PyObject* Py_False
 
-   The Python ``False`` object.  This object has no methods and is
-   :term:`immortal`.
+   The Python ``False`` object.  This object is :term:`immortal`.
 
    .. versionchanged:: 3.12
       :c:data:`Py_False` is :term:`immortal`.
@@ -34,8 +33,7 @@ are available, however.
 
 .. c:var:: PyObject* Py_True
 
-   The Python ``True`` object.  This object has no methods and is
-   :term:`immortal`.
+   The Python ``True`` object.  This object is :term:`immortal`.
 
    .. versionchanged:: 3.12
       :c:data:`Py_True` is :term:`immortal`.

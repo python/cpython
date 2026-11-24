@@ -1,0 +1,4 @@
+Fix :exc:`asyncio.InvalidStateError` being logged when the standard input of
+an :mod:`asyncio` subprocess is closed after a task waiting in
+:meth:`proc.stdin.wait_closed() <asyncio.StreamWriter.wait_closed>` was
+cancelled.

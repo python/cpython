@@ -406,11 +406,12 @@ class TestLongMessage(unittest.TestCase):
         # test warning raised but with wrong message
         def raise_wrong_message():
             warnings.warn('foo')
-        self.assertMessagesCM('assertWarnsRegex', (UserWarning, 'regex'),
-                              raise_wrong_message,
-                              ['^"regex" does not match "foo"$', '^oops$',
-                               '^"regex" does not match "foo"$',
-                               '^"regex" does not match "foo" : oops$'])
+        with self.assertWarnsRegex(UserWarning, 'foo'):
+            self.assertMessagesCM('assertWarnsRegex', (UserWarning, 'regex'),
+                                  raise_wrong_message,
+                                  ['^"regex" does not match "foo"$', '^oops$',
+                                   '^"regex" does not match "foo"$',
+                                   '^"regex" does not match "foo" : oops$'])
 
 
 if __name__ == "__main__":

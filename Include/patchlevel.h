@@ -21,13 +21,13 @@
 /* Version parsed out into numeric values */
 /*--start constants--*/
 #define PY_MAJOR_VERSION        3
-#define PY_MINOR_VERSION        15
+#define PY_MINOR_VERSION        16
 #define PY_MICRO_VERSION        0
 #define PY_RELEASE_LEVEL        PY_RELEASE_LEVEL_ALPHA
-#define PY_RELEASE_SERIAL       7
+#define PY_RELEASE_SERIAL       2
 
 /* Version as a string */
-#define PY_VERSION              "3.15.0a7+"
+#define PY_VERSION              "3.16.0a2+dev"
 /*--end constants--*/
 
 
@@ -37,6 +37,7 @@
     (((Z) & 0xff) << 8) |                               \
     (((LEVEL) & 0xf) << 4) |                            \
     (((SERIAL) & 0xf) << 0))
+#define _Py_PACK_VERSION(X, Y) _Py_PACK_FULL_VERSION(X, Y, 0, 0, 0)
 
 /* Version as a single 4-byte hex number, e.g. 0x010502B2 == 1.5.2b2.
    Use this for numeric comparisons, e.g. #if PY_VERSION_HEX >= ... */
@@ -60,33 +61,5 @@
 #define PYTHON_API_STRING "1013"
 #define PYTHON_ABI_VERSION 3
 #define PYTHON_ABI_STRING "3"
-
-
-/* Stable ABI for free-threaded builds (introduced in PEP 803)
-   is enabled by one of:
-     - Py_TARGET_ABI3T, or
-     - Py_LIMITED_API and Py_GIL_DISABLED.
-   "Output" macros to be used internally:
-     - Py_LIMITED_API (defines the subset of API we expose)
-     - _Py_OPAQUE_PYOBJECT (additionally hides what's ABI-incompatible between
-       free-threaded & GIL)
-     (Don't use Py_TARGET_ABI3T directly: it's currently only used to set these
-      2 macros. It's also available for users' convenience.)
- */
-#if defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED) \
-    && !defined(Py_TARGET_ABI3T)
-#  define Py_TARGET_ABI3T Py_LIMITED_API
-#endif
-#if defined(Py_TARGET_ABI3T)
-#  define _Py_OPAQUE_PYOBJECT
-#  if !defined(Py_LIMITED_API)
-#    define Py_LIMITED_API Py_TARGET_ABI3T
-#  elif Py_LIMITED_API > Py_TARGET_ABI3T
-     // if both are defined, use the *lower* version,
-     // i.e. maximum compatibility
-#    undef Py_LIMITED_API
-#    define Py_LIMITED_API Py_TARGET_ABI3T
-#  endif
-#endif
 
 #endif //_Py_PATCHLEVEL_H

@@ -1,5 +1,0 @@
-Fixed multiple error handling issues in the :mod:`!_remote_debugging` module
-including a double-free in code object caching, memory leaks on allocation
-failure, missing exception checks in binary format varint decoding, reference
-leaks on error paths in frame chain processing, and inconsistent thread status
-error reporting across platforms. Patch by Pablo Galindo.

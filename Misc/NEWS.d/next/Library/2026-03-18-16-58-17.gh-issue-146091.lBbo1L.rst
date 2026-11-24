@@ -1,3 +1,0 @@
-Fix a bug in :func:`termios.tcsetwinsize` where passing a sequence that
-raises an exception in ``__getitem__`` would cause a :exc:`SystemError`
-instead of propagating the original exception.

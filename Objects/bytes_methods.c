@@ -277,8 +277,8 @@ _Py_bytes_upper(char *result, const char *cptr, Py_ssize_t len)
 PyDoc_STRVAR_shared(_Py_title__doc__,
 "B.title() -> copy of B\n\
 \n\
-Return a titlecased version of B, i.e. ASCII words start with uppercase\n\
-characters, all remaining cased characters have lowercase.");
+Return a titlecased version of B, i.e. ASCII words start with\n\
+uppercase characters, all remaining cased characters have lowercase.");
 
 void
 _Py_bytes_title(char *result, const char *s, Py_ssize_t len)
@@ -377,6 +377,7 @@ _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to)
 }
 
 #define FASTSEARCH fastsearch
+#define STRINGLIB_IS_UNICODE 0
 #define STRINGLIB(F) stringlib_##F
 #define STRINGLIB_CHAR char
 #define STRINGLIB_SIZEOF_CHAR 1

@@ -245,6 +245,7 @@ is_unionable(PyObject *obj)
 {
     if (obj == Py_None ||
         PyType_Check(obj) ||
+        PySentinel_Check(obj) ||
         _PyGenericAlias_Check(obj) ||
         _PyUnion_Check(obj) ||
         Py_IS_TYPE(obj, &_PyTypeAlias_Type)) {
@@ -517,7 +518,8 @@ union_mro_entries(PyObject *self, PyObject *args)
 
 static PyMethodDef union_methods[] = {
     {"__mro_entries__", union_mro_entries, METH_O},
-    {"__class_getitem__", union_class_getitem, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {"__class_getitem__", union_class_getitem, METH_O|METH_CLASS,
+     PyDoc_STR("Create a union containing the given types")},
     {0}
 };
 

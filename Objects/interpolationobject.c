@@ -50,6 +50,7 @@ typedef struct {
     (assert(_PyInterpolation_CheckExact(op)), _Py_CAST(interpolationobject*, (op)))
 
 /*[clinic input]
+@vectorcall
 @classmethod
 Interpolation.__new__ as interpolation_new
 
@@ -63,7 +64,7 @@ static PyObject *
 interpolation_new_impl(PyTypeObject *type, PyObject *value,
                        PyObject *expression, PyObject *conversion,
                        PyObject *format_spec)
-/*[clinic end generated code: output=6488e288765bc1a9 input=fc5c285c1dd23d36]*/
+/*[clinic end generated code: output=6488e288765bc1a9 input=de7e890ea8f801e5]*/
 {
     interpolationobject *self = PyObject_GC_New(interpolationobject, type);
     if (!self) {
@@ -138,7 +139,7 @@ static PyMethodDef interpolation_methods[] = {
     {"__reduce__", interpolation_reduce, METH_NOARGS,
         PyDoc_STR("__reduce__() -> (cls, state)")},
     {"__class_getitem__", Py_GenericAlias,
-        METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+        METH_O|METH_CLASS, PyDoc_STR("Interpolations are generic over the types of their values")},
     {NULL, NULL},
 };
 
@@ -150,6 +151,7 @@ PyTypeObject _PyInterpolation_Type = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_new = interpolation_new,
+    .tp_vectorcall = interpolation_vectorcall,
     .tp_alloc = PyType_GenericAlloc,
     .tp_dealloc = interpolation_dealloc,
     .tp_clear = interpolation_clear,

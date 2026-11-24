@@ -4,8 +4,6 @@
 Logging HOWTO
 =============
 
-:Author: Vinay Sajip <vinay_sajip at red-dove dot com>
-
 .. _logging-basic-tutorial:
 
 .. currentmodule:: logging
@@ -147,13 +145,6 @@ interpreter, and don't just continue from the session described above::
    logger.info('So should this')
    logger.warning('And this, too')
    logger.error('And non-ASCII stuff, too, like Øresund and Malmö')
-
-.. versionchanged:: 3.9
-   The *encoding* argument was added. In earlier Python versions, or if not
-   specified, the encoding used is the default value used by :func:`open`. While
-   not shown in the above example, an *errors* argument can also now be passed,
-   which determines how encoding errors are handled. For available values and
-   the default, see the documentation for :func:`open`.
 
 And now if we open the file and look at what we have, we should find the log
 messages:
@@ -467,10 +458,9 @@ With the logger object configured, the following methods create log messages:
   a message and a level that corresponds to their respective method names. The
   message is actually a format string, which may contain the standard string
   substitution syntax of ``%s``, ``%d``, ``%f``, and so on.  The
-  rest of their arguments is a list of objects that correspond with the
-  substitution fields in the message.  With regard to ``**kwargs``, the
-  logging methods care only about a keyword of ``exc_info`` and use it to
-  determine whether to log exception information.
+  remaining positional arguments correspond to the substitution fields in the
+  message. These methods also accept the keyword arguments *exc_info*, *extra*,
+  *stack_info*, and *stacklevel*, described in :meth:`Logger.debug`.
 
 * :meth:`Logger.exception` creates a log message similar to
   :meth:`Logger.error`.  The difference is that :meth:`Logger.exception` dumps a
@@ -1008,9 +998,9 @@ Logged messages are formatted for presentation through instances of the
 use with the % operator and a dictionary.
 
 For formatting multiple messages in a batch, instances of
-:class:`BufferingFormatter` can be used. In addition to the format
-string (which is applied to each message in the batch), there is provision for
-header and trailer format strings.
+:class:`BufferingFormatter` can be used. A line formatter formats each record
+in the batch. To add a header or footer, override
+:meth:`~BufferingFormatter.formatHeader` or :meth:`~BufferingFormatter.formatFooter`.
 
 When filtering based on logger level and/or handler level is not enough,
 instances of :class:`Filter` can be added to both :class:`Logger` and
@@ -1061,10 +1051,7 @@ In the preceding sections and examples, it has been assumed that the message
 passed when logging the event is a string. However, this is not the only
 possibility. You can pass an arbitrary object as a message, and its
 :meth:`~object.__str__` method will be called when the logging system needs to
-convert it to a string representation. In fact, if you want to, you can avoid
-computing a string representation altogether - for example, the
-:class:`~handlers.SocketHandler` emits an event by pickling it and sending it
-over the wire.
+convert it to a string representation.
 
 
 Optimization

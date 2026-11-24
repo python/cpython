@@ -1,1 +1,0 @@
-Add ``application/sql`` and ``application/vnd.sqlite3`` into ``mimetypes``.

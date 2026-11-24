@@ -60,11 +60,16 @@ or on combining URL components into a URL string.
    *missing_as_none* is true.
    Not defined component are represented an empty string (by default) or
    ``None`` if *missing_as_none* is true.
-   The components are not broken up
-   into smaller parts (for example, the network location is a single string), and %
-   escapes are not expanded. The delimiters as shown above are not part of the
-   result, except for a leading slash in the *path* component, which is retained if
-   present.  For example:
+   The delimiters as shown above are not part of the result, except for a
+   leading slash in the *path* component, which is retained if present.
+
+   Additionally, the netloc property is broken down into these additional
+   attributes added to the returned object: username, password, hostname, and
+   port.
+
+   Percent-encoded sequences are not decoded.
+
+   For example:
 
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
@@ -220,6 +225,16 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.15
       Added the *missing_as_none* parameter.
 
+   .. versionchanged:: 3.16
+      Passing an object that is not a string, bytes, or ``None`` as
+      *urlstring* or *scheme* now raises :exc:`TypeError` instead of
+      :exc:`AttributeError`.
+
+   .. deprecated:: 3.16
+      Accepting objects with false values (like ``0`` and ``[]``) except empty
+      strings, byte-like objects and ``None`` as *urlstring* or *scheme* is
+      now deprecated.  They will raise :exc:`TypeError` in Python 3.18.
+
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
 
 
@@ -336,6 +351,15 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.15
       Added the *keep_empty* parameter.
 
+   .. versionchanged:: 3.16
+      Passing an object that is not a string, bytes, or ``None`` in *parts*
+      now raises :exc:`TypeError` instead of :exc:`AttributeError`.
+
+   .. deprecated:: 3.16
+      Accepting objects with false values (like ``0`` and ``[]``) except empty
+      strings, byte-like objects and ``None`` in *parts* is now deprecated.
+      They will raise :exc:`TypeError` in Python 3.18.
+
 
 .. function:: urlparse(urlstring, scheme=None, allow_fragments=True, *, missing_as_none=False)
 
@@ -352,6 +376,16 @@ or on combining URL components into a URL string.
    of the *path* portion of the URL (see :rfc:`3986`).
    :func:`urlsplit` should generally be used instead of :func:`urlparse`.
    A separate function is needed to separate the path segments and parameters.
+
+   .. versionchanged:: 3.16
+      Passing an object that is not a string, bytes, or ``None`` as
+      *urlstring* or *scheme* now raises :exc:`TypeError` instead of
+      :exc:`AttributeError`.
+
+   .. deprecated:: 3.16
+      Accepting objects with false values (like ``0`` and ``[]``) except empty
+      strings, byte-like objects and ``None`` as *urlstring* or *scheme* is
+      now deprecated.  They will raise :exc:`TypeError` in Python 3.18.
 
 .. function:: urlunparse(parts)
               urlunparse(parts, *, keep_empty)
@@ -373,6 +407,15 @@ or on combining URL components into a URL string.
 
    .. versionchanged:: 3.15
       Added the *keep_empty* parameter.
+
+   .. versionchanged:: 3.16
+      Passing an object that is not a string, bytes, or ``None`` in *parts*
+      now raises :exc:`TypeError` instead of :exc:`AttributeError`.
+
+   .. deprecated:: 3.16
+      Accepting objects with false values (like ``0`` and ``[]``) except empty
+      strings, byte-like objects and ``None`` in *parts* is now deprecated.
+      They will raise :exc:`TypeError` in Python 3.18.
 
 
 .. function:: urljoin(base, url, allow_fragments=True)
@@ -417,6 +460,15 @@ or on combining URL components into a URL string.
 
       Behavior updated to match the semantics defined in :rfc:`3986`.
 
+   .. versionchanged:: 3.16
+      Passing an object that is not a string, bytes, or ``None`` as *base* or
+      *url* now raises :exc:`TypeError` instead of :exc:`AttributeError`.
+
+   .. deprecated:: 3.16
+      Accepting objects with false values (like ``0`` and ``[]``) except empty
+      strings, byte-like objects and ``None`` as *base* or *url* is now
+      deprecated.  They will raise :exc:`TypeError` in Python 3.18.
+
 
 .. function:: urldefrag(url, *, missing_as_none=False)
 
@@ -446,6 +498,15 @@ or on combining URL components into a URL string.
 
    .. versionchanged:: 3.15
       Added the *missing_as_none* parameter.
+
+   .. versionchanged:: 3.16
+      Passing an object that is not a string, bytes, or ``None`` as *url* now
+      raises :exc:`TypeError` instead of :exc:`AttributeError`.
+
+   .. deprecated:: 3.16
+      Accepting objects with false values (like ``0`` and ``[]``) except empty
+      strings, byte-like objects and ``None`` as *url* is now deprecated.
+      They will raise :exc:`TypeError` in Python 3.18.
 
 .. function:: unwrap(url)
 
@@ -644,8 +705,9 @@ task isn't already covered by the URL parsing functions above.
 
    The optional *encoding* and *errors* parameters specify how to deal with
    non-ASCII characters, as accepted by the :meth:`str.encode` method.
-   *encoding* defaults to ``'utf-8'``.
-   *errors* defaults to ``'strict'``, meaning unsupported characters raise a
+   Although these parameters default to ``None`` in the function signature,
+   when processing :class:`str` inputs, *encoding* effectively defaults to ``'utf-8'``
+   and *errors* to ``'strict'``, meaning unsupported characters raise a
    :class:`UnicodeEncodeError`.
    *encoding* and *errors* must not be supplied if *string* is a
    :class:`bytes`, or a :class:`TypeError` is raised.
