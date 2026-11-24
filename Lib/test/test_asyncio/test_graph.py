@@ -600,6 +600,24 @@ class CallStackTestBase:
         self.assertIs(parent.future, consumer)
         self.assertFalse(parent.awaited_by)
 
+    async def test_shield_discards_awaited_by_on_cancel(self):
+        async def consume(fut):
+            await fut
+
+        release = asyncio.Event()
+        child = asyncio.create_task(release.wait())
+        shielded = asyncio.shield(child)
+        consumer = asyncio.create_task(consume(shielded), eager_start=True)
+        consumer.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await consumer
+
+        self.assertFalse(child.done())
+        graph = asyncio.capture_call_graph(child, limit=0)
+        release.set()
+        await child
+        self.assertFalse(graph.awaited_by)
+
     async def test_stack_timeout(self):
 
         stack_for_inner = None

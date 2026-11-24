@@ -995,10 +995,9 @@ def shield(arg):
 
     futures.future_add_to_awaited_by(inner, outer)
 
-    def _clear_awaited_by_callback(inner):
+    def _inner_done_callback(inner):
         futures.future_discard_from_awaited_by(inner, outer)
 
-    def _inner_done_callback(inner):
         if outer.cancelled():
             return
 
@@ -1014,10 +1013,8 @@ def shield(arg):
     def _outer_done_callback(outer):
         if not inner.done():
             inner.remove_done_callback(_inner_done_callback)
-            inner.remove_done_callback(_clear_awaited_by_callback)
             futures.future_discard_from_awaited_by(inner, outer)
 
-    inner.add_done_callback(_clear_awaited_by_callback)
     inner.add_done_callback(_inner_done_callback)
     outer.add_done_callback(_outer_done_callback)
     return outer
