@@ -3,6 +3,7 @@
 # portable than they had been thought to be.
 
 import asyncio
+import builtins
 import codecs
 import contextlib
 import decimal
@@ -28,6 +29,7 @@ import threading
 import time
 import types
 import unittest
+import unittest.mock
 import uuid
 import warnings
 from test import support
@@ -4682,11 +4684,52 @@ class CPUCountTests(unittest.TestCase):
         affinity2 = os.process_cpu_count()
         self.assertEqual(affinity2, affinity1 - 1)
 
+    @unittest.skipUnless(sys.platform == "linux", "Requires Linux")
+    def test_missing_cgroups_files(self):
+        original_open = builtins.open
+        original_exists = os.path.exists
+
+        def force_proc_mounts_parsing_exists(path):
+            if path == "/sys/fs/cgroup/cgroup.controllers":
+                return False
+            return original_exists(path)
+
+        with unittest.mock.patch(
+            "os.path.exists",
+            force_proc_mounts_parsing_exists
+        ):
+            # /proc/mounts parsing correctly identifies where cgroup sysfs is
+            # mounted
+            sysfs_cgroup_path = os._get_cgroup2_mount_point()
+            if sysfs_cgroup_path is None:
+                # 99% of the time will be /sys/fs/cgroup, so if we failed to
+                # find it, that better not exist!
+                self.assertFalse(original_exists("/sys/fs/cgroup"))
+            else:
+                self.assertTrue(
+                    original_exists(
+                        os.path.join(sysfs_cgroup_path, "cgroup.controllers")
+                    )
+                )
+
+            for path_to_fail in [
+                "/proc/self/cgroup",
+                "/proc/mounts",
+                os._get_cgroup2_mount_point()
+            ]:
+                def might_fail_to_open(path, *args, **kwargs):
+                    if path.startswith(path_to_fail):
+                        raise OSError("disabled for test")
+                    else:
+                        return original_open(path, *args, **kwargs)
+                with unittest.mock.patch("builtins.open", might_fail_to_open):
+                    self.assertIsNone(os._cpu_count_cgroups())
+
     @unittest.skipUnless(
         sys.platform == "linux" and shutil.which("systemd-run") is not None,
         "testing cgroups requires Linux with systemd-run",
     )
-    def test_process_cpu_count_cgroups(self):
+    def test_process_cpu_count_cgroups_end_to_end(self):
         """``os.process_cpu_count()`` respects cgroups v2 limits."""
         base_count = os.process_cpu_count()
         if base_count is None:

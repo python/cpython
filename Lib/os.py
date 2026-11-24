@@ -28,7 +28,7 @@ import stat as st
 
 from _collections_abc import _check_methods
 
-lazy from builtins import open as _builtins_open
+lazy import builtins
 lazy import math
 
 GenericAlias = type(list[int])
@@ -1248,7 +1248,7 @@ if sys.platform == "linux":
             return "/sys/fs/cgroup"
 
         try:
-            with _builtins_open("/proc/mounts") as fp:
+            with builtins.open("/proc/mounts") as fp:
                 for line in fp:
                     parts = line.split()
                     _, mount_dir, mount_type, *_ = parts
@@ -1264,7 +1264,7 @@ if sys.platform == "linux":
         if successful.
         """
         try:
-            with _builtins_open(filename) as fp:
+            with builtins.open(filename) as fp:
                 line = fp.readline()
         except OSError:
             return None
@@ -1293,7 +1293,7 @@ if sys.platform == "linux":
 
         cgroup_subpath = None
         try:
-            fp = _builtins_open("/proc/self/cgroup")
+            fp = builtins.open("/proc/self/cgroup")
         except OSError:
             return None
         with fp:
