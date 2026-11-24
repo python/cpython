@@ -237,64 +237,75 @@ class TestForwardRefFormat(unittest.TestCase):
             arg2, support.EqualToForwardRef("undefined", is_class=True, owner=UnionForwardrefs)
         )
 
-    def test_nested_deferred(self):
+    def test_nested_genericalias_deferred(self):
         # Test that ForwardReferences inside generic aliases and
         # typing.Annotated are correctly caught and resolved.
 
+        # Create a user generic class and simplify its string repr
+        class UserGeneric[T]: ...
+        UserGeneric.__qualname__ = "UserGeneric"
+        UserGeneric.__module__ = "usermodule"
+
+        # Old style typing.List is included to test typing._GenericAlias
+        # with ._inst = False and a value for ._name
         class NestedForwardRefs:
             genericalias: Unknown1[str, list[Unknown2]]
+            usergeneric: Unknown1[str, UserGeneric[Unknown2]]
+            typing_list: Unknown1[str, typing.List[Unknown2]]
+            typing_union: Unknown1[str, typing.Union[Unknown2, int]]
             annotated: Unknown1[str, typing.Annotated[Unknown2, '']]
             extra_nested: Unknown3[tuple[Unknown4[list[Unknown5]]]]
 
+            # Generics with no internal forward references are stored as one value
+            # and are not reconstructed directly.
+            known_internal_generic: Unknown1[str, list[int]]
+            known_internal_typing_generic: Unknown1[str, UserGeneric[int]]
+            known_internal_typing_union: Unknown1[str, typing.Union[str, int]]
+            known_internal_annotated: Unknown1[str, typing.Annotated[str, '']]
+
         annos = get_annotations(NestedForwardRefs, format=Format.FORWARDREF)
 
-        gen = annos['genericalias']
-        annotated = annos['annotated']
-        nested = annos['extra_nested']
+        # Tuples of annotation name, expected string, expected value, needs_unknown2
+        subtests = (
+            # These annotations fail to resolve if Unknown2 is not defined
+            ("genericalias", "Unknown1[str, list[Unknown2]]", tuple[str, list[str]], True),
+            ("usergeneric", "Unknown1[str, usermodule.UserGeneric[Unknown2]]", tuple[str, UserGeneric[str]], True),
+            ("typing_list", "Unknown1[str, typing.List[Unknown2]]", tuple[str, typing.List[str]], True),
+            ("typing_union", "Unknown1[str, typing.Union[Unknown2, int]]", tuple[str, typing.Union[str, int]], True),
+            ("annotated", "Unknown1[str, typing.Annotated[Unknown2, '']]", tuple[str, typing.Annotated[str, '']], True),
+            ("extra_nested", "Unknown3[tuple[Unknown4[list[Unknown5]]]]", list[tuple[set[list[int]]]], True),
 
-        self.assertEqual(
-            gen.evaluate(format=Format.STRING),
-            "Unknown1[str, list[Unknown2]]"
+            # These annotations do not require Unknown2 to be defined to resolve
+            ("known_internal_generic", "Unknown1[str, list[int]]", tuple[str, list[int]], False),
+            ("known_internal_typing_generic", "Unknown1[str, usermodule.UserGeneric[int]]", tuple[str, UserGeneric[int]], False),
+            ("known_internal_typing_union", "Unknown1[str, str | int]", tuple[str, typing.Union[str, int]], False),
+            ("known_internal_annotated", "Unknown1[str, typing.Annotated[str, '']]", tuple[str, typing.Annotated[str, '']], False)
         )
 
-        self.assertEqual(
-            annotated.evaluate(format=Format.STRING),
-            "Unknown1[str, typing.Annotated[Unknown2, '']]",
-        )
-
-        self.assertEqual(
-            nested.evaluate(format=Format.STRING),
-            "Unknown3[tuple[Unknown4[list[Unknown5]]]]",
-        )
+        for name, str_result, _, _ in subtests:
+            with self.subTest(type="Format.STRING Evaluation", annotation=name):
+                self.assertEqual(annos[name].evaluate(format=Format.STRING), str_result)
 
         Unknown1 = tuple
+
         # Unknown2 is still undefined, these should raise
-        with self.assertRaises(NameError):
-            gen.evaluate()
-        with self.assertRaises(NameError):
-            annotated.evaluate()
+        for name, _, _, should_fail in subtests:
+            if should_fail:
+                with self.subTest(type="Undefined raise NameError", annotation=name):
+                    with self.assertRaises(NameError):
+                        annos[name].evaluate()
 
-        # Test that the annotations fully evaluate now both unknowns are defined
+        # Once all names are defined, they fully evaluate correctly
         Unknown2 = str
-        self.assertEqual(
-            gen.evaluate(),
-            tuple[str, list[str]],
-        )
-
-        self.assertEqual(
-            annotated.evaluate(),
-            tuple[str, typing.Annotated[str, '']],
-        )
-
         Unknown3 = list
         Unknown4 = set
         Unknown5 = int
-        self.assertEqual(
-            nested.evaluate(),
-            list[tuple[set[list[int]]]],
-        )
 
-    def test_nested_special_generic(self):
+        for name, _, resolved, _ in subtests:
+            with self.subTest(type="format.VALUE evaluation", annotation=name):
+                self.assertEqual(annos[name].evaluate(), resolved)
+
+    def test_nested_genericalias_nonsubscript(self):
         # Test that ForwardRef works correctly for generic aliases that aren't
         # created through subscripting
         class NonSubscriptableGeneric:
