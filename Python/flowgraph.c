@@ -2483,14 +2483,14 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts,
                     case JUMP:
                     case JUMP_IF_NONE:
                         i -= jump_thread(bb, inst, target, JUMP_IF_NONE);
-                        break;
+                        continue;
                     case JUMP_IF_NOT_NONE:
                         // No need to check for loops here, a block's b_next
                         // cannot point to itself.
                         assert(inst->i_target != inst->i_target->b_next);
                         inst->i_target = inst->i_target->b_next;
                         i--;
-                        break;
+                        continue;
                 }
                 break;
             case JUMP_IF_NOT_NONE:
@@ -2498,14 +2498,14 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts,
                     case JUMP:
                     case JUMP_IF_NOT_NONE:
                         i -= jump_thread(bb, inst, target, JUMP_IF_NOT_NONE);
-                        break;
+                        continue;
                     case JUMP_IF_NONE:
                         // No need to check for loops here, a block's b_next
                         // cannot point to itself.
                         assert(inst->i_target != inst->i_target->b_next);
                         inst->i_target = inst->i_target->b_next;
                         i--;
-                        break;
+                        continue;
                 }
                 break;
             case POP_JUMP_IF_FALSE:
@@ -3677,7 +3677,7 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &to_bool));
             }
-            if (instr->i_opcode == JUMP_IF_NONE || instr->i_opcode == JUMP_IF_NOT_NONE) {
+            else if (instr->i_opcode == JUMP_IF_NONE || instr->i_opcode == JUMP_IF_NOT_NONE) {
                 assert(i == b->b_iused - 1);
                 instr->i_opcode = instr->i_opcode == JUMP_IF_NONE ?
                                           POP_JUMP_IF_NONE : POP_JUMP_IF_NOT_NONE;
