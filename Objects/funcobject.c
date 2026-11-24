@@ -350,6 +350,32 @@ func_clear_version(PyInterpreterState *interp, PyFunctionObject *func)
     func->func_version = FUNC_VERSION_CLEARED;
 }
 
+/* Notify watchers that *field is about to change, then store new_value (a new
+   reference) into it.
+
+   The function's critical section is held across both steps so that concurrent
+   modifications of the same function deliver their events in the same order as
+   their stores.  The watchers must not be called while the world is stopped as
+   they can run arbitrary code and can deadlock by stopping the world again
+   (e.g. by triggering a garbage collection) or by waiting on a lock held by a
+   parked thread. */
+static void
+func_set_watched_field(PyFunctionObject *func, PyFunction_WatchEvent event,
+                       PyObject **field, PyObject *new_value)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *old_value;
+    Py_BEGIN_CRITICAL_SECTION(func);
+    handle_func_event(event, func, new_value);
+    _PyEval_StopTheWorld(interp);
+    func_clear_version(interp, func);
+    old_value = *field;
+    *field = new_value;
+    _PyEval_StartTheWorld(interp);
+    Py_END_CRITICAL_SECTION();
+    Py_XDECREF(old_value);
+}
+
 void
 _PyFunction_ClearCodeByVersion(uint32_t version)
 {
@@ -436,14 +462,8 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
         return -1;
     }
     PyFunctionObject *func = (PyFunctionObject *)op;
-    handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS, func, defaults);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    func_clear_version(interp, func);
-    PyObject *old_defaults = func->func_defaults;
-    func->func_defaults = defaults;
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_defaults);
+    func_set_watched_field(func, PyFunction_EVENT_MODIFY_DEFAULTS,
+                           &func->func_defaults, defaults);
     return 0;
 }
 
@@ -486,14 +506,8 @@ PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
         return -1;
     }
     PyFunctionObject *func = (PyFunctionObject *)op;
-    handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS, func, defaults);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    func_clear_version(interp, func);
-    PyObject *old_kwdefaults = func->func_kwdefaults;
-    func->func_kwdefaults = defaults;
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_kwdefaults);
+    func_set_watched_field(func, PyFunction_EVENT_MODIFY_KWDEFAULTS,
+                           &func->func_kwdefaults, defaults);
     return 0;
 }
 
@@ -731,14 +745,8 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         }
     }
 
-    handle_func_event(PyFunction_EVENT_MODIFY_CODE, op, value);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    func_clear_version(interp, op);
-    PyObject *old_code = op->func_code;
-    op->func_code = Py_NewRef(value);
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_code);
+    func_set_watched_field(op, PyFunction_EVENT_MODIFY_CODE,
+                           &op->func_code, Py_NewRef(value));
     return 0;
 }
 
@@ -786,8 +794,8 @@ func_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__qualname__ must be set to a string object");
         return -1;
     }
-    handle_func_event(PyFunction_EVENT_MODIFY_QUALNAME, (PyFunctionObject *) op, value);
     Py_BEGIN_CRITICAL_SECTION(op);
+    handle_func_event(PyFunction_EVENT_MODIFY_QUALNAME, op, value);
     _PyObject_XSetRefDelayed(&op->func_qualname, Py_NewRef(value));
     Py_END_CRITICAL_SECTION();
     return 0;
@@ -873,14 +881,8 @@ func_set_defaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
 
-    handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS, op, value);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    func_clear_version(interp, op);
-    PyObject *old_defaults = op->func_defaults;
-    op->func_defaults = Py_XNewRef(value);
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_defaults);
+    func_set_watched_field(op, PyFunction_EVENT_MODIFY_DEFAULTS,
+                           &op->func_defaults, Py_XNewRef(value));
     return 0;
 }
 
@@ -921,14 +923,8 @@ func_set_kwdefaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
 
-    handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS, op, value);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyEval_StopTheWorld(interp);
-    func_clear_version(interp, op);
-    PyObject *old_kwdefaults = op->func_kwdefaults;
-    op->func_kwdefaults = Py_XNewRef(value);
-    _PyEval_StartTheWorld(interp);
-    Py_XDECREF(old_kwdefaults);
+    func_set_watched_field(op, PyFunction_EVENT_MODIFY_KWDEFAULTS,
+                           &op->func_kwdefaults, Py_XNewRef(value));
     return 0;
 }
 

@@ -10,6 +10,7 @@
 #include "pycore_interp_structs.h" // CODE_MAX_WATCHERS
 #include "pycore_context.h"       // CONTEXT_MAX_WATCHERS
 #include "pycore_lock.h"          // _PyOnceFlag
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_RELAXED()
 
 /*[clinic input]
 module _testcapi
@@ -648,6 +649,117 @@ allocate_too_many_func_watchers(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+// A function watcher that checks MODIFY events for one function will arrive in
+// the same order as their corresponding stores.  When an event is delivered,
+// the watched field must still hold the value announced by the previous event.
+// Written in C so that it doesn't run any bytecode or drop references to
+// objects owned by other threads, either of which can block and suspend the
+// function's critical section.
+static int order_watcher_id = -1;
+static PyObject *order_target;
+static PyFunction_WatchEvent order_event;
+static PyObject *order_history;  // announced values, in event order
+static Py_ssize_t order_mismatches;
+
+static PyObject *
+get_watched_func_field(PyFunctionObject *func, PyFunction_WatchEvent event)
+{
+    PyObject *value;
+    switch (event) {
+        case PyFunction_EVENT_MODIFY_CODE:
+            value = FT_ATOMIC_LOAD_PTR_RELAXED(func->func_code);
+            break;
+        case PyFunction_EVENT_MODIFY_DEFAULTS:
+            value = FT_ATOMIC_LOAD_PTR_RELAXED(func->func_defaults);
+            break;
+        case PyFunction_EVENT_MODIFY_KWDEFAULTS:
+            value = FT_ATOMIC_LOAD_PTR_RELAXED(func->func_kwdefaults);
+            break;
+        case PyFunction_EVENT_MODIFY_QUALNAME:
+            value = FT_ATOMIC_LOAD_PTR_RELAXED(func->func_qualname);
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
+    return value == NULL ? Py_None : value;
+}
+
+static int
+order_func_watcher_callback(PyFunction_WatchEvent event,
+                            PyFunctionObject *func, PyObject *new_value)
+{
+    if ((PyObject *)func != order_target || event != order_event) {
+        return 0;
+    }
+    PyObject *current = get_watched_func_field(func, event);
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(order_history);
+    Py_ssize_t n = PyList_GET_SIZE(order_history);
+    if (PyList_GET_ITEM(order_history, n - 1) != current) {
+        _Py_atomic_add_ssize(&order_mismatches, 1);
+    }
+    res = PyList_Append(order_history, new_value ? new_value : Py_None);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
+static PyObject *
+start_func_order_watcher(PyObject *self, PyObject *args)
+{
+    PyObject *func;
+    int event;
+    if (!PyArg_ParseTuple(args, "O!i", &PyFunction_Type, &func, &event)) {
+        return NULL;
+    }
+    if (event != PyFunction_EVENT_MODIFY_CODE &&
+        event != PyFunction_EVENT_MODIFY_DEFAULTS &&
+        event != PyFunction_EVENT_MODIFY_KWDEFAULTS &&
+        event != PyFunction_EVENT_MODIFY_QUALNAME)
+    {
+        PyErr_SetString(PyExc_ValueError, "expected a MODIFY event");
+        return NULL;
+    }
+    if (order_watcher_id != -1) {
+        PyErr_SetString(PyExc_RuntimeError, "order watcher already active");
+        return NULL;
+    }
+    PyObject *current = get_watched_func_field((PyFunctionObject *)func,
+                                               (PyFunction_WatchEvent)event);
+    PyObject *history = PyList_New(1);
+    if (history == NULL) {
+        return NULL;
+    }
+    PyList_SET_ITEM(history, 0, Py_NewRef(current));
+    int wid = PyFunction_AddWatcher(order_func_watcher_callback);
+    if (wid < 0) {
+        Py_DECREF(history);
+        return NULL;
+    }
+    order_watcher_id = wid;
+    order_target = Py_NewRef(func);
+    order_event = (PyFunction_WatchEvent)event;
+    order_history = history;
+    order_mismatches = 0;
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+stop_func_order_watcher(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    if (order_watcher_id == -1) {
+        PyErr_SetString(PyExc_RuntimeError, "order watcher not active");
+        return NULL;
+    }
+    if (PyFunction_ClearWatcher(order_watcher_id) < 0) {
+        return NULL;
+    }
+    order_watcher_id = -1;
+    PyObject *result = Py_BuildValue("(Nn)", order_history, order_mismatches);
+    order_history = NULL;
+    Py_CLEAR(order_target);
+    return result;
+}
+
 // Test contexct object watchers
 #define NUM_CONTEXT_WATCHERS 2
 static int context_watcher_ids[NUM_CONTEXT_WATCHERS] = {-1, -1};
@@ -861,6 +973,8 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_SET_FUNC_KWDEFAULTS_VIA_CAPI_METHODDEF
     {"allocate_too_many_func_watchers", allocate_too_many_func_watchers,
      METH_NOARGS, NULL},
+    {"start_func_order_watcher", start_func_order_watcher, METH_VARARGS, NULL},
+    {"stop_func_order_watcher",  stop_func_order_watcher,  METH_NOARGS,  NULL},
 
     // Code object watchers.
     {"add_context_watcher",         add_context_watcher,        METH_O,       NULL},
