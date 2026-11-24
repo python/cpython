@@ -43,7 +43,7 @@ Process #1..n:
   _ResultItems in "Result Q"
 """
 
-__author__ = 'Brian Quinlan (brian@sweetapp.com)'
+# Original author: Brian Quinlan (brian@sweetapp.com)
 
 import os
 from concurrent.futures import _base
@@ -58,6 +58,7 @@ import weakref
 from functools import partial
 import itertools
 import sys
+lazy import warnings
 from traceback import format_exception
 
 
@@ -119,10 +120,11 @@ EXTRA_QUEUED_CALLS = 1
 
 
 # On Windows, WaitForMultipleObjects is used to wait for processes to finish.
-# It can wait on, at most, 63 objects. There is an overhead of two objects:
+# It can wait on, at most, 64 objects. There is an overhead of three objects:
 # - the result queue reader
 # - the thread wakeup reader
-_MAX_WINDOWS_WORKERS = 63 - 2
+# - the SIGINT handler
+_MAX_WINDOWS_WORKERS = 64 - 3
 
 # Hack to embed stringification of remote traceback in local traceback
 
@@ -200,7 +202,14 @@ def _process_chunk(fn, chunk):
     This function is run in a separate process.
 
     """
-    return [fn(*args) for args in chunk]
+    results = []
+    for args in chunk:
+        try:
+            result = (fn(*args), None)
+        except BaseException as exc:
+            result = (None, exc)
+        results.append(result)
+    return results
 
 
 def _sendback_result(result_queue, work_id, result=None, exception=None,
@@ -963,7 +972,7 @@ class ProcessPoolExecutor(_base.Executor):
                               itertools.batched(zip(*iterables), chunksize),
                               timeout=timeout,
                               buffersize=buffersize)
-        return _chain_from_iterable_of_lists(results)
+        return _base._MapResultIterator(_chain_from_iterable_of_lists(results))
 
     def shutdown(self, wait=True, *, cancel_futures=False):
         with self._shutdown_lock:
@@ -1057,3 +1066,10 @@ class ProcessPoolExecutor(_base.Executor):
         submitted).
         """
         return self._force_shutdown(operation=_KILL)
+
+
+def __getattr__(name):
+    if name == "__author__":
+        warnings._deprecated("__author__", remove=(3, 20))
+        return 'Brian Quinlan (brian@sweetapp.com)'  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

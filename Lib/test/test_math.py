@@ -287,8 +287,6 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.atanh, NINF)
         self.assertTrue(math.isnan(math.atanh(NAN)))
 
-    @unittest.skipIf(sys.platform.startswith("sunos"),
-                     "skipping, see gh-138573")
     def testAtan2(self):
         self.assertRaises(TypeError, math.atan2)
         self.ftest('atan2(-1, 0)', math.atan2(-1, 0), -math.pi/2)
@@ -350,6 +348,15 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.atan2(NAN, 2.3)))
         self.assertTrue(math.isnan(math.atan2(NAN, INF)))
         self.assertTrue(math.isnan(math.atan2(NAN, NAN)))
+        # overflow and underflow of y/x
+        self.assertEqual(math.atan2(1E-320, 1E300), 0.0)
+        self.assertEqual(math.atan2(-1E-320, 1E300), -0.0)
+        self.assertAlmostEqual(math.atan2(1E300, 1E-320), math.pi/2)
+        self.assertAlmostEqual(math.atan2(1E300, -1E-320), math.pi/2)
+        self.assertAlmostEqual(math.atan2(1E-320, -1E300), math.pi)
+        self.assertAlmostEqual(math.atan2(-1E-320, -1E300), -math.pi)
+        self.assertAlmostEqual(math.atan2(-1E300, 1E-320), -math.pi/2)
+        self.assertAlmostEqual(math.atan2(-1E300, -1E-320), -math.pi/2)
 
     def testCbrt(self):
         self.assertRaises(TypeError, math.cbrt)
@@ -2144,7 +2151,12 @@ class MathTests(unittest.TestCase):
         fail_fmt = "{}: {}{!r}: {}"
 
         failures = []
+        ids = set()
         for id, fn, args, expected, flags in parse_mtestfile(math_testcases):
+            if id in ids:
+                failures.append(f"Duplicate test id {id}")
+            ids.add(id)
+
             func = getattr(math, fn)
 
             if 'invalid' in flags or 'divide-by-zero' in flags:
@@ -2682,11 +2694,8 @@ class FMATests(unittest.TestCase):
     @unittest.skipIf(
         sys.platform.startswith(("freebsd", "wasi", "netbsd", "emscripten", "cygwin"))
         or (sys.platform == "android" and platform.machine() == "x86_64")
-        or support.linked_to_musl(),  # gh-131032
+        or (support.linked_to_musl() and support.linked_to_musl() < (1, 2, 6)),  # gh-131032
         f"this platform doesn't implement IEE 754-2008 properly")
-    # gh-131032: musl is fixed but the fix is not yet released; when the fixed
-    # version is known change this to:
-    #   or support.linked_to_musl() < (1, <m>, <p>)
     def test_fma_zero_result(self):
         nonnegative_finites = [0.0, 1e-300, 2.3, 1e300]
 
