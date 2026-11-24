@@ -1,0 +1,2 @@
+Fix remote inspection of suspended asyncio tasks. Their stacks could include
+frames from the event loop. Patch by Timofei Ivankov.
