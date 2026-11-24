@@ -186,6 +186,47 @@ class IsolatedCodeGenTests(CodegenTestCase):
         ]
         self.codegen_test(snippet, expected)
 
+    def test_del_for_store_deref(self):
+        snippet = textwrap.dedent("""
+            def f():
+                x = 1
+                def g():
+                    return x
+                del x
+        """)
+        expected = [
+            ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
+            ('LOAD_CONST', 0),
+            ('MAKE_FUNCTION', None),
+            ('STORE_NAME', 0),
+            ('LOAD_CONST', 1),
+            ('RETURN_VALUE', None),
+            [
+                ('RESUME', 0),
+                ('LOAD_CONST', 0),
+                ('STORE_DEREF', 0),
+                ('LOAD_CLOSURE', 0),
+                ('BUILD_TUPLE', 1),
+                ('LOAD_CONST', 1),
+                ('MAKE_FUNCTION', None),
+                ('SET_FUNCTION_ATTRIBUTE', 8),
+                ('STORE_FAST', 0),
+                ('PUSH_NULL', None),
+                ('STORE_DEREF', 0),
+                ('LOAD_CONST', 2),
+                ('RETURN_VALUE', None),
+                [
+                    ('RESUME', 0),
+                    ('LOAD_DEREF', 0),
+                    ('RETURN_VALUE', None),
+                    ('LOAD_CONST', 0),
+                    ('RETURN_VALUE', None),
+                ],
+            ],
+        ]
+        self.codegen_test(snippet, expected)
+
     def test_frozenset_optimization(self):
         l1 = self.Label()
         snippet = "frozenset({1, 2, 3})"

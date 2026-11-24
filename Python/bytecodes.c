@@ -2395,8 +2395,22 @@ dummy_func(
 
         inst(STORE_DEREF, (v --)) {
             PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
-            PyObject *value_o = PyStackRef_IsNull(v) ? NULL : PyStackRef_AsPyObjectSteal(v);
-            PyCell_SetTakeRef(cell, value_o);
+            int err = 0;
+            if (PyStackRef_IsNull(v)) {
+                DEAD(v);
+                PyObject *oldobj = PyCell_SwapTakeRef(cell, NULL);
+                if (oldobj == NULL) {
+                    _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
+                    err = -1;
+                }
+                else {
+                    Py_DECREF(oldobj);
+                }
+            }
+            else {
+                PyCell_SetTakeRef(cell, PyStackRef_AsPyObjectSteal(v));
+            }
+            ERROR_IF(err < 0);
         }
 
         inst(COPY_FREE_VARS, (--)) {

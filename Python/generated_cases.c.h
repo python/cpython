@@ -12282,13 +12282,37 @@
             _PyStackRef v;
             v = stack_pointer[-1];
             PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
-            PyObject *value_o = PyStackRef_IsNull(v) ? NULL : PyStackRef_AsPyObjectSteal(v);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyFrame_StackPointerValidate(frame);
-            PyCell_SetTakeRef(cell, value_o);
-            _PyFrame_StackPointerInvalidate(frame);
+            int err = 0;
+            if (PyStackRef_IsNull(v)) {
+                PyObject *oldobj = PyCell_SwapTakeRef(cell, NULL);
+                if (oldobj == NULL) {
+                    stack_pointer += -1;
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyFrame_StackPointerValidate(frame);
+                    _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
+                    _PyFrame_StackPointerInvalidate(frame);
+                    err = -1;
+                }
+                else {
+                    stack_pointer += -1;
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyFrame_StackPointerValidate(frame);
+                    Py_DECREF(oldobj);
+                    _PyFrame_StackPointerInvalidate(frame);
+                }
+            }
+            else {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                PyCell_SetTakeRef(cell, PyStackRef_AsPyObjectSteal(v));
+                _PyFrame_StackPointerInvalidate(frame);
+                stack_pointer += -1;
+            }
+            if (err < 0) {
+                JUMP_TO_LABEL(error);
+            }
             DISPATCH();
         }
 
