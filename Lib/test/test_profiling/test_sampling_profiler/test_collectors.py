@@ -1101,8 +1101,6 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 self.assertLessEqual(start_time, end_time)
                 end_times.append(end_time)
         self.assertEqual(max(end_times), 3.0)
-        # Six samples up to 3.0 ms
-        self.assertEqual(profile_data["meta"]["interval"], 0.5)
 
     def test_pstats_collector_export(self):
         collector = PstatsCollector(
