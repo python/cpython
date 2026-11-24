@@ -18,7 +18,7 @@
 #include "pycore_function.h"
 #include "pycore_import.h"        // _PyImport_LoadLazyImportTstate()
 #include "pycore_instruments.h"
-#include "pycore_interpolation.h" // _PyInterpolation_Build()
+#include "pycore_interpolation.h" // _PyInterpolation_BuildSteal()
 #include "pycore_intrinsics.h"
 #include "pycore_lazyimportobject.h"  // PyLazyImport_CheckExact()
 #include "pycore_long.h"          // _PyLong_ExactDealloc(), _PyLong_GetZero()
@@ -33,7 +33,7 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_stackref.h"
-#include "pycore_template.h"      // _PyTemplate_Build()
+#include "pycore_template.h"      // _PyTemplate_BuildSteal()
 #include "pycore_tuple.h"         // _PyStolenTuple_Free(), _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 
@@ -2446,7 +2446,7 @@ dummy_func(
                 format_o = Py_NewRef(&_Py_STR(empty));
                 DEAD(format);
             }
-            PyObject *interpolation_o = _PyInterpolation_Build(value_o, str_o, conversion, format_o);
+            PyObject *interpolation_o = _PyInterpolation_BuildSteal(value_o, str_o, conversion, format_o);
             ERROR_IF(interpolation_o == NULL);
             interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
         }
@@ -2456,7 +2456,7 @@ dummy_func(
             DEAD(strings);
             PyObject *interpolations_o = PyStackRef_AsPyObjectSteal(interpolations);
             DEAD(interpolations);
-            PyObject *template_o = _PyTemplate_Build(strings_o, interpolations_o);
+            PyObject *template_o = _PyTemplate_BuildSteal(strings_o, interpolations_o);
             ERROR_IF(template_o == NULL);
             template = PyStackRef_FromPyObjectSteal(template_o);
         }

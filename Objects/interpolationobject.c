@@ -188,7 +188,7 @@ error:
 }
 
 PyObject *
-_PyInterpolation_Build(PyObject *value, PyObject *str, int conversion, PyObject *format_spec)
+_PyInterpolation_BuildSteal(PyObject *value, PyObject *str, int conversion, PyObject *format_spec)
 {
     interpolationobject *interpolation = PyObject_GC_New(interpolationobject, &_PyInterpolation_Type);
     if (!interpolation) {

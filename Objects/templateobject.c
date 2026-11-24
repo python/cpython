@@ -186,7 +186,7 @@ template_new_impl(PyTypeObject *type, PyObject * const *args,
         PyTuple_SET_ITEM(strings, stringsidx++, &_Py_STR(empty));
     }
 
-    return _PyTemplate_Build(strings, interpolations);
+    return _PyTemplate_BuildSteal(strings, interpolations);
 }
 
 static void
@@ -301,7 +301,7 @@ template_concat_templates(templateobject *self, templateobject *other)
         return NULL;
     }
 
-    return _PyTemplate_Build(newstrings, newinterpolations);
+    return _PyTemplate_BuildSteal(newstrings, newinterpolations);
 }
 
 PyObject *
@@ -409,7 +409,7 @@ PyTypeObject _PyTemplate_Type = {
 };
 
 PyObject *
-_PyTemplate_Build(PyObject *strings, PyObject *interpolations)
+_PyTemplate_BuildSteal(PyObject *strings, PyObject *interpolations)
 {
     templateobject *template = PyObject_GC_New(templateobject, &_PyTemplate_Type);
     if (template == NULL) {

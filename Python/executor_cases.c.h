@@ -10918,7 +10918,7 @@
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
-            PyObject *interpolation_o = _PyInterpolation_Build(value_o, str_o, conversion, format_o);
+            PyObject *interpolation_o = _PyInterpolation_BuildSteal(value_o, str_o, conversion, format_o);
             _PyFrame_StackPointerInvalidate(frame);
             if (interpolation_o == NULL) {
                 SET_CURRENT_CACHED_VALUES(0);
@@ -10947,7 +10947,7 @@
             PyObject *interpolations_o = PyStackRef_AsPyObjectSteal(interpolations);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
-            PyObject *template_o = _PyTemplate_Build(strings_o, interpolations_o);
+            PyObject *template_o = _PyTemplate_BuildSteal(strings_o, interpolations_o);
             _PyFrame_StackPointerInvalidate(frame);
             if (template_o == NULL) {
                 SET_CURRENT_CACHED_VALUES(0);
