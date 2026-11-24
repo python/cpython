@@ -1,0 +1,836 @@
+# This file lists all PySlot values
+# This should only be used as input to Tools/build/generate_slots.py,
+# its format can change at any time (e.g. we can switch to slots.csv)
+
+# Entries:
+# name: name of the slot
+# kind:
+# - 'type', 'mod': slots to create a particular kind of object
+# - 'slot': special slots applicable to any kind of object
+# - 'compat': old IDs that need to be resolved
+# dtype: data type (tag for the union of sl_ptr, sl_size, etc.)
+# equivalents: for 'compat' slots; the slots to resolve to
+# is_type_field: slot that corresponds to a field in the type object (or in
+#   an array like PyNumberMethods).
+# functype: C function type, where needed
+# duplicates, nulls: How to handle common "problems" -- duplicate slots with
+#   the same ID, and NULL pointers, respectively
+#   - 'allow': not a problem for this slot
+#   - 'deprecated': issue a deprecation warning. Don't use for new slots.
+#      (typically, the problem was disallowed in docs, but allowed in practice)
+#   - 'reject': raise error
+#   The default for duplicate slots is 'reject'
+#   The default for NULLs is 'reject' for pointer slots; 'allow' for
+#       non-pointer ones
+# must_be_static: true if slot needs the PySlot_STATIC flag (in PySlot struct)
+
+
+[0]
+name = 'Py_slot_end'
+kind = 'slot'
+dtype = 'void'
+
+[1]
+kind = 'compat'
+equivalents = {type='Py_bf_getbuffer', mod='Py_mod_create'}
+
+[2]
+kind = 'compat'
+equivalents = {type='Py_bf_releasebuffer', mod='Py_mod_exec'}
+
+[3]
+kind = 'compat'
+equivalents = {type='Py_mp_ass_subscript', mod='Py_mod_multiple_interpreters'}
+
+[4]
+kind = 'compat'
+equivalents = {type='Py_mp_length', mod='Py_mod_gil'}
+
+[5]
+name = 'Py_mp_subscript'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[6]
+name = 'Py_nb_absolute'
+kind = 'type'
+is_type_field = true
+functype = 'unaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[7]
+name = 'Py_nb_add'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[8]
+name = 'Py_nb_and'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[9]
+name = 'Py_nb_bool'
+kind = 'type'
+is_type_field = true
+functype = 'inquiry'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[10]
+name = 'Py_nb_divmod'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[11]
+name = 'Py_nb_float'
+kind = 'type'
+is_type_field = true
+functype = 'unaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[12]
+name = 'Py_nb_floor_divide'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[13]
+name = 'Py_nb_index'
+kind = 'type'
+is_type_field = true
+functype = 'unaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[14]
+name = 'Py_nb_inplace_add'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[15]
+name = 'Py_nb_inplace_and'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[16]
+name = 'Py_nb_inplace_floor_divide'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[17]
+name = 'Py_nb_inplace_lshift'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[18]
+name = 'Py_nb_inplace_multiply'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[19]
+name = 'Py_nb_inplace_or'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[20]
+name = 'Py_nb_inplace_power'
+kind = 'type'
+is_type_field = true
+functype = 'ternaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[21]
+name = 'Py_nb_inplace_remainder'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[22]
+name = 'Py_nb_inplace_rshift'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[23]
+name = 'Py_nb_inplace_subtract'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[24]
+name = 'Py_nb_inplace_true_divide'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[25]
+name = 'Py_nb_inplace_xor'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[26]
+name = 'Py_nb_int'
+kind = 'type'
+is_type_field = true
+functype = 'unaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[27]
+name = 'Py_nb_invert'
+kind = 'type'
+is_type_field = true
+functype = 'unaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[28]
+name = 'Py_nb_lshift'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[29]
+name = 'Py_nb_multiply'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[30]
+name = 'Py_nb_negative'
+kind = 'type'
+is_type_field = true
+functype = 'unaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[31]
+name = 'Py_nb_or'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[32]
+name = 'Py_nb_positive'
+kind = 'type'
+is_type_field = true
+functype = 'unaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[33]
+name = 'Py_nb_power'
+kind = 'type'
+is_type_field = true
+functype = 'ternaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[34]
+name = 'Py_nb_remainder'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[35]
+name = 'Py_nb_rshift'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[36]
+name = 'Py_nb_subtract'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[37]
+name = 'Py_nb_true_divide'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[38]
+name = 'Py_nb_xor'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[39]
+name = 'Py_sq_ass_item'
+kind = 'type'
+is_type_field = true
+functype = 'ssizeobjargproc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[40]
+name = 'Py_sq_concat'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[41]
+name = 'Py_sq_contains'
+kind = 'type'
+is_type_field = true
+functype = 'objobjproc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[42]
+name = 'Py_sq_inplace_concat'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[43]
+name = 'Py_sq_inplace_repeat'
+kind = 'type'
+is_type_field = true
+functype = 'ssizeargfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[44]
+name = 'Py_sq_item'
+kind = 'type'
+is_type_field = true
+functype = 'ssizeargfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[45]
+name = 'Py_sq_length'
+kind = 'type'
+is_type_field = true
+functype = 'lenfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[46]
+name = 'Py_sq_repeat'
+kind = 'type'
+is_type_field = true
+functype = 'ssizeargfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[47]
+name = 'Py_tp_alloc'
+kind = 'type'
+is_type_field = true
+functype = 'allocfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[48]
+name = 'Py_tp_base'
+kind = 'type'
+is_type_field = true
+dtype = 'ptr'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[49]
+name = 'Py_tp_bases'
+kind = 'type'
+is_type_field = true
+dtype = 'ptr'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[50]
+name = 'Py_tp_call'
+kind = 'type'
+is_type_field = true
+functype = 'ternaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[51]
+name = 'Py_tp_clear'
+kind = 'type'
+is_type_field = true
+functype = 'inquiry'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[52]
+name = 'Py_tp_dealloc'
+kind = 'type'
+is_type_field = true
+functype = 'destructor'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[53]
+name = 'Py_tp_del'
+kind = 'type'
+is_type_field = true
+functype = 'destructor'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[54]
+name = 'Py_tp_descr_get'
+kind = 'type'
+is_type_field = true
+functype = 'descrgetfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[55]
+name = 'Py_tp_descr_set'
+kind = 'type'
+is_type_field = true
+functype = 'descrsetfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[56]
+name = 'Py_tp_doc'
+kind = 'type'
+is_type_field = true
+dtype = 'ptr'
+nulls = 'allow'
+
+[57]
+name = 'Py_tp_getattr'
+kind = 'type'
+is_type_field = true
+functype = 'getattrfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[58]
+name = 'Py_tp_getattro'
+kind = 'type'
+is_type_field = true
+functype = 'getattrofunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[59]
+name = 'Py_tp_hash'
+kind = 'type'
+is_type_field = true
+functype = 'hashfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[60]
+name = 'Py_tp_init'
+kind = 'type'
+is_type_field = true
+functype = 'initproc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[61]
+name = 'Py_tp_is_gc'
+kind = 'type'
+is_type_field = true
+functype = 'inquiry'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[62]
+name = 'Py_tp_iter'
+kind = 'type'
+is_type_field = true
+functype = 'getiterfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[63]
+name = 'Py_tp_iternext'
+kind = 'type'
+is_type_field = true
+functype = 'iternextfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[64]
+name = 'Py_tp_methods'
+kind = 'type'
+is_type_field = true
+dtype = 'ptr'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+must_be_static = true
+
+[65]
+name = 'Py_tp_new'
+kind = 'type'
+is_type_field = true
+functype = 'newfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[66]
+name = 'Py_tp_repr'
+kind = 'type'
+is_type_field = true
+functype = 'reprfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[67]
+name = 'Py_tp_richcompare'
+kind = 'type'
+is_type_field = true
+functype = 'richcmpfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[68]
+name = 'Py_tp_setattr'
+kind = 'type'
+is_type_field = true
+functype = 'setattrfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[69]
+name = 'Py_tp_setattro'
+kind = 'type'
+is_type_field = true
+functype = 'setattrofunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[70]
+name = 'Py_tp_str'
+kind = 'type'
+is_type_field = true
+functype = 'reprfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[71]
+name = 'Py_tp_traverse'
+kind = 'type'
+is_type_field = true
+functype = 'traverseproc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[72]
+name = 'Py_tp_members'
+kind = 'type'
+is_type_field = true
+dtype = 'ptr'
+nulls = 'reject'
+must_be_static = true
+
+[73]
+name = 'Py_tp_getset'
+kind = 'type'
+is_type_field = true
+dtype = 'ptr'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+must_be_static = true
+
+[74]
+name = 'Py_tp_free'
+kind = 'type'
+is_type_field = true
+functype = 'freefunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[75]
+name = 'Py_nb_matrix_multiply'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[76]
+name = 'Py_nb_inplace_matrix_multiply'
+kind = 'type'
+is_type_field = true
+functype = 'binaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[77]
+name = 'Py_am_await'
+kind = 'type'
+is_type_field = true
+functype = 'unaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[78]
+name = 'Py_am_aiter'
+kind = 'type'
+is_type_field = true
+functype = 'unaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[79]
+name = 'Py_am_anext'
+kind = 'type'
+is_type_field = true
+functype = 'unaryfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[80]
+name = 'Py_tp_finalize'
+kind = 'type'
+is_type_field = true
+functype = 'destructor'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[81]
+name = 'Py_am_send'
+kind = 'type'
+is_type_field = true
+functype = 'sendfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[82]
+name = 'Py_tp_vectorcall'
+kind = 'type'
+is_type_field = true
+functype = 'vectorcallfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[83]
+name = 'Py_tp_token'
+kind = 'type'
+is_type_field = true
+dtype = 'ptr'
+field = 'ht_token'
+duplicates = 'deprecated'
+nulls = 'allow'
+
+[84]
+name = 'Py_mod_create'
+kind = 'mod'
+dtype = 'func'
+nulls = 'deprecated'
+
+[85]
+name = 'Py_mod_exec'
+kind = 'mod'
+dtype = 'func'
+duplicates = 'allow'  # only alowed in PyModuleDef.m_slots
+nulls = 'reject'
+
+[86]
+name = 'Py_mod_multiple_interpreters'
+kind = 'mod'
+dtype = 'uint64'
+
+[87]
+name = 'Py_mod_gil'
+kind = 'mod'
+dtype = 'uint64'
+
+[88]
+name = 'Py_bf_getbuffer'
+kind = 'type'
+is_type_field = true
+functype = 'getbufferproc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[89]
+name = 'Py_bf_releasebuffer'
+kind = 'type'
+is_type_field = true
+functype = 'releasebufferproc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[90]
+name = 'Py_mp_ass_subscript'
+kind = 'type'
+is_type_field = true
+functype = 'objobjargproc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[91]
+name = 'Py_mp_length'
+kind = 'type'
+is_type_field = true
+functype = 'lenfunc'
+duplicates = 'deprecated'
+nulls = 'deprecated'
+
+[92]
+name = 'Py_slot_subslots'
+kind = 'slot'
+dtype = 'ptr'
+nulls = 'allow'
+
+[93]
+name = 'Py_tp_slots'
+kind = 'type'
+dtype = 'ptr'
+nulls = 'allow'
+
+[94]
+name = 'Py_mod_slots'
+kind = 'mod'
+dtype = 'ptr'
+nulls = 'allow'
+
+[95]
+name = 'Py_tp_name'
+kind = 'type'
+dtype = 'ptr'
+
+[96]
+name = 'Py_tp_basicsize'
+kind = 'type'
+dtype = 'size'
+
+[97]
+name = 'Py_tp_extra_basicsize'
+kind = 'type'
+dtype = 'size'
+
+[98]
+name = 'Py_tp_itemsize'
+kind = 'type'
+dtype = 'size'
+
+[99]
+name = 'Py_tp_flags'
+kind = 'type'
+dtype = 'uint64'
+
+[100]
+name = 'Py_mod_name'
+kind = 'mod'
+dtype = 'ptr'
+
+[101]
+name = 'Py_mod_doc'
+kind = 'mod'
+dtype = 'ptr'
+
+[102]
+name = 'Py_mod_state_size'
+kind = 'mod'
+dtype = 'size'
+
+[103]
+name = 'Py_mod_methods'
+kind = 'mod'
+dtype = 'ptr'
+must_be_static = true
+
+[104]
+name = 'Py_mod_state_traverse'
+kind = 'mod'
+dtype = 'func'
+
+[105]
+name = 'Py_mod_state_clear'
+kind = 'mod'
+dtype = 'func'
+
+[106]
+name = 'Py_mod_state_free'
+kind = 'mod'
+dtype = 'func'
+
+[107]
+name = 'Py_tp_metaclass'
+kind = 'type'
+dtype = 'ptr'
+
+[108]
+name = 'Py_tp_module'
+kind = 'type'
+dtype = 'ptr'
+
+[109]
+name = 'Py_mod_abi'
+kind = 'mod'
+dtype = 'ptr'
+duplicates = 'allow'
+
+[110]
+name = 'Py_mod_token'
+kind = 'mod'
+dtype = 'ptr'

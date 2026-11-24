@@ -1294,9 +1294,9 @@ if HAS_SHMEM:
     class _SharedMemoryTracker:
         "Manages one or more shared memory segments."
 
-        def __init__(self, name, segment_names=[]):
+        def __init__(self, name, segment_names=None):
             self.shared_memory_context_name = name
-            self.segment_names = segment_names
+            self.segment_names = [] if segment_names is None else segment_names
 
         def register_segment(self, segment_name):
             "Adds the supplied shared memory block name to tracker."

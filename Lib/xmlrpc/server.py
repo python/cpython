@@ -752,7 +752,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         anchor = (cl and cl.__name__ or '') + '-' + name
         note = ''
 
-        title = '<a name="%s"><strong>%s</strong></a>' % (
+        title = '<a id="%s"><strong>%s</strong></a>' % (
             self.escape(anchor), self.escape(name))
 
         if callable(object):
@@ -766,13 +766,13 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         else:
             docstring = pydoc.getdoc(object)
 
-        decl = title + argspec + (note and self.grey(
-               '<font face="helvetica, arial">%s</font>' % note))
+        decl = title + argspec + (note and
+               '<span class="note">%s</span>' % note)
 
         doc = self.markup(
             docstring, self.preformat, funcs, classes, methods)
-        doc = doc and '<dd><tt>%s</tt></dd>' % doc
-        return '<dl><dt>%s</dt>%s</dl>\n' % (decl, doc)
+        doc = doc and '<dd class="docstring">%s</dd>' % doc
+        return '<dl class="doc"><dt>%s</dt>%s</dl>\n' % (decl, doc)
 
     def docserver(self, server_name, package_documentation, methods):
         """Produce HTML documentation for an XML-RPC server."""
@@ -783,12 +783,11 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
             fdict[value] = fdict[key]
 
         server_name = self.escape(server_name)
-        head = '<big><big><strong>%s</strong></big></big>' % server_name
-        result = self.heading(head)
+        result = self.heading(server_name)
 
         doc = self.markup(package_documentation, self.preformat, fdict)
-        doc = doc and '<tt>%s</tt>' % doc
-        result = result + '<p>%s</p>\n' % doc
+        doc = doc and '<div class="docstring">%s</div>\n' % doc
+        result = result + doc
 
         contents = []
         method_items = sorted(methods.items())
@@ -807,12 +806,15 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
             '<link rel="stylesheet" type="text/css" href="%s">' %
             css_path)
         return '''\
-<!DOCTYPE>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Python: %s</title>
-%s</head><body>%s</body></html>''' % (title, css_link, contents)
+%s</head><body>
+%s
+</body></html>''' % (title, css_link, contents)
 
 class XMLRPCDocGenerator:
     """Generates documentation for an XML-RPC server.

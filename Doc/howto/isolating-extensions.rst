@@ -530,7 +530,7 @@ and the corresponding :c:type:`PyCMethod` signature::
        PyTypeObject *defining_class, // defining class
        PyObject *const *args,        // C array of arguments
        Py_ssize_t nargs,             // length of "args"
-       PyObject *kwnames)            // NULL, or dict of keyword arguments
+       PyObject *kwnames)            // NULL, or tuple of keyword argument names
 
 Once you have the defining class, call :c:func:`PyType_GetModuleState` to get
 the state of its associated module.
@@ -557,9 +557,9 @@ For example::
        {"example_method",
          (PyCFunction)(void(*)(void))example_method,
          METH_METHOD|METH_FASTCALL|METH_KEYWORDS,
-         example_method_doc}
+         example_method_doc},
        {NULL},
-   }
+   };
 
 
 Module State Access from Slot Methods, Getters and Setters

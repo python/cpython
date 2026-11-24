@@ -1,11 +1,17 @@
 import importlib
+import inspect
 import os
 import types
 import unittest
 
 from _colorize import ANSIColors, get_theme
 from _pyrepl.completing_reader import stripcolor
-from _pyrepl.fancycompleter import Completer, commonprefix
+from _pyrepl.fancycompleter import (
+    Completer,
+    colorize_matches,
+    commonprefix,
+    _color_for_obj,
+)
 from test.support.import_helper import ready_to_import
 
 class MockPatch:
@@ -36,6 +42,11 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertEqual(commonprefix(['isalpha', 'isdigit']), 'is')
         self.assertEqual(commonprefix([]), '')
 
+    def test_colorize_matches_signature(self):
+        signature = inspect.signature(colorize_matches)
+
+        self.assertEqual(list(signature.parameters), ["names", "values", "theme"])
+
     def test_complete_attribute(self):
         compl = Completer({'a': None}, use_colors=False)
         self.assertEqual(compl.attr_matches('a.'), ['a.__'])
@@ -55,7 +66,7 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertEqual(compl.attr_matches('a.'), ['a.attr', 'a.mro'])
         self.assertEqual(
             compl.attr_matches('a._'),
-            ['a._C__attr__attr', 'a._attr', ' '],
+            ['a._C__attr__attr', 'a._attr'],
         )
         matches = compl.attr_matches('a.__')
         self.assertNotIn('__class__', matches)
@@ -79,7 +90,7 @@ class FancyCompleterTests(unittest.TestCase):
                 break
         else:
             self.assertFalse(True, matches)
-        self.assertIn(' ', matches)
+        self.assertNotIn(' ', matches)
 
     def test_preserves_callable_postfix_for_single_attribute_match(self):
         compl = Completer({'os': os}, use_colors=False)
@@ -159,22 +170,17 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertEqual(compl.global_matches('foo'), ['fooba'])
         matches = compl.global_matches('fooba')
 
-        # these are the fake escape sequences which are needed so that
-        # readline displays the matches in the proper order
-        N0 = f"\x1b[000;00m"
-        N1 = f"\x1b[000;01m"
         int_color = theme.fancycompleter.int
-        self.assertEqual(set(matches), {
-            ' ',
-            f'{N0}{int_color}foobar{ANSIColors.RESET}',
-            f'{N1}{int_color}foobazzz{ANSIColors.RESET}',
-        })
+        self.assertEqual(matches, [
+            f'{int_color}foobar{ANSIColors.RESET}',
+            f'{int_color}foobazzz{ANSIColors.RESET}',
+        ])
         self.assertEqual(compl.global_matches('foobaz'), ['foobazzz'])
         self.assertEqual(compl.global_matches('nothing'), [])
 
-    def test_large_color_sort_prefix_is_stripped(self):
-        compl = Completer({'a': 42}, use_colors=True)
-        match = compl._color_for_obj(1000, 'spam', 1)
+    def test_colorized_match_is_stripped(self):
+        theme = get_theme()
+        match = _color_for_obj('spam', 1, theme)
         self.assertEqual(stripcolor(match), 'spam')
 
     def test_complete_with_indexer(self):
@@ -197,13 +203,11 @@ class FancyCompleterTests(unittest.TestCase):
         compl = Completer({'A': A}, use_colors=False)
         #
         # In this case, we want to display all attributes which start with
-        # 'a'. Moreover, we also include a space to prevent readline to
-        # automatically insert the common prefix (which will the the ANSI escape
-        # sequence if we use colors).
+        # 'a'.
         matches = compl.attr_matches('A.a')
         self.assertEqual(
             sorted(matches),
-            [' ', 'A.aaa', 'A.abc_1', 'A.abc_2', 'A.abc_3'],
+            ['A.aaa', 'A.abc_1', 'A.abc_2', 'A.abc_3'],
         )
         #
         # If there is an actual common prefix, we return just it, so that readline
@@ -211,13 +215,12 @@ class FancyCompleterTests(unittest.TestCase):
         matches = compl.attr_matches('A.ab')
         self.assertEqual(matches, ['A.abc_'])
         #
-        # Finally, at the next tab, we display again all the completions available
-        # for this common prefix. Again, we insert a spurious space to prevent the
-        # automatic completion of ANSI sequences.
+        # Finally, at the next tab, we display again all the completions
+        # available for this common prefix.
         matches = compl.attr_matches('A.abc_')
         self.assertEqual(
             sorted(matches),
-            [' ', 'A.abc_1', 'A.abc_2', 'A.abc_3'],
+            ['A.abc_1', 'A.abc_2', 'A.abc_3'],
         )
 
     def test_complete_exception(self):

@@ -553,6 +553,9 @@ class Counter(dict):
     or multiset.  Elements are stored as dictionary keys and their counts
     are stored as dictionary values.
 
+    When constructed from a Mapping or Counter, the original object's
+    values will be used as the initial counts.
+
     >>> c = Counter('abcdeabcdabcaba')  # count elements from a string
 
     >>> c.most_common(3)                # three most common elements
@@ -1160,8 +1163,7 @@ class ChainMap(_collections_abc.MutableMapping):
         if not isinstance(other, _collections_abc.Mapping):
             return NotImplemented
         m = dict(other)
-        for child in reversed(self.maps):
-            m.update(child)
+        m.update(self)
         return self.__class__(m)
 
 
@@ -1252,6 +1254,20 @@ class UserDict(_collections_abc.MutableMapping):
             self.data = data
         c.update(self)
         return c
+
+
+    # This method has a default implementation in MutableMapping, but dict's
+    # equivalent is last-in, first-out instead of first-in, first-out.
+    def popitem(self):
+        """Remove and return a (key, value) pair as a 2-tuple.
+
+        Removes pairs in the same order as the wrapped mapping's popitem()
+        method. For dict objects (the default), that order is last-in,
+        first-out (LIFO).
+        Raises KeyError if the UserDict is empty.
+        """
+        return self.data.popitem()
+
 
     @classmethod
     def fromkeys(cls, iterable, value=None):
@@ -1519,6 +1535,8 @@ class UserString(_collections_abc.Sequence):
         return self.data.encode(encoding, errors)
 
     def endswith(self, suffix, start=0, end=_sys.maxsize):
+        if isinstance(suffix, UserString):
+            suffix = suffix.data
         return self.data.endswith(suffix, start, end)
 
     def expandtabs(self, tabsize=8):
@@ -1629,6 +1647,8 @@ class UserString(_collections_abc.Sequence):
         return self.data.splitlines(keepends)
 
     def startswith(self, prefix, start=0, end=_sys.maxsize):
+        if isinstance(prefix, UserString):
+            prefix = prefix.data
         return self.data.startswith(prefix, start, end)
 
     def strip(self, chars=None):

@@ -1,2 +1,0 @@
-Fix REPL cursor position on Windows when module completion suggestion line
-hits console width.

@@ -74,6 +74,9 @@ class OrderedDictTests:
         od.update(dict(pairs))
         self.assertEqual(sorted(od.items()), pairs)                                 # dict input
         od = OrderedDict()
+        od.update(frozendict(pairs))
+        self.assertEqual(sorted(od.items()), pairs)                                 # frozendict input
+        od = OrderedDict()
         od.update(**dict(pairs))
         self.assertEqual(sorted(od.items()), pairs)                                 # kwds input
         od = OrderedDict()
@@ -288,9 +291,11 @@ class OrderedDictTests:
         pairs = pairs[2:] + pairs[:2]
         od2 = OrderedDict(pairs)
         self.assertNotEqual(od1, od2)       # different order implies inequality
-        # comparison to regular dict is not order sensitive
+        # comparison to regular (frozen)dict is not order sensitive
         self.assertEqual(od1, dict(od2))
         self.assertEqual(dict(od2), od1)
+        self.assertEqual(od1, frozendict(od2))
+        self.assertEqual(frozendict(od1), od2)
         # different length implied inequality
         self.assertNotEqual(od1, OrderedDict(pairs[:-1]))
 
@@ -878,6 +883,39 @@ class CPythonOrderedDictSideEffects:
         self.assertEqual(Key.count, 2)
         self.assertDictEqual(dict1, dict.fromkeys((0, 4.2)))
         self.assertDictEqual(dict2, dict.fromkeys((0, Key(), 4.2)))
+
+    def test_issue148660_copy_clear_in_key_eq(self):
+        # gh-148660: od.copy() must not crash when a key's __eq__ clears od
+        # while copy() is inserting into the new dict.
+        armed = False
+        calls = 0
+        class Key:
+            def __hash__(self):
+                return 1
+            def __eq__(self, other):
+                nonlocal calls
+                if armed:
+                    calls += 1
+                    if calls == 2:
+                        od.clear()
+                return self is other
+        od = self.OrderedDict()
+        od[Key()] = "v1"
+        od[Key()] = "v2"
+        armed = True
+        msg = "OrderedDict mutated during iteration"
+        self.assertRaisesRegex(RuntimeError, msg, od.copy)
+
+    def test_issue148660_copy_clear_in_subclass_getitem(self):
+        # gh-148660: od.copy() must not crash when a subclass __getitem__
+        # clears od.
+        class OD(self.OrderedDict):
+            def __getitem__(self, key):
+                od.clear()
+                return "v"
+        od = OD([(1, "v1"), (2, "v2")])
+        msg = "OrderedDict mutated during iteration"
+        self.assertRaisesRegex(RuntimeError, msg, od.copy)
 
 
 @unittest.skipUnless(c_coll, 'requires the C version of the collections module')

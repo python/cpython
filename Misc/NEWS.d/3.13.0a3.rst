@@ -2166,7 +2166,7 @@ current user has no permission to the WMI.
 .. nonce: WOpiNt
 .. section: Windows
 
-Deprecate :func:`sys._enablelegacywindowsfsencoding`. Use
+Deprecate :func:`!sys._enablelegacywindowsfsencoding`. Use
 :envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead. Patch by Inada Naoki.
 
 ..

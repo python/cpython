@@ -802,6 +802,18 @@ vector128 Lib_IntVector_Intrinsics_vec128_xor(vector128 x0, vector128 x1) {
 #if defined(HACL_CAN_COMPILE_VEC128)
 
 #include <altivec.h>
+
+/* GCC's AltiVec extension hijacks 'bool' as '__vector __bool int'.
+   Restore C99/C11 scalar bool for HACL* code. */
+#if defined(__GNUC__) && !defined(__clang__)
+#undef bool
+#define bool _Bool
+#undef true
+#define true 1
+#undef false
+#define false 0
+#endif
+
 #include <string.h> // for memcpy
 #include <stdint.h>
 

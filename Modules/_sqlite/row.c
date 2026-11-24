@@ -27,6 +27,7 @@
 
 #include "row.h"
 #include "cursor.h"
+#include "util.h"
 
 #define clinic_state() (pysqlite_get_state_by_type(type))
 #include "clinic/row.c.h"
@@ -93,7 +94,8 @@ pysqlite_row_new_impl(PyTypeObject *type, pysqlite_Cursor *cursor,
         return NULL;
 
     self->data = Py_NewRef(data);
-    self->description = Py_NewRef(cursor->description);
+    self->description = pysqlite_get_ref((PyObject *)cursor,
+                                         &cursor->description, Py_None);
 
     return (PyObject *) self;
 }
@@ -232,7 +234,15 @@ static Py_hash_t
 pysqlite_row_hash(PyObject *op)
 {
     pysqlite_Row *self = _pysqlite_Row_CAST(op);
-    return PyObject_Hash(self->description) ^ PyObject_Hash(self->data);
+    Py_hash_t hash_description = PyObject_Hash(self->description);
+    if (hash_description == -1) {
+        return -1;
+    }
+    Py_hash_t hash_data = PyObject_Hash(self->data);
+    if (hash_data == -1) {
+        return -1;
+    }
+    return hash_description ^ hash_data;
 }
 
 static PyObject *

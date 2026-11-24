@@ -1,2 +1,0 @@
-Fix ``unittest.util.sorted_list_difference()`` to deduplicate remaining
-elements when one input list is exhausted before the other.

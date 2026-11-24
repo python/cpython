@@ -27,6 +27,7 @@
 #include "pycore_strhex.h"               // _Py_strhex()
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_RELAXED
 #include "hashlib.h"
+#include "_openssl_mem.h"
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
@@ -692,43 +693,46 @@ static PY_EVP_MD *
 get_openssl_evp_md_by_utf8name(_hashlibstate *state, const char *name,
                                Py_hash_type py_ht)
 {
-    PY_EVP_MD *digest = NULL, *other_digest = NULL;
+    PY_EVP_MD *digest = NULL, *fresh = NULL;
     py_hashentry_t *entry = _Py_hashtable_get(state->hashtable, name);
+    int fips = !disable_fips_property(py_ht);
 
     if (entry != NULL) {
-        if (!disable_fips_property(py_ht)) {
-            digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp);
-            if (digest == NULL) {
-                digest = PY_EVP_MD_fetch(entry->ossl_name, NULL);
-#ifdef Py_GIL_DISABLED
-                // exchange just in case another thread did same thing at same time
-                other_digest = _Py_atomic_exchange_ptr(&entry->evp, (void *)digest);
-#else
-                entry->evp = digest;
-#endif
+        PY_EVP_MD **cached = fips ? &entry->evp : &entry->evp_nosecurity;
+        digest = FT_ATOMIC_LOAD_PTR_RELAXED(*cached);
+        if (digest == NULL) {
+            fresh = PY_EVP_MD_fetch(entry->ossl_name, fips ? NULL : "-fips");
+            if (fresh != NULL) {
+                /*
+                 * Publish a freshly fetched digest into the cache exactly once.
+                 *
+                 * On the first publication, 'cached' adopts the 'fresh' ref.
+                 * If another thread wins the race, 'fresh' is released and
+                 * the cached digest is used instead.
+                 *
+                 * See https://github.com/python/cpython/issues/128657
+                 * and https://github.com/python/cpython/issues/149816.
+                 */
+                PY_EVP_MD *expected = NULL;
+                if (_Py_atomic_compare_exchange_ptr(cached, &expected, (void *)fresh)) {
+                    digest = fresh;         // we won: 'cached' now owns the fresh digest
+                }
+                else {
+                    PY_EVP_MD_free(fresh);  // we lost: discard the fresh digest
+                    digest = expected;      // reuse the winner's digest
+                }
             }
         }
-        else {
-            digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp_nosecurity);
-            if (digest == NULL) {
-                digest = PY_EVP_MD_fetch(entry->ossl_name, "-fips");
-#ifdef Py_GIL_DISABLED
-                // exchange just in case another thread did same thing at same time
-                other_digest = _Py_atomic_exchange_ptr(&entry->evp_nosecurity, (void *)digest);
-#else
-                entry->evp_nosecurity = digest;
-#endif
-            }
-        }
-        // if another thread same thing at same time make sure we got same ptr
-        assert(other_digest == NULL || other_digest == digest);
-        if (digest != NULL && other_digest == NULL) {
+        /* Hand the caller its own reference; the cache keeps its own. Valid
+         * whether `digest` was already cached, freshly published by this
+         * thread, or published by a thread that won the race. */
+        if (digest != NULL) {
             PY_EVP_MD_up_ref(digest);
         }
     }
     else {
         // Fall back for looking up an unindexed OpenSSL specific name.
-        const char *props = disable_fips_property(py_ht) ? "-fips" : NULL;
+        const char *props = fips ? NULL : "-fips";
         (void)props;  // will only be used in OpenSSL 3.0 and later
         digest = PY_EVP_MD_fetch(name, props);
     }
@@ -846,6 +850,12 @@ new_hash_object(PyTypeObject *type)
     return retval;
 }
 
+/*
+ * Update the digest context of 'self' with 'len' bytes from 'vp'.
+ *
+ * Return 0 on success and -1 if EVP_DigestUpdate() failed. No exception
+ * is set, so that this can be called without an attached thread state.
+ */
 static int
 _hashlib_HASH_hash(HASHobject *self, const void *vp, Py_ssize_t len)
 {
@@ -857,7 +867,6 @@ _hashlib_HASH_hash(HASHobject *self, const void *vp, Py_ssize_t len)
         else
             process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
         if (!EVP_DigestUpdate(self->ctx, (const void*)cp, process)) {
-            notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestUpdate));
             return -1;
         }
         len -= process;
@@ -990,7 +999,11 @@ _hashlib_HASH_update_impl(HASHobject *self, PyObject *obj)
         result = _hashlib_HASH_hash(self, view.buf, view.len)
     );
     PyBuffer_Release(&view);
-    return result < 0 ? NULL : Py_None;
+    if (result < 0) {
+        notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestUpdate));
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef HASH_methods[] = {
@@ -1006,6 +1019,7 @@ _hashlib_HASH_get_blocksize(PyObject *op, void *Py_UNUSED(closure))
 {
     HASHobject *self = HASHobject_CAST(op);
     long block_size = EVP_MD_CTX_block_size(self->ctx);
+    assert(block_size > 0);
     return PyLong_FromLong(block_size);
 }
 
@@ -1014,6 +1028,7 @@ _hashlib_HASH_get_digestsize(PyObject *op, void *Py_UNUSED(closure))
 {
     HASHobject *self = HASHobject_CAST(op);
     long size = EVP_MD_CTX_size(self->ctx);
+    assert(size > 0);
     return PyLong_FromLong(size);
 }
 
@@ -1302,7 +1317,7 @@ _hashlib_HASH(_hashlibstate *state, const char *digestname, PyObject *data_obj,
             result = _hashlib_HASH_hash(self, view.buf, view.len)
         );
         if (result == -1) {
-            assert(PyErr_Occurred());
+            notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestUpdate));
             Py_CLEAR(self);
             goto exit;
         }
@@ -1973,16 +1988,6 @@ hashlib_HMAC_get_hashlib_digest_name(HMACobject *self)
 #endif
 }
 
-static int
-hashlib_openssl_HMAC_update_once(PY_HMAC_CTX_TYPE *ctx, const Py_buffer *v)
-{
-    if (!PY_HMAC_update(ctx, (const unsigned char *)v->buf, (size_t)v->len)) {
-        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(PY_HMAC_update));
-        return -1;
-    }
-    return 0;
-}
-
 /* Thin wrapper around PY_HMAC_CTX_free that allows to pass a NULL 'ctx'. */
 static inline void
 hashlib_openssl_HMAC_CTX_free(PY_HMAC_CTX_TYPE *ctx)
@@ -2103,6 +2108,7 @@ hashlib_HMAC_CTX_new_from_digestmod(_hashlibstate *state,
     PY_EVP_MD_free(md);
 #endif
     if (r == 0) {
+        hashlib_openssl_HMAC_CTX_free(ctx);
         if (is_xof) {
             /* use a better default error message if an XOF is used */
             raise_unsupported_algorithm_error(state, digestmod);
@@ -2199,7 +2205,7 @@ error:
  *
  * On error, set an exception and return BAD_DIGEST_SIZE.
  */
-static unsigned int
+static int
 _hashlib_hmac_digest_size(HMACobject *self)
 {
     assert(EVP_MAX_MD_SIZE < INT_MAX);
@@ -2214,15 +2220,18 @@ _hashlib_hmac_digest_size(HMACobject *self)
     }
     int digest_size = EVP_MD_size(md);
     /* digest_size < 0 iff EVP_MD context is NULL (which is impossible here) */
-    assert(digest_size >= 0);
     assert(digest_size <= (int)EVP_MAX_MD_SIZE);
+    if (digest_size < 0) {
+        raise_ssl_error(PyExc_SystemError, "invalid digest size");
+        return BAD_DIGEST_SIZE;
+    }
 #endif
     /* digest_size == 0 means that the context is not entirely initialized */
     if (digest_size == 0) {
-        raise_ssl_error(PyExc_ValueError, "missing digest size");
+        raise_ssl_error(PyExc_SystemError, "missing digest size");
         return BAD_DIGEST_SIZE;
     }
-    return (unsigned int)digest_size;
+    return (int)digest_size;
 }
 
 static int
@@ -2233,10 +2242,15 @@ _hmac_update(HMACobject *self, PyObject *obj)
     GET_BUFFER_VIEW_OR_ERROR(obj, &view, return -1);
     HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
         self, view.len,
-        r = hashlib_openssl_HMAC_update_once(self->ctx, &view)
+        r = PY_HMAC_update(self->ctx, (const unsigned char *)view.buf,
+                           (size_t)view.len)
     );
     PyBuffer_Release(&view);
-    return r;
+    if (r == 0) {
+        notify_smart_ssl_error_occurred_in(Py_STRINGIFY(PY_HMAC_update));
+        return -1;
+    }
+    return 0;
 }
 
 /*[clinic input]
@@ -2320,7 +2334,7 @@ _hashlib_HMAC_update_impl(HMACobject *self, PyObject *msg)
 static Py_ssize_t
 _hmac_digest(HMACobject *self, unsigned char *buf)
 {
-    unsigned int digest_size = _hashlib_hmac_digest_size(self);
+    int digest_size = _hashlib_hmac_digest_size(self);
     assert(digest_size <= EVP_MAX_MD_SIZE);
     if (digest_size == BAD_DIGEST_SIZE) {
         assert(PyErr_Occurred());
@@ -2363,18 +2377,17 @@ _hashlib_HMAC_digest_impl(HMACobject *self)
 
 /*[clinic input]
 @permit_long_summary
-@permit_long_docstring_body
 _hashlib.HMAC.hexdigest
 
 Return hexadecimal digest of the bytes passed to the update() method so far.
 
-This may be used to exchange the value safely in email or other non-binary
-environments.
+This may be used to exchange the value safely in email or other
+non-binary environments.
 [clinic start generated code]*/
 
 static PyObject *
 _hashlib_HMAC_hexdigest_impl(HMACobject *self)
-/*[clinic end generated code: output=80d825be1eaae6a7 input=5e48db83ab1a4d19]*/
+/*[clinic end generated code: output=80d825be1eaae6a7 input=e37a84c36a43787c]*/
 {
     unsigned char buf[EVP_MAX_MD_SIZE];
     Py_ssize_t n = _hmac_digest(self, buf);
@@ -2385,7 +2398,7 @@ static PyObject *
 _hashlib_hmac_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
-    unsigned int size = _hashlib_hmac_digest_size(self);
+    int size = _hashlib_hmac_digest_size(self);
     return size == BAD_DIGEST_SIZE ? NULL : PyLong_FromLong(size);
 }
 
@@ -2534,8 +2547,8 @@ _hashlib.get_fips_mode -> int
 Determine the OpenSSL FIPS mode of operation.
 
 For OpenSSL 3.0.0 and newer it returns the state of the default provider
-in the default OSSL context. It's not quite the same as FIPS_mode() but good
-enough for unittests.
+in the default OSSL context. It's not quite the same as FIPS_mode() but
+good enough for unittests.
 
 Effectively any non-zero return value indicates FIPS mode;
 values other than 1 may have additional significance.
@@ -2543,7 +2556,7 @@ values other than 1 may have additional significance.
 
 static int
 _hashlib_get_fips_mode_impl(PyObject *module)
-/*[clinic end generated code: output=87eece1bab4d3fa9 input=2db61538c41c6fef]*/
+/*[clinic end generated code: output=87eece1bab4d3fa9 input=a6cdb6901421d122]*/
 
 {
 #ifdef Py_HAS_OPENSSL3_SUPPORT
@@ -2928,5 +2941,6 @@ static struct PyModuleDef _hashlibmodule = {
 PyMODINIT_FUNC
 PyInit__hashlib(void)
 {
+    _PyOpenSSL_SetupMemFunctions();
     return PyModuleDef_Init(&_hashlibmodule);
 }
