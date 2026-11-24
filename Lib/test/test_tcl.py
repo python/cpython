@@ -2,6 +2,7 @@ import unittest
 import subprocess
 import sys
 import os
+import socket
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -848,6 +849,178 @@ class TclTest(unittest.TestCase):
         support.check_disallow_instantiation(self, _tkinter.Tcl_Obj)
         support.check_disallow_instantiation(self, _tkinter.TkttType)
         support.check_disallow_instantiation(self, _tkinter.TkappType)
+
+
+class ChannelTest(unittest.TestCase):
+
+    def setUp(self):
+        self.tk = Tcl().tk
+
+    def wait(self, channel, mask):
+        events = []
+        channel.createhandler(mask, lambda chan, m: events.append(m))
+        try:
+            for _ in range(1000):
+                if events:
+                    break
+                self.tk.dooneevent()
+            else:
+                self.fail('no event')
+        finally:
+            channel.deletehandler()
+        self.assertEqual(events[0] & mask, mask)
+
+    def test_pipe(self):
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        with self.tk.createchannel(r) as channel:
+            self.assertFalse(channel.closed)
+            self.assertIsInstance(channel.name, str)
+            self.assertIsNone(channel.read())
+            os.write(w, b'ab\0\xff')
+            self.wait(channel, tkinter.READABLE)
+            self.assertEqual(channel.read(2), b'ab')
+            self.assertEqual(channel.read(), b'\0\xff')
+            self.assertIsNone(channel.read())
+            self.assertFalse(channel.eof())
+        self.assertTrue(channel.closed)
+        # The original file descriptor is still open.
+        os.write(w, b'x')
+        self.assertEqual(os.read(r, 1), b'x')
+
+    def test_eof(self):
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        with self.tk.createchannel(r) as channel:
+            os.write(w, b'x')
+            os.close(w)
+            self.wait(channel, tkinter.READABLE)
+            self.assertEqual(channel.read(), b'x')
+            self.assertEqual(channel.read(), b'')
+            self.assertTrue(channel.eof())
+
+    def test_write(self):
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        with self.tk.createchannel(w, 'w') as channel:
+            self.wait(channel, tkinter.WRITABLE)
+            channel.write(b'ab\0\xff')
+            channel.write(bytearray(b'c'))
+            channel.flush()
+            self.assertEqual(os.read(r, 10), b'ab\0\xffc')
+
+    def test_socket(self):
+        a, b = socket.socketpair()
+        self.addCleanup(a.close)
+        self.addCleanup(b.close)
+        with self.tk.createchannel(a, 'rw') as channel:
+            channel.write(b'ping')
+            channel.flush()
+            self.assertEqual(b.recv(10), b'ping')
+            b.send(b'pong')
+            self.wait(channel, tkinter.READABLE)
+            self.assertEqual(channel.read(), b'pong')
+        # The original socket is still open.
+        a.send(b'x')
+        self.assertEqual(b.recv(1), b'x')
+
+    def test_handler(self):
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        channel = self.tk.createchannel(r)
+        self.addCleanup(channel.close)
+        calls = []
+        def handler(chan, mask):
+            calls.append((chan, mask))
+            chan.read()
+            chan.deletehandler()
+        channel.createhandler(tkinter.READABLE, handler)
+        os.write(w, b'x')
+        for _ in range(1000):
+            if calls:
+                break
+            self.tk.dooneevent()
+        self.assertEqual(calls, [(channel, tkinter.READABLE)])
+        # Deleting a deleted handler is a no-op.
+        channel.deletehandler()
+
+    def test_handler_keeps_channel_alive(self):
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        calls = []
+        def handler(chan, mask):
+            calls.append(chan.read())
+            chan.close()
+        self.tk.createchannel(r).createhandler(tkinter.READABLE, handler)
+        support.gc_collect()
+        os.write(w, b'x')
+        for _ in range(1000):
+            if calls:
+                break
+            self.tk.dooneevent()
+        self.assertEqual(calls, [b'x'])
+
+    def test_close_from_tcl(self):
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        with self.tk.createchannel(w, 'w') as channel:
+            self.tk.call('puts', '-nonewline', channel.name, 'ab')
+            self.tk.call('flush', channel.name)
+            self.assertEqual(os.read(r, 10), b'ab')
+            # Closing it in Tcl only unregisters the name.
+            self.tk.call('close', channel.name)
+            self.assertRaises(TclError, self.tk.call, 'flush', channel.name)
+            channel.write(b'cd')
+            channel.flush()
+            self.assertEqual(os.read(r, 10), b'cd')
+
+    def test_closed(self):
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        channel = self.tk.createchannel(r)
+        name = channel.name
+        channel.close()
+        channel.close()
+        self.assertTrue(channel.closed)
+        self.assertRaises(TclError, self.tk.call, 'chan', 'configure', name)
+        for meth, *args in [('read',), ('write', b'x'), ('flush',),
+                            ('eof',), ('deletehandler',),
+                            ('createhandler', tkinter.READABLE, print)]:
+            with self.subTest(meth):
+                self.assertRaises(ValueError, getattr(channel, meth), *args)
+        self.assertIn('closed', repr(channel))
+
+    def test_dealloc_closes(self):
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        name = self.tk.createchannel(r).name
+        support.gc_collect()
+        self.assertRaises(TclError, self.tk.call, 'chan', 'configure', name)
+
+    def test_bad_arguments(self):
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        for mode in '', 'x', 'rr', 'a':
+            with self.subTest(mode=mode):
+                self.assertRaises(ValueError, self.tk.createchannel, r, mode)
+        self.assertRaises(TypeError, self.tk.createchannel, 'spam')
+        self.assertRaises(OSError, self.tk.createchannel, os_helper.make_bad_fd())
+        with self.tk.createchannel(r) as channel:
+            self.assertRaises(TypeError, channel.createhandler,
+                              tkinter.READABLE, 'spam')
+            for mask in 0, tkinter.EXCEPTION, tkinter.READABLE | 0x100:
+                with self.subTest(mask=mask):
+                    self.assertRaises(ValueError, channel.createhandler,
+                                      mask, print)
+            self.assertRaises(TypeError, channel.write, 'spam')
 
 
 class BigmemTclTest(unittest.TestCase):

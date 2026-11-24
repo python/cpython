@@ -1,0 +1,4 @@
+Added support for Tcl :ref:`channels <tkinter-channels>` in :mod:`tkinter`.
+A channel lets the Tk mainloop do the I/O on a file, a pipe or a socket, and
+call a handler when data can be read or written.  Unlike file handlers,
+channels also work on Windows.
