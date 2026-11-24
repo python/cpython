@@ -238,10 +238,8 @@ def _get_main_module_details(error=ImportError):
     # or zipfile -- not in the whole sys.path.
     main_name = "__main__"
     kwargs = {"name": main_name} if issubclass(error, ImportError) else {}
-    from pkgutil import get_importer
     path_name = sys.path[0]
-    importer = get_importer(path_name)
-    spec = importer.find_spec(main_name) if importer is not None else None
+    spec = importlib.machinery.PathFinder.find_spec(main_name, [path_name])
     if spec is None or spec.loader is None:
         raise error("can't find %r module in %r" % (main_name, path_name),
                     **kwargs)
