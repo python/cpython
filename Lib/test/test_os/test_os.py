@@ -4725,6 +4725,30 @@ class CPUCountTests(unittest.TestCase):
                 with unittest.mock.patch("builtins.open", might_fail_to_open):
                     self.assertIsNone(os._cpu_count_cgroups())
 
+    @unittest.skipUnless(sys.platform == "linux", "Requires Linux")
+    def test_cpu_count_parse_cpu_max(self):
+        for cpu_max_contents, expected_n_cpus in [
+            # max means all cores
+            ("max 100000", os.cpu_count()),
+            # garbage
+            ("garbage garbage", None),
+            # too many numbers
+            ("123 123 123", None),
+            # less than one core means one core
+            ("1000 100000", 1),
+            # One or more cores, rounding up:
+            ("100000 100000", 1),
+            ("200000 100000", 2),
+            ("230000 100000", 3),
+            # Divide by quota:
+            ("100000  50000", 2),
+        ]:
+            with tempfile.NamedTemporaryFile("w") as f:
+                f.write(cpu_max_contents)
+                f.flush()
+                result = os._parse_cgroup2_cpu_max(f.name)
+                self.assertEqual(result, expected_n_cpus)
+
     @unittest.skipUnless(
         sys.platform == "linux" and shutil.which("systemd-run") is not None,
         "testing cgroups requires Linux with systemd-run",
@@ -4771,15 +4795,11 @@ class CPUCountTests(unittest.TestCase):
                 subprocess.check_output(command_args, encoding="utf-8").strip()
             )
 
-        for set_num_cpus, expected in [
-            (0.01, 1),
-            (0.5, 1),
-            (1, 1),
-            (1.5, 2),
-            (base_count - 1, base_count - 1),
-        ]:
-            result = run_and_get_int(get_systemd_args(set_num_cpus))
-            self.assertEqual(result, expected)
+        # Base setting of number of cores:
+        result = run_and_get_int(get_systemd_args(1))
+        self.assertEqual(result, 1)
+        result = run_and_get_int(get_systemd_args(2))
+        self.assertEqual(result, 2)
 
         # Changes to the quota's period are taken into account:
         result = run_and_get_int(get_systemd_args(1, cpu_period_ms=30))
