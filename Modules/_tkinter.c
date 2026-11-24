@@ -312,6 +312,14 @@ Tkinter_TkInit(Tcl_Interp *interp)
    ENTER_TCL/LEAVE_TCL pairs to be contained inside the code between
    ENTER_PYTHON and LEAVE_PYTHON.
 
+   An event handler can also be called when Tcl is not entered with
+   ENTER_TCL, for example from a foreign event loop on Windows, which
+   dispatches a window message to Tk while the Python interpreter lock
+   is released.  Then there is no saved thread state and the lock for
+   Tcl is not held, so ENTER_PYTHON acquires the Python interpreter
+   lock with PyGILState_Ensure() and LEAVE_PYTHON releases it with
+   PyGILState_Release().
+
    These locks expand to several statements and brackets; they should
    not be used in branches of if statements and the like.
 
@@ -362,15 +370,27 @@ static PyThreadState *tcl_tstate = NULL;
     tcl_tstate = NULL; if(tcl_lock)PyThread_release_lock(tcl_lock); }
 
 #define ENTER_PYTHON \
-    { PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; \
-      if(tcl_lock) \
-        PyThread_release_lock(tcl_lock); \
-      PyEval_RestoreThread((tstate)); }
+    { PyThreadState *tstate = tcl_tstate; \
+      PyGILState_STATE gilstate = PyGILState_UNLOCKED; \
+      if (tstate == NULL) { \
+          gilstate = PyGILState_Ensure(); \
+      } \
+      else { \
+          tcl_tstate = NULL; \
+          if(tcl_lock)PyThread_release_lock(tcl_lock); \
+          PyEval_RestoreThread(tstate); \
+      }
 
 #define LEAVE_PYTHON \
-    { PyThreadState *tstate = PyEval_SaveThread(); \
-      if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
-      tcl_tstate = tstate; }
+      if (tstate == NULL) { \
+          PyGILState_Release(gilstate); \
+      } \
+      else { \
+          tstate = PyEval_SaveThread(); \
+          if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
+          tcl_tstate = tstate; \
+      } \
+    }
 
 #ifndef FREECAST
 #define FREECAST (char *)
@@ -2446,15 +2466,6 @@ typedef struct {
     PyObject *func;
 } PythonCmd_ClientData;
 
-static int
-PythonCmd_Error(Tcl_Interp *interp)
-{
-    errorInCmd = 1;
-    excInCmd = PyErr_GetRaisedException();
-    LEAVE_PYTHON
-    return TCL_ERROR;
-}
-
 /* This is the Tcl command that acts as a wrapper for Python
  * function or method.
  */
@@ -2467,19 +2478,20 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
     int i;
     Tcl_Obj *obj_res;
     int objargs = data->self->wantobjects >= 2;
+    int result = TCL_ERROR;
 
     ENTER_PYTHON
 
     /* Create argument tuple (objv1, ..., objvN) */
     if (!(args = PyTuple_New(objc - 1)))
-        return PythonCmd_Error(interp);
+        goto error;
 
     for (i = 0; i < (objc - 1); i++) {
         PyObject *s = objargs ? FromObj(data->self, objv[i + 1])
                               : unicodeFromTclObj(data->self, objv[i + 1]);
         if (!s) {
             Py_DECREF(args);
-            return PythonCmd_Error(interp);
+            goto error;
         }
         PyTuple_SET_ITEM(args, i, s);
     }
@@ -2488,19 +2500,25 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
     Py_DECREF(args);
 
     if (res == NULL)
-        return PythonCmd_Error(interp);
+        goto error;
 
     obj_res = AsObj(res);
     if (obj_res == NULL) {
         Py_DECREF(res);
-        return PythonCmd_Error(interp);
+        goto error;
     }
     Tcl_SetObjResult(interp, obj_res);
     Py_DECREF(res);
+    result = TCL_OK;
+    goto done;
 
+error:
+    errorInCmd = 1;
+    excInCmd = PyErr_GetRaisedException();
+done:
     LEAVE_PYTHON
 
-    return TCL_OK;
+    return result;
 }
 
 
