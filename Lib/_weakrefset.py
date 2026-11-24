@@ -150,7 +150,10 @@ class WeakSet:
     __or__ = union
 
     def isdisjoint(self, other):
-        return len(self.intersection(other)) == 0
+        for item in other:
+            if item in self:
+                return False
+        return True
 
     def __repr__(self):
         return repr(self.data)
