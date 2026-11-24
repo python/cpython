@@ -1014,6 +1014,13 @@ class TestCurses(unittest.TestCase):
             self.assertIsInstance(cud_2, bytes)
             curses.putp(cud_2)
 
+        # String parameters are not supported.  An omitted one is empty.
+        ms = curses.tigetstr('Ms')
+        if ms is not None and b'%p2%s' in ms:
+            self.assertRaises(TypeError, curses.tparm, ms, 1, 2)
+            self.assertRaises(TypeError, curses.tparm, ms, 0, 2)
+            self.assertNotIn(b'%', curses.tparm(ms))
+
         curses.putp(b'abc\n')
 
     def test_misc_module_funcs(self):
