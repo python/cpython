@@ -3745,8 +3745,10 @@ _PyEval_MaterializeLazyCoro(PyThreadState *tstate, _PyInterpreterFrame *frame)
     _PyErr_StackItem *exc_info =
         (_PyErr_StackItem *)(tstate->datastack_top - item_slots);
     assert(exc_info->previous_item == NULL);
+    // Right after the frame, unless it starts a new data stack chunk.
     assert((PyObject **)frame + _PyFrame_GetCode(frame)->co_framesize ==
-           (PyObject **)exc_info);
+           (PyObject **)exc_info ||
+           (PyObject **)exc_info == &tstate->datastack_chunk->data[0]);
     PyGenObject *gen = (PyGenObject *)_PyCoro_MaterializeLazy(frame);
     if (gen == NULL) {
         return NULL;
@@ -3756,13 +3758,15 @@ _PyEval_MaterializeLazyCoro(PyThreadState *tstate, _PyInterpreterFrame *frame)
     _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
     _PyFrame_Copy(frame, gen_frame);
     gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
-    FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED_YIELD_FROM);
     PyFrameObject *f = gen_frame->frame_obj;
     if (f != NULL) {
         Py_BEGIN_CRITICAL_SECTION(f);
         f->f_frame = gen_frame;
         Py_END_CRITICAL_SECTION();
     }
+    // Publish the frame only once the frame object points to it, as the
+    // critical section may let the GC run.
+    FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED_YIELD_FROM);
     _PyThreadState_PopFrame(tstate, frame);
     return gen;
 }

@@ -3535,6 +3535,110 @@ class LazyCoroutineTest(unittest.TestCase):
                     sys.monitoring.set_events(tool, 0)
                     sys.monitoring.free_tool_id(tool)
 
+    def test_lazy_with_line_events_at_awaited_call_jump_target(self):
+        # The list(genexpr) fast path jumps to GET_AWAITABLE, which must
+        # not get INSTRUMENTED_LINE.
+        async def list(arg):
+            return sys._getframe().f_generator is None
+
+        async def outer():
+            return await list(i for i in range(3))
+
+        mon = sys.monitoring
+        tool = mon.DEBUGGER_ID
+        self.assertEqual(run_async(outer()), ([], True))
+        mon.use_tool_id(tool, "test")
+        try:
+            mon.register_callback(tool, mon.events.LINE, lambda *args: None)
+            mon.set_events(tool, mon.events.LINE)
+            self.assertEqual(run_async(outer()), ([], True))
+        finally:
+            mon.set_events(tool, 0)
+            mon.register_callback(tool, mon.events.LINE, None)
+            mon.free_tool_id(tool)
+        self.assertEqual(run_async(outer()), ([], True))
+
+    def test_line_event_raises_after_suspension(self):
+        async def inner():
+            await AsyncYield("suspended")
+            return "done"
+
+        async def outer():
+            x = (await
+                 inner())
+            return x
+
+        def line(code, lineno):
+            if code is outer.__code__ and lineno == code.co_firstlineno + 1:
+                raise ValueError("line")
+
+        mon = sys.monitoring
+        tool = mon.DEBUGGER_ID
+        mon.use_tool_id(tool, "test")
+        try:
+            mon.register_callback(tool, mon.events.LINE, line)
+            mon.set_events(tool, mon.events.LINE)
+            with self.assertRaisesRegex(ValueError, "line"):
+                run_async(outer())
+        finally:
+            mon.set_events(tool, 0)
+            mon.register_callback(tool, mon.events.LINE, None)
+            mon.free_tool_id(tool)
+
+    def test_set_lineno_to_multiline_await(self):
+        # The await line must not start at GET_AWAITABLE, whose lazy
+        # outcome slot cannot hold an arbitrary object.
+        async def inner():
+            return "done"
+
+        async def outer():
+            a = b = [1]
+            t = (a, b,
+                 a)
+            x = (await
+                 inner())
+            return x
+
+        first = outer.__code__.co_firstlineno
+        errors = []
+        def tracer(frame, event, arg):
+            if (event == "line" and frame.f_code is outer.__code__
+                    and frame.f_lineno == first + 3):
+                try:
+                    frame.f_lineno = first + 4
+                except ValueError as e:
+                    errors.append(str(e))
+            return tracer
+
+        old_trace = sys.gettrace()
+        sys.settrace(tracer)
+        try:
+            self.assertEqual(run_async(outer()), ([], "done"))
+        finally:
+            sys.settrace(old_trace)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("incompatible stacks", errors[0])
+
+    def test_exc_state_at_data_stack_chunk_end(self):
+        # The body's exception state may start a new data stack chunk.
+        async def rec(n):
+            if n == 0:
+                await AsyncYield(None)
+                return 0
+            return await rec(n - 1) + 1
+
+        def padded(k):
+            ns = {}
+            names = "=".join(f"a{i}" for i in range(k))
+            body = f"    {names} = None\n" if k else ""
+            exec(f"def f(fn):\n{body}    return fn()\n", ns)
+            return ns["f"]
+
+        # Shift the frames by one slot at a time.
+        for k in range(32):
+            self.assertEqual(padded(k)(lambda: run_async(rec(200))),
+                             ([None], 200))
+
 
 @support.cpython_only
 @unittest.skipIf(_testcapi is None, "requires _testcapi")

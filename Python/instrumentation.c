@@ -1661,22 +1661,15 @@ initialize_lines(_PyCoLineInstrumentationData *line_data, PyCodeObject *code, in
                 target = i - oparg;
                 break;
             }
-            case GET_AWAITABLE:
-            {
-                if (!(oparg & GET_AWAITABLE_AWAITED_CALL)) {
-                    continue;
-                }
-                /* To YIELD_VALUE; the jump past END_SEND lands on SEND's target */
-                target = i + 1 + INLINE_CACHE_ENTRIES_SEND;
-                break;
-            }
             default:
                 continue;
         }
         assert(target >= 0);
         if (get_line_delta(line_data, target) != NO_LINE) {
             int opcode = _Py_GetBaseCodeUnit(code, target).op.code;
-            if (opcode != POP_ITER) {
+            if (opcode != POP_ITER &&
+                !is_awaited_call_get_awaitable(code, target))
+            {
                 set_original_opcode(line_data, target, opcode);
             }
         }

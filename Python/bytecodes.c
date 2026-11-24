@@ -1705,7 +1705,24 @@ dummy_func(
                     stack_pointer[-1] = PyStackRef_NULL;
                     stack_pointer[0] = v;
                     stack_pointer += 1;
+                    _Py_CODEUNIT *send = next_instr;
                     next_instr += 1 + INLINE_CACHE_ENTRIES_SEND;
+                    if (send->op.code == INSTRUMENTED_LINE && !tstate->tracing) {
+                        // Emit the LINE event of the skipped SEND here, as
+                        // the handler around YIELD_VALUE expects only throws.
+                        frame->instr_ptr = send;
+                        SAVE_SP();
+                        int original_opcode = _Py_call_instrumentation_line(
+                                tstate, frame, send, this_instr);
+                        LOAD_SP();
+                        if (original_opcode < 0) {
+                            next_instr = send + 1;
+                            goto error;
+                        }
+                        if (frame->instr_ptr != send) {
+                            next_instr = frame->instr_ptr;
+                        }
+                    }
                     DISPATCH();
                 }
             }
@@ -1972,7 +1989,11 @@ dummy_func(
             RELOAD_STACK();
             LOAD_IP(offset);
             value = temp;
-            LLTRACE_RESUME_FRAME();
+            // After a lazy suspension, the caller's lazy outcome slot holds a
+            // frame pointer, which nothing may see before GET_AWAITABLE runs.
+            if (offset != 0) {
+                LLTRACE_RESUME_FRAME();
+            }
         }
 
         macro(YIELD_VALUE) =

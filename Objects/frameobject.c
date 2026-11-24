@@ -1697,7 +1697,16 @@ marklines(PyCodeObject *code, int len)
     while (_PyLineTable_NextAddressRange(&bounds)) {
         assert(bounds.ar_start / (int)sizeof(_Py_CODEUNIT) < len);
         if (bounds.ar_line != last_line && bounds.ar_line != -1) {
-            linestarts[bounds.ar_start / sizeof(_Py_CODEUNIT)] = bounds.ar_line;
+            int i = bounds.ar_start / (int)sizeof(_Py_CODEUNIT);
+            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(code, i);
+            if (inst.op.code == GET_AWAITABLE &&
+                (inst.op.arg & GET_AWAITABLE_AWAITED_CALL))
+            {
+                /* Its lazy outcome slot must hold NULL or an outcome,
+                 * so jump to the SEND that follows it instead. */
+                i++;
+            }
+            linestarts[i] = bounds.ar_line;
             last_line = bounds.ar_line;
         }
     }

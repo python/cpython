@@ -7634,6 +7634,8 @@
             int opcode = GET_AWAITABLE;
             (void)(opcode);
             #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_AWAITABLE);
@@ -7698,7 +7700,25 @@
                         stack_pointer[-1] = PyStackRef_NULL;
                         stack_pointer[0] = v;
                         stack_pointer += 1;
+                        _Py_CODEUNIT *send = next_instr;
                         next_instr += 1 + INLINE_CACHE_ENTRIES_SEND;
+                        if (send->op.code == INSTRUMENTED_LINE && !tstate->tracing) {
+                            frame->instr_ptr = send;
+                            SAVE_SP();
+                            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                            _PyFrame_StackPointerValidate(frame);
+                            int original_opcode = _Py_call_instrumentation_line(
+                                tstate, frame, send, this_instr);
+                            _PyFrame_StackPointerInvalidate(frame);
+                            LOAD_SP();
+                            if (original_opcode < 0) {
+                                next_instr = send + 1;
+                                JUMP_TO_LABEL(error);
+                            }
+                            if (frame->instr_ptr != send) {
+                                next_instr = frame->instr_ptr;
+                            }
+                        }
                         DISPATCH();
                     }
                 }
@@ -9264,7 +9284,9 @@
                 _PyFrame_StackPointerInvalidate(frame);
                 LOAD_IP(offset);
                 value = temp;
-                LLTRACE_RESUME_FRAME();
+                if (offset != 0) {
+                    LLTRACE_RESUME_FRAME();
+                }
             }
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -14573,7 +14595,9 @@
                 _PyFrame_StackPointerInvalidate(frame);
                 LOAD_IP(offset);
                 value = temp;
-                LLTRACE_RESUME_FRAME();
+                if (offset != 0) {
+                    LLTRACE_RESUME_FRAME();
+                }
             }
             stack_pointer[0] = value;
             stack_pointer += 1;

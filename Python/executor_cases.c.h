@@ -9659,7 +9659,9 @@
             _PyFrame_StackPointerInvalidate(frame);
             LOAD_IP(offset);
             value = temp;
-            LLTRACE_RESUME_FRAME();
+            if (offset != 0) {
+                LLTRACE_RESUME_FRAME();
+            }
             _tos_cache0 = value;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
