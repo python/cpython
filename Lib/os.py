@@ -1247,7 +1247,7 @@ if sys.platform == "linux":
                             mount_dir = mount_dir.replace(quoted, value)
                         return mount_dir
         except OSError:
-            return
+            return None
 
 
     def _parse_cgroup2_cpu_max(filename):
@@ -1261,11 +1261,11 @@ if sys.platform == "linux":
             with open(filename) as fp:
                 line = fp.readline()
         except OSError:
-            return
+            return None
 
         parts = line.split()
         if len(parts) != 2:
-            return
+            return None
 
         if parts[0] == "max":
             return cpu_count()
@@ -1274,7 +1274,7 @@ if sys.platform == "linux":
             quota = int(parts[0])
             period = int(parts[1])
         except ValueError:
-            return
+            return None
 
         # Rounds up in order to saturate CPUs if the quota is fractional:
         import math
@@ -1287,13 +1287,13 @@ if sys.platform == "linux":
 
         sched = sched_getscheduler(0)
         if sched in (SCHED_FIFO, SCHED_RR, SCHED_DEADLINE):
-            return
+            return None
 
         cgroup_subpath = None
         try:
             fp = open("/proc/self/cgroup")
         except OSError:
-            return
+            return None
         with fp:
             for line in fp:
                 # Cgroups v2 format; see cgroups(7) man page, section on
@@ -1302,11 +1302,11 @@ if sys.platform == "linux":
                     cgroup_subpath = line[3:].rstrip("\n")
 
         if cgroup_subpath is None:
-            return
+            return None
 
         cgroup2_mount_point = _get_cgroup2_mount_point()
         if cgroup2_mount_point is None:
-            return
+            return None
 
         # Traverse nested controllers, from child to parent, looking for a CPU
         # limit:
@@ -1339,7 +1339,7 @@ if sys.platform == "linux":
         return cpu_quota
 else:
     def _cpu_count_cgroups():
-        return
+        return None
 
 
 if _exists('sched_getaffinity') and sys._get_cpu_count_config() < 0:
