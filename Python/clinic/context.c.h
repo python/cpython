@@ -2,6 +2,10 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_contextvars_Context_get__doc__,
@@ -114,6 +118,88 @@ static PyObject *
 _contextvars_Context_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _contextvars_Context_copy_impl((PyContext *)self);
+}
+
+static PyObject *
+contextvar_tp_new_impl(PyTypeObject *type, PyObject *name, PyObject *def);
+
+static PyObject *
+contextvar_tp_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(default), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "default", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "ContextVar",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t noptargs = nargs + nkw - 1;
+    PyObject *name;
+    PyObject *def = NULL;
+
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    name = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    def = fastargs[1];
+skip_optional_kwonly:
+    return_value = contextvar_tp_new_impl(type, name, def);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+contextvar_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return contextvar_tp_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+contextvar_tp_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    assert(_PyType_CAST(type)->tp_new == contextvar_tp_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    return contextvar_tp_new_helper(_PyType_CAST(type), args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
 }
 
 PyDoc_STRVAR(_contextvars_ContextVar_get__doc__,
@@ -259,4 +345,4 @@ token_exit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=90ec3e4375804e9b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=488efab9f3932fbb input=a9049054013a1b77]*/

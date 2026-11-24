@@ -1,2 +1,0 @@
-Preserve :exc:`SyntaxError` for malformed escapes in unfinished f-strings and
-t-strings passed to :func:`codeop.compile_command`.

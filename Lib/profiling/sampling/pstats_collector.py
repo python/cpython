@@ -30,7 +30,6 @@ class PstatsCollector(Collector):
         self._seen_locations.clear()
 
         # Process each frame in the stack to track cumulative calls
-        # frame.location is int, tuple (lineno, end_lineno, col_offset, end_col_offset), or None
         for frame in frames:
             lineno = extract_lineno(frame.location)
             location = (frame.filename, lineno, frame.funcname)

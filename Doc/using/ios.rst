@@ -226,7 +226,7 @@ To add Python to an iOS Xcode project:
    .. code-block:: bash
 
       set -e
-      source $PROJECT_DIR/Python.xcframework/build/build_utils.sh
+      source "$PROJECT_DIR/Python.xcframework/build/utils.sh"
       install_python Python.xcframework app
 
    If you have placed your XCframework somewhere other than the root of your

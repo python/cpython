@@ -1324,6 +1324,11 @@ class ElementTreeTest(unittest.TestCase):
             ET.fromstring('<r>%s<</r>' % ('x' * size))
         self.assertEqual(cm.exception.position, (1, size + 4))
 
+    def test_parse_error_msg_is_string(self):
+        with self.assertRaises(ET.ParseError) as cm:
+            ET.XML("<")
+        self.assertIsInstance(cm.exception.msg, str)
+        self.assertEqual(cm.exception.msg, "unclosed token: line 1, column 0")
 
     @support.subTests('sample,exception', [
         (b'<x> \xa1</x>', UnicodeDecodeError),  # crashed
@@ -4063,6 +4068,19 @@ class ElementFindTest(unittest.TestCase):
         e = ET.XML(SAMPLE_XML)
         with self.assertRaisesRegex(SyntaxError, 'cannot use absolute path'):
             e.findall('/tag')
+
+    def test_find_invalid_path(self):
+        e = ET.XML(SAMPLE_XML)
+        paths = ('@', './x=y', './(', './)', './]', './!=', './::',
+                 './()', "./'tag'", './"tag"', 'tag/@')
+        for obj in (e, ET.ElementTree(e)):
+            for method in ('find', 'findall', 'findtext', 'iterfind'):
+                for path in paths:
+                    with self.subTest(type=type(obj).__name__,
+                                      method=method, path=path):
+                        self.assertRaisesRegex(
+                            SyntaxError, '^invalid path$',
+                            getattr(obj, method), path)
 
     def test_find_through_ElementTree(self):
         e = ET.XML(SAMPLE_XML)
