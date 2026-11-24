@@ -1312,7 +1312,7 @@ if sys.platform == "linux":
 
         # Traverse nested controllers, from child to parent, looking for a CPU
         # limit:
-        cpu_quota = cpu_count()
+        cpu_quota = None
         while True:
             cpu_max_filename = path.join(
                 cgroup2_mount_point,
@@ -1327,6 +1327,8 @@ if sys.platform == "linux":
                 # the resource distribution further. The restrictions set
                 # closer to the root in the hierarchy can not be overridden
                 # from further away." So we have to pick the minimum.
+                if cpu_quota is None:
+                    cpu_quota = num_cpus
                 cpu_quota = min(num_cpus, cpu_quota)
                 if cpu_quota == 1:
                     # Can't get any lower than 1
