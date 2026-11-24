@@ -697,7 +697,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
             td = timedelta(microseconds=ms)
             self.assertEqual(td.total_seconds(), td / timedelta(seconds=1))
 
-        # Converting the numerator to double before division loses a microsecond.
+        # Converting to double before division would lose the +1.
         us = 2**53 + 1
         td = timedelta(microseconds=us)
         self.assertEqual(td.total_seconds(), us / 1_000_000)
