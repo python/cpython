@@ -2328,6 +2328,30 @@ class TestSpecializer(TestBase):
 
     @cpython_only
     @requires_specialization
+    def test_load_attr_module_builtin_data_descriptors(self):
+        def load_dict(module):
+            return module.__dict__
+
+        def load_class(module):
+            return module.__class__
+
+        for name, load_attr in (
+            ("__dict__", load_dict),
+            ("__class__", load_class),
+        ):
+            with self.subTest(name=name):
+                module = types.ModuleType("test_module_builtin_descriptor")
+                namespace = vars(module)
+                namespace[name] = object()
+                expected = namespace if name == "__dict__" else types.ModuleType
+
+                for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                    self.assertIs(load_attr(module), expected)
+
+                self.assert_no_opcode(load_attr, "LOAD_ATTR_MODULE")
+
+    @cpython_only
+    @requires_specialization
     def test_load_attr_module_subclass_with_data_descriptor(self):
         # gh-156399: a types.ModuleType subclass inherits
         # PyModule_Type.tp_getattro, so guarding specialization on tp_getattro

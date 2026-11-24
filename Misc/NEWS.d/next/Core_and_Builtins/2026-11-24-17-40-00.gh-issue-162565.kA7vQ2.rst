@@ -1,0 +1,3 @@
+Preserve built-in data descriptor precedence when specializing attribute loads
+on module objects, including dictionary entries shadowing ``__dict__`` and
+``__class__``.

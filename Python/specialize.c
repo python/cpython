@@ -457,6 +457,14 @@ specialize_module_load_attr(
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_NO_DICT);
         return -1;
     }
+    // Module data descriptors take precedence over the module dictionary.
+    PyObject *descriptor = _PyType_LookupRef(&PyModule_Type, name);
+    bool overrides_dict = descriptor != NULL && PyDescr_IsData(descriptor);
+    Py_XDECREF(descriptor);
+    if (overrides_dict) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_OVERRIDING_DESCRIPTOR);
+        return -1;
+    }
     int result;
     Py_BEGIN_CRITICAL_SECTION(dict);
     result = specialize_module_load_attr_lock_held(dict, instr, name);
