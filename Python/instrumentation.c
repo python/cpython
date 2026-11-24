@@ -995,7 +995,7 @@ call_one_instrument(
         return -1;
     }
     if (res == &_PyInstrumentation_DISABLE) {
-        assert(_Py_IsImmortal(res));
+        _Py_ASSERT_IMMORTAL(res);
         return 1;
     }
     Py_DECREF(res);

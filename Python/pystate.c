@@ -872,6 +872,7 @@ common_const_is_initialized(_PyStackRef ref)
 static void
 common_constants_clear(PyInterpreterState *interp)
 {
+    // Refcount reclamation skips heap immortals; release manually.
     for (int i = 0; i < NUM_COMMON_CONSTANTS; i++) {
         _PyStackRef ref = interp->common_consts[i];
         if (!common_const_is_initialized(ref)) {
@@ -880,27 +881,23 @@ common_constants_clear(PyInterpreterState *interp)
         PyObject *obj = PyStackRef_AsPyObjectBorrow(ref);
         PyStackRef_XCLOSE(ref);
         interp->common_consts[i] = PyStackRef_NULL;
-        // Refcount reclamation skips heap immortals; release manually.
-        // - All constants are immortal.
+        // On GIL builds, old Stable ABI extensions can de-immortalize
+        // objects, so we assume the following, and assert on platforms with
+        // reliable immortality checks:
+        // - All the constants are immortal.
         // - Only `all` and `any` are heap objects; the rest are statically
         //   allocated.
-        // On GIL builds, old Stable ABI extensions can de-immortalize
-        // objects. We only use Py_Is*Immortal functions to *check*
-        // these assumptions on builds where the functions can be trusted.
+        // Adjust this function if the assumptions are out of date.
+        _Py_ASSERT_IMMORTAL(obj);
         bool is_heap = (
             i == CONSTANT_BUILTIN_ALL
             || i == CONSTANT_BUILTIN_ANY);
-#if defined(Py_GIL_DISABLED)
-        // On free-threading builds, we can trust _Py_IsImmortal.
-        assert (_Py_IsImmortal(obj));
-#endif
-#if defined(Py_GIL_DISABLED) || SIZEOF_VOID_P >= 4
-        // On 64-bit and free-threading builds,
-        // we can trust _Py_IsStaticImmortal.
-        assert (is_heap == !_Py_IsStaticImmortal(obj));
-#endif
         if (is_heap) {
+            _Py_ASSERT_NOT_STATIC_IMMORTAL(obj);
             _Py_ClearImmortal(obj);
+        }
+        else {
+            _Py_ASSERT_STATIC_IMMORTAL(obj);
         }
     }
 }

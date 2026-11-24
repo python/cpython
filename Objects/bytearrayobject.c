@@ -63,7 +63,7 @@ bytearray_reinit_from_bytes(PyByteArrayObject *self, Py_ssize_t size)
     }
     else {
         // Use the empty bytes string singleton for an empty bytearray
-        assert(_Py_IsImmortal(self->ob_bytes_object));
+        _Py_ASSERT_IMMORTAL(self->ob_bytes_object);
     }
 
     self->ob_bytes = self->ob_start = PyBytes_AS_STRING(self->ob_bytes_object);
