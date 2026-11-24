@@ -414,13 +414,18 @@ the Limited API and must *also* avoid the versioned dependency.
 A Python built with :option:`--enable-shared` and without
 :option:`--with-pydebug` installs :file:`libpython3.so` next to the versioned
 library.
-This library defines no Python symbols itself.
-It only depends on the versioned library, which the dynamic loader loads
-along with it.
-Linking an executable with ``-lpython3`` therefore fails with
-``undefined reference`` errors, but an application can load
-:file:`libpython3.so` with :manpage:`dlopen(3)` and look up each function that
-it uses with :manpage:`dlsym(3)`.
+When the dynamic loader loads this library, it also loads the versioned
+library that it was built with, and symbols looked up through
+:file:`libpython3.so` are found in the versioned library.
+An application can therefore load :file:`libpython3.so` with
+:manpage:`dlopen(3)` and look up each function that it uses with
+:manpage:`dlsym(3)`.
+
+This only works at run time.
+When linking an executable, the linker does not use the dependencies of a
+library to resolve symbols, and :file:`libpython3.so` defines no Python
+symbols of its own, so linking with ``-lpython3`` fails with
+``undefined reference`` errors.
 
 For example, with Python 3.12 as the oldest supported version::
 
@@ -432,14 +437,14 @@ For example, with Python 3.12 as the oldest supported version::
    /* The API this application uses, declared as in Python.h.
       Everything is reached through these pointers. */
    static struct {
-       const unsigned long *Version;       /* Py_Version */
-       const char *(*GetVersion)(void);    /* Py_GetVersion */
-       void (*InitializeEx)(int);          /* Py_InitializeEx */
-       int (*FinalizeEx)(void);            /* Py_FinalizeEx */
+       const unsigned long *Version;
+       const char *(*GetVersion)(void);
+       void (*InitializeEx)(int);
+       int (*FinalizeEx)(void);
    } py;
 
-   #define LOAD(lib, name) \
-       ((*(void **)&py.name = dlsym(lib, "Py_" #name)) != NULL)
+   #define LOAD(lib, pointer, name) \
+       ((*(void **)&(pointer) = dlsym(lib, name)) != NULL)
 
    int
    main(int argc, char *argv[])
@@ -451,13 +456,17 @@ For example, with Python 3.12 as the oldest supported version::
                    argv[0]);
            return 2;
        }
+       /* RTLD_GLOBAL is required: it lets the extension modules that
+          Python imports find Python's symbols. */
        void *lib = dlopen(argv[1], RTLD_NOW | RTLD_GLOBAL);
        if (lib == NULL) {
            fprintf(stderr, "Python is not available: %s\n", dlerror());
            return 1;
        }
-       if (!LOAD(lib, Version) || !LOAD(lib, GetVersion)
-           || !LOAD(lib, InitializeEx) || !LOAD(lib, FinalizeEx))
+       if (!LOAD(lib, py.Version, "Py_Version")
+           || !LOAD(lib, py.GetVersion, "Py_GetVersion")
+           || !LOAD(lib, py.InitializeEx, "Py_InitializeEx")
+           || !LOAD(lib, py.FinalizeEx, "Py_FinalizeEx"))
        {
            fprintf(stderr, "Unsupported Python: %s\n", dlerror());
            return 1;
@@ -473,18 +482,23 @@ For example, with Python 3.12 as the oldest supported version::
    }
 
 Compile the program with Python's headers, but without the output of
-``--ldflags``.
+``--ldflags``:
 
 .. code-block:: shell-session
 
    $ gcc $(/opt/bin/python3.12-config --includes) -o myapp myapp.c
-   $ readelf -d myapp | grep NEEDED
-    0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
    $ ./myapp /usr/local/lib/libpython3.so
    Loaded Python 3.14.10 (main, Nov  5 2026, 09:47:10) [GCC 14.2.0]
 
 No Python library is passed to the linker, so the executable does not depend
 on one.
+You can check this with ``readelf``:
+
+.. code-block:: shell-session
+
+   $ readelf -d myapp | grep NEEDED
+    0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+
 For the same reason, Python functions can only be called through such
 pointers.
 This includes the functions that macros in :file:`Python.h` expand to:
@@ -492,19 +506,30 @@ for example, call :c:func:`Py_DecRef` through a pointer instead of using
 :c:func:`Py_DECREF`.
 
 * The path passed to ``dlopen()`` selects the code that runs in your process.
-  Use an absolute path that comes from a trusted source and that names a file
-  only trusted users can replace.
-* The dynamic loader looks for the versioned library by name in its usual
-  search path, such as :envvar:`!LD_LIBRARY_PATH` and the system library
-  directories, and not next to :file:`libpython3.so`.
+  It should come from a trusted source and name a file that only trusted
+  users can replace.
+* Use an absolute path.
+  The dynamic loader looks for a name without a slash in its usual search
+  path, such as :envvar:`!LD_LIBRARY_PATH` and the system library directories.
+  It looks for the versioned library that :file:`libpython3.so` depends on in
+  the same way, and not next to :file:`libpython3.so`.
   To choose the exact file, pass the absolute path of the versioned library
   to ``dlopen()`` instead.
 * ``RTLD_GLOBAL`` makes Python's symbols available to the extension modules
   that Python imports, which are normally not linked against a Python library.
 
-An existing application that calls the C API directly can instead be linked
-as described :ref:`above <compiling>`, and have the dependency recorded in
-the executable renamed afterwards, for example with
+.. rubric:: Alternative: renaming the dependency after linking
+
+Loading Python at run time, as described above,
+is the preferred way to run one binary with several Python versions,
+and it does not need anything described below.
+
+The following is a packaging workaround for an existing application that
+calls the C API directly and cannot easily be changed.
+It is not recommended; use it at your own risk.
+
+Such an application is linked as described :ref:`above <compiling>`.
+The dependency recorded in the executable is then renamed, for example with
 `patchelf <https://github.com/NixOS/patchelf>`__:
 
 .. code-block:: shell-session
@@ -513,9 +538,8 @@ the executable renamed afterwards, for example with
 
 .. warning::
 
-   This is a packaging workaround.
-   It does not make the application compatible with other Python versions,
-   and it has additional limitations and caveats:
+   Renaming the dependency does not make the application compatible with
+   other Python versions, and it has additional limitations and caveats:
 
    * Renaming the dependency does not check that the application uses only
      the Stable ABI.
