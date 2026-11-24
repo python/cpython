@@ -600,6 +600,36 @@ class CallStackTestBase:
         self.assertIs(parent.future, consumer)
         self.assertFalse(parent.awaited_by)
 
+    async def test_shield_indirect_consumers(self):
+        async def wait(fut):
+            await asyncio.wait([fut])
+
+        async def gather(fut):
+            await asyncio.gather(fut)
+
+        async def add_done_callback(fut):
+            done = asyncio.get_running_loop().create_future()
+            fut.add_done_callback(done.set_result)
+            await done
+
+        for consume in (wait, gather, add_done_callback):
+            with self.subTest(method=consume.__name__):
+                release = asyncio.Event()
+                child = asyncio.create_task(release.wait())
+                shielded = asyncio.shield(child)
+                consumer = asyncio.create_task(
+                    consume(shielded), eager_start=True)
+                graph = asyncio.capture_call_graph(child, limit=0)
+                release.set()
+                await consumer
+
+                waiter, = graph.awaited_by
+                self.assertIs(waiter.future, shielded)
+                while waiter.awaited_by:
+                    waiter, = waiter.awaited_by
+                expected = shielded if consume is add_done_callback else consumer
+                self.assertIs(waiter.future, expected)
+
     async def test_shield_discards_awaited_by_on_cancel(self):
         async def consume(fut):
             await fut
