@@ -347,7 +347,7 @@ class saved_test_environment:
             current = get()
             # Check for changes to the resource's value
             if current != original:
-                support.environment_altered = True
+                support.set_environment_altered(f"{name} was modified")
                 restore(original)
                 if not self.quiet and not self.pgo:
                     print_warning(

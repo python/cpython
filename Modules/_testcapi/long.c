@@ -281,6 +281,21 @@ get_pylong_layout(PyObject *module, PyObject *Py_UNUSED(args))
 }
 
 
+// Write into an immutable int object to test _PyStaticObjects_CheckAll()
+static PyObject *
+corrupt_long(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *obj;
+    int value;
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &value)) {
+        return NULL;
+    }
+
+    ((PyLongObject*)obj)->long_value.ob_digit[0] = value;
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef test_methods[] = {
     _TESTCAPI_CALL_LONG_COMPACT_API_METHODDEF
     {"pylong_fromunicodeobject",    pylong_fromunicodeobject,   METH_VARARGS},
@@ -295,6 +310,7 @@ static PyMethodDef test_methods[] = {
     {"pylong_ispositive",           pylong_ispositive,          METH_O},
     {"pylong_isnegative",           pylong_isnegative,          METH_O},
     {"pylong_iszero",               pylong_iszero,              METH_O},
+    {"corrupt_long",                corrupt_long,               METH_VARARGS},
     {NULL},
 };
 

@@ -1,0 +1,2 @@
+:meth:`tarfile.TarFile.extractall` now uses OS-specific separators to call
+lstat.

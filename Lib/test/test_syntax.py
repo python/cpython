@@ -1502,6 +1502,50 @@ Ensure that early = are not matched by the parser as invalid comparisons
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
+Ensure that alternative patterns bind the same names (when there is
+a single capture in the first pattern that is not uniformly captured,
+the error message is sightly different).
+
+   >>> match 1:
+   ...     case x | 1: pass
+   Traceback (most recent call last):
+   SyntaxError: name capture 'x' makes remaining patterns unreachable
+
+   >>> match 1:
+   ...     case x | y: pass
+   Traceback (most recent call last):
+   SyntaxError: name capture 'x' makes remaining patterns unreachable
+
+   >>> match 1:
+   ...     case 1 | x: pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (pattern 1 binds nothing, pattern 2 binds ['x'])
+
+   >>> match 1:
+   ...     case (x, y) | 1: pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (pattern 1 binds ['x', 'y'], pattern 2 binds nothing)
+
+   >>> match 1:
+   ...     case 1 | ("point", {"x": x, "y": y}): pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (pattern 1 binds nothing, pattern 2 binds ['x', 'y'])
+
+   >>> match 1:
+   ...     case ("point", {"x": x, "y": y}) | 1: pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (pattern 1 binds ['x', 'y'], pattern 2 binds nothing)
+
+   >>> match 1:
+   ...     case ("user", {"id": id}) | ("admin", {"name": name}): pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (pattern 1 binds ['id'], pattern 2 binds ['name'])
+
+   >>> match 1:
+   ...     case ("user", {"id": id}) | ("admin", {"id": id}) | ("other", {"ip": ip}): pass
+   Traceback (most recent call last):
+   SyntaxError: alternative patterns bind different names (pattern 1 binds ['id'], pattern 3 binds ['ip'])
+
 Incomplete dictionary literals
 
    >>> {1:2, 3:4, 5}
@@ -3393,10 +3437,14 @@ def func2():
         self._check_error('\nfgdfgf\n1,\\#\n2\n',
                           "unexpected character after line continuation character",
                           lineno=3, offset=4)
+        for prefix in ("f", "t"):
+            self._check_error(f'{prefix}"""{{\n\\ x}}"""',
+                              "unexpected character after line continuation character",
+                              lineno=2, offset=2)
 
     def test_invalid_line_continuation_left_recursive(self):
         # Check bpo-42218: SyntaxErrors following left-recursive rules
-        # (t_primary_raw in this case) need to be tested explicitly
+        # (primary_raw in this case) need to be tested explicitly
         self._check_error("A.\u018a\\ ",
                           "unexpected character after line continuation character")
         self._check_error("A.\u03bc\\\n",
@@ -3520,6 +3568,38 @@ while 1:
         self._check_error(source, "too many statically nested blocks")
 
     @support.cpython_only
+    def test_nested_inlined_comprehensions_block_limit(self):
+        # Each inlined comprehension with locals emits SETUP_FINALLY, which
+        # must count toward CO_MAXBLOCKS (gh-156091).
+        def src(depth):
+            e = "i for i in r"
+            for _ in range(depth - 1):
+                e = "[" + e + "] for i in r"
+            return "x = [" + e + "]"
+
+        CO_MAXBLOCKS = 21
+        compile(src(CO_MAXBLOCKS), "<testcase>", "exec")
+        self._check_error(src(CO_MAXBLOCKS + 1),
+                          "too many statically nested blocks")
+
+    def test_invalid_starred_for_target_in_async_comprehension(self):
+        sources = [
+            "async def f():\n    {a async for b in d for *(b,) in e}",
+            "async def f():\n    [a async for b in d for *(b,) in e]",
+            "async def f():\n    {a: a async for b in d for *(b,) in e}",
+        ]
+        for src in sources:
+            with self.subTest(src=src):
+                self._check_error(
+                    src, "starred assignment target must be in a list or tuple")
+
+    def test_syntax_error_in_nested_inlined_async_comprehension(self):
+        self._check_error(
+            "async def f(it):\n"
+            "    return [[f(a=1, a=2) for y in z] async for x in it]\n",
+            "keyword argument repeated")
+
+    @support.cpython_only
     def test_error_on_parser_stack_overflow(self):
         source = "-" * 100000 + "4"
         for mode in ["exec", "eval", "single"]:
@@ -3607,6 +3687,31 @@ while 1:
             ("continue", "import ast")
         ]:
             self._check_error(f"x = {lhs_stmt} if 1 else {rhs_stmt}", msg)
+
+    def test_diamond_operator(self):
+        self._check_error(
+            "1<>2",
+            r"Maybe you meant '!=' instead of '<>'\?",
+            lineno=1,
+            end_lineno=1,
+            offset=2,
+            end_offset=4,
+        )
+
+    def test_diamond_operator_barry_as_flufl(self):
+        # Under barry_as_FLUFL, '<>' is the valid "not equal" operator
+        compile(
+            "from __future__ import barry_as_FLUFL\n1<>2",
+            "<test>", "exec",
+        )
+        self._check_error(
+            "from __future__ import barry_as_FLUFL\na != b",
+            "with Barry as BDFL, use '<>' instead of '!='",
+            lineno=2,
+            end_lineno=2,
+            offset=3,
+            end_offset=5,
+        )
 
     def test_double_ampersand(self):
         self._check_error(

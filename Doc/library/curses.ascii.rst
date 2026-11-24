@@ -201,7 +201,7 @@ integer byte value; they return a value of the same type.
    character bit value is bitwise-anded with 0x1f).  A non-ASCII character has no
    control character and is returned unchanged.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       A non-ASCII argument is now returned unchanged instead of masked to a
       control character.
 

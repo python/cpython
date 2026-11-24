@@ -167,7 +167,7 @@ The module defines the following user-callable items:
       deprecated alias for this class.
       It will be removed in Python 3.21
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. class:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
@@ -233,6 +233,15 @@ The module defines the following user-callable items:
    to disable the action taken when exiting the context, it can be useful during
    debugging or when you need your cleanup behavior to be conditional based on
    other logic.
+
+   .. warning::
+
+      Cleanup is not robust against the tree being modified while it is removed.
+      Files outside of the tree may have their permissions and file flags reset.
+
+      On systems where :data:`shutil.rmtree.avoids_symlink_attacks` is
+      false, manipulating symbolic links during cleanup
+      may cause files outside of the tree to be removed.
 
    .. audit-event:: tempfile.mkdtemp fullpath tempfile.TemporaryDirectory
 
@@ -348,8 +357,11 @@ The module defines the following user-callable items:
 
    #. A platform-specific location:
 
-      * On Windows, the directories :file:`C:\\TEMP`, :file:`C:\\TMP`,
-        :file:`\\TEMP`, and :file:`\\TMP`, in that order.
+      * On Windows, the directories
+        :file:`%USERPROFILE%\\AppData\\Local\\Temp`,
+        :file:`%SYSTEMROOT%\\Temp`, :file:`C:\\TEMP`,
+        :file:`C:\\TMP`, :file:`\\TEMP`, and
+        :file:`\\TMP`, in that order.
 
       * On all other platforms, the directories :file:`/tmp`, :file:`/var/tmp`, and
         :file:`/usr/tmp`, in that order.

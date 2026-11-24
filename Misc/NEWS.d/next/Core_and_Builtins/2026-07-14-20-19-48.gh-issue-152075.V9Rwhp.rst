@@ -1,2 +1,0 @@
-Reduced lock contention during LOAD_GLOBAL bytecode specialization under
-free threading.

@@ -215,14 +215,17 @@ same :class:`!numpy.ndarray` from two distinct Python shells:
    of all shared memory blocks managed by that process, call
    :meth:`~multiprocessing.managers.BaseManager.shutdown` on the instance.
    This triggers a :meth:`~multiprocessing.shared_memory.SharedMemory.unlink` call
-   on all of the :class:`SharedMemory` objects managed by that process and then
-   stops the process itself.  By creating :class:`!SharedMemory` instances
+   on all of the :class:`~multiprocessing.shared_memory.SharedMemory` objects
+   managed by that process and then stops the process itself.
+   By creating :class:`!SharedMemory` instances
    through a :class:`!SharedMemoryManager`, we avoid the need to manually track
    and trigger the freeing of shared memory resources.
 
-   This class provides methods for creating and returning :class:`SharedMemory`
-   instances and for creating a list-like object (:class:`ShareableList`)
-   backed by shared memory.
+   This class provides methods for creating and returning
+   :class:`~multiprocessing.shared_memory.SharedMemory` instances and for
+   creating a list-like object
+   (:class:`~multiprocessing.shared_memory.ShareableList`) backed by shared
+   memory.
 
    Refer to :class:`~multiprocessing.managers.BaseManager` for a description
    of the inherited *address* and *authkey* optional input arguments and how
@@ -231,12 +234,14 @@ same :class:`!numpy.ndarray` from two distinct Python shells:
 
    .. method:: SharedMemory(size)
 
-      Create and return a new :class:`SharedMemory` object with the
+      Create and return a new
+      :class:`~multiprocessing.shared_memory.SharedMemory` object with the
       specified *size* in bytes.
 
    .. method:: ShareableList(sequence)
 
-      Create and return a new :class:`ShareableList` object, initialized
+      Create and return a new
+      :class:`~multiprocessing.shared_memory.ShareableList` object, initialized
       by the values from the input *sequence*.
 
 

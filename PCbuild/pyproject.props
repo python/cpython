@@ -40,6 +40,8 @@
     <!-- See https://developercommunity.visualstudio.com/t/Regression-in-MSVC-1433-1434-ARM64-co/10224361 -->
     <MSVCHasBrokenARM64Clamping Condition="$(_VCToolsVersion) == '14.34' or $(_VCToolsVersion) == '14.35'">true</MSVCHasBrokenARM64Clamping>
     <MSVCHasBrokenARM64SignExtension Condition="$(_VCToolsVersion) == '14.37'">true</MSVCHasBrokenARM64SignExtension>
+    <!-- See gh-153668 and https://developercommunity.visualstudio.com/t/ARM64-compiler-uses-excessive-memory-on/11120089 -->
+    <MSVCHasBrokenARM64UniDbOpt Condition="$(_VCToolsVersion) == '14.50' or $(_VCToolsVersion) == '14.51' or $(_VCToolsVersion) == '14.52'">true</MSVCHasBrokenARM64UniDbOpt>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -50,7 +52,7 @@
     <_DebugPreprocessorDefinition>NDEBUG;</_DebugPreprocessorDefinition>
     <_DebugPreprocessorDefinition Condition="$(Configuration) == 'Debug'">_DEBUG;</_DebugPreprocessorDefinition>
     <_PyStatsPreprocessorDefinition>PyStats;</_PyStatsPreprocessorDefinition>
-    <_PyStatsPreprocessorDefinition Condition="$(PySTATS) != ''">Py_STATS;</_PyStatsPreprocessorDefinition>
+    <_PyStatsPreprocessorDefinition Condition="$(PySTATS) != ''">Py_STATS=1;</_PyStatsPreprocessorDefinition>
     <_PlatformPreprocessorDefinition>_WIN32;</_PlatformPreprocessorDefinition>
     <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64'">_WIN64;</_PlatformPreprocessorDefinition>
     <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64' and $(PlatformToolset) != 'ClangCL'">_M_X64;$(_PlatformPreprocessorDefinition)</_PlatformPreprocessorDefinition>

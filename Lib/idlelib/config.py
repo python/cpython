@@ -25,7 +25,7 @@ configuration problem notification and resolution.
 """
 # TODOs added Oct 2014, tjr
 
-from configparser import ConfigParser
+from configparser import ConfigParser, Error as ConfigParserError
 import os
 import sys
 
@@ -74,7 +74,7 @@ class IdleConfParser(ConfigParser):
     def Load(self):
         "Load the configuration file from disk."
         if self.file and os.path.exists(self.file):
-            with open(self.file, encoding='utf-8', errors='replace') as f:
+            with open(self.file, encoding='utf-8') as f:
                 self.read_file(f)
 
 class IdleUserConfParser(IdleConfParser):
@@ -159,6 +159,7 @@ class IdleConf:
         self.defaultCfg = {}
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
+        self.file_load_errors = []  # (file, error) for unparsable cfg files.
 
         # See https://bugs.python.org/issue4630#msg356516 for following.
         # self.blink_off_time = <first editor text>['insertofftime']
@@ -795,7 +796,28 @@ class IdleConf:
         "Load all configuration files."
         for key in self.defaultCfg:
             self.defaultCfg[key].Load()
-            self.userCfg[key].Load() #same keys
+            try:
+                self.userCfg[key].Load()  # same keys
+            except (ConfigParserError, UnicodeDecodeError) as err:
+                # Move an invalid user file aside instead of losing it
+                # or failing to start (gh-66172).
+                file = self.userCfg[key].file
+                self.file_load_errors.append((file, err))
+                try:
+                    os.replace(file, file + '.bad')
+                except OSError:
+                    pass
+
+    def file_load_error_message(self):
+        "Return a warning about invalid config files, or None."
+        if not self.file_load_errors:
+            return None
+        files = '\n'.join(
+            f'  {file}:\n    {type(err).__name__}: {str(err).splitlines()[0]}'
+            for file, err in self.file_load_errors)
+        return ('The following IDLE configuration files could not be read.  '
+                'They were renamed by appending ".bad", and default settings '
+                'are used instead:\n\n' + files)
 
     def SaveUserCfgFiles(self):
         "Write all loaded user configuration files to disk."

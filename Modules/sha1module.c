@@ -75,6 +75,7 @@ newSHA1object(SHA1State *st)
         return NULL;
     }
     HASHLIB_INIT_MUTEX(sha);
+    sha->hash_state = NULL; // PyObject_GC_New() does not zero memory
 
     PyObject_GC_Track(sha);
     return sha;
@@ -85,13 +86,13 @@ newSHA1object(SHA1State *st)
 static void
 SHA1_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     SHA1object *ptr = _SHA1object_CAST(op);
     if (ptr->hash_state != NULL) {
         Hacl_Hash_SHA1_free(ptr->hash_state);
         ptr->hash_state = NULL;
     }
-    PyTypeObject *tp = Py_TYPE(ptr);
-    PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
     Py_DECREF(tp);
 }

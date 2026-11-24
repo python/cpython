@@ -1,0 +1,3 @@
+Fix the :mod:`random` :ref:`command-line interface <random-cli>`
+printing a random float for a zero or negative integer input instead of
+failing like ``--integer`` does.
