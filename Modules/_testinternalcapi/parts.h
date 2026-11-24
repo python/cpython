@@ -15,6 +15,7 @@ int _PyTestInternalCapi_Init_PyTime(PyObject *module);
 int _PyTestInternalCapi_Init_Set(PyObject *module);
 int _PyTestInternalCapi_Init_Complex(PyObject *module);
 int _PyTestInternalCapi_Init_CriticalSection(PyObject *module);
+int _PyTestInternalCapi_Init_Tokenizer(PyObject *module);
 int _PyTestInternalCapi_Init_Tuple(PyObject *module);
 int _PyTestInternalCapi_Init_TypeCache(PyObject *module);
 

@@ -4,6 +4,7 @@ import os
 import shutil
 import tempfile
 import unittest
+from unittest import mock
 from collections import namedtuple
 from pathlib import Path
 
@@ -615,13 +616,43 @@ class TestHeatmapCollectorExport(unittest.TestCase):
         html_files = [f for f in os.listdir(output_path)
                       if f.startswith('file_') and f.endswith('.html')]
 
-        if html_files:
-            with open(os.path.join(output_path, html_files[0]), 'r', encoding='utf-8') as f:
-                content = f.read()
+        self.assertEqual(len(html_files), 1)
+        with open(os.path.join(output_path, html_files[0]), 'r', encoding='utf-8') as f:
+            content = f.read()
 
-            # Should have line-related content
-            self.assertIn('line-', content)
+        # Should have line-related content
+        self.assertIn('line-', content)
 
+    def test_export_skips_nonexistent_source(self):
+        self.check_unavailable_source(os.path.join(self.test_dir, 'missing.py'))
+
+    def test_export_skips_directory_source(self):
+        self.check_unavailable_source(self.test_dir)
+
+    @unittest.skipUnless(hasattr(os, 'mkfifo'), 'requires os.mkfifo')
+    def test_export_skips_fifo_source(self):
+        filename = os.path.join(self.test_dir, 'source.fifo')
+        os.mkfifo(filename)
+        self.check_unavailable_source(filename)
+
+    def check_unavailable_source(self, filename):
+        collector = HeatmapCollector(sample_interval_usec=100)
+        frames = [(filename, (1, 1, -1, -1), 'f', None)]
+        collector.process_frames(frames, thread_id=1)
+        output_path = Path(self.test_dir) / 'unavailable_source'
+        read_text = Path.read_text
+
+        def check_read(path, *args, **kwargs):
+            self.assertNotEqual(path, Path(filename),
+                                'Non-regular source must not be opened')
+            return read_text(path, *args, **kwargs)
+
+        with (captured_stdout(), captured_stderr(),
+              mock.patch.object(Path, 'read_text', check_read)):
+            collector.export(output_path)
+        content = (output_path / collector.file_index[filename]).read_text(
+            encoding='utf-8')
+        self.assertIn('Source file not available', content)
 
 class MockFrameInfo:
     """Mock FrameInfo for testing.

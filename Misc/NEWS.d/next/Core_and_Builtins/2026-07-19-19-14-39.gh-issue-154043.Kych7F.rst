@@ -1,2 +1,0 @@
-Fix a data race when iterating a shared :class:`types.GenericAlias` iterator
-from multiple threads under the :term:`free-threaded build`.

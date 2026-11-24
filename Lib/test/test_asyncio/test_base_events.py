@@ -2041,6 +2041,43 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop.run_until_complete(protocol.done)
         self.assertEqual('CLOSED', protocol.state)
 
+    def test_create_datagram_endpoint_transport_error_closes_sock(self):
+        # gh-156400: the socket is closed if the transport is never created.
+        sock = mock.Mock()
+        sock.type = socket.SOCK_DGRAM
+
+        def factory():
+            raise ZeroDivisionError
+
+        coro = self.loop.create_datagram_endpoint(factory, sock=sock)
+        with self.assertRaises(ZeroDivisionError):
+            self.loop.run_until_complete(coro)
+        self.assertTrue(sock.close.called)
+
+    def test_connect_read_pipe_transport_error_closes_pipe(self):
+        # gh-156400: the pipe is closed if the transport is never created.
+        pipe = mock.Mock()
+
+        def factory():
+            raise ZeroDivisionError
+
+        coro = self.loop.connect_read_pipe(factory, pipe)
+        with self.assertRaises(ZeroDivisionError):
+            self.loop.run_until_complete(coro)
+        self.assertTrue(pipe.close.called)
+
+    def test_connect_write_pipe_transport_error_closes_pipe(self):
+        # gh-156400: the pipe is closed if the transport is never created.
+        pipe = mock.Mock()
+
+        def factory():
+            raise ZeroDivisionError
+
+        coro = self.loop.connect_write_pipe(factory, pipe)
+        with self.assertRaises(ZeroDivisionError):
+            self.loop.run_until_complete(coro)
+        self.assertTrue(pipe.close.called)
+
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
     def test_create_datagram_endpoint_sock_unix(self):
         fut = self.loop.create_datagram_endpoint(
@@ -2479,6 +2516,17 @@ class TestSelectorUtils(test_utils.TestCase):
         with sock:
             sock.setblocking(False)
             self.check_set_nodelay(sock)
+
+    @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
+                         'need socket.TCP_NODELAY')
+    def test_set_nodelay_error(self):
+        # gh-161076: a failing setsockopt() must not break transport creation.
+        sock = mock.Mock(family=socket.AF_INET, type=socket.SOCK_STREAM,
+                         proto=socket.IPPROTO_TCP)
+        sock.setsockopt.side_effect = OSError(errno.EINVAL, 'Invalid argument')
+        base_events._set_nodelay(sock)
+        sock.setsockopt.assert_called_once_with(
+            socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
 
 

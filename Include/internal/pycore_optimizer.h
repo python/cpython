@@ -206,7 +206,7 @@ typedef struct _PyExecutorObject {
 PyAPI_FUNC(_PyExecutorObject*) _Py_GetExecutor(PyCodeObject *code, int offset);
 
 int _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
-void _Py_ExecutorDetach(_PyExecutorObject *);
+PyAPI_FUNC(void) _Py_ExecutorDetach(_PyExecutorObject *);
 PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
 
 /* We use a bloomfilter with k = 6, m = 256

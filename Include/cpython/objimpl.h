@@ -15,15 +15,40 @@ static inline size_t _PyObject_SIZE(PyTypeObject *type) {
 
    Note that there's no memory wastage in doing this, as malloc has to
    return (at worst) pointer-aligned memory anyway.
+
+   Return SIZE_MAX on integer overflow (if the result would be greater than
+   PY_SSIZE_T_MAX).
 */
 #if ((SIZEOF_VOID_P - 1) & SIZEOF_VOID_P) != 0
 #   error "_PyObject_VAR_SIZE requires SIZEOF_VOID_P be a power of 2"
 #endif
 
-static inline size_t _PyObject_VAR_SIZE(PyTypeObject *type, Py_ssize_t nitems) {
-    size_t size = _Py_STATIC_CAST(size_t, type->tp_basicsize);
-    size += _Py_STATIC_CAST(size_t, nitems) * _Py_STATIC_CAST(size_t, type->tp_itemsize);
-    return _Py_SIZE_ROUND_UP(size, SIZEOF_VOID_P);
+static inline size_t
+_PyObject_VAR_SIZE(PyTypeObject *type, Py_ssize_t nitems_signed)
+{
+    size_t basicsize;
+    size_t size;
+
+    assert(type->tp_itemsize >= 0);
+    basicsize = _Py_STATIC_CAST(size_t, type->tp_basicsize);
+
+    if (type->tp_itemsize != 0) {
+        size_t nitems = _Py_STATIC_CAST(size_t, nitems_signed);
+        size_t itemsize = _Py_STATIC_CAST(size_t, type->tp_itemsize);
+        if (nitems > ((size_t)PY_SSIZE_T_MAX - basicsize) / itemsize) {
+            return SIZE_MAX;
+        }
+        size = basicsize + nitems * itemsize;
+    }
+    else {
+        size = basicsize;
+    }
+
+    size = _Py_SIZE_ROUND_UP(size, SIZEOF_VOID_P);
+    if (size > (size_t)PY_SSIZE_T_MAX) {
+        return SIZE_MAX;
+    }
+    return size;
 }
 
 

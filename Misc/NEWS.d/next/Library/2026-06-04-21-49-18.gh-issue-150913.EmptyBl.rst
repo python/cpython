@@ -1,3 +1,0 @@
-Fix :class:`sqlite3.Blob` slice assignment to raise
-:exc:`TypeError` and :exc:`IndexError` for type and size mismatches
-respectively, even when the target slice is empty.
