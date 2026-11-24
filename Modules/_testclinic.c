@@ -1869,6 +1869,20 @@ static PyTypeObject TestClass = {
     .tp_methods = test_class_methods,
 };
 
+/* Heap type sharing TestClass's methods, to test defining_class on both. */
+static PyType_Slot HeapTestClass_slots[] = {
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_methods, test_class_methods},
+    {0, NULL},
+};
+
+static PyType_Spec HeapTestClass_spec = {
+    .name = "_testclinic.HeapTestClass",
+    .basicsize = sizeof(PyObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .slots = HeapTestClass_slots,
+};
+
 
 /*[clinic input]
 output push
@@ -1923,13 +1937,17 @@ static struct PyMethodDef depr_star_new_methods[] = {
     {NULL, NULL}
 };
 
-static PyTypeObject DeprStarNew = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "_testclinic.DeprStarNew",
-    .tp_basicsize = sizeof(PyObject),
-    .tp_new = depr_star_new,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_methods = depr_star_new_methods,
+static PyType_Slot DeprStarNew_slots[] = {
+    {Py_tp_new, depr_star_new},
+    {Py_tp_methods, depr_star_new_methods},
+    {0, NULL},
+};
+
+static PyType_Spec DeprStarNew_spec = {
+    .name = "_testclinic.DeprStarNew",
+    .basicsize = sizeof(PyObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .slots = DeprStarNew_slots,
 };
 
 
@@ -1964,14 +1982,18 @@ static struct PyMethodDef depr_star_init_methods[] = {
     {NULL, NULL}
 };
 
-static PyTypeObject DeprStarInit = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "_testclinic.DeprStarInit",
-    .tp_basicsize = sizeof(PyObject),
-    .tp_new = PyType_GenericNew,
-    .tp_init = depr_star_init,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_methods = depr_star_init_methods,
+static PyType_Slot DeprStarInit_slots[] = {
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_init, depr_star_init},
+    {Py_tp_methods, depr_star_init_methods},
+    {0, NULL},
+};
+
+static PyType_Spec DeprStarInit_spec = {
+    .name = "_testclinic.DeprStarInit",
+    .basicsize = sizeof(PyObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .slots = DeprStarInit_slots,
 };
 
 
@@ -1995,13 +2017,17 @@ depr_star_init_noinline_impl(PyObject *self, PyObject *a, PyObject *b,
     return 0;
 }
 
-static PyTypeObject DeprStarInitNoInline = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "_testclinic.DeprStarInitNoInline",
-    .tp_basicsize = sizeof(PyObject),
-    .tp_new = PyType_GenericNew,
-    .tp_init = depr_star_init_noinline,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
+static PyType_Slot DeprStarInitNoInline_slots[] = {
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_init, depr_star_init_noinline},
+    {0, NULL},
+};
+
+static PyType_Spec DeprStarInitNoInline_spec = {
+    .name = "_testclinic.DeprStarInitNoInline",
+    .basicsize = sizeof(PyObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .slots = DeprStarInitNoInline_slots,
 };
 
 
@@ -2021,12 +2047,16 @@ depr_kwd_new_impl(PyTypeObject *type, PyObject *a)
     return type->tp_alloc(type, 0);
 }
 
-static PyTypeObject DeprKwdNew = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "_testclinic.DeprKwdNew",
-    .tp_basicsize = sizeof(PyObject),
-    .tp_new = depr_kwd_new,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
+static PyType_Slot DeprKwdNew_slots[] = {
+    {Py_tp_new, depr_kwd_new},
+    {0, NULL},
+};
+
+static PyType_Spec DeprKwdNew_spec = {
+    .name = "_testclinic.DeprKwdNew",
+    .basicsize = sizeof(PyObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .slots = DeprKwdNew_slots,
 };
 
 
@@ -2045,13 +2075,17 @@ depr_kwd_init_impl(PyObject *self, PyObject *a)
     return 0;
 }
 
-static PyTypeObject DeprKwdInit = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "_testclinic.DeprKwdInit",
-    .tp_basicsize = sizeof(PyObject),
-    .tp_new = PyType_GenericNew,
-    .tp_init = depr_kwd_init,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
+static PyType_Slot DeprKwdInit_slots[] = {
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_init, depr_kwd_init},
+    {0, NULL},
+};
+
+static PyType_Spec DeprKwdInit_spec = {
+    .name = "_testclinic.DeprKwdInit",
+    .basicsize = sizeof(PyObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .slots = DeprKwdInit_slots,
 };
 
 
@@ -2075,13 +2109,17 @@ depr_kwd_init_noinline_impl(PyObject *self, PyObject *a, PyObject *b,
     return 0;
 }
 
-static PyTypeObject DeprKwdInitNoInline = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "_testclinic.DeprKwdInitNoInline",
-    .tp_basicsize = sizeof(PyObject),
-    .tp_new = PyType_GenericNew,
-    .tp_init = depr_kwd_init_noinline,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
+static PyType_Slot DeprKwdInitNoInline_slots[] = {
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_init, depr_kwd_init_noinline},
+    {0, NULL},
+};
+
+static PyType_Spec DeprKwdInitNoInline_spec = {
+    .name = "_testclinic.DeprKwdInitNoInline",
+    .basicsize = sizeof(PyObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .slots = DeprKwdInitNoInline_slots,
 };
 
 
@@ -2843,62 +2881,56 @@ static PyMethodDef tester_methods[] = {
     {NULL, NULL}
 };
 
+static int
+_testclinic_exec(PyObject *m)
+{
+    PyTypeObject *static_types[] = {
+        &TestClass, &VcNew_Type, &VcNewBase_Type, &VcKwOnly_Type,
+    };
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(static_types); i++) {
+        if (PyModule_AddType(m, static_types[i]) < 0) {
+            return -1;
+        }
+    }
+
+    PyType_Spec *heap_specs[] = {
+        &HeapTestClass_spec,
+        &DeprStarNew_spec, &DeprStarInit_spec, &DeprStarInitNoInline_spec,
+        &DeprKwdNew_spec, &DeprKwdInit_spec, &DeprKwdInitNoInline_spec,
+        &VcInit_spec,
+    };
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(heap_specs); i++) {
+        PyObject *type = PyType_FromModuleAndSpec(m, heap_specs[i], NULL);
+        if (type == NULL) {
+            return -1;
+        }
+        int rc = PyModule_AddType(m, (PyTypeObject *)type);
+        Py_DECREF(type);
+        if (rc < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot _testclinic_slots[] = {
+    {Py_mod_exec, _testclinic_exec},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
 static struct PyModuleDef _testclinic_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_testclinic",
     .m_size = 0,
     .m_methods = tester_methods,
+    .m_slots = _testclinic_slots,
 };
 
 PyMODINIT_FUNC
 PyInit__testclinic(void)
 {
-    PyObject *m = PyModule_Create(&_testclinic_module);
-    if (m == NULL) {
-        return NULL;
-    }
-#ifdef Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
-#endif
-    if (PyModule_AddType(m, &TestClass) < 0) {
-        goto error;
-    }
-    if (PyModule_AddType(m, &DeprStarNew) < 0) {
-        goto error;
-    }
-    if (PyModule_AddType(m, &DeprStarInit) < 0) {
-        goto error;
-    }
-    if (PyModule_AddType(m, &DeprStarInitNoInline) < 0) {
-        goto error;
-    }
-    if (PyModule_AddType(m, &DeprKwdNew) < 0) {
-        goto error;
-    }
-    if (PyModule_AddType(m, &DeprKwdInit) < 0) {
-        goto error;
-    }
-    if (PyModule_AddType(m, &DeprKwdInitNoInline) < 0) {
-        goto error;
-    }
-    if (PyModule_AddType(m, &VcNew_Type) < 0) {
-        goto error;
-    }
-    if (PyModule_Add(m, "VcInit",
-                     PyType_FromModuleAndSpec(m, &VcInit_spec, NULL)) < 0) {
-        goto error;
-    }
-    if (PyModule_AddType(m, &VcNewBase_Type) < 0) {
-        goto error;
-    }
-    if (PyModule_AddType(m, &VcKwOnly_Type) < 0) {
-        goto error;
-    }
-    return m;
-
-error:
-    Py_DECREF(m);
-    return NULL;
+    return PyModuleDef_Init(&_testclinic_module);
 }
 
 #undef RETURN_PACKED_ARGS

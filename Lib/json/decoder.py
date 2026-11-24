@@ -112,7 +112,7 @@ def py_scanstring(s, end, strict=True,
                 char = _b[esc]
             except KeyError:
                 msg = "Invalid \\escape: {0!r}".format(esc)
-                raise JSONDecodeError(msg, s, end)
+                raise JSONDecodeError(msg, s, end - 1)
             end += 1
         else:
             uni = _decode_uXXXX(s, end)

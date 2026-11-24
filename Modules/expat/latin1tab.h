@@ -9,7 +9,7 @@
    Copyright (c) 1997-2000 Thai Open Source Software Center Ltd
    Copyright (c) 2000      Clark Cooper <coopercc@users.sourceforge.net>
    Copyright (c) 2002      Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
-   Copyright (c) 2017      Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2017-2026 Sebastian Pipping <sebastian@pipping.org>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -44,11 +44,11 @@
     /* 0x9C */ BT_OTHER, BT_OTHER, BT_OTHER, BT_OTHER,
     /* 0xA0 */ BT_OTHER, BT_OTHER, BT_OTHER, BT_OTHER,
     /* 0xA4 */ BT_OTHER, BT_OTHER, BT_OTHER, BT_OTHER,
-    /* 0xA8 */ BT_OTHER, BT_OTHER, BT_NMSTRT, BT_OTHER,
+    /* 0xA8 */ BT_OTHER, BT_OTHER, BT_OTHER, BT_OTHER,
     /* 0xAC */ BT_OTHER, BT_OTHER, BT_OTHER, BT_OTHER,
     /* 0xB0 */ BT_OTHER, BT_OTHER, BT_OTHER, BT_OTHER,
-    /* 0xB4 */ BT_OTHER, BT_NMSTRT, BT_OTHER, BT_NAME,
-    /* 0xB8 */ BT_OTHER, BT_OTHER, BT_NMSTRT, BT_OTHER,
+    /* 0xB4 */ BT_OTHER, BT_OTHER, BT_OTHER, BT_NAME,
+    /* 0xB8 */ BT_OTHER, BT_OTHER, BT_OTHER, BT_OTHER,
     /* 0xBC */ BT_OTHER, BT_OTHER, BT_OTHER, BT_OTHER,
     /* 0xC0 */ BT_NMSTRT, BT_NMSTRT, BT_NMSTRT, BT_NMSTRT,
     /* 0xC4 */ BT_NMSTRT, BT_NMSTRT, BT_NMSTRT, BT_NMSTRT,

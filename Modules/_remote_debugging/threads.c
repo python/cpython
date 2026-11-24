@@ -18,6 +18,14 @@
 #include <sys/wait.h>
 #endif
 
+#ifdef MS_WINDOWS
+enum {
+    /* ThreadSystemThreadInformation is not named in the Windows SDK. */
+    WIN32_THREAD_SYSTEM_INFORMATION = 40,
+    WIN32_THREAD_RUNNING = 2,
+};
+#endif
+
 /* Bound traversal of corrupted remote exception chains. */
 #define MAX_EXCEPTION_CHAIN_DEPTH (2 << 15)
 
@@ -158,45 +166,22 @@ find_running_frame(
  * THREAD STATUS FUNCTIONS
  * ============================================================================ */
 
-int
-get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread_id) {
+static int
+get_thread_status(RemoteUnwinderObject *unwinder, unsigned long tid) {
 #if defined(__APPLE__) && TARGET_OS_OSX
-   if (!unwinder->thread_id_offset_initialized) {
-        uint64_t *tids = (uint64_t *)PyMem_Malloc(MAX_NATIVE_THREADS * sizeof(uint64_t));
-        if (!tids) {
-            // Non-fatal: thread status is best-effort
-            return THREAD_STATE_UNKNOWN;
-        }
-        int n = proc_pidinfo(unwinder->handle.pid, PROC_PIDLISTTHREADS, 0, tids, MAX_NATIVE_THREADS * sizeof(uint64_t)) / sizeof(uint64_t);
-        if (n <= 0) {
-            PyMem_Free(tids);
-            return THREAD_STATE_UNKNOWN;
-        }
-        uint64_t min_offset = UINT64_MAX;
-        for (int i = 0; i < n; i++) {
-            uint64_t offset = tids[i] - pthread_id;
-            if (offset < min_offset) {
-                min_offset = offset;
-            }
-        }
-        unwinder->thread_id_offset = min_offset;
-        unwinder->thread_id_offset_initialized = 1;
-        PyMem_Free(tids);
-    }
-    struct proc_threadinfo ti;
-    uint64_t tid_with_offset = pthread_id + unwinder->thread_id_offset;
-    if (proc_pidinfo(unwinder->handle.pid, PROC_PIDTHREADINFO, tid_with_offset, &ti, sizeof(ti)) != sizeof(ti)) {
+    struct proc_threadinfo thread;
+    int size = proc_pidinfo(unwinder->handle.pid, PROC_PIDTHREADID64INFO,
+                           tid, &thread, sizeof(thread));
+    if (size != sizeof(thread)) {
         return THREAD_STATE_UNKNOWN;
     }
-    if (ti.pth_run_state == TH_STATE_RUNNING) {
-        return THREAD_STATE_RUNNING;
-    }
-    return THREAD_STATE_IDLE;
+    return thread.pth_run_state == TH_STATE_RUNNING
+        ? THREAD_STATE_RUNNING : THREAD_STATE_IDLE;
 #elif defined(__linux__)
     char stat_path[256];
     char buffer[2048] = "";
 
-    snprintf(stat_path, sizeof(stat_path), "/proc/%d/task/%" PRIu64 "/stat", unwinder->handle.pid, tid);
+    snprintf(stat_path, sizeof(stat_path), "/proc/%d/task/%lu/stat", unwinder->handle.pid, tid);
 
     int fd = open(stat_path, O_RDONLY);
     if (fd == -1) {
@@ -232,46 +217,24 @@ get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread
             return THREAD_STATE_UNKNOWN;
     }
 #elif defined(MS_WINDOWS)
-    ULONG n;
-    NTSTATUS status = NtQuerySystemInformation(
-        SystemProcessInformation,
-        unwinder->win_process_buffer,
-        unwinder->win_process_buffer_size,
-        &n
-    );
-    if (status == STATUS_INFO_LENGTH_MISMATCH) {
-        // Buffer was too small so we reallocate a larger one and try again.
-        unwinder->win_process_buffer_size = n;
-        PVOID new_buffer = PyMem_Realloc(unwinder->win_process_buffer, n);
-        if (!new_buffer) {
-            // Match Linux/macOS: degrade gracefully on alloc failure
-            return THREAD_STATE_UNKNOWN;
-        }
-        unwinder->win_process_buffer = new_buffer;
-        return get_thread_status(unwinder, tid, pthread_id);
-    }
-    if (status != STATUS_SUCCESS) {
+    HANDLE thread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)tid);
+    if (thread == NULL) {
         return THREAD_STATE_UNKNOWN;
     }
-
-    SYSTEM_PROCESS_INFORMATION *pi = (SYSTEM_PROCESS_INFORMATION *)unwinder->win_process_buffer;
-    while ((ULONG)(ULONG_PTR)pi->UniqueProcessId != unwinder->handle.pid) {
-        if (pi->NextEntryOffset == 0) {
-            // Process not found (may have exited)
-            return THREAD_STATE_UNKNOWN;
-        }
-        pi = (SYSTEM_PROCESS_INFORMATION *)(((BYTE *)pi) + pi->NextEntryOffset);
+    SYSTEM_THREAD_INFORMATION info;
+    ULONG size = 0;
+    NTSTATUS result = NtQueryInformationThread(
+        thread, (THREADINFOCLASS)WIN32_THREAD_SYSTEM_INFORMATION,
+        &info, sizeof(info), &size);
+    CloseHandle(thread);
+    if (result != STATUS_SUCCESS || size != sizeof(info) ||
+        (ULONG_PTR)info.ClientId.UniqueProcess != (ULONG_PTR)unwinder->handle.pid ||
+        (ULONG_PTR)info.ClientId.UniqueThread != tid)
+    {
+        return THREAD_STATE_UNKNOWN;
     }
-
-    SYSTEM_THREAD_INFORMATION *ti = (SYSTEM_THREAD_INFORMATION *)((char *)pi + sizeof(SYSTEM_PROCESS_INFORMATION));
-    for (size_t i = 0; i < pi->NumberOfThreads; i++, ti++) {
-        if (ti->ClientId.UniqueThread == (HANDLE)tid) {
-            return ti->ThreadState != WIN32_THREADSTATE_RUNNING ? THREAD_STATE_IDLE : THREAD_STATE_RUNNING;
-        }
-    }
-
-    // Thread not found (may have exited)
-    return THREAD_STATE_UNKNOWN;
+    return info.ThreadState == WIN32_THREAD_RUNNING
+        ? THREAD_STATE_RUNNING : THREAD_STATE_IDLE;
 #else
     return THREAD_STATE_UNKNOWN;
 #endif
@@ -398,7 +361,8 @@ unwind_stack_for_thread(
         STATS_ADD(unwinder, memory_bytes_read, SIZEOF_INTERP_FRAME);
     }
 
-    long tid = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id);
+    unsigned long tid = GET_MEMBER(unsigned long, ts,
+                                   unwinder->debug_offsets.thread_state.native_thread_id);
 
     // Calculate thread status using flags (always)
     int status_flags = 0;
@@ -490,13 +454,9 @@ unwind_stack_for_thread(
         status_flags |= THREAD_STATUS_HAS_EXCEPTION;
     }
 
-    // Check CPU status
-    long pthread_id = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.thread_id);
-
-    // Optimization: only check CPU status if needed by mode because it's expensive
     int cpu_status = THREAD_STATE_UNKNOWN;
     if (unwinder->mode == PROFILING_MODE_CPU || unwinder->mode == PROFILING_MODE_ALL) {
-        cpu_status = get_thread_status(unwinder, tid, pthread_id);
+        cpu_status = get_thread_status(unwinder, tid);
     }
 
     if (cpu_status == THREAD_STATE_UNKNOWN) {
@@ -597,7 +557,7 @@ unwind_stack_for_thread(
         }
     }
     if (thread_id == NULL) {
-        thread_id = PyLong_FromLongLong(tid);
+        thread_id = PyLong_FromUnsignedLong(tid);
         if (thread_id == NULL) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create thread ID");
             goto error;

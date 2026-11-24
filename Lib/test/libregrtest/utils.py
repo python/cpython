@@ -665,8 +665,32 @@ def display_header(use_resources: dict[str, str | None],
         if process_cpu_count and process_cpu_count != cpu_count:
             cpu_count = f"{process_cpu_count} (process) / {cpu_count} (system)"
         print("== CPU count:", cpu_count)
-    print("== encodings: locale=%s FS=%s"
-          % (locale.getencoding(), sys.getfilesystemencoding()))
+
+    encodings = []
+    if _winapi is not None:
+        # Log ANSI and OEM code pages
+        ansi = f'cp{_winapi.GetACP()}'
+        oem = f'cp{_winapi.GetOEMCP()}'
+        if ansi == oem:
+            encodings.append(f'ansi=oem={ansi}')
+        else:
+            encodings.append(f'ansi={ansi}')
+            encodings.append(f'oem={oem}')
+        encodings.append(f'FS={sys.getfilesystemencoding()}')
+    else:
+        locale_encoding = locale.getencoding()     # nl_langinfo(CODESET)
+        fs_encoding = sys.getfilesystemencoding()  # normalized name
+        if locale_encoding.lower() == fs_encoding.lower():
+            encodings.append(f'locale=FS={fs_encoding}')
+        else:
+            encodings.append(f'locale={locale_encoding}')
+            encodings.append(f'FS={fs_encoding}')
+    if not sys.flags.utf8_mode:
+        encodings.append('utf8=0')
+    if (not sys.flags.ignore_environment
+        and os.environ.get('PYTHONCOERCECLOCALE') == '0'):
+        encodings.append('coerce=0')
+    print(f"== encodings: {' '.join(encodings)}")
 
     if use_resources:
         text = format_resources(use_resources)

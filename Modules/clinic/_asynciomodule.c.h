@@ -4,10 +4,10 @@ preserve
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_runtime.h"       // _Py_SINGLETON()
 
 PyDoc_STRVAR(_asyncio_Future___init____doc__,
 "Future(*, loop=None)\n"
@@ -30,7 +30,8 @@ static int
 _asyncio_Future___init___impl(FutureObj *self, PyObject *loop);
 
 static int
-_asyncio_Future___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+_asyncio_Future___init___helper(PyObject *self, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -62,11 +63,10 @@ _asyncio_Future___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    Py_ssize_t noptargs = nargs + nkw - 0;
     PyObject *loop = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -80,6 +80,42 @@ skip_optional_kwonly:
 
 exit:
     return return_value;
+}
+
+static int
+_asyncio_Future___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    return _asyncio_Future___init___helper(self, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+_asyncio_Future_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *self;
+    int _result;
+
+    assert(_PyType_CAST(type)->tp_init == _asyncio_Future___init__);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+        (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
+    if (self == NULL) {
+        return NULL;
+    }
+    _result = _asyncio_Future___init___helper(self, args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
+    if (_result != 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    return self;
 }
 
 PyDoc_STRVAR(_asyncio_Future_result__doc__,
@@ -755,7 +791,8 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
                             int eager_start);
 
 static int
-_asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+_asyncio_Task___init___helper(PyObject *self, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -787,15 +824,14 @@ _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[5];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    Py_ssize_t noptargs = nargs + nkw - 1;
     PyObject *coro;
     PyObject *loop = Py_None;
     PyObject *name = Py_None;
     PyObject *context = Py_None;
     int eager_start = 0;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -831,6 +867,42 @@ skip_optional_kwonly:
 
 exit:
     return return_value;
+}
+
+static int
+_asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    return _asyncio_Task___init___helper(self, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+_asyncio_Task_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *self;
+    int _result;
+
+    assert(_PyType_CAST(type)->tp_init == _asyncio_Task___init__);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+        (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
+    if (self == NULL) {
+        return NULL;
+    }
+    _result = _asyncio_Task___init___helper(self, args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
+    if (_result != 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    return self;
 }
 
 static int
@@ -2104,4 +2176,4 @@ exit:
 
 #define _ASYNCIO_TASK__FUT_WAITER_GETSETDEF {"_fut_waiter", (getter)_asyncio_Task__fut_waiter_get, (setter)NULL, NULL},
 
-/*[clinic end generated code: output=419f6d2b73047616 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=da5f44b3f6de9883 input=a9049054013a1b77]*/

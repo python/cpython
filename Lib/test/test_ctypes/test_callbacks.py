@@ -15,6 +15,7 @@ from ctypes import (CDLL, cdll, Structure, Union, CFUNCTYPE,
 from ctypes.util import find_library, struct, wrap_dll_function
 from test import support
 from test.support import import_helper
+from test.support import script_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 
@@ -558,6 +559,19 @@ class SampleCallbacksTestCase(unittest.TestCase):
             return -1
 
         self.assertEqual(_testfunc_callback_int_to_longlong(cb), -1)
+
+    def test_import_does_not_open_fds(self):
+        # gh-135893: Importing ctypes must not allocate a libffi closure,
+        # which can leave a file descriptor open for the rest of the
+        # process' lifetime.
+        code = """if 1:
+            from test.support import os_helper
+            before = os_helper.fd_count()
+            import ctypes
+            after = os_helper.fd_count()
+            assert before == after
+            """
+        script_helper.assert_python_ok("-c", code)
 
 
 if __name__ == '__main__':
