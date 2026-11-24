@@ -157,8 +157,9 @@
 #endif
 
 /* Tier one only, after next_instr has skipped the call's inline cache.
- * GET_AWAITABLE is never specialized, and never instrumented after an
- * awaited call. */
+ * GET_AWAITABLE is never specialized. After an awaited call, it is never
+ * instrumented with INSTRUMENTED_LINE; with INSTRUCTION events on, the call
+ * is not lazy. */
 #define IS_AWAITED_CALL() \
     (next_instr->op.code == GET_AWAITABLE && \
      (next_instr->op.arg & GET_AWAITABLE_AWAITED_CALL))

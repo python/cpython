@@ -20879,6 +20879,18 @@
                 _PyInterpreterFrame *caller = frame->previous;
                 caller->instr_ptr += caller->return_offset;
                 caller->return_offset = 0;
+                _Py_CODEUNIT *send = caller->instr_ptr + 1;
+                if (send->op.code == INSTRUMENTED_LINE && !tstate->tracing) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyFrame_StackPointerValidate(frame);
+                    int err = _Py_call_instrumentation_line(
+                        tstate, caller, send, caller->instr_ptr) < 0;
+                    _PyFrame_StackPointerInvalidate(frame);
+                    if (err) {
+                        SET_CURRENT_CACHED_VALUES(0);
+                        JUMP_TO_ERROR();
+                    }
+                }
                 res = PyStackRef_None;
             }
             else {

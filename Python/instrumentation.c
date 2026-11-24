@@ -1364,8 +1364,13 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
         int prev_opcode = bytecode[prev_index].op.code;
         /* RESUME and INSTRUMENTED_RESUME are needed for the operation of
             * instrumentation, so must never be hidden by an INSTRUMENTED_LINE.
+            * GET_AWAITABLE after an awaited call cannot start a line, so
+            * the SEND after it does.
             */
-        if (prev_opcode != RESUME && prev_opcode != INSTRUMENTED_RESUME) {
+        if (prev_opcode != RESUME && prev_opcode != INSTRUMENTED_RESUME &&
+            !(i == prev_index + 1 &&
+              is_awaited_call_get_awaitable(code, prev_index)))
+        {
             goto done;
         }
     }
@@ -1460,6 +1465,14 @@ _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame*
     assert(instrumentation_data->per_instruction_opcodes);
     int next_opcode = instrumentation_data->per_instruction_opcodes[offset];
     if (tstate->tracing) {
+        return next_opcode;
+    }
+    if (next_opcode == GET_AWAITABLE &&
+        (instr->op.arg & GET_AWAITABLE_AWAITED_CALL) &&
+        !PyStackRef_IsNull(frame->stackpointer[-2]))
+    {
+        /* Instrumented while a lazy coroutine ran: its outcome must reach
+         * GET_AWAITABLE before anything else runs. */
         return next_opcode;
     }
     assert(debug_check_sanity(tstate->interp, code));
@@ -1595,9 +1608,7 @@ initialize_lines(_PyCoLineInstrumentationData *line_data, PyCodeObject *code, in
                         /* GET_AWAITABLE after an awaited call must not be
                         * instrumented with INSTRUMENTED_LINE, as no events may
                         * fire before it handles a lazy coroutine.
-                        * It has the location of the await, which starts a line
-                        * after the call, so it keeps the line of the call. */
-                        set_line_delta(line_data, i, compute_line_delta(code, current_line));
+                        * The SEND after it starts the line of the await. */
                         set_original_opcode(line_data, i, 0);
                         break;
                     }
@@ -1926,9 +1937,7 @@ force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
     if (removed_per_instruction_tools) {
         for (int i = code->_co_firsttraceable; i < code_len;) {
             int opcode = _Py_GetBaseCodeUnit(code, i).op.code;
-            if (opcode == RESUME || opcode == END_FOR ||
-                is_awaited_call_get_awaitable(code, i))
-            {
+            if (opcode == RESUME || opcode == END_FOR) {
                 i += _PyInstruction_GetLength(code, i);
                 continue;
             }
@@ -1955,9 +1964,7 @@ force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
     if (new_per_instruction_tools) {
         for (int i = code->_co_firsttraceable; i < code_len;) {
             int opcode = _Py_GetBaseCodeUnit(code, i).op.code;
-            if (opcode == RESUME || opcode == END_FOR ||
-                is_awaited_call_get_awaitable(code, i))
-            {
+            if (opcode == RESUME || opcode == END_FOR) {
                 i += _PyInstruction_GetLength(code, i);
                 continue;
             }

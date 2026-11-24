@@ -1,6 +1,7 @@
 import ast
 import contextlib
 import copy
+import dis
 import builtins
 import gc
 import inspect
@@ -3558,7 +3559,7 @@ class LazyCoroutineTest(unittest.TestCase):
             mon.free_tool_id(tool)
         self.assertEqual(run_async(outer()), ([], True))
 
-    def test_line_event_raises_after_suspension(self):
+    def test_line_event_raises_at_await(self):
         async def inner():
             await AsyncYield("suspended")
             return "done"
@@ -3584,6 +3585,144 @@ class LazyCoroutineTest(unittest.TestCase):
             mon.set_events(tool, 0)
             mon.register_callback(tool, mon.events.LINE, None)
             mon.free_tool_id(tool)
+
+    @staticmethod
+    @contextlib.contextmanager
+    def eager():
+        # Origin tracking makes awaited calls create the coroutine eagerly.
+        old_depth = sys.get_coroutine_origin_tracking_depth()
+        sys.set_coroutine_origin_tracking_depth(1)
+        try:
+            yield
+        finally:
+            sys.set_coroutine_origin_tracking_depth(old_depth)
+
+    def test_settrace_events_like_eager_coroutine(self):
+        async def returns():
+            return 1
+
+        async def suspends():
+            await AsyncYield(None)
+            return 1
+
+        async def raises():
+            raise ValueError
+
+        async def outer(f):
+            try:
+                x = (await
+                     f())
+            except ValueError:
+                x = 0
+            return x
+
+        def trace(f):
+            events = []
+            def tracer(frame, event, arg):
+                code = frame.f_code
+                if code in (outer.__code__, f.__code__):
+                    events.append((code.co_name, event,
+                                   frame.f_lineno - code.co_firstlineno))
+                return tracer
+            old_trace = sys.gettrace()
+            sys.settrace(tracer)
+            try:
+                run_async(outer(f))
+            finally:
+                sys.settrace(old_trace)
+            return events
+
+        for f in returns, suspends, raises:
+            with self.subTest(f=f.__name__):
+                lazy = trace(f)
+                with self.eager():
+                    eager = trace(f)
+                self.assertEqual(lazy, eager)
+
+    def test_traceback_lineno_with_line_events(self):
+        async def outer():
+            await (
+                int())
+
+        def tb_lineno():
+            try:
+                run_async(outer())
+            except TypeError as e:
+                tb = e.__traceback__
+            while tb.tb_frame.f_code is not outer.__code__:
+                tb = tb.tb_next
+            return tb.tb_lineno - outer.__code__.co_firstlineno
+
+        mon = sys.monitoring
+        tool = mon.DEBUGGER_ID
+        self.assertEqual(tb_lineno(), 1)
+        mon.use_tool_id(tool, "test")
+        try:
+            mon.register_callback(tool, mon.events.LINE, lambda *args: None)
+            mon.set_local_events(tool, outer.__code__, mon.events.LINE)
+            self.assertEqual(tb_lineno(), 1)
+            mon.set_local_events(tool, outer.__code__, 0)
+            self.assertEqual(tb_lineno(), 1)
+        finally:
+            mon.register_callback(tool, mon.events.LINE, None)
+            mon.free_tool_id(tool)
+
+    def test_instruction_events_at_awaited_call(self):
+        async def inner():
+            return 1
+
+        async def outer():
+            return await inner()
+
+        get_awaitable = [i.offset for i in dis.get_instructions(outer)
+                         if i.opname == "GET_AWAITABLE"]
+        offsets = []
+        def instruction(code, offset):
+            if code is outer.__code__:
+                offsets.append(offset)
+
+        mon = sys.monitoring
+        tool = mon.DEBUGGER_ID
+        mon.use_tool_id(tool, "test")
+        try:
+            mon.register_callback(tool, mon.events.INSTRUCTION, instruction)
+            mon.set_local_events(tool, outer.__code__, mon.events.INSTRUCTION)
+            self.assertEqual(run_async(outer()), ([], 1))
+        finally:
+            mon.set_local_events(tool, outer.__code__, 0)
+            mon.register_callback(tool, mon.events.INSTRUCTION, None)
+            mon.free_tool_id(tool)
+        self.assertEqual(len(get_awaitable), 1)
+        self.assertIn(get_awaitable[0], offsets)
+
+    def test_set_lineno_on_await_line_before_body(self):
+        async def inner():
+            return "done"
+
+        async def outer():
+            x = (await
+                 inner())
+            return x
+
+        first = outer.__code__.co_firstlineno
+        errors = []
+        def tracer(frame, event, arg):
+            if (event == "line" and frame.f_code is outer.__code__
+                    and frame.f_lineno == first + 1):
+                try:
+                    frame.f_lineno = first + 3
+                except ValueError as e:
+                    errors.append(str(e))
+            return tracer
+
+        old_trace = sys.gettrace()
+        sys.settrace(tracer)
+        try:
+            self.assertEqual(run_async(outer()), ([], "done"))
+        finally:
+            sys.settrace(old_trace)
+        self.assertEqual(errors,
+                         ["can't jump from the await of a lazily run coroutine"])
 
     def test_set_lineno_to_multiline_await(self):
         # The await line must not start at GET_AWAITABLE, whose lazy

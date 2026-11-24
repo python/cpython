@@ -1705,24 +1705,7 @@ dummy_func(
                     stack_pointer[-1] = PyStackRef_NULL;
                     stack_pointer[0] = v;
                     stack_pointer += 1;
-                    _Py_CODEUNIT *send = next_instr;
                     next_instr += 1 + INLINE_CACHE_ENTRIES_SEND;
-                    if (send->op.code == INSTRUMENTED_LINE && !tstate->tracing) {
-                        // Emit the LINE event of the skipped SEND here, as
-                        // the handler around YIELD_VALUE expects only throws.
-                        frame->instr_ptr = send;
-                        SAVE_SP();
-                        int original_opcode = _Py_call_instrumentation_line(
-                                tstate, frame, send, this_instr);
-                        LOAD_SP();
-                        if (original_opcode < 0) {
-                            next_instr = send + 1;
-                            goto error;
-                        }
-                        if (frame->instr_ptr != send) {
-                            next_instr = frame->instr_ptr;
-                        }
-                    }
                     DISPATCH();
                 }
             }
@@ -6035,6 +6018,14 @@ dummy_func(
                 _PyInterpreterFrame *caller = frame->previous;
                 caller->instr_ptr += caller->return_offset;
                 caller->return_offset = 0;
+                _Py_CODEUNIT *send = caller->instr_ptr + 1;
+                if (send->op.code == INSTRUMENTED_LINE && !tstate->tracing) {
+                    /* The LINE event of the await, which the eager path
+                     * emits at SEND before the body runs. */
+                    int err = _Py_call_instrumentation_line(
+                        tstate, caller, send, caller->instr_ptr) < 0;
+                    ERROR_IF(err);
+                }
                 /* The following POP_TOP discards this. */
                 res = PyStackRef_None;
             }

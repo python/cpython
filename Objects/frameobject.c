@@ -1820,6 +1820,20 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
             return -1;
     }
 
+    if (!is_suspended) {
+        _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(
+            code, _PyInterpreterFrame_LASTI(self->f_frame));
+        if (inst.op.code == GET_AWAITABLE &&
+            (inst.op.arg & GET_AWAITABLE_AWAITED_CALL))
+        {
+            /* The LINE event of an await, emitted before a lazily run
+             * body starts, when the stack is not as at a line start. */
+            PyErr_SetString(PyExc_ValueError,
+                "can't jump from the await of a lazily run coroutine");
+            return -1;
+        }
+    }
+
     int new_lineno;
 
     /* Fail if the line falls outside the code block and
