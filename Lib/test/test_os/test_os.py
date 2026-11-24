@@ -4687,6 +4687,7 @@ class CPUCountTests(unittest.TestCase):
         "testing cgroups requires Linux with systemd-run",
     )
     def test_process_cpu_count_cgroups(self):
+        """``os.process_cpu_count()`` respects cgroups v2 limits."""
         base_count = os.process_cpu_count()
         if base_count is None:
             self.skipTest("Could not determine the number of CPUs")
@@ -4757,6 +4758,15 @@ print(os.process_cpu_count())
                 get_systemd_args(cgroups_cores, python_code=code)
             )
             self.assertEqual(result, expected)
+
+    @unittest.skipUnless(
+        sys.platform == "linux", "Linux-specific functionality",
+    )
+    def test_unquote_mount_path(self):
+        """``os._unquote_mount_path()`` decodes correctly."""
+        original_path = "/foo/bar\\\n \t"
+        encoded_path = r"/foo/bar\134\012\040\011"
+        self.assertEqual(os._unquote_mount_path(encoded_path), original_path)
 
 
 # FD inheritance check is only useful for systems with process support.

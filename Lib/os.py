@@ -1229,6 +1229,20 @@ if name == 'nt':
 
 
 if sys.platform == "linux":
+    def _unquote_mount_path(path):
+        """Decode quoted characters in /etc/fstab, /proc/mounts, and the like.
+
+        See https://man7.org/linux/man-pages/man5/fstab.5.html
+        """
+        for quoted, value in [
+            (r"\040", " "),
+            (r"\011", "\t"),
+            (r"\012", "\n"),
+            (r"\134", "\\"),
+        ]:
+            path = path.replace(quoted, value)
+        return path
+
     def _get_cgroup2_mount_point():
         if path.exists("/sys/fs/cgroup/cgroup.controllers"):
             return "/sys/fs/cgroup"
@@ -1239,14 +1253,7 @@ if sys.platform == "linux":
                     parts = line.split()
                     _, mount_dir, mount_type, *_ = parts
                     if mount_type == "cgroup2":
-                        for quoted, value in [
-                            (r"\040", " "),
-                            (r"\011", "\t"),
-                            (r"\012", "\n"),
-                            (r"\134", "\\"),
-                        ]:
-                            mount_dir = mount_dir.replace(quoted, value)
-                        return mount_dir
+                        return _unquote_mount_path(mount_dir)
         except OSError:
             return None
 
