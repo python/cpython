@@ -403,7 +403,8 @@ class Fraction(numbers.Rational):
         # approximation to x if, and only if, it is a convergent or
         # semiconvergent of the (unique shortest) continued fraction
         # associated to x.  See e.g. Continued Fractions by A. Ya.
-        # Khinchin (1964), Theorem 15.
+        # Khinchin (1964), Theorem 15.  See also
+        # InternalDocs/fractions.md for details.
         #
         # To find a best rational approximation with denominator <= M,
         # we find the best upper and lower approximations with
@@ -725,6 +726,7 @@ class Fraction(numbers.Rational):
         return forward, reverse
 
     # Rational arithmetic algorithms: Knuth, TAOCP, Volume 2, 4.5.1.
+    # See also InternalDocs/fractions.md for details.
 
     def _add(a, b):
         """a + b"""
