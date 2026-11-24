@@ -711,7 +711,6 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             check(complex(complex1(1j)), 0.0, 2.0)
         self.assertRaises(TypeError, complex, complex2(1j))
 
-    def test_constructor_float_subclass(self):
         class FloatSubclass(float):
             def __float__(self):
                 return 42.0
@@ -723,15 +722,14 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 self.assertEqual(cls(real=value), 42+0j)
                 self.assertEqual(cls(value, 0), 42+0j)
 
-    def test_constructor_float_subclass_errors(self):
-        class FloatSubclass(float):
+        class FloatSubclassError(float):
             def __float__(self):
                 raise ValueError('float conversion failed')
 
         for cls in complex, ComplexSubclass:
             with self.subTest(cls=cls):
                 with self.assertRaisesRegex(ValueError, 'float conversion failed'):
-                    cls(FloatSubclass(1.0))
+                    cls(FloatSubclassError(1.0))
 
     def test___complex__(self):
         z = 3 + 4j
