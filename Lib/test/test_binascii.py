@@ -1263,7 +1263,7 @@ class BinASCIITest(unittest.TestCase):
         eq(a2b_base32(b'=MF=RA====', ignorechars=b'='), b'ab')
 
         for data in (b'======ME', b'=ME=====', b'M======E', b'ME==FR==',
-                    b'=MFRGG43'):
+                     b'=MFRGG43'):
             with self.subTest(data=data):
                 with self.assertRaisesRegex(binascii.Error, 'Incorrect padding'):
                     a2b_base32(data, ignorechars=b'=')
