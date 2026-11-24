@@ -34,12 +34,13 @@ static PyStructSequence_Field TaskInfo_fields[] = {
     {"task_name", "Task name"},
     {"coroutine_stack", "Coroutine call stack"},
     {"awaited_by", "Tasks awaiting this task"},
+    {"is_future", "Whether this node is a plain Future rather than a Task"},
     {NULL}
 };
 
 PyStructSequence_Desc TaskInfo_desc = {
     "_remote_debugging.TaskInfo",
-    "Information about an asyncio task",
+    "Information about an asyncio task or future",
     TaskInfo_fields,
     4
 };
@@ -795,6 +796,9 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
                         goto exit;
                     }
                     // Thread was skipped due to mode filtering, continue to next thread
+                    if (self->tstate_addr || self->only_active_thread) {
+                        break;
+                    }
                     continue;
                 }
                 // This was an actual error
@@ -887,14 +891,17 @@ Returns:
 
     - thread_id (int): Identifier of the thread, or 0 for tasks in the
       interpreter's fallback task list.
-    - awaited_by (list[TaskInfo]): Tasks registered with this thread.
+    - awaited_by (list[TaskInfo]): Tasks registered with this thread and
+      intermediate futures in their awaited_by chains.
 
 Each TaskInfo contains:
     - task_id (int): Identifier of the task.
-    - task_name (str): Name of the task.
+    - task_name (str): Name of the task, or a generated name for
+      a future.
     - coroutine_stack (list[CoroInfo]): Stack of coroutine frames.
     - awaited_by (list[CoroInfo]): Coroutine information for tasks or futures
       awaiting this task.
+    - is_future (bool, named-only): True for a plain Future.
 
 Each CoroInfo contains:
     - call_stack (list[FrameInfo]): Call stack frames for the coroutine.
@@ -925,7 +932,7 @@ Example output:
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6a49cd345e8aec53 input=79e556b3973d21a8]*/
+/*[clinic end generated code: output=6a49cd345e8aec53 input=17fcd3d7bb835624]*/
 {
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
@@ -988,14 +995,16 @@ Returns:
 
     - thread_id (int): Identifier of the thread.
     - awaited_by (list[TaskInfo]): The running task and all its
-      transitive waiters.
+      transitive waiters, including intermediate futures.
 
 Each TaskInfo contains:
     - task_id (int): Identifier of the task.
-    - task_name (str): Name of the task.
+    - task_name (str): Name of the task, or a generated name for
+      a future.
     - coroutine_stack (list[CoroInfo]): Stack of coroutine frames.
     - awaited_by (list[CoroInfo]): Coroutine information for
       tasks or futures awaiting this task.
+    - is_future (bool, named-only): True for a plain Future.
 
 Each CoroInfo contains:
     - call_stack (list[FrameInfo]): Frames for the coroutine.
@@ -1029,7 +1038,9 @@ Example output:
                 coroutine_stack=[
                     CoroInfo(call_stack=[...], task_name=1)
                 ],
-                awaited_by=[CoroInfo(call_stack=[...], task_name=2)]
+                awaited_by=[
+                    CoroInfo(call_stack=[...], task_name=2)
+                ]
             ),
             TaskInfo(
                 task_id=2,
@@ -1046,7 +1057,7 @@ Example output:
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6433d52b55e87bbe input=0532031a7c495491]*/
+/*[clinic end generated code: output=6433d52b55e87bbe input=a95958816358476a]*/
 {
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
@@ -1842,8 +1853,8 @@ _remote_debugging_BinaryWriter_set_stats_impl(BinaryWriterObject *self,
 /* Finalize the writer, cache total_samples, and destroy it.
  *
  * The cache assignment must happen AFTER binary_writer_finalize(): finalize
- * flushes pending RLE records and updates the file header before the writer is
- * destroyed. Caching before finalize would preserve a count for a file that
+ * flushes the open sample block and updates the file header before the writer
+ * is destroyed. Caching before finalize would preserve a count for a file that
  * might still fail to finish. */
 static int
 binary_writer_finalize_and_cache(BinaryWriterObject *self)
@@ -1957,13 +1968,13 @@ _remote_debugging.BinaryWriter.get_stats
 Get encoding statistics for the writer.
 
 Returns a dict with encoding statistics including
-repeat/full/suffix/pop-push record counts, frames written/saved, and
+repeat/full/suffix/reuse record counts, frames written/saved, and
 compression ratio.
 [clinic start generated code]*/
 
 static PyObject *
 _remote_debugging_BinaryWriter_get_stats_impl(BinaryWriterObject *self)
-/*[clinic end generated code: output=06522cd52544df89 input=a8bb8c8682ccd34b]*/
+/*[clinic end generated code: output=06522cd52544df89 input=09c317b6289ae311]*/
 {
     if (!self->writer) {
         PyErr_SetString(PyExc_ValueError, "Writer is closed");
@@ -2044,6 +2055,22 @@ static PyType_Spec BinaryWriter_spec = {
 
 #define BinaryReader_CAST(op) ((BinaryReaderObject *)(op))
 
+static int
+binary_reader_close_checked(BinaryReaderObject *self)
+{
+    if (self->reader && self->reader->replaying) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Cannot close or reinitialize the reader "
+                        "while it is replaying");
+        return -1;
+    }
+    if (self->reader) {
+        binary_reader_close(self->reader);
+        self->reader = NULL;
+    }
+    return 0;
+}
+
 /*[clinic input]
 class _remote_debugging.BinaryReader "BinaryReaderObject *" "&PyBinaryReader_Type"
 [clinic start generated code]*/
@@ -2066,10 +2093,9 @@ _remote_debugging_BinaryReader___init___impl(BinaryReaderObject *self,
                                              PyObject *filename)
 /*[clinic end generated code: output=f04b33ee5c5e6dbf input=9d7cbe8b4f1a97c9]*/
 {
-    if (self->reader) {
-        binary_reader_close(self->reader);
+    if (binary_reader_close_checked(self) < 0) {
+        return -1;
     }
-
     self->reader = binary_reader_open(filename);
     if (!self->reader) {
         return -1;
@@ -2163,9 +2189,8 @@ static PyObject *
 _remote_debugging_BinaryReader_close_impl(BinaryReaderObject *self)
 /*[clinic end generated code: output=ad0238cf5240b4f8 input=b919a66c737712d5]*/
 {
-    if (self->reader) {
-        binary_reader_close(self->reader);
-        self->reader = NULL;
+    if (binary_reader_close_checked(self) < 0) {
+        return NULL;
     }
     Py_RETURN_NONE;
 }
@@ -2200,9 +2225,8 @@ _remote_debugging_BinaryReader___exit___impl(BinaryReaderObject *self,
                                              PyObject *exc_tb)
 /*[clinic end generated code: output=2acdd36cfdc14e4a input=87284243d7935835]*/
 {
-    if (self->reader) {
-        binary_reader_close(self->reader);
-        self->reader = NULL;
+    if (binary_reader_close_checked(self) < 0) {
+        return NULL;
     }
     Py_RETURN_FALSE;
 }

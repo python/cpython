@@ -3,6 +3,65 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
+PyDoc_STRVAR(framelocalsproxy_new__doc__,
+"FrameLocalsProxy(frame, /)\n"
+"--\n"
+"\n"
+"Create a write-through view of the locals dictionary for a frame.\n"
+"\n"
+"  frame\n"
+"    the frame object to wrap.");
+
+static PyObject *
+framelocalsproxy_new_impl(PyTypeObject *type, PyObject *frame);
+
+static PyObject *
+framelocalsproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyFrameLocalsProxy_Type;
+    PyObject *frame;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("FrameLocalsProxy", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("FrameLocalsProxy", PyTuple_GET_SIZE(args), 1, 1)) {
+        goto exit;
+    }
+    frame = PyTuple_GET_ITEM(args, 0);
+    return_value = framelocalsproxy_new_impl(type, frame);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+framelocalsproxy_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *frame;
+
+    assert(_PyType_CAST(type)->tp_new == framelocalsproxy_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("FrameLocalsProxy", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("FrameLocalsProxy", nargs, 1, 1)) {
+        goto exit;
+    }
+    frame = args[0];
+    return_value = framelocalsproxy_new_impl(_PyType_CAST(type), frame);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(frame_locals__doc__,
 "Return the mapping used by the frame to look up local variables.");
@@ -322,4 +381,4 @@ frame_repr(PyObject *self)
 
 #define FRAME_F_GENERATOR_GETSETDEF {"f_generator", (getter)frame_generator_get, (setter)NULL, frame_generator__doc__},
 
-/*[clinic end generated code: output=e86fc251b0396a11 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e6d74bb87e4b1a95 input=a9049054013a1b77]*/

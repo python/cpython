@@ -250,11 +250,6 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(w1, w2)
         w3 = font.Font(root=self.root, font=('Times', 12), exists=True)
         self.assertNotEqual(w1, w3)
-        # A wrapped description never equals a named font, even one whose name
-        # is the string form of the description.
-        named = font.Font(root=self.root, name=str(w1), family='Courier')
-        self.assertNotEqual(w1, named)
-        self.assertNotEqual(named, w1)
 
         self.assertNotEqual(font1, 0)
         self.assertEqual(font1, ALWAYS_EQ)

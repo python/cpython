@@ -2294,7 +2294,7 @@ tstate_deactivate(PyThreadState *tstate)
     assert(tstate_is_bound(tstate));
     assert(tstate->_status.active);
 
-#if Py_STATS
+#ifdef Py_STATS
     _PyStats_Detach((_PyThreadStateImpl *)tstate);
 #endif
 
