@@ -1558,8 +1558,11 @@ encoder_write_string(PyEncoderObject *s, PyUnicodeWriter *writer, PyObject *obj)
 static int
 _steal_accumulate(PyUnicodeWriter *writer, PyObject *stolen)
 {
-    /* Append stolen and then decrement its reference count */
-    int rval = PyUnicodeWriter_WriteStr(writer, stolen);
+    /* Append stolen and then decrement its reference count.
+       gh-148241: Avoid PyUnicodeWriter_WriteStr() which calls str(obj)
+       on str subclasses. */
+    assert(PyUnicode_Check(stolen));
+    int rval = _PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, stolen);
     Py_DECREF(stolen);
     return rval;
 }
@@ -1712,7 +1715,8 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
         }
     }
     else {
-        if (PyUnicodeWriter_WriteStr(writer, item_separator) < 0) {
+        if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer,
+                                      item_separator) < 0) {
             Py_DECREF(keystr);
             return -1;
         }
@@ -1724,7 +1728,8 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
     if (rv < 0) {
         return -1;
     }
-    if (PyUnicodeWriter_WriteStr(writer, s->key_separator) < 0) {
+    if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer,
+                                  s->key_separator) < 0) {
         return -1;
     }
     if (encoder_listencode_obj(s, writer, value, indent_level, indent_cache) < 0) {
@@ -1899,7 +1904,8 @@ _encoder_iterate_fast_seq_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
         // that mutates the sequence, invalidating this borrowed ref.
         Py_INCREF(obj);
         if (i) {
-            if (PyUnicodeWriter_WriteStr(writer, separator) < 0) {
+            if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer,
+                                          separator) < 0) {
                 Py_DECREF(obj);
                 return -1;
             }
