@@ -167,14 +167,12 @@ jobs:
           - true
         interpreter:
           - switch-case
+          - tail-call
         exclude:
           # Skip Win32 on free-threaded builds
           - { arch: Win32, free-threading: true }
-        include:
-          # msvc::musttail is currently only supported on x64,
-          # and only supported on 3.15+.
-          - { arch: x64, free-threading: false, interpreter: tail-call }
-          - { arch: x64, free-threading: true,  interpreter: tail-call }
+          # Skip Win32 on tail-call interpreter builds
+          - { arch: Win32, interpreter: tail-call }
     uses: $/.github/workflows/reusable-windows.yml
     with:
       arch: ${{ matrix.arch }}
