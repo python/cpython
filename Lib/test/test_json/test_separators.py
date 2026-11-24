@@ -52,13 +52,13 @@ class TestSeparators:
                 return "StrSubclass"
 
         h = {'a': [1, 2], 'b': 3}
-        seps = (StrSubclass(','), StrSubclass(':'))
+        seps = (StrSubclass(',_'), StrSubclass(':_'))
         self.assertEqual(self.dumps(h, separators=seps),
-                         '{"a":[1,2],"b":3}')
+                         '{"a":_[1,_2],_"b":_3}')
         self.assertEqual(self.dumps(h, separators=seps, sort_keys=True),
-                         '{"a":[1,2],"b":3}')
+                         '{"a":_[1,_2],_"b":_3}')
         self.assertEqual(self.dumps(h, separators=seps, indent=1),
-                         '{\n "a":[\n  1,\n  2\n ],\n "b":3\n}')
+                         '{\n "a":_[\n  1,_\n  2\n ],_\n "b":_3\n}')
 
 
 class TestPySeparators(TestSeparators, PyTest): pass
