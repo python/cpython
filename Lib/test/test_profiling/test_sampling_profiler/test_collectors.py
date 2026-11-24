@@ -741,6 +741,128 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertGreater(stack_table["length"], 0)
         self.assertGreater(len(stack_table["frame"]), 0)
 
+    def test_gecko_collector_resource_module_names(self):
+        """Test that GeckoCollector resolves resources to module names and
+        distinguishes files with the same basename in different packages."""
+        collector = GeckoCollector(1000)
+
+        # 1. Package __init__.py files
+        file_pkg_a = "pkg_a/__init__.py"
+        file_pkg_b = "pkg_b/__init__.py"
+
+        # 2. Submodule names
+        file_submod = "pkg_a/utils.py"
+
+        # 3. Standard library file (using collector._path_info)
+        stdlib_dir = collector._path_info.get("stdlib")
+        file_stdlib = (
+            str(stdlib_dir / "os.py")
+            if stdlib_dir
+            else "/usr/lib/python3.15/os.py"
+        )
+
+        # 4. Synthetic files
+        file_stdin = "<stdin>"
+        file_string = "<string>"
+
+        # 5. Unresolved external paths (absolute paths outside sys.path)
+        file_ext_pkg = "/opt/external/deep/pkg_x/__init__.py"
+        file_ext_tool = "/opt/external/deep/pkg_x/tool.py"
+        file_root_tool = "/root_tool.py"
+
+        # 6. Windows-style backslash paths (relative and absolute)
+        file_win_pkg = r"pkg_w\__init__.py"
+        file_win_tool = r"pkg_w\utils.py"
+        file_win_ext_pkg = r"C:\external\pkg_x\__init__.py"
+        file_win_ext_tool = r"C:\external\pkg_x\tool.py"
+        file_win_root_tool = r"C:\tool.py"
+
+        test_cases = [
+            (file_pkg_a, 10, "func_pkg_a"),
+            (file_pkg_b, 20, "func_pkg_b"),
+            (file_submod, 30, "func_submod"),
+            (file_stdlib, 40, "func_stdlib"),
+            (file_stdin, 1, "func_stdin"),
+            (file_string, 2, "func_string"),
+            (file_ext_pkg, 10, "func_ext_pkg"),
+            (file_ext_tool, 20, "func_ext_tool"),
+            (file_root_tool, 30, "func_root_tool"),
+            (file_win_pkg, 10, "func_win_pkg"),
+            (file_win_tool, 20, "func_win_tool"),
+            (file_win_ext_pkg, 10, "func_win_ext_pkg"),
+            (file_win_ext_tool, 20, "func_win_ext_tool"),
+            (file_win_root_tool, 30, "func_win_root_tool"),
+        ]
+
+        frames = [MockFrameInfo(fn, line, name) for fn, line, name in test_cases]
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        frames,
+                        status=THREAD_STATUS_MAIN_THREAD,
+                    )
+                ],
+            )
+        ]
+        collector.collect(test_frames)
+        profile_data = collector._build_profile()
+
+        string_array = profile_data["shared"]["stringArray"]
+        thread_data = profile_data["threads"][0]
+        func_table = thread_data["funcTable"]
+        resource_table = thread_data["resourceTable"]
+
+        self.assertEqual(resource_table["length"], len(resource_table["name"]))
+        for r_type in resource_table["type"]:
+            self.assertEqual(r_type, gecko_collector.RESOURCE_TYPE_LIBRARY)
+
+        funcs_by_name = {
+            string_array[func_table["name"][i]]: (
+                func_table["resource"][i],
+                string_array[
+                    resource_table["name"][func_table["resource"][i]]
+                ],
+            )
+            for i in range(func_table["length"])
+        }
+
+        # 1. Distinct resource table entries and names for duplicate packages
+        res_idx_a, res_name_a = funcs_by_name["func_pkg_a"]
+        res_idx_b, res_name_b = funcs_by_name["func_pkg_b"]
+        self.assertNotEqual(res_idx_a, res_idx_b)
+        self.assertEqual(res_name_a, "pkg_a")
+        self.assertEqual(res_name_b, "pkg_b")
+        name_idx_a = resource_table["name"][res_idx_a]
+        name_idx_b = resource_table["name"][res_idx_b]
+        self.assertNotEqual(name_idx_a, name_idx_b)
+        self.assertEqual(string_array[name_idx_a], "pkg_a")
+        self.assertEqual(string_array[name_idx_b], "pkg_b")
+
+        # 2. Submodule names resolve to dotted names
+        self.assertEqual(funcs_by_name["func_submod"][1], "pkg_a.utils")
+
+        # 3. Standard library resolves to exact module name
+        self.assertEqual(funcs_by_name["func_stdlib"][1], "os")
+
+        # 4. Synthetic files preserve sensible names
+        self.assertEqual(funcs_by_name["func_stdin"][1], "<stdin>")
+        self.assertEqual(funcs_by_name["func_string"][1], "<string>")
+
+        # 5. Unresolved external paths provide readable fallbacks
+        self.assertEqual(funcs_by_name["func_ext_pkg"][1], "pkg_x")
+        self.assertEqual(funcs_by_name["func_ext_tool"][1], "pkg_x/tool.py")
+        self.assertEqual(funcs_by_name["func_root_tool"][1], "root_tool.py")
+
+        # 6. Windows-style paths resolve platform-independently
+        self.assertEqual(funcs_by_name["func_win_pkg"][1], "pkg_w")
+        self.assertEqual(funcs_by_name["func_win_tool"][1], "pkg_w.utils")
+        self.assertEqual(funcs_by_name["func_win_ext_pkg"][1], "pkg_x")
+        self.assertEqual(funcs_by_name["func_win_ext_tool"][1], "pkg_x/tool.py")
+        self.assertEqual(funcs_by_name["func_win_root_tool"][1], "tool.py")
+
     def test_gecko_collector_async_aware(self):
         collector = GeckoCollector(1000)
 
