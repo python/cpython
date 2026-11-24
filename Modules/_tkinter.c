@@ -382,6 +382,7 @@ typedef struct {
     int threaded; /* True if tcl_platform[threaded] */
     Tcl_ThreadId thread_id;
     int dispatching;
+    int event_hook; /* True if counted by EnableEventHook() */
     PyObject *trace;
     /* We cannot include tclInt.h, as this is internal.
        So we cache interesting types here. */
@@ -655,8 +656,8 @@ Tcl_AppInit(Tcl_Interp *interp)
  * `tkMain.c'.
  */
 
-static void EnableEventHook(void); /* Forward */
-static void DisableEventHook(void); /* Forward */
+static void EnableEventHook(TkappObject *); /* Forward */
+static void DisableEventHook(TkappObject *); /* Forward */
 
 static TkappObject *
 Tkapp_New(const char *screenName, const char *className,
@@ -830,7 +831,7 @@ Tkapp_New(const char *screenName, const char *className,
         return (TkappObject *)result;
     }
 
-    EnableEventHook();
+    EnableEventHook(v);
 
     return v;
 }
@@ -3219,10 +3220,10 @@ Tkapp_Dealloc(PyObject *op)
         Tcl_DeleteInterp(Tkapp_Interp(self));
         LEAVE_TCL
     }
+    DisableEventHook(self);
     Py_XDECREF(self->trace);
     PyObject_Free(self);
     Py_DECREF(tp);
-    DisableEventHook();
 }
 
 
@@ -3527,6 +3528,10 @@ static PyMethodDef moduleMethods[] =
 };
 
 #ifdef WAIT_FOR_STDIN
+/* The number of Tcl interpreters which use the event hook. */
+static Py_ssize_t event_hook_users = 0;
+static PyMutex event_hook_mutex = {0};
+
 #ifndef MS_WINDOWS
 
 static int stdin_ready = 0;
@@ -3544,8 +3549,6 @@ MyFileProc(void *clientData, int mask)
 }
 #endif
 
-static PyThreadState *event_tstate = NULL;
-
 static int
 EventHook(void)
 {
@@ -3554,9 +3557,18 @@ EventHook(void)
     DWORD type;
 #else
     int tfile;
+#endif
+    /* The hook is called with the GIL released, usually by PyOS_Readline()
+       in the thread which reads the input.  Use the thread state of that
+       thread, not of the thread which created the Tcl interpreter. */
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
+    if (tstate == NULL) {
+        return 0;
+    }
+#ifndef MS_WINDOWS
     stdin_ready = 0;
 #endif
-    PyEval_RestoreThread(event_tstate);
+    PyEval_RestoreThread(tstate);
     errorInCmd = 0;
 #ifdef MS_WINDOWS
     hStdin = GetStdHandle(STD_INPUT_HANDLE);
@@ -3588,7 +3600,7 @@ EventHook(void)
 #endif
         Py_BEGIN_ALLOW_THREADS
         if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1);
-        tcl_tstate = event_tstate;
+        tcl_tstate = tstate;
 
         result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 
@@ -3622,23 +3634,32 @@ EventHook(void)
 #endif
 
 static void
-EnableEventHook(void)
+EnableEventHook(TkappObject *self)
 {
 #ifdef WAIT_FOR_STDIN
+    PyMutex_Lock(&event_hook_mutex);
+    event_hook_users++;
     if (PyOS_InputHook == NULL) {
-        event_tstate = PyThreadState_Get();
         PyOS_InputHook = EventHook;
     }
+    self->event_hook = 1;
+    PyMutex_Unlock(&event_hook_mutex);
 #endif
 }
 
 static void
-DisableEventHook(void)
+DisableEventHook(TkappObject *self)
 {
 #ifdef WAIT_FOR_STDIN
-    if (Tk_GetNumMainWindows() == 0 && PyOS_InputHook == EventHook) {
+    if (!self->event_hook) {
+        return;
+    }
+    PyMutex_Lock(&event_hook_mutex);
+    self->event_hook = 0;
+    if (--event_hook_users == 0 && PyOS_InputHook == EventHook) {
         PyOS_InputHook = NULL;
     }
+    PyMutex_Unlock(&event_hook_mutex);
 #endif
 }
 
