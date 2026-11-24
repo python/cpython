@@ -4690,7 +4690,7 @@ class CPUCountTests(unittest.TestCase):
         base_count = os.process_cpu_count()
         if base_count is None:
             self.skipTest("Could not determine the number of CPUs")
-        elif base_count < 2:
+        if base_count < 2:
             self.skipTest("require at least 2 CPU cores to test")
 
         def get_systemd_args(
@@ -4738,7 +4738,7 @@ class CPUCountTests(unittest.TestCase):
             self.assertEqual(result, expected)
 
         # Changes to the quota's period are taken into account:
-        result = run_and_get_int(get_systemd_args(1, 30))
+        result = run_and_get_int(get_systemd_args(1, cpu_period_ms=30))
         self.assertEqual(result, 1)
 
         # Result is minimum of sched affinity and quota:

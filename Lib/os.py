@@ -1327,7 +1327,7 @@ if sys.platform == "linux":
                 # from further away." So we have to pick the minimum.
                 cpu_quota = min(num_cpus, cpu_quota)
                 if cpu_quota == 1:
-                    # Can't get any lower than 1:
+                    # Can't get any lower than 1
                     return 1
 
             # Move on to the parent cgroup, if any:
@@ -1350,10 +1350,11 @@ if _exists('sched_getaffinity') and sys._get_cpu_count_config() < 0:
         Return the number of logical CPUs usable by the calling thread of the
         current process. Return None if indeterminable.
         """
-        cpu_count_cgroups = _cpu_count_cgroups()
-        if cpu_count_cgroups is None:
-            cpu_count_cgroups = cpu_count()
-        return min(len(sched_getaffinity(0)), cpu_count_cgroups)
+        count = _cpu_count_cgroups()
+        if count is None:
+            count = cpu_count()
+        affinity_count = len(sched_getaffinity(0))
+        return min(affinity_count, count)
 else:
     # Just an alias to cpu_count() (same docstring)
     process_cpu_count = cpu_count
