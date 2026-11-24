@@ -3272,6 +3272,7 @@ class LazyCoroutineTest(unittest.TestCase):
             with self.assertRaises(RecursionError):
                 coro.send(None)
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_memory_error_before_body_runs(self):
         # MAKE_CELL runs before RETURN_GENERATOR.
         async def inner(x):

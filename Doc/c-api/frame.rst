@@ -78,15 +78,15 @@ See also :ref:`Reflection <reflection>`.
 .. c:function:: PyObject* PyFrame_GetGenerator(PyFrameObject *frame)
 
    Get the generator, coroutine, or async generator that owns this frame,
-   or ``NULL`` if this frame is not owned by a generator.
-   Does not raise an exception, even if the return value is ``NULL``.
+   or ``None`` if this frame is not owned by a generator.
+   Does not raise an exception.
 
-   Return a :term:`strong reference`, or ``NULL``.
+   Return a :term:`strong reference`.
 
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.16
-      May return ``NULL`` for a coroutine frame before its first suspension;
+      May return ``None`` for a coroutine frame before its first suspension;
       see :attr:`frame.f_generator`.
 
 

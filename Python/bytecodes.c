@@ -1669,6 +1669,7 @@ dummy_func(
                 // lazy_outcome would make the load wait for oparg.
                 _PyStackRef *slot = &stack_pointer[-2];
                 assert(slot == lazy_outcome);
+                (void)lazy_outcome;
                 _PyStackRef outcome = *slot;
                 if (PyStackRef_IsTaggedInt(outcome)) {
                     *slot = PyStackRef_NULL;
@@ -1719,6 +1720,7 @@ dummy_func(
         op(_POP_LAZY_OUTCOME, (lazy_outcome[(oparg >> 2) & 1], res -- value)) {
             assert(!(oparg & GET_AWAITABLE_AWAITED_CALL) ||
                    PyStackRef_IsNull(lazy_outcome[0]));
+            (void)lazy_outcome;
             DEAD(lazy_outcome);
             value = res;
             DEAD(res);

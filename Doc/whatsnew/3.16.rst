@@ -1434,7 +1434,7 @@ This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
 * :attr:`frame.f_generator` and :c:func:`PyFrame_GetGenerator` may now
-  return ``None``/``NULL`` for a coroutine frame before its first
+  return ``None`` for a coroutine frame before its first
   suspension, because a coroutine that is awaited as soon as it is called
   (``await coro_func()``) runs without a coroutine object until then.
   Code that used ``frame.f_generator is None`` to detect frames of normal

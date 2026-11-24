@@ -829,7 +829,7 @@ not have to be) the original ``STACK[-2]``.
    * ``1``: After a call to ``__aenter__``
    * ``2``: After a call to ``__aexit__``
 
-   If bit ``4`` of *flags* is set, the instruction follows a call whose
+   If *flags* has the ``4`` bit set, the instruction follows a call whose
    result is awaited right away (``await f()``, and the calls of
    :meth:`~object.__aenter__` and :meth:`~object.__aexit__` in
    :keyword:`async with`). The compiler pushes an extra ``NULL``, the

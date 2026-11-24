@@ -7651,6 +7651,7 @@
                 if (oparg & GET_AWAITABLE_AWAITED_CALL) {
                     _PyStackRef *slot = &stack_pointer[-2];
                     assert(slot == lazy_outcome);
+                    (void)lazy_outcome;
                     _PyStackRef outcome = *slot;
                     if (PyStackRef_IsTaggedInt(outcome)) {
                         *slot = PyStackRef_NULL;
@@ -7707,6 +7708,7 @@
             {
                 assert(!(oparg & GET_AWAITABLE_AWAITED_CALL) ||
                    PyStackRef_IsNull(lazy_outcome[0]));
+                (void)lazy_outcome;
                 value = res;
             }
             // _GET_AWAITABLE

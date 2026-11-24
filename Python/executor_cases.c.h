@@ -8981,6 +8981,7 @@
             lazy_outcome = &stack_pointer[-((oparg >> 2) & 1)];
             assert(!(oparg & GET_AWAITABLE_AWAITED_CALL) ||
                    PyStackRef_IsNull(lazy_outcome[0]));
+            (void)lazy_outcome;
             value = res;
             _tos_cache0 = value;
             SET_CURRENT_CACHED_VALUES(1);
