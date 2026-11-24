@@ -739,7 +739,14 @@ also be used to improve performance.
    Enable Link Time Optimization (LTO) in any build (disabled by default).
 
    The C compiler Clang requires ``llvm-ar`` for LTO (``ar`` on macOS), as well
-   as an LTO-aware linker (``ld.gold`` or ``lld``).
+   as an LTO-aware linker (``ld.gold`` or ``lld``). GNU linkers require the
+   ``LLVMgold.so`` plugin for Clang LTO; ``lld`` does not. On platforms other
+   than macOS, configure tries ``-fuse-ld=lld`` if the configured linker cannot
+   link a Clang LTO program.
+
+   .. versionchanged:: next
+      Fall back to ``lld`` when the configured linker cannot link Clang LTO
+      programs.
 
    .. versionadded:: 3.6
 

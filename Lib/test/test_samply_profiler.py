@@ -1,7 +1,6 @@
 import unittest
 import subprocess
 import sys
-import sysconfig
 import os
 import pathlib
 from test import support
@@ -20,14 +19,7 @@ if support.check_sanitizer(address=True, memory=True, function=False):
     raise unittest.SkipTest("test crash randomly on ASAN/MSAN build")
 
 
-def supports_trampoline_profiling():
-    perf_trampoline = sysconfig.get_config_var("PY_HAVE_PERF_TRAMPOLINE")
-    if not perf_trampoline:
-        return False
-    return int(perf_trampoline) == 1
-
-
-if not supports_trampoline_profiling():
+if not support.supports_perf_trampoline_profiling():
     raise unittest.SkipTest("perf trampoline profiling not supported")
 
 

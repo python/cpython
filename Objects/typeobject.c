@@ -2537,25 +2537,43 @@ _PyType_NewManagedObject(PyTypeObject *type)
 PyObject *
 _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
 {
-    PyObject *obj;
+#ifdef Py_DEBUG
+    if (nitems < 0) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+#endif
+
     /* The +1 on nitems is needed for most types but not all. We could save a
      * bit of space by allocating one less item in certain cases, depending on
      * the type. However, given the extra complexity (e.g. an additional type
      * flag to indicate when that is safe) it does not seem worth the memory
      * savings. An example type that doesn't need the +1 is a subclass of
      * tuple. See GH-100659 and GH-81381. */
-    size_t size = _PyObject_VAR_SIZE(type, nitems+1);
-
-    const size_t presize = _PyType_PreHeaderSize(type);
-    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-        assert(type->tp_itemsize == 0);
-        size += _PyInlineValuesSize(type);
-    }
-    char *alloc = _PyObject_MallocWithType(type, size + presize);
-    if (alloc  == NULL) {
+    if (nitems > PY_SSIZE_T_MAX - 1) {
         return PyErr_NoMemory();
     }
-    obj = (PyObject *)(alloc + presize);
+    size_t size = _PyObject_VAR_SIZE(type, nitems+1);
+
+    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        assert(type->tp_itemsize == 0);
+        size_t inline_values_size = _PyInlineValuesSize(type);
+        if (size > (size_t)PY_SSIZE_T_MAX - inline_values_size) {
+            return PyErr_NoMemory();
+        }
+        size += inline_values_size;
+    }
+
+    const size_t presize = _PyType_PreHeaderSize(type);
+    if (size > (size_t)PY_SSIZE_T_MAX - presize) {
+        return PyErr_NoMemory();
+    }
+
+    char *alloc = _PyObject_MallocWithType(type, size + presize);
+    if (alloc == NULL) {
+        return PyErr_NoMemory();
+    }
+    PyObject *obj = (PyObject *)(alloc + presize);
     if (presize) {
         ((PyObject **)alloc)[0] = NULL;
         ((PyObject **)alloc)[1] = NULL;
@@ -6671,11 +6689,11 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
     return 0;
 }
 
-static void
+static int
 update_slot_after_setattr(PyTypeObject *type, PyObject *name)
 {
     types_stop_world();
-    update_slot(type, name);
+    int res = update_slot(type, name);
     types_start_world();
 #ifdef Py_GIL_DISABLED
     // Invalidate again, after the slots are updated and while TYPE_LOCK is
@@ -6686,6 +6704,7 @@ update_slot_after_setattr(PyTypeObject *type, PyObject *name)
     ASSERT_TYPE_LOCK_HELD();
     _PyType_Modified_Unlocked(type);
 #endif
+    return res;
 }
 
 static int
@@ -6774,7 +6793,7 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     if (res == 0) {
         if (is_dunder_name(name) && has_slotdef(name)) {
             // The name corresponds to a type slot.
-            update_slot_after_setattr(type, name);
+            res = update_slot_after_setattr(type, name);
         }
     }
     END_TYPE_DICT_LOCK();

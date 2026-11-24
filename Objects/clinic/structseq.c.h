@@ -87,15 +87,7 @@ structseq___replace__(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!_PyArg_NoPositional("__replace__", args)) {
         goto exit;
     }
-    if (kwargs == NULL) {
-        changes = PyDict_New();
-        if (changes == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        changes = Py_NewRef(kwargs);
-    }
+    changes = Py_XNewRef(kwargs);
     return_value = structseq___replace___impl((PyStructSequence *)self, changes);
 
 exit:
@@ -104,4 +96,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=18fcf88e5df26774 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f0231faecca9248b input=a9049054013a1b77]*/

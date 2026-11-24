@@ -866,8 +866,13 @@ contextvar_set(PyContextVar *var, PyObject *val)
         return -1;
     }
 
+    // gh-148891: Make a strong reference so a GC during _PyHamt_Assoc will
+    // not free the HAMT during traversal.
+    PyHamtObject *old_vars = context_get_current_vars(ctx);
+    Py_INCREF(old_vars);
     PyHamtObject *new_vars = _PyHamt_Assoc(
-        context_get_current_vars(ctx), (PyObject *)var, val);
+        old_vars, (PyObject *)var, val);
+    Py_DECREF(old_vars);
     if (new_vars == NULL) {
         return -1;
     }
@@ -894,8 +899,12 @@ contextvar_del(PyContextVar *var)
         return -1;
     }
 
+    // gh-148891: Make a strong reference so a GC during _PyHamt_Without will
+    // not free the HAMT during traversal.
     PyHamtObject *vars = context_get_current_vars(ctx);
+    Py_INCREF(vars);
     PyHamtObject *new_vars = _PyHamt_Without(vars, (PyObject *)var);
+    Py_DECREF(vars);
     if (new_vars == NULL) {
         return -1;
     }
@@ -985,19 +994,20 @@ class _contextvars.ContextVar "PyContextVar *" "&PyContextVar_Type"
 #define _PyContextVar_CAST(op)  ((PyContextVar *)(op))
 
 
+/*[clinic input]
+@vectorcall
+@classmethod
+_contextvars.ContextVar.__new__ as contextvar_tp_new
+    name: object
+    /
+    *
+    default as def: object = NULL
+[clinic start generated code]*/
+
 static PyObject *
-contextvar_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+contextvar_tp_new_impl(PyTypeObject *type, PyObject *name, PyObject *def)
+/*[clinic end generated code: output=1c8af17a14fc9dc2 input=d5e8cf845a1ddc27]*/
 {
-    static char *kwlist[] = {"", "default", NULL};
-    PyObject *name;
-    PyObject *def = NULL;
-
-    if (!PyArg_ParseTupleAndKeywords(
-            args, kwds, "O|$O:ContextVar", kwlist, &name, &def))
-    {
-        return NULL;
-    }
-
     return (PyObject *)contextvar_new(name, def);
 }
 
@@ -1191,6 +1201,7 @@ PyTypeObject PyContextVar_Type = {
     .tp_traverse = contextvar_tp_traverse,
     .tp_clear = contextvar_tp_clear,
     .tp_new = contextvar_tp_new,
+    .tp_vectorcall = contextvar_tp_vectorcall,
     .tp_free = PyObject_GC_Del,
     .tp_hash = contextvar_tp_hash,
     .tp_repr = contextvar_tp_repr,

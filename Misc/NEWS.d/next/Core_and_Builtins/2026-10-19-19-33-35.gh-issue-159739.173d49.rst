@@ -1,2 +1,0 @@
-Avoid a crash if formatting an integer with the ``c`` presentation type runs
-out of memory.

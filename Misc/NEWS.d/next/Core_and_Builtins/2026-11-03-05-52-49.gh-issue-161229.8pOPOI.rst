@@ -1,2 +1,0 @@
-:func:`!__lazy_import__` now treats ``None`` for *globals* and *locals* the
-same as omitting them, matching its signature.

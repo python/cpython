@@ -1,2 +1,0 @@
-:class:`reprlib.Repr` objects now have a meaningful :meth:`~object.__repr__`
-describing the instance attributes.

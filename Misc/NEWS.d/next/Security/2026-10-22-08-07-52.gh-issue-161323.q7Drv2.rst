@@ -1,5 +1,0 @@
-On Windows, the ``'tar'`` and ``'data'`` :mod:`tarfile` extraction filters
-now refuse member names and link targets that have a drive but are not
-absolute, such as ``C:foo``, with :exc:`~tarfile.AbsolutePathError` or
-:exc:`~tarfile.AbsoluteLinkError`. Such members could be extracted outside
-the destination directory.  Fixes :cve:`2026-107784`.

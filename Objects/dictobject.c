@@ -4300,7 +4300,9 @@ static int
 dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override, PyObject **dupkey)
 {
     assert(can_modify_dict(mp));
-    ASSERT_DICT_LOCKED(other);
+    if (!PyFrozenDict_Check(other)) {
+        ASSERT_DICT_LOCKED(other);
+    }
 
     if (other == mp || other->ma_used == 0)
         /* a.update(a) or a.update({}); nothing to do */
@@ -4666,7 +4668,14 @@ copy_lock_held_untracked(PyObject *o, int as_frozendict)
     }
     if (copy == NULL)
         return NULL;
-    if (dict_merge(copy, o, 1, NULL) < 0) {
+    int res;
+    if (Py_TYPE(mp)->tp_iter == dict_iter) {
+        res = dict_dict_merge((PyDictObject *)copy, mp, 1, NULL);
+    }
+    else {
+        res = dict_merge(copy, o, 1, NULL);
+    }
+    if (res < 0) {
         Py_DECREF(copy);
         return NULL;
     }
@@ -4970,7 +4979,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         }
     }
 
-    if (ix == DKIX_EMPTY) {
+    if (ix == DKIX_EMPTY || value == NULL) {
         value = default_value;
 
         // See comment to this function in insertdict.
@@ -5696,7 +5705,10 @@ PyDict_DelItemString(PyObject *v, const char *key)
 
 typedef struct {
     PyObject_HEAD
-    PyDictObject *di_dict; /* Set to NULL when iterator is exhausted */
+    /* Set to NULL when the iterator is exhausted, except in the free-threaded
+       build, where the reference is kept until the iterator is deallocated
+       (see dictiter_set_exhausted()). */
+    PyDictObject *di_dict;
     Py_ssize_t di_used;
     Py_ssize_t di_pos;
     PyObject* di_result; /* reusable result tuple for iteritems */
@@ -5790,6 +5802,28 @@ static PyMethodDef dictiter_methods[] = {
      reduce_doc},
     {NULL,              NULL}           /* sentinel */
 };
+
+/* Mark the iterator as exhausted.  In the free-threaded build an iterator
+   may be advanced by several threads at once, each holding a borrowed
+   pointer to di_dict, so the iterator keeps its reference to the dict until
+   it is deallocated (as list and tuple iterators do) and records exhaustion
+   by setting di_pos to DICTITER_EXHAUSTED.  This is distinct from -1, the
+   starting position of a reverse iterator over an empty dict. */
+#ifdef Py_GIL_DISABLED
+#define DICTITER_EXHAUSTED PY_SSIZE_T_MIN
+#endif
+
+static void
+dictiter_set_exhausted(dictiterobject *di, PyDictObject *d)
+{
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_ssize_relaxed(&di->di_pos, DICTITER_EXHAUSTED);
+    _Py_atomic_store_ssize_relaxed(&di->len, 0);
+#else
+    di->di_dict = NULL;
+    Py_DECREF(d);
+#endif
+}
 
 #ifdef Py_GIL_DISABLED
 
@@ -6056,6 +6090,11 @@ dictiter_iternextitem_lock_held(PyDictObject *d, PyObject *self,
     assert (PyAnyDict_Check(d));
     ASSERT_DICT_LOCKED(d);
 
+    i = FT_ATOMIC_LOAD_SSIZE_RELAXED(di->di_pos);
+    if (i < 0) {
+        return -1;  /* exhausted */
+    }
+
     if (di->di_used != d->ma_used) {
         PyErr_SetString(PyExc_RuntimeError,
                         "dictionary changed size during iteration");
@@ -6063,9 +6102,6 @@ dictiter_iternextitem_lock_held(PyDictObject *d, PyObject *self,
         return -1;
     }
 
-    i = FT_ATOMIC_LOAD_SSIZE_RELAXED(di->di_pos);
-
-    assert(i >= 0);
     if (_PyDict_HasSplitTable(d)) {
         if (i >= d->ma_used)
             goto fail;
@@ -6116,8 +6152,7 @@ dictiter_iternextitem_lock_held(PyDictObject *d, PyObject *self,
     return 0;
 
 fail:
-    di->di_dict = NULL;
-    Py_DECREF(d);
+    dictiter_set_exhausted(di, d);
     return -1;
 }
 
@@ -6161,6 +6196,11 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
 
     assert (PyAnyDict_Check(d));
 
+    i = _Py_atomic_load_ssize_relaxed(&di->di_pos);
+    if (i == DICTITER_EXHAUSTED) {
+        return -1;
+    }
+
     if (di->di_used != _Py_atomic_load_ssize_relaxed(&d->ma_used)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "dictionary changed size during iteration");
@@ -6170,9 +6210,7 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
 
     ensure_shared_on_read(d);
 
-    i = _Py_atomic_load_ssize_relaxed(&di->di_pos);
     k = _Py_atomic_load_ptr_acquire(&d->ma_keys);
-    assert(i >= 0);
     if (_PyDict_HasSplitTable(d)) {
         PyDictValues *values = _Py_atomic_load_ptr_consume(&d->ma_values);
         if (values == NULL) {
@@ -6251,8 +6289,7 @@ concurrent_modification:
                     "dictionary keys changed during iteration");
 
 fail:
-    di->di_dict = NULL;
-    Py_DECREF(d);
+    dictiter_set_exhausted(di, d);
     return -1;
 
 try_locked:
@@ -6354,6 +6391,12 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
     assert (PyAnyDict_Check(d));
     ASSERT_DICT_LOCKED(d);
 
+#ifdef Py_GIL_DISABLED
+    if (di->di_pos == DICTITER_EXHAUSTED) {
+        return NULL;
+    }
+#endif
+
     if (di->di_used != d->ma_used) {
         PyErr_SetString(PyExc_RuntimeError,
                          "dictionary changed size during iteration");
@@ -6440,8 +6483,7 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
     }
 
 fail:
-    di->di_dict = NULL;
-    Py_DECREF(d);
+    dictiter_set_exhausted(di, d);
     return NULL;
 }
 
@@ -8137,6 +8179,7 @@ PyObject_ClearManagedDict(PyObject *obj)
                 /* Clear the dict */
                 Py_BEGIN_CRITICAL_SECTION(dict);
                 PyDictKeysObject *oldkeys = dict->ma_keys;
+                ensure_shared_on_resize(dict);
                 set_keys(dict, Py_EMPTY_KEYS);
                 dict->ma_values = NULL;
                 dictkeys_decref(oldkeys, IS_DICT_SHARED(dict));
@@ -8653,16 +8696,22 @@ frozendict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return d;
 }
 
-static void
+static int
 transfer_keys_and_values_lock_held(PyObject *res, PyObject *dict)
 {
     PyDictObject *new = (PyDictObject *)res;
     PyDictObject *old = (PyDictObject *)dict;
     assert(can_modify_dict(old));
 
+    if (old->ma_values && old->ma_values->embedded) {
+        PyErr_SetString(PyExc_ValueError,
+                        "can't convert dict with embedded values");
+        return -1;
+    }
+
     // Fast path: do nothing on an empty dict:
     if (old->ma_keys == Py_EMPTY_KEYS) {
-        return;
+        return 0;
     }
 
     Py_ssize_t used = old->ma_used;
@@ -8680,6 +8729,7 @@ transfer_keys_and_values_lock_held(PyObject *res, PyObject *dict)
     new->ma_keys = keys;
     new->ma_values = values;
     ASSERT_CONSISTENT(new);
+    return 0;
 }
 
 PyObject *
@@ -8695,9 +8745,14 @@ PyDict_AsFrozenDictAndClear(PyObject *dict)
         return NULL;
     }
 
+    int transfer;
     Py_BEGIN_CRITICAL_SECTION(dict);
-    transfer_keys_and_values_lock_held(res, dict);
+    transfer = transfer_keys_and_values_lock_held(res, dict);
     Py_END_CRITICAL_SECTION();
+    if (transfer < 0) {
+        Py_DECREF(res);
+        return NULL;
+    }
 
     _PyObject_GC_TRACK(res);
     assert(_PyFrozenDictObject_CAST(res)->ma_hash == -1);

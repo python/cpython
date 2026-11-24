@@ -43,7 +43,7 @@ PyAPI_FUNC(PyObject *) PyImport_AddModuleObject(
 PyAPI_FUNC(PyObject *) PyImport_AddModule(
     const char *name            /* UTF-8 encoded string */
     );
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(PyObject *) PyImport_AddModuleRef(
     const char *name            /* UTF-8 encoded string */
     );

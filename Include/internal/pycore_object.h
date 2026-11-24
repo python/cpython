@@ -27,9 +27,6 @@ extern "C" {
 // `ob_ref_shared` are used for flags.
 #define _Py_REF_DEFERRED (PY_SSIZE_T_MAX / 8)
 
-/* For backwards compatibility -- Do not use this */
-#define _Py_IsImmortalLoose(op) _Py_IsImmortal
-
 
 /* Check if an object is consistent. For example, ensure that the reference
    counter is greater than or equal to 1, and ensure that ob_type is not NULL.
