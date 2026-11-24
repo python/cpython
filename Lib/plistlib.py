@@ -699,7 +699,7 @@ class _BinaryPlistWriter (object):
         top_object = self._getrefnum(value)
         offset_table_offset = self._fp.tell()
         offset_size = _count_to_size(offset_table_offset)
-        offset_format = '>' + _BINARY_FORMAT[offset_size] * num_objects
+        offset_format = f'>{num_objects}{_BINARY_FORMAT[offset_size]}'
         self._fp.write(struct.pack(offset_format, *self._object_offsets))
 
         # Write trailer
@@ -846,7 +846,7 @@ class _BinaryPlistWriter (object):
             refs = [self._getrefnum(o) for o in value]
             s = len(refs)
             self._write_size(0xA0, s)
-            self._fp.write(struct.pack('>' + self._ref_format * s, *refs))
+            self._fp.write(struct.pack(f'>{s}{self._ref_format}', *refs))
 
         elif isinstance(value, (dict, frozendict)):
             keyRefs, valRefs = [], []
@@ -862,8 +862,8 @@ class _BinaryPlistWriter (object):
 
             s = len(keyRefs)
             self._write_size(0xD0, s)
-            self._fp.write(struct.pack('>' + self._ref_format * s, *keyRefs))
-            self._fp.write(struct.pack('>' + self._ref_format * s, *valRefs))
+            self._fp.write(struct.pack(f'>{s}{self._ref_format}', *keyRefs))
+            self._fp.write(struct.pack(f'>{s}{self._ref_format}', *valRefs))
 
         else:
             raise TypeError(value)

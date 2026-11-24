@@ -14,7 +14,8 @@ interpolation_new_impl(PyTypeObject *type, PyObject *value,
                        PyObject *format_spec);
 
 static PyObject *
-interpolation_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+interpolation_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -46,14 +47,13 @@ interpolation_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[4];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    Py_ssize_t noptargs = nargs + nkw - 1;
     PyObject *value;
     PyObject *expression = &_Py_STR(empty);
     PyObject *conversion = Py_None;
     PyObject *format_spec = &_Py_STR(empty);
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -91,4 +91,63 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2391391e2d7708c0 input=a9049054013a1b77]*/
+
+static PyObject *
+interpolation_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return interpolation_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+interpolation_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *value;
+    PyObject *expression = &_Py_STR(empty);
+    PyObject *conversion = Py_None;
+    PyObject *format_spec = &_Py_STR(empty);
+
+    assert(_PyType_CAST(type)->tp_new == interpolation_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs < 1 || nargs > 4) {
+        return interpolation_new_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    value = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("Interpolation", "argument 'expression'", "str", args[1]);
+        goto exit;
+    }
+    expression = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_conversion_converter(args[2], &conversion)) {
+        goto exit;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[3])) {
+        _PyArg_BadArgument("Interpolation", "argument 'format_spec'", "str", args[3]);
+        goto exit;
+    }
+    format_spec = args[3];
+skip_optional:
+    return_value = interpolation_new_impl(_PyType_CAST(type), value, expression, conversion, format_spec);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=d07caaaa0e78ca15 input=a9049054013a1b77]*/

@@ -189,12 +189,13 @@ venv:
 .PHONY: lock
 lock:
 # Dependencies have a 14 day cooldown period to mitigate supply chain attacks,
-# except for sphinx_linklint and python-docs-theme, which are maintained by
+# except for blurb, python-docs-theme and sphinx_linklint, which are maintained by
 # core team members.
 	$(UV) pip compile requirements.txt \
 		--upgrade --exclude-newer P14D \
-		--exclude-newer-package sphinx_linklint=PT0S \
+		--exclude-newer-package blurb=PT0S \
 		--exclude-newer-package python-docs-theme=PT0S \
+		--exclude-newer-package sphinx_linklint=PT0S \
 		--no-cache --output-file $(REQUIREMENTS) \
 		--python-version 3.12 --universal \
 		--custom-compile-command="make lock"

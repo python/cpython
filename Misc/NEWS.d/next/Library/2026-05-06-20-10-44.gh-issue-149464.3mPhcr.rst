@@ -1,3 +1,0 @@
-Add :func:`os.pidfd_getfd` for duplicating a file descriptor from another
-process via a pidfd.  Available on Linux 5.6+. Patch by Maurycy
-Pawłowski-Wieroński.

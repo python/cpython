@@ -4,7 +4,7 @@
 #include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
 #include "pycore_call.h"          // _PyStack_AsDict()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
-#include "pycore_emscripten_trampoline.h" // descr_set_trampoline_call(), descr_get_trampoline_call()
+#include "pycore_wasm_trampoline.h" // descr_set_trampoline_call(), descr_get_trampoline_call()
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_modsupport.h"    // _PyArg_UnpackStack()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
@@ -1300,6 +1300,7 @@ PyDictProxy_New(PyObject *mapping)
 }
 
 /*[clinic input]
+@vectorcall
 @classmethod
 mappingproxy.__new__ as mappingproxy_new
 
@@ -1310,7 +1311,7 @@ Read-only proxy of a mapping.
 
 static PyObject *
 mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping)
-/*[clinic end generated code: output=65f27f02d5b68fa7 input=c156df096ef7590c]*/
+/*[clinic end generated code: output=65f27f02d5b68fa7 input=7388846480c052d2]*/
 {
     return PyDictProxy_New(mapping);
 }
@@ -2007,7 +2008,11 @@ static int
 property_clear(PyObject *self)
 {
     propertyobject *pp = (propertyobject *)self;
+    Py_CLEAR(pp->prop_get);
+    Py_CLEAR(pp->prop_set);
+    Py_CLEAR(pp->prop_del);
     Py_CLEAR(pp->prop_doc);
+    Py_CLEAR(pp->prop_name);
     return 0;
 }
 
@@ -2053,6 +2058,7 @@ PyTypeObject PyDictProxy_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     mappingproxy_new,                           /* tp_new */
+    .tp_vectorcall = mappingproxy_vectorcall,
 };
 
 PyTypeObject PyProperty_Type = {

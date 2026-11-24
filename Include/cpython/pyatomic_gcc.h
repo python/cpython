@@ -577,6 +577,10 @@ _Py_atomic_store_int8_release(int8_t *obj, int8_t value)
 { __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
 
 static inline void
+_Py_atomic_store_uint8_release(uint8_t *obj, uint8_t value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
+
+static inline void
 _Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value)
 { __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
 

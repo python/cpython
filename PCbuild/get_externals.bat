@@ -60,7 +60,7 @@ set libraries=%libraries%                                       sqlite-3.53.4.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-9.0.4.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tk-9.0.4.1
 set libraries=%libraries%                                       xz-5.8.1.1
-set libraries=%libraries%                                       zlib-ng-2.2.4
+set libraries=%libraries%                                       zlib-ng-2.2.5
 set libraries=%libraries%                                       zstd-1.5.7
 
 for %%e in (%libraries%) do (

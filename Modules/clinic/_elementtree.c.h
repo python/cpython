@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_elementtree_SubElement__doc__,
 "SubElement($module, parent, tag, attrib={}, /, **extra)\n"
@@ -50,15 +51,7 @@ _elementtree_SubElement(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     attrib = PyTuple_GET_ITEM(args, 2);
 skip_optional:
-    if (kwargs == NULL) {
-        extra = PyDict_New();
-        if (extra == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        extra = Py_NewRef(kwargs);
-    }
+    extra = Py_XNewRef(kwargs);
     return_value = _elementtree_SubElement_impl(module, parent, tag, attrib, extra);
 
 exit:
@@ -1352,13 +1345,8 @@ _elementtree_XMLParser___init__(PyObject *self, PyObject *args, PyObject *kwargs
         encoding = NULL;
     }
     else if (PyUnicode_Check(fastargs[1])) {
-        Py_ssize_t encoding_length;
-        encoding = PyUnicode_AsUTF8AndSize(fastargs[1], &encoding_length);
+        encoding = _PyUnicode_AsUTF8NoNUL(fastargs[1]);
         if (encoding == NULL) {
-            goto exit;
-        }
-        if (strlen(encoding) != (size_t)encoding_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1486,4 +1474,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9f9f792978663b16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d454d27e90eb399e input=a9049054013a1b77]*/

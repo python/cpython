@@ -18,12 +18,6 @@ typedef struct {
     int byte_col;
 } _PyTok_Loc;
 
-static inline _PyTok_Span
-_PyTok_SpanFromBounds(_PyTok_Off start, _PyTok_Off end)
-{
-    return (_PyTok_Span){start, end};
-}
-
 static inline int
 _PyTok_SpanIsValid(_PyTok_Span span)
 {

@@ -26,6 +26,7 @@ Modules/posixmodule.c	os_pipe_impl	pipe2_works_atomic	-
 ## guards around resource init
 Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-
 Modules/_struct.c	-	endian_tables_init_once	-
+Modules/_ctypes/callbacks.c	-	closure_alloc_init_once	-
 
 ##-----------------------
 ## other values (not Python-specific)
@@ -48,8 +49,7 @@ Objects/unicodeobject.c	_init_global_state	initialized	-
 Modules/getbuildinfo.c	-	buildinfo	-
 Modules/getbuildinfo.c	-	initialized	-
 Python/getversion.c	-	initialized	-
-Python/getversion.c	-	static_version	-
-Python/getversion.c	-	heap_version	-
+Python/getversion.c	-	version	-
 
 ## public C-API - set during first init
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
@@ -57,6 +57,7 @@ Python/pyhash.c	-	_Py_HashSecret	-
 
 ## thread-safe hashtable (internal locks)
 Python/parking_lot.c	-	buckets	-
+Python/pystate.c	-	state_freelists	-
 
 ## shared empty sentinel for the per-type method cache
 Python/typecache.c	-	empty_cache	-
@@ -240,11 +241,8 @@ Modules/_decimal/_decimal.c	-	cond_map_template	-
 Modules/_decimal/_decimal.c	-	dec_signal_string	-
 Modules/_decimal/_decimal.c	-	dflt_ctx	-
 Modules/_decimal/_decimal.c	-	int_constants	-
-Modules/_decimal/_decimal.c	-	invalid_rounding_err	-
-Modules/_decimal/_decimal.c	-	invalid_signals_err	-
 Modules/_decimal/_decimal.c	-	signal_map_template	-
 Modules/_decimal/_decimal.c	-	ssize_constants	-
-Modules/_decimal/_decimal.c	-	INVALID_SIGNALDICT_ERROR_MSG	-
 Modules/_elementtree.c	-	ExpatMemoryHandler	-
 Modules/_hashopenssl.c	-	py_hashes	-
 Modules/_hacl/Hacl_Hash_SHA1.c	-	_h0	-
@@ -318,6 +316,7 @@ Modules/cmathmodule.c	-	sinh_special_values	-
 Modules/cmathmodule.c	-	sqrt_special_values	-
 Modules/cmathmodule.c	-	tanh_special_values	-
 Modules/config.c	-	_PyImport_Inittab	-
+Modules/config_bootstrap.c	-	_PyImport_Inittab	-
 Modules/faulthandler.c	-	faulthandler_handlers	-
 Modules/getnameinfo.c	-	gni_afdl	-
 Modules/hmacmodule.c	-	py_hmac_static_hinfo	-
@@ -465,6 +464,13 @@ Modules/_testcapi/datetime.c	-	test_run_counter	-
 Modules/_testcapi/docstring.c	-	DocStringNoSignatureTest	-
 Modules/_testcapi/docstring.c	-	DocStringUnrepresentableSignatureTest	-
 Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-
+Modules/_testcapi/fpcast.c	-	last_set_value	-
+Modules/_testcapi/fpcast.c	-	FpcastTestType	-
+Modules/_testcapi/fpcast.c	-	FpcastCallable0	-
+Modules/_testcapi/fpcast.c	-	FpcastCallable1	-
+Modules/_testcapi/fpcast.c	-	FpcastCallable2	-
+Modules/_testcapi/fpcast.c	-	FpcastCallable3	-
+Modules/_testcapi/fpcast.c	-	FpcastCallable4	-
 Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/mem.c	-	FmData	-
 Modules/_testcapi/mem.c	-	FmHook	-
@@ -521,6 +527,7 @@ Modules/_testcapimodule.c	-	MethodDescriptor2_Type	-
 Modules/_testcapimodule.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapimodule.c	-	MethodDescriptorDerived_Type	-
 Modules/_testcapimodule.c	-	MethodDescriptorNopGet_Type	-
+Modules/_testcapimodule.c	-	MyListDictSubclass_Type	-
 Modules/_testcapimodule.c	-	MyList_Type	-
 Modules/_testcapimodule.c	-	PyRecursingInfinitelyError_Type	-
 Modules/_testcapimodule.c	-	TestError	-

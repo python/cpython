@@ -1,2 +1,0 @@
-Fixed data-race when calling :meth:`io.TextIOBase.detach` in
-:term:`free-threaded build`.

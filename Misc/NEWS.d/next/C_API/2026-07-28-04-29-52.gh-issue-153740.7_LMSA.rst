@@ -1,3 +1,0 @@
-If available on the platform, use native :c:type:`_Float16` in
-:c:func:`PyFloat_Pack2` and :c:func:`PyFloat_Unpack2` functions.  Patch by
-Sergey B Kirpichev.

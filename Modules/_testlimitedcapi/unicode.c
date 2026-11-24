@@ -140,14 +140,19 @@ unicode_copy(PyObject *unicode)
 
 /* Test PyUnicode_WriteChar() */
 static PyObject *
-unicode_writechar(PyObject *self, PyObject *args)
+unicode_writechar(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"to", "index", "character", "incref", NULL};
     PyObject *to, *to_copy;
     Py_ssize_t index;
     unsigned int character;
     int result;
+    int incref = 0;
 
-    if (!PyArg_ParseTuple(args, "OnI", &to, &index, &character)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "OnI|p", kwlist,
+                                     &to, &index, &character, &incref))
+    {
         return NULL;
     }
 
@@ -156,7 +161,14 @@ unicode_writechar(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    if (incref) {
+        Py_INCREF(to_copy);
+    }
     result = PyUnicode_WriteChar(to_copy, index, (Py_UCS4)character);
+    if (incref) {
+        Py_DECREF(to_copy);
+    }
+
     if (result == -1 && PyErr_Occurred()) {
         Py_DECREF(to_copy);
         return NULL;
@@ -981,7 +993,7 @@ unicode_encodecodepage(PyObject *self, PyObject *args)
 {
     int code_page;
     PyObject *unicode;
-    const char *errors;
+    const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "iO|z", &code_page, &unicode, &errors))
         return NULL;
@@ -998,7 +1010,7 @@ unicode_decodelocaleandsize(PyObject *self, PyObject *args)
 {
     const char *data;
     Py_ssize_t size;
-    const char *errors;
+    const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))
         return NULL;
@@ -1012,7 +1024,7 @@ unicode_decodelocale(PyObject *self, PyObject *args)
 {
     const char *data;
     Py_ssize_t size;
-    const char *errors;
+    const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "y#|z", &data, &size, &errors))
         return NULL;
@@ -1025,7 +1037,7 @@ static PyObject *
 unicode_encodelocale(PyObject *self, PyObject *args)
 {
     PyObject *unicode;
-    const char *errors;
+    const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "O|z", &unicode, &errors))
         return NULL;
@@ -1319,7 +1331,7 @@ unicode_comparewithasciistring(PyObject *self, PyObject *args)
 {
     PyObject *left;
     const char *right = NULL;
-    Py_ssize_t right_len;
+    Py_ssize_t right_len = 0;
     int result;
 
     if (!PyArg_ParseTuple(args, "O|y#", &left, &right, &right_len))
@@ -1358,7 +1370,7 @@ unicode_equaltoutf8andsize(PyObject *self, PyObject *args)
 {
     PyObject *left;
     const char *right = NULL;
-    Py_ssize_t right_len;
+    Py_ssize_t right_len = 0;
     Py_ssize_t size = -100;
     int result;
 
@@ -1915,7 +1927,7 @@ static PyMethodDef TestMethods[] = {
      test_unicode_compare_with_ascii,                            METH_NOARGS},
     {"test_string_from_format",  test_string_from_format,        METH_NOARGS},
     {"test_widechar",            test_widechar,                  METH_NOARGS},
-    {"unicode_writechar",        unicode_writechar,              METH_VARARGS},
+    {"unicode_writechar",        _PyCFunction_CAST(unicode_writechar), METH_VARARGS | METH_KEYWORDS},
     {"unicode_resize",           unicode_resize,                 METH_VARARGS},
     {"unicode_resize_null",      unicode_resize_null,            METH_VARARGS},
     {"unicode_append",           unicode_append,                 METH_VARARGS},

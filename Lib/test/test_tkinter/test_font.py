@@ -2,6 +2,7 @@ import collections.abc
 import unittest
 import tkinter
 from tkinter import font
+from test import support
 from test.support import requires, gc_collect, ALWAYS_EQ
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest
@@ -249,11 +250,6 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(w1, w2)
         w3 = font.Font(root=self.root, font=('Times', 12), exists=True)
         self.assertNotEqual(w1, w3)
-        # A wrapped description never equals a named font, even one whose name
-        # is the string form of the description.
-        named = font.Font(root=self.root, name=str(w1), family='Courier')
-        self.assertNotEqual(w1, named)
-        self.assertNotEqual(named, w1)
 
         self.assertNotEqual(font1, 0)
         self.assertEqual(font1, ALWAYS_EQ)
@@ -364,13 +360,10 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
 
 class TestModule(unittest.TestCase):
-    def test_deprecated__version__(self):
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.20",
-        ) as cm:
-            getattr(font, "__version__")
-        self.assertEqual(cm.filename, __file__)
+    def test_deprecated_module_attributes(self):
+        support.check_deprecated_module_attributes(
+            self, font, "__version__", remove=(3, 20),
+        )
 
 
 if __name__ == "__main__":

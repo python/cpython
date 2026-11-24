@@ -1390,7 +1390,11 @@ class PunycodeTest(unittest.TestCase):
             (b"Proprostnemluvesky-&uyb24dma41a", "strict", UnicodeDecodeError("punycode", b"", 19, 20, "")),
             (b"Proprostnemluvesky-uyb24d&ma41a", "strict", UnicodeDecodeError("punycode", b"", 25, 26, "")),
             (b"Proprostnemluvesky-uyb24dma41a&", "strict", UnicodeDecodeError("punycode", b"", 30, 31, "")),
+            # A delimiter not preceded by any basic code point (RFC 3492, 6.2)
+            (b"-", "strict", UnicodeDecodeError("punycode", b"", 0, 1, "")),
+            (b"-80a1acny", "strict", UnicodeDecodeError("punycode", b"", 0, 1, "")),
             (b"xn--w&", "ignore", "xn-"),
+            (b"-80a1acny", "ignore", ""),
         ]
         for puny, errors, expected in testcases:
             with self.subTest(puny=puny, errors=errors):
@@ -1667,6 +1671,8 @@ class IDNACodecTest(unittest.TestCase):
         (b"xn--pythn-&mua.org", UnicodeDecodeError("idna", b"xn--pythn-&mua.org", 10, 11, "")),
         (b"xn--pythn-m&ua.org", UnicodeDecodeError("idna", b"xn--pythn-m&ua.org", 11, 12, "")),
         (b"xn--pythn-mua&.org", UnicodeDecodeError("idna", b"xn--pythn-mua&.org", 13, 14, "")),
+        (b"bugs.xn--pythn-&mua.org", UnicodeDecodeError("idna", b"bugs.xn--pythn-&mua.org", 15, 16, "")),
+        (b".xn--pythn-&mua.org", UnicodeDecodeError("idna", b".xn--pythn-&mua.org", 11, 12, "")),
     ]
     invalid_encode_testcases = [
         (f"foo.{'\xff'*60}", UnicodeEncodeError("idna", f"foo.{'\xff'*60}", 4, 64, "")),
@@ -1785,6 +1791,22 @@ class IDNACodecTest(unittest.TestCase):
         self.assertEqual(decoder.decode(b"ple-9ta.o", ), "\xe4xample.")
         self.assertEqual(decoder.decode(b"rg."), "org.")
         self.assertEqual(decoder.decode(b"", True), "")
+
+    def test_incremental_decode_leading_empty_labels(self):
+        # The dot after an empty label at the start of the input has to be
+        # counted as consumed, or it is decoded again by the next call.
+        for data in b".python.org", b"..python.org.", b"..", b"." * 100:
+            with self.subTest(data=data):
+                decoder = codecs.getincrementaldecoder("idna")()
+                result = decoder.decode(data)
+                self.assertNotIn(b".", decoder.getstate()[0])
+                result += decoder.decode(b"", True)
+                self.assertEqual(result, data.decode("idna"))
+                self.assertEqual(decoder.getstate(), (b"", 0))
+                self.assertEqual(decoder.decode(b"", True), "")
+
+        with io.TextIOWrapper(io.BytesIO(b"." * 100), encoding="idna") as f:
+            self.assertEqual(f.readline(), "." * 100)
 
     def test_incremental_decode_invalid(self):
         iterdecode_testcases = [
@@ -3251,6 +3273,27 @@ class TransformCodecTest(unittest.TestCase):
         # Missing "begin" line
         self.assertRaises(ValueError, codecs.decode, b"", "uu-codec")
 
+    def test_uu_begin_line(self):
+        # Only a "begin <octal mode> [<filename>]" line starts the encoded
+        # data; other lines starting with "begin" are leading text.
+        block = codecs.encode(b"data", "uu-codec")
+        other = codecs.encode(b"other", "uu-codec").partition(b"\n")[2]
+        for line in (b"begin 666 name", b"begin 0 name with spaces",
+                     b"begin 644 name\r", b"begin 666"):
+            with self.subTest(line=line):
+                encoded = line + b"\n" + other
+                self.assertEqual(codecs.decode(encoded + block, "uu-codec"),
+                                 b"other")
+        for line in (b"beginning of the text", b"begin", b"begin ",
+                     b"begin mode name", b"begin 888 name",
+                     b"beginx 666 name", b"begin-base64 666 name"):
+            with self.subTest(line=line):
+                encoded = line + b"\n" + other
+                self.assertRaises(ValueError, codecs.decode,
+                                  encoded, "uu-codec")
+                self.assertEqual(codecs.decode(encoded + block, "uu-codec"),
+                                 b"data")
+
 
 # The codec system tries to add notes to exceptions in order to ensure
 # the error mentions the operation being performed and the codec involved.
@@ -4057,34 +4100,67 @@ class StreamRecoderTest(unittest.TestCase):
                     pickle.dumps(sr, proto)
 
 
+@unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
 @unittest.skipIf(_testinternalcapi is None, 'need _testinternalcapi module')
 class LocaleCodecTest(unittest.TestCase):
     """
-    Test indirectly _Py_DecodeUTF8Ex() and _Py_EncodeUTF8Ex().
+    Test public Py_EncodeLocale() and Py_DecodeLocale() C API.
+
+    Test internal _Py_EncodeLocale() and _Py_DecodeLocale() C API.
+
+    Test indirectly _Py_DecodeUTF8() and _Py_EncodeUTF8().
     """
     ENCODING = sys.getfilesystemencoding()
     STRINGS = ("ascii", "ulatin1:\xa7\xe9",
                "u255:\xff",
                "UCS:\xe9\u20ac\U0010ffff",
-               "surrogates:\uDC80\uDCFF")
+               "surrogates:\uDC80\uDCFF",
+               "embed\0char")
     BYTES_STRINGS = (b"blatin1:\xa7\xe9", b"b255:\xff")
-    SURROGATES = "\uDC80\uDCFF"
 
-    def encode(self, text, errors="strict"):
-        return _testinternalcapi.EncodeLocaleEx(text, 0, errors)
+    def encode_locale_surrogateescape(self, text):
+        # Test public Py_EncodeLocale() C API:
+        # use the "surrogateescape" error handler
+        return _testlimitedcapi.encode_locale(text)
+
+    def encode_locale(self, text, errors="strict"):
+        # Test internal _Py_EncodeLocale() C API
+        return _testinternalcapi.encode_locale(text, 0, errors)
 
     def check_encode_strings(self, errors):
         for text in self.STRINGS:
             with self.subTest(text=text):
                 try:
                     expected = text.encode(self.ENCODING, errors)
+                    if b"\0" in expected:
+                        # Py_EncodeLocale() and _Py_EncodeLocale()
+                        # truncate the input string at the first NUL character
+                        expected = expected.partition(b'\0')[0]
                 except UnicodeEncodeError:
+                    for error_pos in range(len(text)):
+                        try:
+                            text[error_pos].encode(self.ENCODING, errors)
+                        except UnicodeEncodeError:
+                            break
+                    else:
+                        self.fail("failed to compute error_pos")
+
+                    if errors == "surrogateescape":
+                        with self.assertRaises(RuntimeError) as cm:
+                            self.encode_locale_surrogateescape(text)
+                        errmsg = f"encode error: pos={error_pos}"
+                        self.assertEqual(str(cm.exception), errmsg)
+
                     with self.assertRaises(RuntimeError) as cm:
-                        self.encode(text, errors)
-                    errmsg = str(cm.exception)
-                    self.assertRegex(errmsg, r"encode error: pos=[0-9]+, reason=")
+                        self.encode_locale(text, errors)
+                    errmsg = f"encode error: pos={error_pos}"
+                    self.assertEqual(str(cm.exception), errmsg)
                 else:
-                    encoded = self.encode(text, errors)
+                    if errors in ("strict", "surrogateescape"):
+                        encoded = self.encode_locale_surrogateescape(text)
+                        self.assertEqual(encoded, expected)
+
+                    encoded = self.encode_locale(text, errors)
                     self.assertEqual(encoded, expected)
 
     def test_encode_strict(self):
@@ -4095,7 +4171,7 @@ class LocaleCodecTest(unittest.TestCase):
 
     def test_encode_surrogatepass(self):
         try:
-            self.encode('', 'surrogatepass')
+            self.encode_locale('', 'surrogatepass')
         except ValueError as exc:
             if str(exc) == 'unsupported error handler':
                 self.skipTest(f"{self.ENCODING!r} encoder doesn't support "
@@ -4107,11 +4183,17 @@ class LocaleCodecTest(unittest.TestCase):
 
     def test_encode_unsupported_error_handler(self):
         with self.assertRaises(ValueError) as cm:
-            self.encode('', 'backslashreplace')
+            self.encode_locale('', 'backslashreplace')
         self.assertEqual(str(cm.exception), 'unsupported error handler')
 
-    def decode(self, encoded, errors="strict"):
-        return _testinternalcapi.DecodeLocaleEx(encoded, 0, errors)
+    def decode_locale(self, encoded, errors="strict"):
+        # Test internal _Py_DecodeLocale() C API
+        return _testinternalcapi.decode_locale(encoded, 0, errors)
+
+    def decode_locale_surrogateescape(self, encoded):
+        # Test the public Py_DecodeLocale() C API:
+        # use the "surrogateescape" error handler
+        return _testlimitedcapi.decode_locale(encoded)
 
     def check_decode_strings(self, errors):
         is_utf8 = (self.ENCODING == "utf-8")
@@ -4138,13 +4220,37 @@ class LocaleCodecTest(unittest.TestCase):
             with self.subTest(encoded=encoded):
                 try:
                     expected = encoded.decode(self.ENCODING, errors)
+                    if "\0" in expected:
+                        # Py_DecodeLocale() and _Py_DecodeLocale() truncate
+                        # the input string at the first NUL byte
+                        expected = expected.partition('\0')[0]
                 except UnicodeDecodeError:
+                    for error_pos in range(len(encoded) - 1, -1, -1):
+                        try:
+                            encoded[:error_pos].decode(self.ENCODING, errors)
+                        except UnicodeDecodeError:
+                            pass
+                        else:
+                            break
+                    else:
+                        self.fail("failed to compute error_pos")
+
+                    if errors == "surrogateescape":
+                        with self.assertRaises(RuntimeError) as cm:
+                            self.decode_locale_surrogateescape(encoded)
+                        errmsg = f"Py_DecodeLocale failed: error_pos={error_pos}"
+                        self.assertEqual(str(cm.exception), errmsg)
+
                     with self.assertRaises(RuntimeError) as cm:
-                        self.decode(encoded, errors)
-                    errmsg = str(cm.exception)
-                    self.assertStartsWith(errmsg, "decode error: ")
+                        self.decode_locale(encoded, errors)
+                    errmsg = f"decode error: pos={error_pos}"
+                    self.assertEqual(str(cm.exception), errmsg)
                 else:
-                    decoded = self.decode(encoded, errors)
+                    if errors in ("strict", "surrogateescape"):
+                        decoded = self.decode_locale_surrogateescape(encoded)
+                        self.assertEqual(decoded, expected)
+
+                    decoded = self.decode_locale(encoded, errors)
                     self.assertEqual(decoded, expected)
 
     def test_decode_strict(self):
@@ -4155,7 +4261,7 @@ class LocaleCodecTest(unittest.TestCase):
 
     def test_decode_surrogatepass(self):
         try:
-            self.decode(b'', 'surrogatepass')
+            self.decode_locale(b'', 'surrogatepass')
         except ValueError as exc:
             if str(exc) == 'unsupported error handler':
                 self.skipTest(f"{self.ENCODING!r} decoder doesn't support "
@@ -4167,8 +4273,26 @@ class LocaleCodecTest(unittest.TestCase):
 
     def test_decode_unsupported_error_handler(self):
         with self.assertRaises(ValueError) as cm:
-            self.decode(b'', 'backslashreplace')
+            self.decode_locale(b'', 'backslashreplace')
         self.assertEqual(str(cm.exception), 'unsupported error handler')
+
+    def test_memory_error(self):
+        # Make sure that MemoryError is handled properly
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                self.decode_locale(b'short ascii string', 0, 'strict')
+
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                self.decode_locale_surrogateescape(b'short ascii string')
+
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                self.encode_locale('short string', 0, 'strict')
+
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                self.encode_locale_surrogateescape('short string')
 
 
 class Rot13Test(unittest.TestCase):
