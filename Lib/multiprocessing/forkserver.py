@@ -394,7 +394,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
                                     del wrapped_s
                             # Receive fds from client
                             fds = reduction.recvfds(s, MAXFDS_TO_SEND + 1)
-                        except (EOFError, BrokenPipeError, AuthenticationError):
+                        except (EOFError, ConnectionError, AuthenticationError):
                             s.close()
                             continue
                         if len(fds) > MAXFDS_TO_SEND:

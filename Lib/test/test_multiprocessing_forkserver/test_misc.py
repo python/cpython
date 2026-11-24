@@ -3,12 +3,43 @@ import re
 import unittest
 from multiprocessing.util import _SUN_PATH_MAX
 from test._test_multiprocessing import install_tests_in_module_dict
+from test import support
 from test.support import os_helper, script_helper
 
 install_tests_in_module_dict(globals(), 'forkserver', exclude_types=True)
 
 
 class TestForkServerConfiguration(unittest.TestCase):
+    def test_client_hanging_up_during_handshake(self):
+        # A client that goes away without reading the forkserver's challenge
+        # resets the connection on Linux. The forkserver must survive it, as
+        # it survives a client that hangs up cleanly.
+        cmd = f'''if 1:
+            import multiprocessing, os, socket, time
+            from multiprocessing import forkserver
+
+            if __name__ == "__main__":
+                forkserver.ensure_running()
+                pid = forkserver._forkserver._forkserver_pid
+                address = forkserver._forkserver._forkserver_address
+                with socket.socket(socket.AF_UNIX) as client:
+                    client.connect(address)
+                    client.settimeout({support.SHORT_TIMEOUT})
+                    client.recv(1, socket.MSG_PEEK)  # the challenge is here
+                time.sleep(0.5)  # let the forkserver read the reset
+                if os.waitpid(pid, os.WNOHANG)[0]:
+                    print("forkserver died")
+                    raise SystemExit
+                ctx = multiprocessing.get_context("forkserver")
+                p = ctx.Process(target=time.sleep, args=(0,))
+                p.start()
+                p.join()
+                assert forkserver._forkserver._forkserver_pid == pid
+                print("exitcode", p.exitcode)
+        '''
+        _, out, _ = script_helper.assert_python_ok('-c', cmd)
+        self.assertEqual(out.decode().strip(), "exitcode 0")
+
     def test_respect_sun_path_max(self):
         # Ensure that the calculation for temporary filepath lengths is correct.
         # See https://github.com/python/cpython/issues/149527.

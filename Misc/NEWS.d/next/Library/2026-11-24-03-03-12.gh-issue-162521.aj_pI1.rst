@@ -1,0 +1,3 @@
+Fix the :mod:`multiprocessing` forkserver exiting with
+:exc:`ConnectionResetError` on Linux when a client hung up during the
+authentication handshake without reading the forkserver's challenge.
