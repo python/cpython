@@ -1235,7 +1235,8 @@ _excinfo_init_type_from_exception(struct _excinfo_type *info, PyObject *exc)
 
     PyTypeObject *type = Py_TYPE(exc);
     if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        assert(_Py_IsImmortal((PyObject *)type));
+        _Py_ASSERT_STATIC_IMMORTAL((PyObject *)type);
+        _Py_ASSERT_IMMORTAL((PyObject *)type);
         info->builtin = type;
     }
     else {
@@ -1325,7 +1326,8 @@ _excinfo_clear_type(struct _excinfo_type *info)
 {
     if (info->builtin != NULL) {
         assert(info->builtin->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
-        assert(_Py_IsImmortal((PyObject *)info->builtin));
+        _Py_ASSERT_STATIC_IMMORTAL((PyObject *)info->builtin);
+        _Py_ASSERT_IMMORTAL((PyObject *)info->builtin);
     }
     if (info->name != NULL) {
         PyMem_RawFree((void *)info->name);

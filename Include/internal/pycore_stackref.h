@@ -270,7 +270,7 @@ _PyStackRef_DupImmortal(_PyStackRef ref, const char *filename, int linenumber)
     assert(!PyStackRef_IsTaggedInt(ref));
     assert(!PyStackRef_RefcountOnObject(ref));
     PyObject *obj = _Py_stackref_get_object(ref);
-    assert(_Py_IsImmortal(obj));
+    _Py_ASSERT_IMMORTAL(obj);
     return _Py_stackref_create(obj, Py_TAG_REFCNT, filename, linenumber);
 }
 #define PyStackRef_DupImmortal(REF) _PyStackRef_DupImmortal((REF), __FILE__, __LINE__)
@@ -361,7 +361,7 @@ static inline _PyStackRef
 _PyStackRef_FromPyObjectNewMortal(PyObject *obj, const char *filename, int linenumber)
 {
     assert(obj != NULL);
-    assert(!_Py_IsStaticImmortal(obj));
+    _Py_ASSERT_NOT_STATIC_IMMORTAL(obj);
     Py_INCREF(obj);
     return _Py_stackref_create(obj, 0, filename, linenumber);
 }
@@ -502,7 +502,7 @@ PyStackRef_CheckValid(_PyStackRef ref)
     switch (tag) {
         case 0:
             /* Can be immortal if object was made immortal after reference came into existence */
-            assert(!_Py_IsStaticImmortal(obj));
+            _Py_ASSERT_NOT_STATIC_IMMORTAL(obj);
             break;
         case Py_TAG_REFCNT:
             break;
@@ -644,7 +644,7 @@ PyStackRef_DupImmortal(_PyStackRef ref)
 {
     assert(!PyStackRef_IsNull(ref));
     assert(!PyStackRef_RefcountOnObject(ref));
-    assert(_Py_IsImmortal(BITS_TO_PTR_MASKED(ref)));
+    _Py_ASSERT_IMMORTAL(BITS_TO_PTR_MASKED(ref));
     return ref;
 }
 

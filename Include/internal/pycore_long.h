@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_bytesobject.h"   // _PyBytesWriter
 #include "pycore_runtime.h"       // _Py_SINGLETON()
+#include "pycore_object.h"        // _Py_ASSERT_STATIC_IMMORTAL
 
 /*
  * Default int base conversion size limitation: Denial of Service prevention.
@@ -240,7 +241,7 @@ _PyLong_IsSmallInt(const PyLongObject *op)
     bool is_small_int = (op->long_value.lv_tag & IMMORTALITY_BIT_MASK) != 0;
     if (is_small_int) {
         assert(PyLong_CheckExact(op));
-        assert(_Py_IsImmortal(op));
+        _Py_ASSERT_STATIC_IMMORTAL(op);
         assert((_PyLong_IsCompact(op)
                 && _PY_IS_SMALL_INT(_PyLong_CompactValue(op))));
     }

@@ -888,13 +888,9 @@ common_constants_clear(PyInterpreterState *interp)
             if (i == CONSTANT_BUILTIN_ALL || i == CONSTANT_BUILTIN_ANY) {
                 _Py_ClearImmortal(obj);
             }
-#if !defined(Py_GIL_DISABLED) && SIZEOF_VOID_P <= 4
             else {
-                // On 64-bit and free-threading builds,
-                // we can trust _Py_IsStaticImmortal.
-                assert (!_Py_IsStaticImmortal(obj));
+                _Py_ASSERT_STATIC_IMMORTAL(obj);
             }
-#endif
         }
     }
 }
