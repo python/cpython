@@ -1345,10 +1345,12 @@ if _exists('sched_getaffinity') and sys._get_cpu_count_config() < 0:
         Return the number of logical CPUs usable by the calling thread of the
         current process. Return None if indeterminable.
         """
+        affinity_count = len(sched_getaffinity(0))
         count = _cpu_count_cgroups()
         if count is None:
             count = cpu_count()
-        affinity_count = len(sched_getaffinity(0))
+        if count is None:
+            count = affinity_count
         return min(affinity_count, count)
 else:
     # Just an alias to cpu_count() (same docstring)
