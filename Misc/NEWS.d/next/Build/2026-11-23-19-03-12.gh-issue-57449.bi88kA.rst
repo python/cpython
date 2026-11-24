@@ -1,0 +1,3 @@
+:program:`configure` now defines ``USE_COMPUTED_GOTOS`` to ``1`` by default
+when the compiler supports computed gotos, so :mod:`sysconfig` no longer
+reports it as ``0``.

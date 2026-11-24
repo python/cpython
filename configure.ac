@@ -7901,6 +7901,11 @@ LABEL2:
 case "$ac_cv_computed_gotos" in yes*)
   AC_DEFINE([HAVE_COMPUTED_GOTOS], [1],
   [Define if the C compiler supports computed gotos.])
+
+  if test "${with_computed_gotos+set}" != set; then
+    AC_DEFINE([USE_COMPUTED_GOTOS], [1],
+    [Define if you want to use computed gotos in ceval.c.])
+  fi
 esac
 
 # Check for --with-tail-call-interp
