@@ -31,7 +31,8 @@ gh issue list --repo python/cpython --state all --label "<topic label>" --search
 ## Commit messages
 
 Do not add a `Co-authored-by` trailer, or any other attribution trailer, that
-names an AI tool or agent. `Co-authored-by` credits human contributors. The
-person submitting the pull request is responsible for its content.
+names an AI tool or agent. `Co-authored-by` should be reserved for human
+contributors.
 
-Disclosure of the use of AI tools belongs in the pull request description.
+If you disclose the use of AI tools, do it in the pull request description,
+not in a commit trailer.
