@@ -1187,8 +1187,7 @@ _Py_MakeCoro(PyFunctionObject *func)
 PyObject *
 _PyCoro_MaterializeLazy(_PyInterpreterFrame *frame)
 {
-    assert(frame->owner == FRAME_OWNED_BY_THREAD);
-    assert(frame->lazy_coro == LAZY_CORO_RUNNING);
+    assert(frame->owner == FRAME_OWNED_BY_LAZY_CORO);
     assert(PyStackRef_FunctionCheck(frame->f_funcobj));
     PyFunctionObject *func =
         (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);

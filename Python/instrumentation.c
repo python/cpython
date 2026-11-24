@@ -2026,7 +2026,7 @@ instrument_all_executing_code_objects(PyInterpreterState *interp)
     _Py_FOR_EACH_TSTATE_BEGIN(interp, ts) {
         _PyInterpreterFrame *frame = ts->current_frame;
         while (frame) {
-            if (frame->owner < FRAME_OWNED_BY_INTERPRETER) {
+            if (frame->owner != FRAME_OWNED_BY_INTERPRETER) {
                 err = instrument_lock_held(_PyFrame_GetCode(frame), interp);
                 if (err) {
                     goto done;

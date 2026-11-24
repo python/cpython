@@ -55,8 +55,8 @@ There is one exception: a coroutine function called by an awaited call
 `LAZY_CORO_REQUESTED` on its frame (see `MAYBE_START_LAZY_CORO()`). The
 specializer gives such a call of a coroutine function an `*_AWAITED` form,
 which does the same. `RETURN_GENERATOR` then pushes the body's own
-`_PyErr_StackItem` on the data stack right after the frame, sets `lazy_coro`
-to `LAZY_CORO_RUNNING`, moves the caller to its `GET_AWAITABLE` (which has
+`_PyErr_StackItem` on the data stack right after the frame, sets the frame's
+`owner` to `FRAME_OWNED_BY_LAZY_CORO`, moves the caller to its `GET_AWAITABLE` (which has
 the location of the `await`, like `SEND`) and keeps running the body in that
 frame, so that a
 body that returns or raises without suspending never creates a coroutine

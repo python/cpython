@@ -6007,7 +6007,7 @@
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
             #if !_Py_TAIL_CALL_INTERP
 
-            assert(throwflag || frame->lazy_coro == LAZY_CORO_RUNNING);
+            assert(throwflag || frame->owner == FRAME_OWNED_BY_LAZY_CORO);
             #endif
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -9235,7 +9235,7 @@
                 _PyFrame_StackPointerValidate(frame);
                 DTRACE_FUNCTION_RETURN();
                 int offset = 1 + INLINE_CACHE_ENTRIES_SEND;
-                if (frame->lazy_coro == LAZY_CORO_RUNNING) {
+                if (frame->owner == FRAME_OWNED_BY_LAZY_CORO) {
                     assert(oparg == 1);
                     frame = _PyEval_SuspendLazyCoro(tstate, frame);
                     offset = 0;
@@ -12383,7 +12383,7 @@
                 exc_info->exc_value = NULL;
                 exc_info->previous_item = tstate->exc_info;
                 tstate->exc_info = exc_info;
-                frame->lazy_coro = LAZY_CORO_RUNNING;
+                frame->owner = FRAME_OWNED_BY_LAZY_CORO;
                 _PyInterpreterFrame *caller = frame->previous;
                 caller->instr_ptr += caller->return_offset;
                 caller->return_offset = 0;
@@ -14557,7 +14557,7 @@
                 _PyFrame_StackPointerValidate(frame);
                 DTRACE_FUNCTION_RETURN();
                 int offset = 1 + INLINE_CACHE_ENTRIES_SEND;
-                if (frame->lazy_coro == LAZY_CORO_RUNNING) {
+                if (frame->owner == FRAME_OWNED_BY_LAZY_CORO) {
                     assert(oparg == 1);
                     frame = _PyEval_SuspendLazyCoro(tstate, frame);
                     offset = 0;

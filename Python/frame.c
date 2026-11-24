@@ -55,7 +55,7 @@ static void
 take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 {
     Py_BEGIN_CRITICAL_SECTION(f);
-    assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
+    assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
     _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)f->_f_frame_data;
     _PyFrame_Copy(frame, new_frame);
@@ -75,7 +75,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     assert(f->f_back == NULL);
     _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);
     if (prev) {
-        assert(prev->owner < FRAME_OWNED_BY_INTERPRETER);
+        assert(prev->owner != FRAME_OWNED_BY_INTERPRETER);
         PyObject *exc = PyErr_GetRaisedException();
         /* Link PyFrameObjects.f_back and remove link through _PyInterpreterFrame.previous */
         PyFrameObject *back = _PyFrame_GetFrameObject(prev);

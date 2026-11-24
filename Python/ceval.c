@@ -2025,7 +2025,7 @@ clear_lazy_coro_frame(PyThreadState *tstate, _PyInterpreterFrame *frame)
     tstate->exc_info = exc_info->previous_item;
     PyObject *exc_value = exc_info->exc_value;
     _PyThreadState_PopFrame(tstate, (_PyInterpreterFrame *)exc_info);
-    frame->lazy_coro = 0;
+    frame->owner = FRAME_OWNED_BY_THREAD;
     _PyInterpreterFrame *caller = frame->previous;
     assert(PyStackRef_IsNull(caller->stackpointer[-1]));
     caller->stackpointer[-1] = LAZY_CORO_RETURNED;
@@ -2040,10 +2040,6 @@ static void
 clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
     assert(frame->owner == FRAME_OWNED_BY_THREAD);
-    if (frame->lazy_coro == LAZY_CORO_RUNNING) {
-        clear_lazy_coro_frame(tstate, frame);
-        return;
-    }
     clear_and_pop_thread_frame(tstate, frame);
 }
 
@@ -2075,6 +2071,9 @@ _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 
     if (frame->owner == FRAME_OWNED_BY_THREAD) {
         clear_thread_frame(tstate, frame);
+    }
+    else if (frame->owner == FRAME_OWNED_BY_LAZY_CORO) {
+        clear_lazy_coro_frame(tstate, frame);
     }
     else {
         clear_gen_frame(tstate, frame);
@@ -3719,7 +3718,7 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
 _PyInterpreterFrame *
 _PyEval_SuspendLazyCoro(PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
-    assert(frame->lazy_coro == LAZY_CORO_RUNNING);
+    assert(frame->owner == FRAME_OWNED_BY_LAZY_CORO);
     _PyErr_StackItem *exc_info = tstate->exc_info;
     tstate->exc_info = exc_info->previous_item;
     exc_info->previous_item = NULL;
@@ -3738,8 +3737,7 @@ _PyEval_SuspendLazyCoro(PyThreadState *tstate, _PyInterpreterFrame *frame)
 PyGenObject *
 _PyEval_MaterializeLazyCoro(PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
-    assert(frame->owner == FRAME_OWNED_BY_THREAD);
-    assert(frame->lazy_coro == LAZY_CORO_RUNNING);
+    assert(frame->owner == FRAME_OWNED_BY_LAZY_CORO);
     assert(frame->previous == NULL);
     const int item_slots = sizeof(_PyErr_StackItem) / sizeof(PyObject *);
     _PyErr_StackItem *exc_info =
@@ -3777,8 +3775,7 @@ _PyInterpreterFrame *
 _PyEval_ThrowIntoLazyCoro(PyThreadState *tstate, _PyInterpreterFrame *frame,
                           _PyStackRef value)
 {
-    assert(frame->owner == FRAME_OWNED_BY_THREAD);
-    assert(frame->lazy_coro == LAZY_CORO_RUNNING);
+    assert(frame->owner == FRAME_OWNED_BY_LAZY_CORO);
     assert(_PyErr_Occurred(tstate));
     const int item_slots = sizeof(_PyErr_StackItem) / sizeof(PyObject *);
     _PyErr_StackItem *exc_info =

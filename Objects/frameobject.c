@@ -2138,7 +2138,9 @@ frame_clear_impl(PyFrameObject *self)
             return NULL;
         }
     }
-    else if (self->f_frame->owner == FRAME_OWNED_BY_THREAD) {
+    else if (self->f_frame->owner == FRAME_OWNED_BY_THREAD ||
+             self->f_frame->owner == FRAME_OWNED_BY_LAZY_CORO)
+    {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot clear an executing frame");
         return NULL;

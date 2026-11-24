@@ -294,7 +294,7 @@ _PyFrame_StackAssertInvalid(_PyInterpreterFrame *frame)
 static inline bool _Py_NO_SANITIZE_THREAD
 _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
 {
-    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
+    if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
         return true;
     }
     return frame->owner != FRAME_OWNED_BY_GENERATOR &&

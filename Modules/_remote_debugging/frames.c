@@ -182,7 +182,9 @@ is_frame_valid(
         return FRAME_PARSE_INTERPRETER;  // C frame or sentinel base frame
     }
 
-    if (owner != FRAME_OWNED_BY_GENERATOR && owner != FRAME_OWNED_BY_THREAD) {
+    if (owner != FRAME_OWNED_BY_GENERATOR && owner != FRAME_OWNED_BY_THREAD &&
+        owner != FRAME_OWNED_BY_LAZY_CORO)
+    {
         PyErr_Format(PyExc_RuntimeError, "Unhandled frame owner %d.\n", owner);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Unhandled frame owner type in async frame");
         return -1;

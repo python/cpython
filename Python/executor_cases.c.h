@@ -9545,7 +9545,7 @@
         case _GUARD_NOT_LAZY_CORO_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
-            if (frame->lazy_coro == LAZY_CORO_RUNNING) {
+            if (frame->owner == FRAME_OWNED_BY_LAZY_CORO) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -9559,7 +9559,7 @@
             CHECK_CURRENT_CACHED_VALUES(1);
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             _PyStackRef _stack_item_0 = _tos_cache0;
-            if (frame->lazy_coro == LAZY_CORO_RUNNING) {
+            if (frame->owner == FRAME_OWNED_BY_LAZY_CORO) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache0 = _stack_item_0;
                 SET_CURRENT_CACHED_VALUES(1);
@@ -9576,7 +9576,7 @@
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
-            if (frame->lazy_coro == LAZY_CORO_RUNNING) {
+            if (frame->owner == FRAME_OWNED_BY_LAZY_CORO) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache1 = _stack_item_1;
                 _tos_cache0 = _stack_item_0;
@@ -9596,7 +9596,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
-            if (frame->lazy_coro == LAZY_CORO_RUNNING) {
+            if (frame->owner == FRAME_OWNED_BY_LAZY_CORO) {
                 UOP_STAT_INC(uopcode, miss);
                 _tos_cache2 = _stack_item_2;
                 _tos_cache1 = _stack_item_1;
@@ -9629,7 +9629,7 @@
             _PyFrame_StackPointerValidate(frame);
             DTRACE_FUNCTION_RETURN();
             int offset = 1 + INLINE_CACHE_ENTRIES_SEND;
-            if (frame->lazy_coro == LAZY_CORO_RUNNING) {
+            if (frame->owner == FRAME_OWNED_BY_LAZY_CORO) {
                 assert(oparg == 1);
                 frame = _PyEval_SuspendLazyCoro(tstate, frame);
                 offset = 0;
@@ -20876,7 +20876,7 @@
                 exc_info->exc_value = NULL;
                 exc_info->previous_item = tstate->exc_info;
                 tstate->exc_info = exc_info;
-                frame->lazy_coro = LAZY_CORO_RUNNING;
+                frame->owner = FRAME_OWNED_BY_LAZY_CORO;
                 _PyInterpreterFrame *caller = frame->previous;
                 caller->instr_ptr += caller->return_offset;
                 caller->return_offset = 0;
@@ -24207,7 +24207,7 @@
             ASSERT_WITHIN_STACK_BOUNDS_IGNORING_CACHE(__FILE__, __LINE__);
             _PyExitData *exit = tstate->jit_exit;
             assert(exit != NULL);
-            assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
             _Py_BackoffCounter temperature = exit->temperature;
             _PyExecutorObject *executor;

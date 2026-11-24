@@ -1925,7 +1925,7 @@ dummy_func(
         }
 
         tier2 op(_GUARD_NOT_LAZY_CORO, (--)) {
-            EXIT_IF(frame->lazy_coro == LAZY_CORO_RUNNING);
+            EXIT_IF(frame->owner == FRAME_OWNED_BY_LAZY_CORO);
         }
 
         op(_YIELD_VALUE, (retval -- value)) {
@@ -1941,7 +1941,7 @@ dummy_func(
             SAVE_STACK();
             DTRACE_FUNCTION_RETURN();
             int offset = 1 + INLINE_CACHE_ENTRIES_SEND;
-            if (frame->lazy_coro == LAZY_CORO_RUNNING) {
+            if (frame->owner == FRAME_OWNED_BY_LAZY_CORO) {
                 // The caller's GET_AWAITABLE creates the coroutine. It is
                 // never instrumented, so nothing runs in between.
                 assert(oparg == 1);
@@ -2060,7 +2060,7 @@ dummy_func(
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
             #if !_Py_TAIL_CALL_INTERP
             // _PyEval_ThrowIntoLazyCoro() raises in a lazily run body.
-            assert(throwflag || frame->lazy_coro == LAZY_CORO_RUNNING);
+            assert(throwflag || frame->owner == FRAME_OWNED_BY_LAZY_CORO);
             #endif
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration);
@@ -6014,7 +6014,7 @@ dummy_func(
                 exc_info->exc_value = NULL;
                 exc_info->previous_item = tstate->exc_info;
                 tstate->exc_info = exc_info;
-                frame->lazy_coro = LAZY_CORO_RUNNING;
+                frame->owner = FRAME_OWNED_BY_LAZY_CORO;
                 /* While the body runs, the caller is at the await, as at
                  * SEND on the eager path. */
                 _PyInterpreterFrame *caller = frame->previous;
@@ -6465,7 +6465,7 @@ dummy_func(
         tier2 op(_COLD_EXIT, ( -- )) {
             _PyExitData *exit = tstate->jit_exit;
             assert(exit != NULL);
-            assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
             _Py_BackoffCounter temperature = exit->temperature;
             _PyExecutorObject *executor;
