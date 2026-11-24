@@ -1,0 +1,2 @@
+Fix :mod:`profiling.sampling` dropping exception-mode samples when a thread
+blocks inside an exception handler.
