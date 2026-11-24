@@ -271,7 +271,8 @@ class CmdPrintExceptionClass(cmd.Cmd):
 
 @support.requires_subprocess()
 class CmdTestReadline(unittest.TestCase):
-    def setUpClass():
+    @classmethod
+    def setUpClass(cls):
         # Ensure that the readline module is loaded
         # If this fails, the test is skipped because SkipTest will be raised
         readline = import_module('readline')
