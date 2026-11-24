@@ -788,7 +788,7 @@ parse_async_frame_chain(
     RemoteUnwinderObject *unwinder,
     PyObject *calls,
     uintptr_t address_of_thread,
-    uintptr_t running_task_code_obj
+    uintptr_t running_task_frame
 );
 
 static int read_py_ptr(RemoteUnwinderObject *unwinder, uintptr_t address, uintptr_t *ptr_addr);
@@ -797,7 +797,7 @@ static int process_task_waiters(RemoteUnwinderObject *unwinder, PyObject *result
                                 bool futures_only);
 static int parse_task_awaited_by(RemoteUnwinderObject *unwinder, uintptr_t task_address, PyObject *awaited_by);
 static int find_running_task_in_thread(RemoteUnwinderObject *unwinder, uintptr_t thread_state_addr, uintptr_t *running_task_addr);
-static int get_task_code_object(RemoteUnwinderObject *unwinder, uintptr_t task_addr, uintptr_t *code_obj_addr);
+static int get_task_frame(RemoteUnwinderObject *unwinder, uintptr_t task_addr, uintptr_t *frame_addr);
 static int append_awaited_by(RemoteUnwinderObject *unwinder, unsigned long tid, uintptr_t head_addr, PyObject *result);
 
 /* ============================================================================
@@ -1881,8 +1881,8 @@ process_running_task_chain(
     uintptr_t thread_state_addr,
     PyObject *result
 ) {
-    uintptr_t running_task_code_obj = 0;
-    if(get_task_code_object(unwinder, running_task_addr, &running_task_code_obj) < 0) {
+    uintptr_t running_task_frame = 0;
+    if(get_task_frame(unwinder, running_task_addr, &running_task_frame) < 0) {
         return -1;
     }
 
@@ -1890,6 +1890,11 @@ process_running_task_chain(
     PyObject *task_info = NULL;
     if (process_single_task_node(unwinder, running_task_addr, &task_info, result) < 0) {
         return -1;
+    }
+
+    // Non-native coroutines have no frame to look for.
+    if (running_task_frame == 0) {
+        return process_task_waiters(unwinder, result, false);
     }
 
     // Get the chain from the current frame to this task
@@ -1907,14 +1912,8 @@ process_running_task_chain(
     PyObject *frame_chain = PyStructSequence_GET_ITEM(coro_info, 0);
     assert(frame_chain != NULL);
 
-    // Clear the coro_chain
-    if (PyList_Clear(frame_chain) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to clear coroutine chain");
-        return -1;
-    }
-
     // Add the chain from the current frame to this task
-    if (parse_async_frame_chain(unwinder, frame_chain, thread_state_addr, running_task_code_obj) < 0) {
+    if (parse_async_frame_chain(unwinder, frame_chain, thread_state_addr, running_task_frame) < 0) {
         return -1;
     }
 
@@ -2090,7 +2089,7 @@ find_running_task_in_thread(
 }
 
 static int
-get_task_code_object(RemoteUnwinderObject *unwinder, uintptr_t task_addr, uintptr_t *code_obj_addr) {
+get_task_frame(RemoteUnwinderObject *unwinder, uintptr_t task_addr, uintptr_t *frame_addr) {
     uintptr_t running_coro_addr = 0;
 
     if(read_py_ptr(
@@ -2110,22 +2109,12 @@ get_task_code_object(RemoteUnwinderObject *unwinder, uintptr_t task_addr, uintpt
     if (get_coro_like_address(unwinder, running_coro_addr, &running_coro_addr) < 0) {
         return -1;
     }
-
-    // note: genobject's gi_iframe is an embedded struct so the address to
-    // the offset leads directly to its first field: f_executable
-    if (read_py_ptr(
-        unwinder,
-        running_coro_addr + (uintptr_t)unwinder->debug_offsets.gen_object.gi_iframe, code_obj_addr) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read running task code object");
-        return -1;
+    if (running_coro_addr == 0) {
+        *frame_addr = 0;
+        return 0;
     }
 
-    if (*code_obj_addr == 0) {
-        PyErr_SetString(PyExc_RuntimeError, "Running task code object is NULL");
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Running task code object address is NULL");
-        return -1;
-    }
-
+    *frame_addr = running_coro_addr + (uintptr_t)unwinder->debug_offsets.gen_object.gi_iframe;
     return 0;
 }
 
@@ -2904,8 +2893,9 @@ static int
     RemoteUnwinderObject *unwinder,
     PyObject *calls,
     uintptr_t address_of_thread,
-    uintptr_t running_task_code_obj
+    uintptr_t running_task_frame
 ) {
+    Py_ssize_t coro_chain_size = PyList_GET_SIZE(calls);
     uintptr_t address_of_current_frame;
     if (find_running_frame(unwinder, address_of_thread, &address_of_current_frame) < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Running frame search failed in async chain");
@@ -2921,6 +2911,7 @@ static int
         }
         PyObject* frame_info = NULL;
         uintptr_t address_of_code_object;
+        uintptr_t this_frame = address_of_current_frame;
         int res = parse_frame_object(
             unwinder,
             &frame_info,
@@ -2946,12 +2937,14 @@ static int
 
         Py_DECREF(frame_info);
 
-        if (address_of_code_object == running_task_code_obj) {
-            break;
+        // Code objects can be shared by recursive calls. Match the frame itself.
+        if (this_frame == running_task_frame) {
+            return PyList_SetSlice(calls, 0, coro_chain_size, NULL);
         }
     }
 
-    return 0;
+    // Keep the coroutine chain if the task's frame was not on this thread.
+    return PyList_SetSlice(calls, coro_chain_size, PY_SSIZE_T_MAX, NULL);
 }
 
 /* ============================================================================
