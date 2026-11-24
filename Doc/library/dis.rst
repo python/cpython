@@ -2040,6 +2040,8 @@ but are replaced by real opcodes or removed before bytecode is generated.
    Conditional jumps which do not impact the stack. Replaced by the sequence
    ``COPY 1``, ``POP_JUMP_IF_NONE/NOT_NONE``.
 
+   .. versionadded:: 3.16
+
 .. opcode:: LOAD_CLOSURE (i)
 
    Pushes a reference to the cell contained in slot ``i`` of the "fast locals"

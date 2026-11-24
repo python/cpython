@@ -14,6 +14,8 @@ extend-exclude = [
     # New grammar constructions may not yet be recognized by Ruff,
     # and tests re-use the same names as only the grammar is being checked.
     "test_grammar.py",
+    # New syntax for Python 3.16, remove with update to "py316"
+    "test_compile.py",
     # Intentional bad lazy import syntax
     "test_lazy_import/data/badsyntax/*.py",
     # Unary plus literal pattern is not yet supported by Ruff (GH-145239)
