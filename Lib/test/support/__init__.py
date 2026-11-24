@@ -351,9 +351,7 @@ _exclusive_locks = {}
 
 
 def _lock_file(fd):
-    try:
-        import fcntl
-    except ImportError:
+    if MS_WINDOWS:
         import msvcrt
         import time
         while True:
@@ -365,6 +363,7 @@ def _lock_file(fd):
             else:
                 return
     else:
+        import fcntl
         fcntl.flock(fd, fcntl.LOCK_EX)
 
 
@@ -381,12 +380,13 @@ def _open_exclusive_lock(resource):
     # The file is left behind: another process may be waiting on a lock on it,
     # and it is empty anyway.  Nothing is ever written in it.
     path = os.path.join(directory, f'python-test-exclusive-{resource}.lock')
+    flags = os.O_CREAT
     if MS_WINDOWS:
-        flags = os.O_WRONLY | os.O_CREAT
+        flags |= os.O_WRONLY
     else:
         # flock() locks a file open for reading too, so that the tests of
         # another user, who cannot write the file, are locked out as well.
-        flags = os.O_RDONLY | os.O_CREAT | os.O_NOFOLLOW
+        flags |= os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0)
     try:
         fd = os.open(path, flags, 0o666)
     except OSError:
