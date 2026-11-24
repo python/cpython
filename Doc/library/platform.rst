@@ -346,7 +346,7 @@ Android platform
 
    * ``release`` - Android version, as a string (e.g. ``"14"``).
 
-   * ``api_level`` - API level of the running device, as an integer (e.g. ``34``
+   * ``api_level`` - Major component of the API level, as an integer (e.g. ``34``
      for Android 14). To get the API level which Python was built against, see
      :func:`sys.getandroidapilevel`.
 
