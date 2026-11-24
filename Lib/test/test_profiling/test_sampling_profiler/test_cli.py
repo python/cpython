@@ -30,17 +30,72 @@ from profiling.sampling.cli import (
     _generate_output_filename,
     _handle_output,
     _replay_with_reader,
+    _skip_idle_for_mode,
     main,
 )
 from profiling.sampling.constants import (
     PROFILING_MODE_ALL,
     PROFILING_MODE_CPU,
+    PROFILING_MODE_EXCEPTION,
+    PROFILING_MODE_GIL,
     PROFILING_MODE_WALL,
 )
 from profiling.sampling.errors import SamplingScriptNotFoundError, SamplingModuleNotFoundError, SamplingUnknownProcessError
 from profiling.sampling.jsonl_collector import JsonlCollector
 
 class TestSampleProfilerCLI(unittest.TestCase):
+    def test_skip_idle_mode_mapping(self):
+        self.assertFalse(_skip_idle_for_mode(PROFILING_MODE_WALL))
+        self.assertTrue(_skip_idle_for_mode(PROFILING_MODE_CPU))
+        self.assertTrue(_skip_idle_for_mode(PROFILING_MODE_GIL))
+        self.assertFalse(_skip_idle_for_mode(PROFILING_MODE_ALL))
+        self.assertFalse(_skip_idle_for_mode(PROFILING_MODE_EXCEPTION))
+        # Preserve the previous default for modes unknown to this CLI.
+        self.assertTrue(_skip_idle_for_mode(999))
+
+    @requires_remote_subprocess_debugging()
+    def test_exception_mode_captures_blocked_handler(self):
+        script = """
+import time
+
+try:
+    raise ValueError("boom")
+except ValueError:
+    time.sleep(30)
+"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            script_path = os.path.join(temp_dir, "blocked_handler.py")
+            output_path = os.path.join(temp_dir, "output.txt")
+            with open(script_path, "w", encoding="utf-8") as file:
+                file.write(script)
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "profiling.sampling",
+                    "run",
+                    "--mode",
+                    "exception",
+                    "--collapsed",
+                    "-r",
+                    "1000",
+                    "-d",
+                    "1",
+                    "-o",
+                    output_path,
+                    script_path,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            with open(output_path, encoding="utf-8") as file:
+                output = file.read()
+            self.assertIn("blocked_handler.py", output)
+
     def _setup_sync_mocks(self, mock_socket, mock_popen):
         """Helper to set up socket and process mocks for coordinator tests."""
         # Mock the sync socket with context manager support
