@@ -59,6 +59,8 @@ void _PyAST_Fini(PyInterpreterState *interp)
         offsetof(struct ast_state, Break_type),
         offsetof(struct ast_state, Call_type),
         offsetof(struct ast_state, ClassDef_type),
+        offsetof(struct ast_state, Coalesce_singleton),
+        offsetof(struct ast_state, Coalesce_type),
         offsetof(struct ast_state, Compare_type),
         offsetof(struct ast_state, Constant_type),
         offsetof(struct ast_state, Continue_type),
@@ -1313,6 +1315,7 @@ add_ast_annotations(struct ast_state *state)
         {offsetof(struct ast_state, Del_type), 149, 0},
         {offsetof(struct ast_state, And_type), 149, 0},
         {offsetof(struct ast_state, Or_type), 149, 0},
+        {offsetof(struct ast_state, Coalesce_type), 149, 0},
         {offsetof(struct ast_state, Add_type), 149, 0},
         {offsetof(struct ast_state, Sub_type), 149, 0},
         {offsetof(struct ast_state, Mult_type), 149, 0},
@@ -2785,7 +2788,7 @@ init_types(void *arg)
                                              NULL, NULL);
     if (!state->Del_singleton) return -1;
     state->boolop_type = make_type(state, "boolop", state->AST_type, NULL, 0,
-        "boolop = And | Or");
+        "boolop = And | Or | Coalesce");
     if (!state->boolop_type) return -1;
     if (add_attributes(state, state->boolop_type, NULL, 0) < 0) return -1;
     if (PySet_Add(state->abstract_types, state->boolop_type) < 0) return -1;
@@ -2801,6 +2804,14 @@ init_types(void *arg)
     state->Or_singleton = PyType_GenericNew((PyTypeObject *)state->Or_type,
                                             NULL, NULL);
     if (!state->Or_singleton) return -1;
+    state->Coalesce_type = make_type(state, "Coalesce", state->boolop_type,
+                                     NULL, 0,
+        "Coalesce");
+    if (!state->Coalesce_type) return -1;
+    state->Coalesce_singleton = PyType_GenericNew((PyTypeObject
+                                                  *)state->Coalesce_type, NULL,
+                                                  NULL);
+    if (!state->Coalesce_singleton) return -1;
     state->operator_type = make_type(state, "operator", state->AST_type, NULL,
                                      0,
         "operator = Add | Sub | Mult | MatMult | Div | Mod | Pow | LShift | RShift | BitOr | BitXor | BitAnd | FloorDiv");
@@ -6333,6 +6344,8 @@ PyObject* ast2obj_boolop(struct ast_state *state, boolop_ty o)
             return Py_NewRef(state->And_singleton);
         case Or:
             return Py_NewRef(state->Or_singleton);
+        case Coalesce:
+            return Py_NewRef(state->Coalesce_singleton);
     }
     Py_UNREACHABLE();
 }
@@ -12059,6 +12072,14 @@ obj2ast_boolop(struct ast_state *state, PyObject* obj, boolop_ty* out, const
         *out = Or;
         return 0;
     }
+    isinstance = PyObject_IsInstance(obj, state->Coalesce_type);
+    if (isinstance == -1) {
+        return -1;
+    }
+    if (isinstance) {
+        *out = Coalesce;
+        return 0;
+    }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of boolop, but got %R", obj);
     return -1;
@@ -14581,6 +14602,9 @@ astmodule_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddObjectRef(m, "Or", state->Or_type) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "Coalesce", state->Coalesce_type) < 0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "operator", state->operator_type) < 0) {

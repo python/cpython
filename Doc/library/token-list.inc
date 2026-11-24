@@ -102,3 +102,5 @@
      - ``":="``
    * - .. data:: EXCLAMATION
      - ``"!"``
+   * - .. data:: COALESCE
+     - ``"??"``

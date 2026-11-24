@@ -3426,10 +3426,19 @@ codegen_boolop(compiler *c, expr_ty e)
 
     location loc = LOC(e);
     assert(e->kind == BoolOp_kind);
-    if (e->v.BoolOp.op == And)
-        jumpi = JUMP_IF_FALSE;
-    else
-        jumpi = JUMP_IF_TRUE;
+    switch (e->v.BoolOp.op) {
+        case And:
+            jumpi = JUMP_IF_FALSE;
+            break;
+        case Or:
+            jumpi = JUMP_IF_TRUE;
+            break;
+        case Coalesce:
+            jumpi = JUMP_IF_NOT_NONE;
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
     NEW_JUMP_TARGET_LABEL(c, end);
     s = e->v.BoolOp.values;
     n = asdl_seq_LEN(s) - 1;
