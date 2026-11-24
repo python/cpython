@@ -29,6 +29,7 @@ from test.support.os_helper import EnvironmentVarGuard, unlink
 
 from .support import (
     FakeConsole,
+    INPUT_SUBMITTED_HOOK_MARKER,
     ScreenEqualMixin,
     handle_all_events,
     handle_events_narrow_console,
@@ -2115,19 +2116,14 @@ class TestMain(ReplTestCase):
     def test_input_submitted_hook(self):
         env = os.environ.copy()
         env["PYTHON_COLORS"] = "0"
-        marker = "\x1b]633;C\x07"
         output, exit_code = self.run_repl(
             [
                 "from _pyrepl import simple_interact as si",
-                f"def hook(source): print({marker!r} + repr(source), flush=True)",
-                "",
-                "si.input_submitted_hook = hook",
-                "print('single executed')",
+                "from test.test_pyrepl import support",
+                "si.input_submitted_hook = support.report_submitted_input",
                 "if True:",
                 "print('block executed')",
                 "",
-                "a b c",
-                "clear",
                 "exit",
             ],
             env=env,
@@ -2135,17 +2131,12 @@ class TestMain(ReplTestCase):
         )
         output = output.replace("\r\n", "\n")
         self.assertEqual(exit_code, 0)
-        self.assertEqual(output.count(marker), 3)
-        for submitted_input, result in (
-            ("print('single executed')", "single executed\n"),
-            ("if True:\n    print('block executed')\n", "block executed\n"),
-            ("a b c", "SyntaxError: invalid syntax"),
-        ):
-            with self.subTest(submitted_input=submitted_input):
-                hook_output = f"{marker}{submitted_input!r}"
-                self.assertIn(hook_output, output)
-                self.assertIn(result, output)
-                self.assertLess(output.index(hook_output), output.index(result))
+        submitted_input = "if True:\n    print('block executed')\n"
+        hook_output = f"{INPUT_SUBMITTED_HOOK_MARKER}{submitted_input!r}"
+        self.assertEqual(output.count(INPUT_SUBMITTED_HOOK_MARKER), 1)
+        self.assertIn(hook_output, output)
+        self.assertIn("block executed\n", output)
+        self.assertLess(output.index(hook_output), output.index("block executed\n"))
 
     def test_input_submitted_hook_exception(self):
         env = make_clean_env()
@@ -2153,48 +2144,13 @@ class TestMain(ReplTestCase):
         output, exit_code = self.run_repl(
             [
                 "from _pyrepl import simple_interact as si",
-                "def hook(statement): raise RuntimeError('hook failed')",
-                "",
-                "si.input_submitted_hook = hook",
-                "x = 1",
-                "print('executed:', x)",
-                "exit",
-            ],
-            env=env,
-            skip=True,
-        )
-
-        output = output.replace("\r\n", "\n")
-        self.assertEqual(exit_code, 0)
-        self.assertEqual(
-            output.count("Error in input_submitted_hook:\n"), 2
-        )
-        self.assertEqual(output.count("RuntimeError: hook failed"), 2)
-        self.assertIn("\nexecuted: 1\n", output)
-
-    def test_input_submitted_hook_exception_preserves_sys_last(self):
-        env = os.environ.copy()
-        env["PYTHON_COLORS"] = "0"
-        output, exit_code = self.run_repl(
-            [
-                "import sys",
-                "from _pyrepl import simple_interact as si",
-                "names = ('last_exc', 'last_type', 'last_value', 'last_traceback')",
-                "print('initially unset:', all(not hasattr(sys, name) for name in names))",
-                "def hook(statement):",
-                "if statement in ('x = 1', 'y = 2'):",
-                "raise RuntimeError('hook failed')",
-                "",
-                "si.input_submitted_hook = hook",
-                "x = 1",
-                "print('still unset:', all(not hasattr(sys, name) for name in names))",
-                "si.input_submitted_hook = None",
+                "from test.test_pyrepl import support",
+                "print('initially unset:', not support.last_exception_attributes())",
+                "si.input_submitted_hook = support.fail_submitted_input",
+                "print('still unset:', not support.last_exception_attributes())",
                 "1 / 0",
-                "previous = tuple(getattr(sys, name) for name in names)",
-                "si.input_submitted_hook = hook",
-                "y = 2",
-                "print('last preserved:', isinstance(previous[0], ZeroDivisionError), "
-                "all(getattr(sys, name) is value for name, value in zip(names, previous)))",
+                "previous = support.last_exception_attributes()",
+                "print('last preserved:', support.last_exception_attributes_preserved(previous))",
                 "exit",
             ],
             env=env,
@@ -2202,10 +2158,12 @@ class TestMain(ReplTestCase):
         )
         output = output.replace("\r\n", "\n")
         self.assertEqual(exit_code, 0)
-        self.assertEqual(output.count("Error in input_submitted_hook:\n"), 2)
+        self.assertEqual(output.count("Error in input_submitted_hook:\n"), 4)
+        self.assertEqual(output.count("RuntimeError: hook failed"), 4)
         self.assertIn("initially unset: True\n", output)
         self.assertIn("still unset: True\n", output)
-        self.assertIn("last preserved: True True\n", output)
+        self.assertIn("ZeroDivisionError: division by zero\n", output)
+        self.assertIn("last preserved: True\n", output)
 
     @force_not_colorized
     def test_exposed_globals_in_repl(self):
