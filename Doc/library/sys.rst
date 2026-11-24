@@ -836,9 +836,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. function:: getandroidapilevel()
 
-   Return the build-time API level of Android as an integer. This represents the
-   minimum version of Android this build of Python can run on. For runtime
-   version information, see :func:`platform.android_ver`.
+   Return the major component of the Android API level that Python was built
+   against, as an integer. For runtime version information, see
+   :func:`platform.android_ver`.
 
    .. availability:: Android.
 
