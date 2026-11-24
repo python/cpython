@@ -300,12 +300,6 @@ def run_path(path_name, init_globals=None, run_name=None):
         # the start of sys.path
         sys.path.insert(0, path_name)
         try:
-            # Here's where things are a little different from the run_module
-            # case. There, we only had to replace the module in sys while the
-            # code was running and doing so was somewhat optional. Here, we
-            # have no choice and we have to remove it even while we read the
-            # code. If we don't do this, a __loader__ attribute in the
-            # existing __main__ module may prevent location of the new module.
             mod_name, mod_spec, code = _get_main_module_details()
             with _TempModule(run_name) as temp_module, \
                  _ModifiedArgv0(path_name):
