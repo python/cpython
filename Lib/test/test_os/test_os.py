@@ -264,12 +264,12 @@ class FileTests(unittest.TestCase):
         old = os.path.join(old_path, "test")
         os.mkdir(old_path)
         open(old, "w+b").close()
-        self.addCleanup(os_helper.rmdir, old_path)
+        self.addCleanup(shutil.rmtree, old_path, ignore_errors=True)
         self.addCleanup(os_helper.unlink, old)
 
         new_path = os_helper.TESTFN + "new_dir"
         new = os.path.join(new_path, "test")
-        self.addCleanup(os_helper.rmdir, new_path)
+        self.addCleanup(shutil.rmtree, new_path, ignore_errors=True)
         self.addCleanup(os_helper.unlink, new)
 
         os.renames(old, new)
