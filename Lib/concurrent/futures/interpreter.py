@@ -88,7 +88,11 @@ class WorkerContext(_thread.WorkerContext):
             if exc is None:
                 # The exception must have been not shareable.
                 raise  # re-raise
-            raise exc from wrapper
+            try:
+                raise exc from wrapper
+            finally:
+                # avoid a ref cycle where exc is captured in its traceback
+                exc = None
 
 
 class BrokenInterpreterPool(_thread.BrokenThreadPool):
@@ -110,8 +114,8 @@ class InterpreterPoolExecutor(_thread.ThreadPoolExecutor):
         """Initializes a new InterpreterPoolExecutor instance.
 
         Args:
-            max_workers: The maximum number of interpreters that can be used to
-                execute the given calls.
+            max_workers: The maximum number of interpreters that can be used
+                to execute the given calls.
             thread_name_prefix: An optional name prefix to give our threads.
             initializer: A callable or script used to initialize
                 each worker interpreter.

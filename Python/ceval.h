@@ -257,9 +257,9 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
     }
     PyFunctionObject *f = (PyFunctionObject *)fobj;
     PyObject *exc = PyErr_GetRaisedException();
-    PyObject *name = f->func_qualname;
+    PyObject *name = Py_XNewRef(FT_ATOMIC_LOAD_PTR_ACQUIRE(f->func_qualname));
     if (name == NULL) {
-        name = f->func_name;
+        name = Py_XNewRef(FT_ATOMIC_LOAD_PTR_ACQUIRE(f->func_name));
     }
     printf("\nResuming frame");
     if (name) {
@@ -267,12 +267,15 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
         if (PyObject_Print(name, stdout, 0) < 0) {
             PyErr_Clear();
         }
+        Py_DECREF(name);
     }
-    if (f->func_module) {
+    PyObject *module = Py_XNewRef(FT_ATOMIC_LOAD_PTR_ACQUIRE(f->func_module));
+    if (module) {
         printf(" in module ");
-        if (PyObject_Print(f->func_module, stdout, 0) < 0) {
+        if (PyObject_Print(module, stdout, 0) < 0) {
             PyErr_Clear();
         }
+        Py_DECREF(module);
     }
     printf("\n");
     fflush(stdout);
@@ -367,7 +370,7 @@ no_tools_for_global_event(PyThreadState *tstate, int event)
 static inline bool
 no_tools_for_local_event(PyThreadState *tstate, _PyInterpreterFrame *frame, int event)
 {
-    assert(event < _PY_MONITORING_LOCAL_EVENTS);
+    assert(event < _PY_MONITORING_UNGROUPED_EVENTS);
     _PyCoMonitoringData *data = _PyFrame_GetCode(frame)->_co_monitoring;
     if (data) {
         return data->active_monitors.tools[event] == 0;
@@ -382,7 +385,7 @@ monitor_handled(PyThreadState *tstate,
                 _PyInterpreterFrame *frame,
                 _Py_CODEUNIT *instr, PyObject *exc)
 {
-    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_EXCEPTION_HANDLED)) {
+    if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_EXCEPTION_HANDLED)) {
         return 0;
     }
     return _Py_call_instrumentation_arg(tstate, PY_MONITORING_EVENT_EXCEPTION_HANDLED, frame, instr, exc);
@@ -393,7 +396,7 @@ monitor_throw(PyThreadState *tstate,
               _PyInterpreterFrame *frame,
               _Py_CODEUNIT *instr)
 {
-    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_PY_THROW)) {
+    if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_PY_THROW)) {
         return;
     }
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_PY_THROW);
@@ -403,7 +406,7 @@ static void
 monitor_reraise(PyThreadState *tstate, _PyInterpreterFrame *frame,
               _Py_CODEUNIT *instr)
 {
-    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_RERAISE)) {
+    if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_RERAISE)) {
         return;
     }
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RERAISE);
@@ -431,7 +434,7 @@ monitor_unwind(PyThreadState *tstate,
                _PyInterpreterFrame *frame,
                _Py_CODEUNIT *instr)
 {
-    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_PY_UNWIND)) {
+    if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_PY_UNWIND)) {
         return;
     }
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_PY_UNWIND);

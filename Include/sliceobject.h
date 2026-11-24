@@ -8,7 +8,7 @@ extern "C" {
 
 PyAPI_DATA(PyObject) _Py_EllipsisObject; /* Don't use this directly */
 
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 #  define Py_Ellipsis Py_GetConstantBorrowed(Py_CONSTANT_ELLIPSIS)
 #else
 #  define Py_Ellipsis (&_Py_EllipsisObject)
@@ -45,9 +45,9 @@ PyAPI_FUNC(Py_ssize_t) PySlice_AdjustIndices(Py_ssize_t length,
 #endif
 
 #ifndef Py_LIMITED_API
-#  define Py_CPYTHON_SLICEOBJECT_H
+#  define _Py_CPYTHON_SLICEOBJECT_H
 #  include "cpython/sliceobject.h"
-#  undef Py_CPYTHON_SLICEOBJECT_H
+#  undef _Py_CPYTHON_SLICEOBJECT_H
 #endif
 
 #ifdef __cplusplus

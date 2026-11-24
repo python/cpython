@@ -9,6 +9,7 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(_hashlib_HASH_copy__doc__,
 "copy($self, /)\n"
@@ -307,13 +308,8 @@ _hashlib_HASH_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
         _PyArg_BadArgument("new", "argument 'name'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
+    name = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (!noptargs) {
@@ -1463,13 +1459,8 @@ pbkdf2_hmac(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         _PyArg_BadArgument("pbkdf2_hmac", "argument 'hash_name'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t hash_name_length;
-    hash_name = PyUnicode_AsUTF8AndSize(args[0], &hash_name_length);
+    hash_name = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (hash_name == NULL) {
-        goto exit;
-    }
-    if (strlen(hash_name) != (size_t)hash_name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &password, PyBUF_SIMPLE) != 0) {
@@ -1865,8 +1856,8 @@ PyDoc_STRVAR(_hashlib_HMAC_hexdigest__doc__,
 "\n"
 "Return hexadecimal digest of the bytes passed to the update() method so far.\n"
 "\n"
-"This may be used to exchange the value safely in email or other non-binary\n"
-"environments.");
+"This may be used to exchange the value safely in email or other\n"
+"non-binary environments.");
 
 #define _HASHLIB_HMAC_HEXDIGEST_METHODDEF    \
     {"hexdigest", (PyCFunction)_hashlib_HMAC_hexdigest, METH_NOARGS, _hashlib_HMAC_hexdigest__doc__},
@@ -1887,8 +1878,8 @@ PyDoc_STRVAR(_hashlib_get_fips_mode__doc__,
 "Determine the OpenSSL FIPS mode of operation.\n"
 "\n"
 "For OpenSSL 3.0.0 and newer it returns the state of the default provider\n"
-"in the default OSSL context. It\'s not quite the same as FIPS_mode() but good\n"
-"enough for unittests.\n"
+"in the default OSSL context. It\'s not quite the same as FIPS_mode() but\n"
+"good enough for unittests.\n"
 "\n"
 "Effectively any non-zero return value indicates FIPS mode;\n"
 "values other than 1 may have additional significance.");
@@ -1986,4 +1977,4 @@ exit:
 #ifndef _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
     #define _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
 #endif /* !defined(_HASHLIB_OPENSSL_SHAKE_256_METHODDEF) */
-/*[clinic end generated code: output=9ba35fcc33795b1e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=608e8ac9483c9173 input=a9049054013a1b77]*/

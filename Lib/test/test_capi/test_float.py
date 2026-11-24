@@ -103,12 +103,17 @@ class CAPIFloatTest(unittest.TestCase):
             def __float__(self):
                 raise RuntimeError
 
+        class IntSubclass(int):
+            def __float__(self):
+                return 4.25
+
         self.assertEqual(asdouble(4.25), 4.25)
         self.assertEqual(asdouble(-1.0), -1.0)
         self.assertEqual(asdouble(42), 42.0)
         self.assertEqual(asdouble(-1), -1.0)
         self.assertEqual(asdouble(2**1000), float(2**1000))
 
+        self.assertEqual(asdouble(IntSubclass(42)), 4.25)
         self.assertEqual(asdouble(FloatSubclass(4.25)), 4.25)
         self.assertEqual(asdouble(FloatSubclass2(4.25)), 4.25)
         self.assertEqual(asdouble(Index()), 99.)
@@ -226,6 +231,8 @@ class CAPIFloatTest(unittest.TestCase):
                         value = unpack(data1, endian)
                         data2 = pack(size, value, endian)
                         self.assertTrue(math.isnan(value))
+                        self.assertEqual(math.copysign(1.0, value),
+                                         -1.0 if sign else 1.0)
                         self.assertEqual(data1, data2)
 
     @unittest.skipUnless(HAVE_IEEE_754, "requires IEEE 754")

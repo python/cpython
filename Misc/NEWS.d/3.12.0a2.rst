@@ -957,7 +957,7 @@ Fix ``make regen-test-levenshtein`` for out-of-tree builds.
 .. nonce: eVXGEx
 .. section: Build
 
-Don't use vendored ``libmpdec`` headers if :option:`--with-system-libmpdec`
+Don't use vendored ``libmpdec`` headers if :option:`!--with-system-libmpdec`
 is passed to :program:`configure`. Don't use vendored ``libexpat`` headers
 if :option:`--with-system-expat` is passed to :program:`configure`.
 

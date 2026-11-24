@@ -138,7 +138,7 @@ await createEmscriptenModule({
 
 - Threading is disabled by default. The ``configure`` option
   ``--enable-wasm-pthreads`` adds compiler flag ``-pthread`` and
-  linker flags ``-sUSE_PTHREADS -sPROXY_TO_PTHREAD``.
+  linker flags ``-pthread -sPROXY_TO_PTHREAD``.
 - pthread support requires WASM threads and SharedArrayBuffer (bulk memory).
   The Node.JS runtime keeps a pool of web workers around. Each web worker
   uses several file descriptors (eventfd, epoll, pipe).
@@ -186,8 +186,8 @@ await createEmscriptenModule({
   are not shipped. All other modules are bundled as pre-compiled
   ``pyc`` files.
 - In-memory file system (MEMFS) is not persistent and limited.
-- Test modules are disabled by default. Use ``--enable-test-modules`` build
-  test modules like ``_testcapi``.
+- Test modules are built by default. Use ``--disable-test-modules`` to disable
+  building test modules like ``_testcapi``.
 
 ## Detecting Emscripten builds
 

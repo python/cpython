@@ -1,13 +1,15 @@
 import collections
 import marshal
 import pstats
+lazy from _colorize import get_colors
 
-from _colorize import ANSIColors
 from .collector import Collector, extract_lineno
 from .constants import MICROSECONDS_PER_SECOND, PROFILING_MODE_CPU
 
 
 class PstatsCollector(Collector):
+    aggregating = True
+
     def __init__(self, sample_interval_usec, *, skip_idle=False):
         self.result = collections.defaultdict(
             lambda: dict(total_rec_calls=0, direct_calls=0, cumulative_calls=0)
@@ -28,7 +30,6 @@ class PstatsCollector(Collector):
         self._seen_locations.clear()
 
         # Process each frame in the stack to track cumulative calls
-        # frame.location is int, tuple (lineno, end_lineno, col_offset, end_col_offset), or None
         for frame in frames:
             lineno = extract_lineno(frame.location)
             location = (frame.filename, lineno, frame.funcname)
@@ -61,6 +62,7 @@ class PstatsCollector(Collector):
     def export(self, filename):
         self.create_stats()
         self._dump_stats(filename)
+        return True
 
     def _dump_stats(self, file):
         stats_with_marker = dict(self.stats)
@@ -175,6 +177,8 @@ class PstatsCollector(Collector):
         }
 
         # Print header with colors and proper alignment
+        ANSIColors = get_colors()
+
         print(f"{ANSIColors.BOLD_BLUE}Profile Stats:{ANSIColors.RESET}")
 
         header_nsamples = f"{ANSIColors.BOLD_BLUE}{'nsamples':>{col_widths['nsamples']}}{ANSIColors.RESET}"
@@ -266,6 +270,8 @@ class PstatsCollector(Collector):
 
     def _print_summary(self, stats_list, total_samples):
         """Print summary of interesting functions."""
+        ANSIColors = get_colors()
+
         print(
             f"\n{ANSIColors.BOLD_BLUE}Summary of Interesting Functions:{ANSIColors.RESET}"
         )

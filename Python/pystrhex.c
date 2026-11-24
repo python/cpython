@@ -36,7 +36,7 @@ _Py_hexlify_scalar(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
    adds a ton of complication. Who ever really hexes huge data?
    The 16-64 byte boosts align nicely with md5 - sha512 hexdigests.
 */
-#ifdef HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
+#ifdef _Py_HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
 
 /* 128-bit vector of 16 unsigned bytes */
 typedef unsigned char v16u8 __attribute__((vector_size(16)));
@@ -67,6 +67,7 @@ _Py_hexlify_simd(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
     const v16u8 mask_0f = v16u8_splat(0x0f);
     const v16u8 ascii_0 = v16u8_splat('0');
     const v16u8 offset = v16u8_splat('a' - '0' - 10);  /* 0x27 */
+    const v16u8 four = v16u8_splat(4);
     const v16s8 nine = v16s8_splat(9);
 
     Py_ssize_t i = 0;
@@ -78,7 +79,7 @@ _Py_hexlify_simd(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
         memcpy(&data, src + i, 16);
 
         /* Extract high and low nibbles using vector operators */
-        v16u8 hi = (data >> 4) & mask_0f;
+        v16u8 hi = (data >> four) & mask_0f;
         v16u8 lo = data & mask_0f;
 
         /* Compare > 9 using signed comparison for efficient codegen.
@@ -109,7 +110,7 @@ _Py_hexlify_simd(const unsigned char *src, Py_UCS1 *dst, Py_ssize_t len)
     _Py_hexlify_scalar(src + i, dst, len - i);
 }
 
-#endif /* HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR */
+#endif /* _Py_HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR */
 
 static PyObject *
 _Py_strhex_impl(const char* argbuf, Py_ssize_t arglen,
@@ -167,15 +168,16 @@ _Py_strhex_impl(const char* argbuf, Py_ssize_t arglen,
         abs_bytes_per_sep = 0;
     }
 
-    PyObject *retval;
+    PyObject *retval = NULL;
+    PyBytesWriter *bytes_writer = NULL;
     Py_UCS1 *retbuf;
     if (return_bytes) {
         /* If _PyBytes_FromSize() were public we could avoid malloc+copy. */
-        retval = PyBytes_FromStringAndSize(NULL, resultlen);
-        if (!retval) {
+        bytes_writer = PyBytesWriter_Create(resultlen);
+        if (!bytes_writer) {
             return NULL;
         }
-        retbuf = (Py_UCS1 *)PyBytes_AS_STRING(retval);
+        retbuf = PyBytesWriter_GetData(bytes_writer);
     }
     else {
         retval = PyUnicode_New(resultlen, 127);
@@ -190,7 +192,7 @@ _Py_strhex_impl(const char* argbuf, Py_ssize_t arglen,
     unsigned char c;
 
     if (bytes_per_sep_group == 0) {
-#ifdef HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
+#ifdef _Py_HAVE_EFFICIENT_BUILTIN_SHUFFLEVECTOR
         if (arglen >= 16) {
             _Py_hexlify_simd((const unsigned char *)argbuf, retbuf, arglen);
         }
@@ -243,13 +245,15 @@ _Py_strhex_impl(const char* argbuf, Py_ssize_t arglen,
         }
     }
 
-#ifdef Py_DEBUG
-    if (!return_bytes) {
-        assert(_PyUnicode_CheckConsistency(retval, 1));
+    if (return_bytes) {
+        return PyBytesWriter_Finish(bytes_writer);
     }
+    else {
+#ifdef Py_DEBUG
+        assert(_PyUnicode_CheckConsistency(retval, 1));
 #endif
-
-    return retval;
+        return retval;
+    }
 }
 
 PyObject * _Py_strhex(const char* argbuf, Py_ssize_t arglen)
