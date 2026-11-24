@@ -518,7 +518,7 @@ for example, call :c:func:`Py_DecRef` through a pointer instead of using
 * ``RTLD_GLOBAL`` makes Python's symbols available to the extension modules
   that Python imports, which are normally not linked against a Python library.
 
-.. rubric:: Alternative: renaming the dependency after linking
+.. rubric:: Unsupported alternative: renaming the dependency after linking
 
 Loading Python at run time, as described above,
 is the preferred way to run one binary with several Python versions,
@@ -526,7 +526,7 @@ and it does not need anything described below.
 
 The following is a packaging workaround for an existing application that
 calls the C API directly and cannot easily be changed.
-It is not recommended; use it at your own risk.
+It is unsupported and not recommended; use it at your own risk.
 
 Such an application is linked as described :ref:`above <compiling>`.
 The dependency recorded in the executable is then renamed, for example with
