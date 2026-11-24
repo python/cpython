@@ -147,6 +147,15 @@ module documentation.  This section lists the differences between the API and
    otherwise it is set to ``"no"``.
    Not stating the argument will omit the declaration from the document.
 
+   :exc:`ValueError` is raised if the content of the node cannot be
+   represented in XML, for example if a comment contains ``"--"`` or
+   a CDATA section contains ``"]]>"``.
+   The characters are not checked:
+   the text, the attribute values and the content of comments,
+   processing instructions and CDATA sections are written as is.
+   If they can contain characters which are not allowed in XML,
+   check them with :func:`xml.is_valid_text` before serialization.
+
    .. versionchanged:: 3.8
       The :meth:`writexml` method now preserves the attribute order specified
       by the user.
