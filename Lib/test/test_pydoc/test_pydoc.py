@@ -808,7 +808,7 @@ class PydocDocTest(unittest.TestCase):
         # test for "pydoc.Helper.help"
         run_pydoc_for_request('pydoc.Helper.help', 'Help on function help in pydoc.Helper:')
         # test for pydoc.Helper.help
-        run_pydoc_for_request(pydoc.Helper.help, 'Help on function help in module pydoc:')
+        run_pydoc_for_request(pydoc.Helper.help, 'Help on function help in Helper:')
         # test for pydoc.Helper() instance skipped because it is always meant to be interactive
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
@@ -837,7 +837,7 @@ class PydocDocTest(unittest.TestCase):
         run_pydoc_pager('pydoc.Helper.help', 'pydoc.Helper.help',
                         'Help on function help in pydoc.Helper:')
         run_pydoc_pager(pydoc.Helper.help, 'Helper.help',
-                        'Help on function help in module pydoc:')
+                        'Help on function help in Helper:')
         run_pydoc_pager('str', 'str', 'Help on class str in module builtins:')
         run_pydoc_pager(str, 'str', 'Help on class str in module builtins:')
         run_pydoc_pager('str.upper', 'str.upper',
@@ -1522,6 +1522,21 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(pydoc.describe(c), 'C')
         expected = 'C in module %s object' % __name__
         self.assertIn(expected, pydoc.render_doc(c))
+
+    def test_method(self):
+        doc = pydoc.render_doc(pydocfodder.A.A_method,
+                               renderer=pydoc.plaintext)
+        self.assertTrue(doc.startswith(
+            'Python Library Documentation: function A_method in A\n'))
+
+    def test_nested_function(self):
+        def nested():
+            "Nested function."
+
+        doc = pydoc.render_doc(nested, renderer=pydoc.plaintext)
+        self.assertTrue(doc.startswith(
+            'Python Library Documentation: function nested in module %s\n'
+            % __name__))
 
     def test_generic_alias(self):
         self.assertEqual(pydoc.describe(typing.List[int]), '_GenericAlias')

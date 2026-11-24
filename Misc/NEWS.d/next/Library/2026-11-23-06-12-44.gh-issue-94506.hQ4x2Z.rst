@@ -1,0 +1,2 @@
+Fix :func:`help` to identify functions defined in a class instead of reporting
+them as module-level functions.

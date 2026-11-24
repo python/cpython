@@ -1753,8 +1753,12 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
     object, name = resolve(thing, forceload)
     desc = describe(object)
     module = inspect.getmodule(object)
+    qualname = getattr(object, '__qualname__', None)
     if name and '.' in name:
         desc += ' in ' + name[:name.rfind('.')]
+    elif (inspect.isfunction(object) and isinstance(qualname, str)
+          and '.' in qualname and '.<locals>.' not in qualname):
+        desc += ' in ' + qualname[:qualname.rfind('.')]
     elif module and module is not object:
         desc += ' in module ' + module.__name__
 
