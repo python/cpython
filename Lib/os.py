@@ -28,6 +28,9 @@ import stat as st
 
 from _collections_abc import _check_methods
 
+lazy from builtins import open as _builtins_open
+lazy import math
+
 GenericAlias = type(list[int])
 
 _names = sys.builtin_module_names
@@ -1227,13 +1230,11 @@ if name == 'nt':
 
 if sys.platform == "linux":
     def _get_cgroup2_mount_point():
-        from builtins import open
-
         if path.exists("/sys/fs/cgroup/cgroup.controllers"):
             return "/sys/fs/cgroup"
 
         try:
-            with open("/proc/mounts") as fp:
+            with _builtins_open("/proc/mounts") as fp:
                 for line in fp:
                     parts = line.split()
                     _, mount_dir, mount_type, *_ = parts
@@ -1255,10 +1256,8 @@ if sys.platform == "linux":
         Returns None if file not found or a parsing error, or a number of cores
         if successful.
         """
-        from builtins import open
-
         try:
-            with open(filename) as fp:
+            with _builtins_open(filename) as fp:
                 line = fp.readline()
         except OSError:
             return None
@@ -1277,21 +1276,17 @@ if sys.platform == "linux":
             return None
 
         # Rounds up in order to saturate CPUs if the quota is fractional:
-        import math
-
         return max(math.ceil(quota / period), 1)
 
 
     def _cpu_count_cgroups():
-        from builtins import open
-
         sched = sched_getscheduler(0)
         if sched in (SCHED_FIFO, SCHED_RR, SCHED_DEADLINE):
             return None
 
         cgroup_subpath = None
         try:
-            fp = open("/proc/self/cgroup")
+            fp = _builtins_open("/proc/self/cgroup")
         except OSError:
             return None
         with fp:
