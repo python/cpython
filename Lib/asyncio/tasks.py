@@ -987,15 +987,11 @@ def shield(arg):
     loop = futures._get_loop(inner)
     outer = loop.create_future()
 
-    if loop is not None and (cur_task := current_task(loop)) is not None:
-        futures.future_add_to_awaited_by(inner, cur_task)
-    else:
-        cur_task = None
-
-    def _clear_awaited_by_callback(inner):
-        futures.future_discard_from_awaited_by(inner, cur_task)
+    futures.future_add_to_awaited_by(inner, outer)
 
     def _inner_done_callback(inner):
+        futures.future_discard_from_awaited_by(inner, outer)
+
         if outer.cancelled():
             return
 
@@ -1011,13 +1007,7 @@ def shield(arg):
     def _outer_done_callback(outer):
         if not inner.done():
             inner.remove_done_callback(_inner_done_callback)
-            if cur_task is not None:
-                inner.remove_done_callback(_clear_awaited_by_callback)
-                futures.future_discard_from_awaited_by(inner, cur_task)
-
-    if cur_task is not None:
-        inner.add_done_callback(_clear_awaited_by_callback)
-
+            futures.future_discard_from_awaited_by(inner, outer)
 
     inner.add_done_callback(_inner_done_callback)
     outer.add_done_callback(_outer_done_callback)
