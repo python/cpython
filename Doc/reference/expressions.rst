@@ -2426,10 +2426,11 @@ evaluated and its value is returned.
 Conditional expressions group from right to left, so
 ``a if b else c if d else e`` means ``a if b else (c if d else e)``::
 
-   >>> 'spam' if True else 'eggs' if False else 'ham'
-   'spam'
-   >>> ('spam' if True else 'eggs') if False else 'ham'
-   'ham'
+   >>> n = 2
+   >>> print('positive' if n > 0
+   ...       else 'negative' if n < 0
+   ...       else 'zero')
+   positive
 
 See :pep:`308` for more details about conditional expressions.
 
