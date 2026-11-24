@@ -4760,6 +4760,66 @@ _curses_tigetstr_impl(PyObject *module, const char *capname)
     return PyBytes_FromString( capname );
 }
 
+/* Return a bit mask of the parameters of a terminfo string that curses takes
+   as strings: those that %s or %l follows directly after %p, as in ncurses'
+   _nc_tparm_analyze().  The others are numbers. */
+static unsigned int
+curses_tparm_string_params(const char *str)
+{
+    unsigned int mask = 0;
+    int last = 0;               /* the parameter pushed last, or 0 */
+
+    while (*str) {
+        if (*str++ != '%') {
+            continue;
+        }
+        /* Skip the flags, width and precision of a conversion. */
+        int allowminus = 0;
+        while (*str) {
+            if (*str == ':') {
+                allowminus = 1;
+            }
+            else if (!(*str == '#' || *str == ' ' || *str == '.'
+                       || Py_ISDIGIT(*str) || (*str == '-' && allowminus)))
+            {
+                break;
+            }
+            str++;
+        }
+        switch (*str) {
+        case 'p':
+            if (str[1] >= '1' && str[1] <= '9') {
+                last = str[1] - '0';
+            }
+            str++;
+            break;
+        case 's':
+        case 'l':
+            if (last > 0) {
+                mask |= 1u << (last - 1);
+            }
+            break;
+        case 'd': case 'o': case 'x': case 'X': case 'c':
+        case '+': case '-': case '*': case '/': case 'm':
+        case '&': case '|': case '^': case '=': case '<': case '>':
+        case 'A': case 'O': case '!': case '~':
+            last = 0;
+            break;
+        case '\'':
+            str += 2;
+            last = 0;
+            break;
+        case '\0':
+            return mask;
+        default:
+            /* %P, %g, %{, %i, %?, %t, %e, %; and %% keep it. */
+            break;
+        }
+        str++;
+    }
+    return mask;
+}
+
 /*[clinic input]
 _curses.tparm
 
@@ -4787,6 +4847,18 @@ _curses_tparm_impl(PyObject *module, const char *str, int i1, int i2, int i3,
     char* result = NULL;
 
     PyCursesStatefulSetupTermCalled(module);
+
+    /* curses would take a non-zero number as a pointer to a string. */
+    unsigned int strings = curses_tparm_string_params(str);
+    int params[9] = {i1, i2, i3, i4, i5, i6, i7, i8, i9};
+    for (int i = 0; i < 9; i++) {
+        if ((strings & (1u << i)) && params[i] != 0) {
+            PyErr_Format(PyExc_TypeError,
+                         "tparm() argument %d: string parameters "
+                         "are not supported", i + 2);
+            return NULL;
+        }
+    }
 
     result = tparm((char *)str,i1,i2,i3,i4,i5,i6,i7,i8,i9);
     if (!result) {

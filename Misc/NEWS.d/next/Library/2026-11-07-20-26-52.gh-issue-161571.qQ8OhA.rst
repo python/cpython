@@ -1,0 +1,3 @@
+Fix a crash in :func:`curses.tparm` for capabilities with parameters
+that they format as strings, such as ``Ms`` of xterm.
+Non-zero integers for these parameters now raise :exc:`TypeError`.
