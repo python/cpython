@@ -85,7 +85,6 @@ use of the imported name. For example, in a new interpreter session::
    >>> fibo.fib(10)  # Loads the module, then calls fib().
    0 1 1 2 3 5 8
 
-The ``lazy`` keyword is available in Python 3.15 and later.
 Lazy imports are permitted only at module scope and outside
 :keyword:`try`/:keyword:`except`/:keyword:`finally` blocks.
 

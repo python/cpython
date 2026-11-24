@@ -2421,7 +2421,7 @@ are always available.  They are listed here in alphabetical order.
    resolution.
 
    You can replace :func:`__import__` through an assignment to
-   ``builtins.__import__``. Import hooks (see :pep:`302`) usually provide a
+   ``builtins.__import__``.  :ref:`Import hooks <import-hooks>` usually provide a
    simpler way to customize imports. A replacement can cause problems for code
    that expects the default import implementation.
    Do not replace :func:`__import__` unless import hooks cannot supply the

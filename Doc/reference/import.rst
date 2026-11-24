@@ -264,6 +264,8 @@ import machinery.
    directly, whereas now they return module specs which *contain* loaders.
    Loaders are still used during import but have fewer responsibilities.
 
+.. _import-hooks:
+
 Import hooks
 ------------
 

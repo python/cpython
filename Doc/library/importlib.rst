@@ -1467,9 +1467,9 @@ To import a Python source file directly from a path, use the following recipe::
 Implementing lazy imports
 '''''''''''''''''''''''''
 
-Python 3.15 adds :ref:`lazy imports <lazy-imports>` through the
-:keyword:`lazy` keyword. This language feature delays the module search
-and execution until the first use of the imported name.
+Use the :keyword:`lazy` keyword for an explicit :ref:`lazy import <lazy-imports>`.
+Python delays the module search and execution until the first use of the
+imported name.
 
 The :class:`importlib.util.LazyLoader` example below does the module search
 immediately and delays only module execution. It creates a module object in
