@@ -357,7 +357,11 @@ or the last :keyword:`!except*` clause has run.
 
 After all :keyword:`!except*` clauses execute, the group of unhandled exceptions
 is merged with any exceptions that were raised or re-raised from within
-:keyword:`!except*` clauses. This merged exception group propagates on::
+:keyword:`!except*` clauses. If this list contains more than one exception
+to reraise, they are combined into an exception group, and this merged
+exception group propagates on. If the list contains a single exception,
+that exception propagates on its own, without being wrapped in an
+exception group::
 
    >>> try:
    ...     raise ExceptionGroup("eg",
