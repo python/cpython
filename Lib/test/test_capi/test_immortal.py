@@ -38,6 +38,32 @@ class TestInternalCAPI(unittest.TestCase):
         for obj in ([], {}, set()):
             self.assertFalse(_testinternalcapi.is_static_immortal(obj))
 
+    @unittest.skipIf(Py_GIL_DISABLED,
+                     "can't de-immortalize on free-threaded build")
+    @subTests(
+        'obj_repr',
+        ['None', 'True', 'False', '-1', '256', '""', 'b""', 'type'],
+    )
+    def test_deimmortalized_static_object_in_subinterpreter(self, obj_repr):
+        # gh-158401: Old Stable ABI extensions de-immortalize objects.
+        # Re-immortalizing such an object (e.g. when a subinterpreter
+        # is created) must keep it static.
+        # Run in a subprocess, since other tests assume deimmortalization
+        # doesn't happen.
+        assert_python_ok("-c", f"""
+            import sys
+            import _testcapi
+            import _testinternalcapi
+
+            obj = {obj_repr}
+            assert _testinternalcapi.is_static_immortal(obj)
+            _testinternalcapi.deimmortalize(obj)
+            _testcapi.run_in_subinterp("pass")
+            # On 64-builds, the static flag is retained
+            if sys.maxsize > 2**32:
+                assert _testinternalcapi.is_static_immortal(obj)
+        """)
+
 
     @unittest.skipIf(Py_GIL_DISABLED,
                      "can't de-immortalize on free-threaded build")

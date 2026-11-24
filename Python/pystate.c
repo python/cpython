@@ -881,8 +881,20 @@ common_constants_clear(PyInterpreterState *interp)
         PyStackRef_XCLOSE(ref);
         interp->common_consts[i] = PyStackRef_NULL;
         // Refcount reclamation skips heap immortals; release manually.
-        if (_Py_IsImmortal(obj) && !_Py_IsStaticImmortal(obj)) {
-            _Py_ClearImmortal(obj);
+        if (_Py_IsImmortal(obj)) {
+            // Only `all` and `any` are heap objects; the rest are statically
+            // allocated.
+            // Don't rely on _Py_IsStaticImmortal().
+            if (i == CONSTANT_BUILTIN_ALL || i == CONSTANT_BUILTIN_ANY) {
+                _Py_ClearImmortal(obj);
+            }
+#if !defined(Py_GIL_DISABLED) && SIZEOF_VOID_P <= 4
+            else {
+                // On 64-bit and free-threading builds,
+                // we can trust _Py_IsStaticImmortal.
+                assert (!_Py_IsStaticImmortal(obj));
+            }
+#endif
         }
     }
 }
