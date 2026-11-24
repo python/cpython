@@ -49,11 +49,11 @@ typedef void (*PyOS_sighandler_t)(int);
 PyAPI_FUNC(PyOS_sighandler_t) PyOS_getsig(int);
 PyAPI_FUNC(PyOS_sighandler_t) PyOS_setsig(int, PyOS_sighandler_t);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 11)
 PyAPI_DATA(const unsigned long) Py_Version;
 #endif
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(int) Py_IsFinalizing(void);
 #endif
 

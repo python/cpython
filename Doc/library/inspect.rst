@@ -284,6 +284,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | ``AGEN_SUSPENDED``, or    |
 |                 |                   | ``AGEN_CLOSED``           |
 +-----------------+-------------------+---------------------------+
+| async generator | aga_gen           | async generator driven by |
+| awaitable       |                   | the awaitable returned    |
+|                 |                   | from ``asend()``,         |
+|                 |                   | ``athrow()``, or          |
+|                 |                   | ``aclose()``              |
++-----------------+-------------------+---------------------------+
 | coroutine       | __name__          | name                      |
 +-----------------+-------------------+---------------------------+
 |                 | __qualname__      | qualified name            |
@@ -359,6 +365,11 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Add ``gi_state`` attribute to generators, ``cr_state`` attribute to
    coroutines, and ``ag_state`` attribute to async generators.
+
+.. versionchanged:: 3.16
+
+   Add ``aga_gen`` attribute to the awaitables returned by the ``asend()``,
+   ``athrow()`` and ``aclose()`` methods of async generators.
 
 .. function:: getmembers(object[, predicate])
 

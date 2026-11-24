@@ -28,7 +28,7 @@ PyAPI_FUNC(PyObject *) PyWeakref_NewRef(PyObject *ob,
 PyAPI_FUNC(PyObject *) PyWeakref_NewProxy(PyObject *ob,
                                           PyObject *callback);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(int) PyWeakref_GetRef(PyObject *ref, PyObject **pobj);
 #endif
 

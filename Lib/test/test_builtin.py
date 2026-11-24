@@ -1052,10 +1052,16 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                                eval, code, ns)
 
     def test_exec_builtins_mapping_import(self):
+        # Globally enabled lazy imports do use different import hooks:
+        if sys.get_lazy_imports() == "all":
+            hook = "__lazy_import__"
+        else:
+            hook = "__import__"
+
         code = compile("import foo.bar", "test", "exec")
         ns = {'__builtins__': types.MappingProxyType({})}
-        self.assertRaisesRegex(ImportError, "__import__ not found", exec, code, ns)
-        ns = {'__builtins__': types.MappingProxyType({'__import__': lambda *args: args})}
+        self.assertRaisesRegex(ImportError, f"{hook} not found", exec, code, ns)
+        ns = {'__builtins__': types.MappingProxyType({hook: lambda *args: args})}
         exec(code, ns)
         self.assertEqual(ns['foo'], ('foo.bar', ns, ns, None, 0))
 
@@ -2251,6 +2257,31 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                                          complex(2, -0.0))
         self.assertComplexesAreIdentical(sum([1.0, complex(1, -0.0)]),
                                          complex(2, -0.0))
+
+    def test_sum_float_subclass(self):
+        # gh-151060: the C fast-sum loop must not free a float subclass with
+        # the exact-float deallocator.  A generator keeps each item's only
+        # reference in sum(), so the specialized DECREF runs the deallocator.
+        class F(float):
+            count = 0
+            def __del__(self):
+                F.count += 1
+
+        self.assertEqual(sum((F(i) for i in range(5)), 1j), complex(10, 1))
+        self.assertEqual(F.count, 5)
+
+    def test_sum_int_subclass(self):
+        # gh-151060: likewise, the float and complex fast-sum loops must not
+        # free an int subclass with the exact-int deallocator.
+        class I(int):
+            count = 0
+            def __del__(self):
+                I.count += 1
+
+        self.assertEqual(sum((I(i) for i in range(5)), 1.0), 11.0)
+        self.assertEqual(I.count, 5)
+        self.assertEqual(sum((I(i) for i in range(5)), 1j), complex(10, 1))
+        self.assertEqual(I.count, 10)
 
     @requires_IEEE_754
     @skip_if_double_rounding

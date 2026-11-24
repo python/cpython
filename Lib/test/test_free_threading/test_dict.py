@@ -228,6 +228,39 @@ class TestDict(TestCase):
 
             self.assertEqual(count, 0)
 
+    def test_racing_replace_inline_values_and_lookup(self):
+        # gh-160496: replacing an unmaterialized __dict__ clears inline
+        # values while attribute lookup can still read them without a lock.
+        class C:
+            pass
+
+        objects = [C() for _ in range(1000)]
+        for obj in objects:
+            obj.x = [0]
+
+        # Inline values are invalidated only once per object, so synchronize
+        # the threads for each fresh instance without accessing its __dict__.
+        barrier = Barrier(2)
+        observed = []
+
+        def writer():
+            for obj in objects:
+                barrier.wait()
+                obj.__dict__ = {"x": [1]}
+                barrier.wait()
+
+        def reader():
+            for obj in objects:
+                barrier.wait()
+                observed.append(getattr(obj, "x", None))
+                barrier.wait()
+
+        threading_helper.run_concurrently([writer, reader])
+        for value in observed:
+            self.assertIn(value, ([0], [1]))
+        for obj in objects:
+            self.assertEqual(obj.x, [1])
+
     def test_racing_object_get_set_dict(self):
         e = Exception()
 
@@ -531,6 +564,51 @@ class TestDict(TestCase):
         REPLACER_THREADS = 8
         CHURN_SIZE = 512
         race(ITER_TIMES, CHURN_SIZE, APPENDER_THREADS, REPLACER_THREADS)
+
+    def test_racing_shared_iterator_exhaustion(self):
+        # gh-154130: exhausting a dict iterator shared between threads must
+        # not release the iterator's reference to the dict more than once.
+        makers = [
+            lambda d: iter(d),
+            lambda d: iter(d.values()),
+            lambda d: iter(d.items()),
+            lambda d: reversed(d),
+            lambda d: reversed(d.items()),
+        ]
+        for make in makers:
+            cell = [make({i: i for i in range(8)})]
+
+            def worker():
+                for _ in range(5000):
+                    it = cell[0]
+                    try:
+                        next(it)
+                    except StopIteration:
+                        cell[0] = make({i: i for i in range(8)})
+                    except RuntimeError:
+                        # Concurrent next() calls may observe each other's
+                        # updates as a modification; only crashes are bugs.
+                        pass
+
+            with self.subTest(make=make):
+                threading_helper.run_concurrently(worker, nthreads=4)
+
+    def test_exhausted_iterator_stays_exhausted(self):
+        d = {1: 1}
+        for it in (iter(d), iter(d.items()), reversed(d)):
+            self.assertEqual(len(list(it)), 1)
+            d[2] = 2
+            self.assertRaises(StopIteration, next, it)
+            self.assertEqual(it.__length_hint__(), 0)
+            del d[2]
+
+    def test_reversed_empty_dict_iterator_not_exhausted(self):
+        # A reverse iterator over an empty dict starts at position -1 but is
+        # not exhausted, so a later size change must still be detected.
+        d = {}
+        it = reversed(d)
+        d[1] = 1
+        self.assertRaises(RuntimeError, next, it)
 
     def test_racing_update_from_mutating_pair(self):
         # gh-159244: dict() must not read the items of a key/value pair
