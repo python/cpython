@@ -7,6 +7,7 @@
 #include "pycore_ceval.h"         // export _PyEval_SetProfile()
 #include "pycore_frame.h"         // PyFrameObject members
 #include "pycore_interpframe.h"   // _PyFrame_GetCode()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_CHAR_RELAXED()
 
 #include "opcode.h"
 #include <stddef.h>
@@ -187,7 +188,7 @@ call_trace_func(_PyLegacyEventHandler *self, PyObject *arg)
                         "Missing frame when calling trace function.");
         return NULL;
     }
-    if (frame->f_trace_opcodes) {
+    if (FT_ATOMIC_LOAD_CHAR_RELAXED(frame->f_trace_opcodes)) {
         if (_PyEval_SetOpcodeTrace(frame, true) != 0) {
             return NULL;
         }
@@ -302,7 +303,8 @@ sys_trace_instruction_func(
         return NULL;
     }
     PyThreadState *tstate = _PyThreadState_GET();
-    if (!tstate->c_tracefunc || !frame->f_trace_opcodes) {
+    if (!tstate->c_tracefunc ||
+        !FT_ATOMIC_LOAD_CHAR_RELAXED(frame->f_trace_opcodes)) {
         if (_PyEval_SetOpcodeTrace(frame, false) != 0) {
             return NULL;
         }
@@ -323,7 +325,7 @@ trace_line(
     PyThreadState *tstate, _PyLegacyEventHandler *self,
     PyFrameObject *frame, int line
 ) {
-    if (!frame->f_trace_lines) {
+    if (!FT_ATOMIC_LOAD_CHAR_RELAXED(frame->f_trace_lines)) {
         Py_RETURN_NONE;
     }
     if (line < 0) {
@@ -403,7 +405,7 @@ sys_trace_jump_func(
                         "Missing frame when calling trace function.");
         return NULL;
     }
-    if (!frame->f_trace_lines) {
+    if (!FT_ATOMIC_LOAD_CHAR_RELAXED(frame->f_trace_lines)) {
         Py_RETURN_NONE;
     }
     return trace_line(tstate, self, frame, to_line);
@@ -680,7 +682,8 @@ maybe_set_opcode_trace(PyThreadState *tstate)
         return 0;
     }
     PyFrameObject *frame = iframe->frame_obj;
-    if (frame == NULL || !frame->f_trace_opcodes) {
+    if (frame == NULL ||
+        !FT_ATOMIC_LOAD_CHAR_RELAXED(frame->f_trace_opcodes)) {
         return 0;
     }
     return set_opcode_trace_world_stopped(_PyFrame_GetCode(iframe), true);

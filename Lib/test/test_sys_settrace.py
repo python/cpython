@@ -3074,6 +3074,114 @@ class TestEdgeCases(unittest.TestCase):
         del foo
         sys.settrace(sys.gettrace())
 
+    def test_local_trace_replacement(self):
+        events = []
+
+        def assigned(frame, event, arg):
+            events.append(('assigned', event))
+            return assigned
+
+        def replacement(frame, event, arg):
+            events.append(('replacement', event))
+            return replacement
+
+        def local_trace(frame, event, arg):
+            events.append(('original', event))
+            frame.f_trace = assigned
+            return replacement
+
+        def trace(frame, event, arg):
+            if frame.f_code is target.__code__:
+                return local_trace
+
+        def target():
+            value = 1
+            return value
+
+        sys.settrace(trace)
+        target()
+        sys.settrace(None)
+        self.assertEqual(events, [('original', 'line'),
+                                  ('replacement', 'line'),
+                                  ('replacement', 'return')])
+
+    def test_local_trace_clear(self):
+        events = []
+
+        def local_trace(frame, event, arg):
+            events.append(event)
+            frame.f_trace = None
+            return None
+
+        def trace(frame, event, arg):
+            if frame.f_code is target.__code__:
+                return local_trace
+
+        def target():
+            value = 1
+            return value
+
+        sys.settrace(trace)
+        target()
+        sys.settrace(None)
+        self.assertEqual(events, ['line'])
+
+    def test_local_trace_error(self):
+        frames = []
+
+        def local_trace(frame, event, arg):
+            raise RuntimeError('local trace error')
+
+        def trace(frame, event, arg):
+            if frame.f_code is target.__code__:
+                frames.append(frame)
+                return local_trace
+
+        def target():
+            return 1
+
+        sys.settrace(trace)
+        with self.assertRaisesRegex(RuntimeError, 'local trace error'):
+            target()
+        self.assertIsNone(sys.gettrace())
+        self.assertEqual(len(frames), 1)
+        self.assertIsNone(frames[0].f_trace)
+
+    def test_local_trace_finalizer_reentrancy(self):
+        events = []
+
+        def final_trace(frame, event, arg):
+            events.append(('final', event))
+            return final_trace
+
+        def replacement(frame, event, arg):
+            events.append(('replacement', event))
+            return replacement
+
+        class LocalTrace:
+            def __call__(self, frame, event, arg):
+                self.frame = frame
+                events.append(('original', event))
+                return replacement
+
+            def __del__(self):
+                events.append(('finalize', self.frame.f_trace is replacement))
+                self.frame.f_trace = final_trace
+
+        def trace(frame, event, arg):
+            if frame.f_code is target.__code__:
+                return LocalTrace()
+
+        def target():
+            value = 1
+            return value
+
+        sys.settrace(trace)
+        target()
+        sys.settrace(None)
+        self.assertEqual(events, [('original', 'line'), ('finalize', True),
+                                  ('final', 'line'), ('final', 'return')])
+
 
 class TestLinesAfterTraceStarted(TraceTestCase):
 
