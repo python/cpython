@@ -1,0 +1,4 @@
+Fix the :mod:`multiprocessing` forkserver exiting on macOS and BSD when its
+listening socket was non-blocking, as it is when the :mod:`socket` module has
+been monkey-patched (for example by gevent). Accepted connections are now made
+blocking before they are read.
