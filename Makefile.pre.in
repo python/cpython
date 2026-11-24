@@ -2887,7 +2887,7 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 		do \
 			case $$i in \
 			*CVS) ;; \
-			*.py[co]) ;; \
+			*.pyc) ;; \
 			*.orig) ;; \
 			*~) ;; \
 			*) \

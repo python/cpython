@@ -204,7 +204,7 @@ install_Python:
 			case $$i in \
 			*CVS) ;; \
 			*.svn) ;; \
-			*.py[co]) ;; \
+			*.pyc) ;; \
 			*.orig) ;; \
 			*~) ;; \
 			*idx) \

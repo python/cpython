@@ -1553,7 +1553,7 @@ def buildInstaller():
     # Zap all compiled files
     for dirpath, _, filenames in os.walk(os.path.join(WORKDIR, '_root')):
         for fn in filenames:
-            if fn.endswith('.pyc') or fn.endswith('.pyo'):
+            if fn.endswith('.pyc'):
                 os.unlink(os.path.join(dirpath, fn))
 
     outdir = os.path.join(WORKDIR, 'installer')
