@@ -21,6 +21,7 @@ SPLITTESTDIRS: set[TestName] = {
     "test_asyncio",
     "test_concurrent_futures",
     "test_doctests",
+    "test_free_threading",
     "test_future_stmt",
     "test_gdb",
     "test_inspect",

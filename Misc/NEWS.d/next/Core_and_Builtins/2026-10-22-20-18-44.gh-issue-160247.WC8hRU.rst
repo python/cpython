@@ -1,0 +1,2 @@
+Reduce padding in the internal instruction sequence structure, saving 8 bytes
+per instance on 64-bit platforms. Patch by Shamil Abdulaev.

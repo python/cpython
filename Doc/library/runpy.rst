@@ -97,7 +97,7 @@ The :mod:`!runpy` module provides two functions:
       :class:`~importlib.machinery.ModuleSpec` for alternatives.
 
    .. versionchanged:: 3.15
-      ``__cached__`` is no longer set.
+      The global variable ``__cached__`` is no longer set.
 
 .. function:: run_path(path_name, init_globals=None, run_name=None)
 
@@ -175,7 +175,7 @@ The :mod:`!runpy` module provides two functions:
       ``__package__`` are deprecated.
 
    .. versionchanged:: 3.15
-      ``__cached__`` is no longer set.
+      The global variable ``__cached__`` is no longer set.
 
 .. seealso::
 

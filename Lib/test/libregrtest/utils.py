@@ -67,6 +67,10 @@ FilterTuple = tuple[TestName, ...]
 FilterDict = dict[TestName, FilterTuple]
 
 
+def cleanup_test_name(name: TestName) -> TestName:
+    return name.removeprefix('test.')
+
+
 def format_duration(seconds: float) -> str:
     ms = math.ceil(seconds * 1e3)
     seconds, ms = divmod(ms, 1000)
@@ -330,9 +334,6 @@ def get_build_info():
     # Get most important configure and build options as a list of strings.
     # Example: ['debug', 'ASAN+MSAN'] or ['release', 'LTO+PGO'].
 
-    config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
-    cflags = sysconfig.get_config_var('PY_CFLAGS') or ''
-    cflags += ' ' + (sysconfig.get_config_var('PY_CFLAGS_NODIST') or '')
     ldflags_nodist = sysconfig.get_config_var('PY_LDFLAGS_NODIST') or ''
 
     build = []
@@ -351,18 +352,16 @@ def get_build_info():
             free_threading = f"{free_threading} GIL={int(PYTHON_GIL)}"
         build.append(free_threading)
 
-    if hasattr(sys, 'gettotalrefcount'):
+    if support.Py_DEBUG:
         # --with-pydebug
         build.append('debug')
 
-        if '-DNDEBUG' in cflags:
+        if not support.built_with_c_assertions():
             build.append('without_assert')
     else:
         build.append('release')
 
-        if '--with-assertions' in config_args:
-            build.append('with_assert')
-        elif '-DNDEBUG' not in cflags:
+        if support.built_with_c_assertions():
             build.append('with_assert')
 
     # --enable-experimental-jit
@@ -402,7 +401,9 @@ def get_build_info():
 
     # --with-address-sanitizer
     sanitizers = []
-    if support.check_sanitizer(address=True):
+    if support.check_sanitizer(hwaddress=True):
+        sanitizers.append("HWASAN")
+    elif support.check_sanitizer(address=True):
         sanitizers.append("ASAN")
     # --with-memory-sanitizer
     if support.check_sanitizer(memory=True):
@@ -413,6 +414,9 @@ def get_build_info():
     # --with-thread-sanitizer
     if support.check_sanitizer(thread=True):
         sanitizers.append("TSAN")
+    # --with-thread-sanitizer
+    if support.check_sanitizer(function=True):
+        sanitizers.append("fsanitize=function")
     if sanitizers:
         build.append('+'.join(sanitizers))
 
@@ -657,13 +661,36 @@ def display_header(use_resources: dict[str, str | None],
 
     cpu_count: object = os.cpu_count()
     if cpu_count:
-        # The function is new in Python 3.13; mypy doesn't know about it yet:
-        process_cpu_count = os.process_cpu_count()  # type: ignore[attr-defined]
+        process_cpu_count = os.process_cpu_count()
         if process_cpu_count and process_cpu_count != cpu_count:
             cpu_count = f"{process_cpu_count} (process) / {cpu_count} (system)"
         print("== CPU count:", cpu_count)
-    print("== encodings: locale=%s FS=%s"
-          % (locale.getencoding(), sys.getfilesystemencoding()))
+
+    encodings = []
+    if _winapi is not None:
+        # Log ANSI and OEM code pages
+        ansi = f'cp{_winapi.GetACP()}'
+        oem = f'cp{_winapi.GetOEMCP()}'
+        if ansi == oem:
+            encodings.append(f'ansi=oem={ansi}')
+        else:
+            encodings.append(f'ansi={ansi}')
+            encodings.append(f'oem={oem}')
+        encodings.append(f'FS={sys.getfilesystemencoding()}')
+    else:
+        locale_encoding = locale.getencoding()     # nl_langinfo(CODESET)
+        fs_encoding = sys.getfilesystemencoding()  # normalized name
+        if locale_encoding.lower() == fs_encoding.lower():
+            encodings.append(f'locale=FS={fs_encoding}')
+        else:
+            encodings.append(f'locale={locale_encoding}')
+            encodings.append(f'FS={fs_encoding}')
+    if not sys.flags.utf8_mode:
+        encodings.append('utf8=0')
+    if (not sys.flags.ignore_environment
+        and os.environ.get('PYTHONCOERCECLOCALE') == '0'):
+        encodings.append('coerce=0')
+    print(f"== encodings: {' '.join(encodings)}")
 
     if use_resources:
         text = format_resources(use_resources)
@@ -701,6 +728,7 @@ def display_header(use_resources: dict[str, str | None],
     msan = support.check_sanitizer(memory=True)
     ubsan = support.check_sanitizer(ub=True)
     tsan = support.check_sanitizer(thread=True)
+    function_san = support.check_sanitizer(function=True)
     sanitizers = []
     if asan:
         sanitizers.append("address")
@@ -710,12 +738,14 @@ def display_header(use_resources: dict[str, str | None],
         sanitizers.append("undefined behavior")
     if tsan:
         sanitizers.append("thread")
+    if function_san:
+        sanitizers.append("function")
     if sanitizers:
         print(f"== sanitizers: {', '.join(sanitizers)}")
         for sanitizer, env_var in (
             (asan, "ASAN_OPTIONS"),
             (msan, "MSAN_OPTIONS"),
-            (ubsan, "UBSAN_OPTIONS"),
+            (ubsan or function_san, "UBSAN_OPTIONS"),
             (tsan, "TSAN_OPTIONS"),
         ):
             options= os.environ.get(env_var)
