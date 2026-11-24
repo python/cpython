@@ -454,8 +454,8 @@ class TraceTests:
     optimize_python = 0
 
     @classmethod
-    def setUpClass(self):
-        self.backend.assert_usable()
+    def setUpClass(cls):
+        cls.backend.assert_usable()
 
     def run_case(self, name):
         actual_output, expected_output = self.backend.run_case(
