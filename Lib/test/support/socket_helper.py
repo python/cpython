@@ -147,6 +147,7 @@ IPV6_ENABLED = _is_ipv6_enabled()
 _bind_nix_socket_error = None
 def skip_unless_bind_unix_socket(test):
     """Decorator for tests requiring a functional bind() for unix sockets."""
+    test = support.mark('requires_unix_sockets')(test)
     if not hasattr(socket, 'AF_UNIX'):
         return unittest.skip('No UNIX Sockets')(test)
     global _bind_nix_socket_error
