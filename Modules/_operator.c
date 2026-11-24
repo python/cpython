@@ -1072,6 +1072,7 @@ itemgetter_type_new_impl(PyTypeObject *type, PyObject * const *items,
     /* create itemgetterobject structure */
     ig = PyObject_GC_New(itemgetterobject, (PyTypeObject *) state->itemgetter_type);
     if (ig == NULL) {
+        Py_DECREF(item);
         return NULL;
     }
 
