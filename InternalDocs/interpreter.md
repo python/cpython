@@ -332,14 +332,13 @@ argument in a special way (like `FORMAT_VALUE` or `MAKE_FUNCTION`).
 
 If you make a change here that can affect the output of bytecode that
 is already in existence and you do not change the magic number, make
-sure to delete your old .py(c|o) files!  Even though you will end up changing
+sure to delete your old .pyc files!  Even though you will end up changing
 the magic number if you change the bytecode, while you are debugging your work
 you may be changing the bytecode output without constantly bumping up the
 magic number.  This can leave you with stale .pyc files that will not be
 recreated.
-Running `find . -name '*.py[co]' -exec rm -f '{}' +` should delete all .pyc
-files you have, forcing new ones to be created and thus allow you test out your
-new bytecode properly.  Run `make regen-importlib` for updating the
+Run `make pycremoval` to delete the .pyc files in your source tree before
+testing your new bytecode.  Run `make regen-importlib` for updating the
 bytecode of frozen importlib files.  You have to run `make` again after this
 to recompile the generated C files.
 
