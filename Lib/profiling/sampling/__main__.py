@@ -58,13 +58,13 @@ def handle_permission_error():
         print(WINDOWS_PERMISSION_ERROR, file=sys.stderr)
     else:
         print(GENERIC_PERMISSION_ERROR, file=sys.stderr)
-    sys.exit(1)
 
 if __name__ == '__main__':
     try:
         main()
     except PermissionError:
         handle_permission_error()
+        sys.exit(1)
     except SamplingUnknownProcessError as err:
         print(f"Tachyon cannot find the process: {err}", file=sys.stderr)
         sys.exit(1)

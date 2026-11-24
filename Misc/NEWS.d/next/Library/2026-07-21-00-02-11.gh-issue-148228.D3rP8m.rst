@@ -1,3 +1,0 @@
-The :term:`REPL` now displays error messages when editing commands cannot be
-performed, such as when tab completion finds no matches or a history search
-fails. Patch by Bartosz Sławecki.

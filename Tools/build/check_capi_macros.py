@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 """
 Check that all macros defined by the Python C API have a name starting with
 "Py". Ignore names listed by check_capi_macros_ignored.txt: macros with an

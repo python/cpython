@@ -1,6 +1,7 @@
 /* Python's malloc wrappers (see pymem.h) */
 
 #include "Python.h"
+#include "pycore_ceval.h"
 #include "pycore_interp.h"        // _PyInterpreterState_HasFeature
 #include "pycore_mmap.h"          // _PyAnnotateMemoryMap()
 #include "pycore_object.h"        // _PyDebugAllocatorStats() definition
@@ -1424,7 +1425,7 @@ should_advance_qsbr_for_free(struct _qsbr_thread_state *qsbr, size_t size)
     if (size > QSBR_FREE_MEM_LIMIT) {
         qsbr->deferred_count = 0;
         qsbr->deferred_memory = 0;
-        qsbr->should_process = true;
+        _Py_set_eval_breaker_bit(qsbr->tstate, _PY_EVAL_PROCESS_DELAYED_BIT);
         return true;
     }
     qsbr->deferred_count++;
@@ -1433,7 +1434,7 @@ should_advance_qsbr_for_free(struct _qsbr_thread_state *qsbr, size_t size)
             qsbr->deferred_memory > QSBR_FREE_MEM_LIMIT) {
         qsbr->deferred_count = 0;
         qsbr->deferred_memory = 0;
-        qsbr->should_process = true;
+        _Py_set_eval_breaker_bit(qsbr->tstate, _PY_EVAL_PROCESS_DELAYED_BIT);
         return true;
     }
     return false;
@@ -1511,13 +1512,6 @@ free_delayed(uintptr_t ptr, size_t size)
     buf->array[buf->wr_idx].ptr = ptr;
     buf->array[buf->wr_idx].qsbr_goal = seq;
     buf->wr_idx++;
-
-    if (buf->wr_idx == WORK_ITEMS_PER_CHUNK) {
-        // Normally the processing of delayed items is done from the eval
-        // breaker.  Processing here is a safety measure to ensure too much
-        // work does not accumulate.
-        _PyMem_ProcessDelayed((PyThreadState *)tstate);
-    }
 #endif
 }
 
@@ -1625,7 +1619,7 @@ _PyMem_ProcessDelayed(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
 
-    tstate_impl->qsbr->should_process = false;
+    _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_PROCESS_DELAYED_BIT);
 
     // Process thread-local work
     process_queue(&tstate_impl->mem_free_queue, tstate_impl, true, NULL, NULL);

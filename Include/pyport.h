@@ -8,6 +8,13 @@
 #  error "Python's source code assumes C's unsigned char is an 8-bit type"
 #endif
 
+// _Py_STDC_VERSION: the version of the C standard.
+// gh-160208: The C++ standard allows __STDC_VERSION__ to be defined to an
+// arbitrary value, which means we can't use __STDC_VERSION__ on C++.
+#if defined(__STDC_VERSION__) && !defined(__cplusplus)
+#  define _Py_STDC_VERSION __STDC_VERSION__
+#endif
+
 
 // Preprocessor check for a builtin preprocessor function. Always return 0
 // if __has_builtin() macro is not defined.
@@ -190,7 +197,7 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #endif
 
 // Soft deprecated since Python 3.14, use memcpy() instead.
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
 #  define Py_MEMCPY memcpy
 #endif
 
@@ -306,16 +313,15 @@ extern "C" {
  * Usage:
  *    int _Py_HOT_FUNCTION x(void) { return 3; }
  *
- * Issue #28618: This attribute must not be abused, otherwise it can have a
+ * Issue gh-72804: This attribute must not be abused, otherwise it can have a
  * negative effect on performance. Only the functions were Python spend most of
  * its time must use it. Use a profiler when running performance benchmark
  * suite to find these functions.
  */
-#if defined(__GNUC__) \
-    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))
-#define _Py_HOT_FUNCTION __attribute__((hot))
+#if _Py__has_attribute(hot)
+#   define _Py_HOT_FUNCTION __attribute__((hot))
 #else
-#define _Py_HOT_FUNCTION
+#   define _Py_HOT_FUNCTION
 #endif
 
 // Ask the compiler to always inline a static inline function. The compiler can
@@ -491,7 +497,7 @@ extern "C" {
 #ifdef WITH_THREAD
 #  ifdef thread_local
 #    define _Py_thread_local thread_local
-#  elif _Py_STDC_VERSION >= 201112L && !defined(__STDC_NO_THREADS__)
+#  elif defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 201112L && !defined(__STDC_NO_THREADS__)
 #    define _Py_thread_local _Thread_local
 #  elif defined(_MSC_VER)  /* AKA NT_THREADS */
 #    define _Py_thread_local __declspec(thread)

@@ -146,7 +146,7 @@ class BinaryCollector(Collector):
         """Get encoding statistics.
 
         Returns:
-            Dict with encoding statistics including repeat/full/suffix/pop-push
+            Dict with encoding statistics including repeat/full/suffix/reuse
             record counts, frames written/saved, and compression ratio.
         """
         return self._writer.get_stats()

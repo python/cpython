@@ -11300,6 +11300,7 @@ class AllTests(BaseTestCase):
     def test_any_str_deprecated(self):
         # gh-105578
         fresh = import_helper.import_fresh_module('typing')
+        self.addCleanup(atexit.unregister, fresh._clear_caches)
 
         with self.assertWarnsRegex(DeprecationWarning, r'typing\.AnyStr'):
             fresh.AnyStr

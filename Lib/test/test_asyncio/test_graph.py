@@ -526,9 +526,31 @@ class CallStackTestBase:
             'T<anon>',
             ['s capture_test_stack', 'a deep', 'a c1'],
             [
-                ['T<anon>', ['a main', 'a test_stack_gather'], []]
+                ['F', [], [
+                    ['T<anon>', ['a main', 'a test_stack_gather'], []],
+                ]],
             ]
         ])
+
+    async def test_gather_awaited_by_different_task(self):
+        # gh-162061
+        async def consume(fut):
+            await fut
+
+        release = asyncio.Event()
+        child = asyncio.create_task(release.wait())
+        gathered = asyncio.gather(child)
+        consumer = asyncio.create_task(consume(gathered), eager_start=True)
+        graph = asyncio.capture_call_graph(child, limit=0)
+        release.set()
+        await consumer
+        self.assertFalse(asyncio.capture_call_graph(child, limit=0).awaited_by)
+
+        waiter, = graph.awaited_by
+        self.assertIs(waiter.future, gathered)
+        parent, = waiter.awaited_by
+        self.assertIs(parent.future, consumer)
+        self.assertFalse(parent.awaited_by)
 
     async def test_stack_gather_survivor(self):
         # gh-157213: a child that outlives gather() must not be shown as awaited
@@ -969,6 +991,23 @@ class CallStackTestBase:
         await main()
         self.assertEqual(stack[:3], ['gen', 'middle', 'main'])
 
+    def set_eager_task_factory(self):
+        loop = asyncio.get_running_loop()
+        loop.set_task_factory(asyncio.create_eager_task_factory(asyncio.Task))
+        self.addCleanup(loop.set_task_factory, None)
+
+    async def test_stack_eager_task(self):
+        self.set_eager_task_factory()
+
+        async def child():
+            nonlocal stack
+            stack = capture_test_stack()
+
+        stack = None
+        await asyncio.gather(child())
+
+        self.assertEqual(stack[0][2], [['T<anon>', ['a test_stack_eager_task'], []]])
+
 
 @unittest.skipIf(
     not hasattr(asyncio.futures, "_c_future_add_to_awaited_by"),
@@ -1030,6 +1069,17 @@ class TestCallStackPy(CallStackTestBase, unittest.IsolatedAsyncioTestCase):
 
         self._Future = asyncio.Future
         asyncio.Future = futures.Future = futures._PyFuture
+
+        # The real _GatheringFuture subclasses the C Future, which the
+        # pure-Python awaited-by helpers ignore.
+        class _PyGatheringFuture(futures._PyFuture):
+            def __init__(self, children, *, loop):
+                super().__init__(loop=loop)
+                self._children = children
+                self._cancel_requested = False
+            cancel = tasks._GatheringFuture.cancel
+        self.enterContext(mock.patch.object(tasks, '_GatheringFuture',
+                                            _PyGatheringFuture))
 
         self._Task = asyncio.Task
         asyncio.Task = tasks.Task = tasks._PyTask

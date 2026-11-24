@@ -1234,8 +1234,9 @@ AsObjNested(PyObject *value, int depth)
 
     {
         PyObject *v = PyObject_Str(value);
-        if (!v)
-            return 0;
+        if (!v) {
+            return NULL;
+        }
         result = AsObjNested(v, depth);
         Py_DECREF(v);
         return result;
@@ -2101,6 +2102,9 @@ SetVar(TkappObject *self, PyObject *args, int flags)
 
         /* XXX must hold tcl lock already??? */
         newval = AsObj(newValue);
+        if (newval == NULL) {
+            return NULL;
+        }
         if (self->trace) {
             if (flags & TCL_GLOBAL_ONLY) {
                 TRACE(self, ("((sssNO))", "uplevel", "#0", "set",
@@ -3584,6 +3588,20 @@ _tkinter_getbusywaitinterval_impl(PyObject *module)
     return Tkinter_busywaitinterval;
 }
 
+/*[clinic input]
+_tkinter._finalize_thread
+
+Clean up per-thread state.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter__finalize_thread_impl(PyObject *module)
+/*[clinic end generated code: output=4ed0d3be4d1f8de8 input=ea68096ee9b83d23]*/
+{
+    Tcl_FinalizeThread();
+    Py_RETURN_NONE;
+}
+
 #include "clinic/_tkinter.c.h"
 
 static PyMethodDef Tktt_methods[] =
@@ -3681,6 +3699,7 @@ static PyMethodDef moduleMethods[] =
     _TKINTER_CREATE_METHODDEF
     _TKINTER_SETBUSYWAITINTERVAL_METHODDEF
     _TKINTER_GETBUSYWAITINTERVAL_METHODDEF
+    _TKINTER__FINALIZE_THREAD_METHODDEF
     {NULL,                 NULL}
 };
 

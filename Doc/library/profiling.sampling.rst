@@ -1051,7 +1051,7 @@ an interactive flame graph visualization::
    `Try the interactive example <../_static/tachyon-example-flamegraph.html>`__!
 
 If no output file is specified, the profiler generates a filename based on
-the process ID (for example, ``flamegraph.12345.html``).
+the process ID (for example, ``flamegraph_12345.html``).
 
 The generated HTML file requires no external dependencies and can be opened
 directly in a web browser. The visualization displays call stacks as nested

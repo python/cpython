@@ -3343,7 +3343,7 @@ A type that supports weakrefs, instance dicts, and hashing::
        .tp_new = myobj_new,
        .tp_traverse = (traverseproc)myobj_traverse,
        .tp_clear = (inquiry)myobj_clear,
-       .tp_alloc = PyType_GenericNew,
+       .tp_alloc = PyType_GenericAlloc,
        .tp_dealloc = (destructor)myobj_dealloc,
        .tp_repr = (reprfunc)myobj_repr,
        .tp_hash = (hashfunc)myobj_hash,
