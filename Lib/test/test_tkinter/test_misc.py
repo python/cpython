@@ -14,6 +14,7 @@ import tkinter
 from tkinter import TclError, ttk
 import enum
 from test import support
+from test.support import import_helper
 from test.support import os_helper
 from test.support.isolation import runInSubprocess
 from test.support.script_helper import assert_python_ok
@@ -748,6 +749,47 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         acc.emit_selection_change()
         if self.root._windowingsystem != 'aqua':
             acc.emit_focus_change()
+
+    @unittest.skipUnless(sys.platform == 'win32', 'requires Windows')
+    def test_callback_from_foreign_event_loop(self):
+        # gh-84256: Tk can call an event handler when Tcl was not entered
+        # by tkinter, for example when a window message is dispatched
+        # from a foreign event loop while the GIL is released.
+        ctypes = import_helper.import_module('ctypes')
+        from ctypes import wintypes
+        user32 = ctypes.WinDLL('user32')
+        user32.SendMessageW.argtypes = [wintypes.HWND, wintypes.UINT,
+                                        wintypes.WPARAM, wintypes.LPARAM]
+        user32.SetWindowPos.argtypes = [wintypes.HWND, wintypes.HWND,
+                                        ctypes.c_int, ctypes.c_int,
+                                        ctypes.c_int, ctypes.c_int,
+                                        wintypes.UINT]
+        WM_ENTERSIZEMOVE = 0x0231
+        WM_EXITSIZEMOVE = 0x0232
+        SWP_NOMOVE = 0x0002
+        SWP_NOZORDER = 0x0004
+        SWP_NOACTIVATE = 0x0010
+
+        top = tkinter.Toplevel(self.root)
+        top.geometry('200x150')
+        if not wait_until_mapped(top):
+            self.skipTest('the window is not mapped')
+        sizes = []
+        def callback(event):
+            # Call Tcl from the handler.
+            sizes.append((event.width, event.height, top.winfo_width()))
+        top.bind('<Configure>', callback)
+        hwnd = int(top.wm_frame(), 16)
+        # Emulate resizing the window with the mouse: Tk handles the
+        # resulting window messages in its window procedure, outside
+        # of the Tcl event loop run by tkinter.
+        user32.SendMessageW(hwnd, WM_ENTERSIZEMOVE, 0, 0)
+        try:
+            user32.SetWindowPos(hwnd, None, 0, 0, 250, 180,
+                                SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE)
+        finally:
+            user32.SendMessageW(hwnd, WM_EXITSIZEMOVE, 0, 0)
+        self.assertTrue(sizes)
 
     def test_wait_variable(self):
         var = tkinter.StringVar(self.root)
