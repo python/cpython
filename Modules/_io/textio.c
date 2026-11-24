@@ -1148,7 +1148,10 @@ _io.TextIOWrapper.__init__
 Character and line based layer over a BufferedIOBase object, buffer.
 
 encoding gives the name of the encoding that the stream will be
-decoded or encoded with. It defaults to locale.getencoding().
+decoded or encoded with. It defaults to UTF-8; if UTF-8 Mode is
+disabled, the encoding returned by locale.getencoding() is used
+instead.  See the codecs module for the list of supported
+encodings.
 
 errors determines the strictness of encoding and decoding (see
 help(codecs.Codec) or the documentation for codecs.register) and
@@ -1180,7 +1183,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                                 const char *encoding, PyObject *errors,
                                 const char *newline, int line_buffering,
                                 int write_through)
-/*[clinic end generated code: output=72267c0c01032ed2 input=0f077220214c40a4]*/
+/*[clinic end generated code: output=72267c0c01032ed2 input=4f0bee5a0b2302fd]*/
 {
     PyObject *raw, *codec_info = NULL;
     PyObject *res;
