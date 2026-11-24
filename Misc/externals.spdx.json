@@ -175,21 +175,21 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "00bbd88709bc416cb96160ab61d3e1c8f76e106799af7328d0fe434dc7dd5004"
+          "checksumValue": "a9734c94080792af0b50d9c51c2cc8845c2f8ecfa4db87f6462a9b260af67f96"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/zlib-ng-2.2.4.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/zlib-ng-2.2.5.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:zlib-ng:zlib-ng:2.2.4:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:zlib-ng:zlib-ng:2.2.5:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "zlib-ng",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2.2.4"
+      "versionInfo": "2.2.5"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-zstd",

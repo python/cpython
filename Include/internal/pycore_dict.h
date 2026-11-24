@@ -170,6 +170,10 @@ PyAPI_FUNC(int) _PyDict_SetItem_KnownHash_LockHeld(PyDictObject *mp, PyObject *k
 PyAPI_FUNC(int) _PyDict_GetItemRef_KnownHash_LockHeld(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
 PyAPI_FUNC(int) _PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
 extern int _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result);
+extern PyObject *_PyDict_GetItem_ExactUnicode(PyDictObject *mp, PyObject *key);
+extern int _PyDict_GetItemStackRef_ExactUnicode(PyDictObject *mp,
+                                                PyObject *key,
+                                                _PyStackRef *value_addr);
 PyAPI_FUNC(int) _PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr, PyObject *name, PyObject *value);
 
 extern int _PyDict_Pop_KnownHash(
@@ -354,8 +358,8 @@ _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
     uint8_t *array = get_insertion_order_array(values);
     assert(size < values->capacity);
     assert(((uint8_t)ix) == ix);
-    array[size] = (uint8_t)ix;
-    values->size = size+1;
+    FT_ATOMIC_STORE_UINT8_RELAXED(array[size], (uint8_t)ix);
+    FT_ATOMIC_STORE_UINT8_RELEASE(values->size, size+1);
 }
 
 // Exported for external JIT support

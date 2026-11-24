@@ -21,6 +21,8 @@ MSVC = support.MS_WINDOWS
 if not MSVC:
     # C compiler flags for GCC and clang
     BASE_CFLAGS = [
+        '-Wall',
+        '-Wextra',
         # The purpose of test_cext extension is to check that building a C
         # extension using the Python C API does not emit C compiler warnings.
         '-Werror',
@@ -40,6 +42,9 @@ if not MSVC:
 
         # Ask for strict(er) compliance with the standard
         '-pedantic-errors',
+
+        # gh-154643: Headers should not use undefined macros in #if
+        '-Werror=undef',
     ]
     if not support.Py_GIL_DISABLED:
         PUBLIC_CFLAGS.append(
@@ -47,7 +52,11 @@ if not MSVC:
             # with the -Werror=declaration-after-statement compiler flag.
             '-Werror=declaration-after-statement',
         )
-    INTERNAL_CFLAGS = [*BASE_CFLAGS]
+    INTERNAL_CFLAGS = [
+        *BASE_CFLAGS,
+        # Do not complain about unused parameteres in the internal C API
+        '-Wno-unused-parameter',
+    ]
 else:
     # MSVC compiler flags
     BASE_CFLAGS = [
@@ -70,14 +79,16 @@ else:
 
 if not MSVC:
     # C++ compiler flags for GCC and clang
-    CPPFLAGS = [
+    CXXFLAGS = [
+        '-Wall',
+        '-Wextra',
         # gh-91321: The purpose of _testcppext extension is to check that building
         # a C++ extension using the Python C API does not emit C++ compiler
         # warnings
         '-Werror',
     ]
 
-    CPPFLAGS_PEDANTIC = [
+    PEDANTIC_CXXFLAGS = [
         # Ask for strict(er) compliance with the standard.
         # We cannot do this for c++03 unlimited API, since several headers in
         # Include/cpython/ use commas at end of `enum` declarations, a C++11
@@ -86,16 +97,24 @@ if not MSVC:
 
         # We also use `long long`, a C++11 feature we can enable individually.
         '-Wno-long-long',
+
+        # gh-154643: Headers should not use undefined macros in #if
+        '-Werror=undef',
+    ]
+    INTERNAL_CXXFLAGS = [
+        # Do not complain about unused parameteres in the internal C API
+        '-Wno-unused-parameter',
     ]
 else:
     # MSVC compiler flags
-    CPPFLAGS = [
+    CXXFLAGS = [
         # Display warnings level 1 to 4
         '/W4',
         # Treat all compiler warnings as compiler errors
         '/WX',
     ]
-    CPPFLAGS_PEDANTIC = []
+    PEDANTIC_CXXFLAGS = []
+    INTERNAL_CXXFLAGS = []
 
 
 def main():
@@ -109,10 +128,13 @@ def main():
     libdirs = os.environ.get("CPYTHON_TEST_EXTRA_LIBDIRS", "")
     extra_cflags = os.environ.get("CPYTHON_TEST_EXTRA_CFLAGS", "")
 
+    if language not in ('C', 'C++'):
+        raise ValueError(f"invalid language: {language}")
+
     source = SOURCE[language]
 
     if language == 'C++':
-        flags = list(CPPFLAGS)
+        flags = list(CXXFLAGS)
     else:
         if not internal:
             flags = list(PUBLIC_CFLAGS)
@@ -127,9 +149,13 @@ def main():
         else:
             flags.append(f'-std={std}')
 
-    if language == 'C++' and (limited or (std != 'c++03') and not internal):
-        # See CPPFLAGS_PEDANTIC docstring
-        flags.extend(CPPFLAGS_PEDANTIC)
+    if language == 'C++':
+        if limited or (std != 'c++03') and not internal:
+            # See PEDANTIC_CXXFLAGS comment
+            flags.extend(PEDANTIC_CXXFLAGS)
+        elif internal:
+            flags.extend(INTERNAL_CXXFLAGS)
+
 
     # gh-105776: When "gcc -std=11" is used as the C++ compiler, -std=c11
     # option emits a C++ compiler warning. Remove "-std11" option from the

@@ -397,7 +397,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsUTF8String(
    when the unicodeobject is deallocated.
 */
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 10)
 PyAPI_FUNC(const char *) PyUnicode_AsUTF8AndSize(
     PyObject *unicode,
     Py_ssize_t *size);
@@ -900,7 +900,7 @@ PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
     const char *right           /* ASCII-encoded string */
     );
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 /* Compare a Unicode object with UTF-8 encoded C string.
    Return 1 if they are equal, or 0 otherwise.
    This function does not raise exceptions. */
@@ -909,7 +909,7 @@ PyAPI_FUNC(int) PyUnicode_EqualToUTF8(PyObject *, const char *);
 PyAPI_FUNC(int) PyUnicode_EqualToUTF8AndSize(PyObject *, const char *, Py_ssize_t);
 #endif
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
 PyAPI_FUNC(int) PyUnicode_Equal(PyObject *str1, PyObject *str2);
 #endif
 
@@ -954,7 +954,59 @@ PyAPI_FUNC(int) PyUnicode_Contains(
 
 PyAPI_FUNC(int) PyUnicode_IsIdentifier(PyObject *s);
 
-/* === Characters Type APIs =============================================== */
+
+/* === Public PyUnicodeWriter API ========================================= */
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 16)
+typedef struct PyUnicodeWriter PyUnicodeWriter;
+
+PyAPI_FUNC(PyUnicodeWriter*) PyUnicodeWriter_Create(Py_ssize_t length);
+PyAPI_FUNC(void) PyUnicodeWriter_Discard(PyUnicodeWriter *writer);
+PyAPI_FUNC(PyObject*) PyUnicodeWriter_Finish(PyUnicodeWriter *writer);
+
+PyAPI_FUNC(int) PyUnicodeWriter_WriteChar(
+    PyUnicodeWriter *writer,
+    Py_UCS4 ch);
+PyAPI_FUNC(int) PyUnicodeWriter_WriteUTF8(
+    PyUnicodeWriter *writer,
+    const char *str,
+    Py_ssize_t size);
+PyAPI_FUNC(int) PyUnicodeWriter_WriteASCII(
+    PyUnicodeWriter *writer,
+    const char *str,
+    Py_ssize_t size);
+PyAPI_FUNC(int) PyUnicodeWriter_WriteWideChar(
+    PyUnicodeWriter *writer,
+    const wchar_t *str,
+    Py_ssize_t size);
+PyAPI_FUNC(int) PyUnicodeWriter_WriteUCS4(
+    PyUnicodeWriter *writer,
+    const Py_UCS4 *str,
+    Py_ssize_t size);
+
+PyAPI_FUNC(int) PyUnicodeWriter_WriteStr(
+    PyUnicodeWriter *writer,
+    PyObject *obj);
+PyAPI_FUNC(int) PyUnicodeWriter_WriteRepr(
+    PyUnicodeWriter *writer,
+    PyObject *obj);
+PyAPI_FUNC(int) PyUnicodeWriter_WriteSubstring(
+    PyUnicodeWriter *writer,
+    PyObject *str,
+    Py_ssize_t start,
+    Py_ssize_t end);
+PyAPI_FUNC(int) PyUnicodeWriter_Format(
+    PyUnicodeWriter *writer,
+    const char *format,
+    ...);
+PyAPI_FUNC(int) PyUnicodeWriter_DecodeUTF8Stateful(
+    PyUnicodeWriter *writer,
+    const char *str,            /* UTF-8 encoded string */
+    Py_ssize_t size,            /* size of string */
+    const char *errors,         /* error handling */
+    Py_ssize_t *consumed);      /* bytes consumed */
+#endif  // !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 16)
+
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_UNICODEOBJECT_H

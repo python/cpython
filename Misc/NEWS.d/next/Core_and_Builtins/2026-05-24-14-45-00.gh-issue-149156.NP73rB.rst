@@ -1,3 +1,0 @@
-Fix an intermittent crash after :func:`os.fork` when perf trampoline
-profiling is enabled and the child returns through trampoline frames
-inherited from the parent process.

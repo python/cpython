@@ -41,6 +41,8 @@ typedef struct {
 } _PyTok_Chunk;
 
 typedef struct _PyTok_Reader {
+    FILE *fp;  // Borrowed input stream; NULL for string and readline input.
+    char *encoding;  // Owned source encoding.
     PyObject *readline;
     PyObject *decoder;
     const char *prompt;
@@ -56,7 +58,7 @@ typedef struct _PyTok_Reader {
     Py_ssize_t decoded_len;
     Py_ssize_t decoded_cap;
     _PyTok_ReaderKind kind;
-    unsigned char prepared_final_newline_is_implicit;
+    unsigned char prepared_final_newline;  // _PyTokenizer_Newline
     unsigned char decoded_tail_is_implicit;
     unsigned char file_initialized;
     unsigned char file_eof;

@@ -1,2 +1,0 @@
-Fix :mod:`profiling.sampling` failing when a native thread has an empty Python
-stack.

@@ -5,6 +5,21 @@ preserve
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
+static PyObject *
+dict_repr_impl(PyObject *self);
+
+static PyObject *
+dict_repr(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dict_repr_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(dict_fromkeys__doc__,
 "fromkeys($type, iterable, value=None, /)\n"
 "--\n"
@@ -341,4 +356,4 @@ frozendict_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return frozendict_copy_impl((PyFrozenDictObject *)self);
 }
-/*[clinic end generated code: output=f4c88a3464928ae3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=46d2d00147dd7917 input=a9049054013a1b77]*/

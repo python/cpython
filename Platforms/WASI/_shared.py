@@ -1,19 +1,25 @@
 __lazy_modules__ = [
+    "contextlib",
     "functools",
     "json",
     "os",
     "pathlib",
+    "shutil",
     "subprocess",
+    "sys",
     "sysconfig",
     "tempfile",
     "tomllib",
 ]
 
+import contextlib
 import functools
 import json
 import os
 import pathlib
+import shutil
 import subprocess
+import sys
 import sysconfig
 import tempfile
 import tomllib
@@ -24,6 +30,7 @@ class Context:
 
     def __init__(self):
         self.here = pathlib.Path(__file__).parent
+        self.orig_cwd = pathlib.Path.cwd()
 
     @functools.cached_property
     def checkout(self):
@@ -178,11 +185,116 @@ class Context:
         return wasi_sdk_path
 
     @functools.cached_property
+    def configure_args(self):
+        args = getattr(self, "_args", [])
+        if self.release:
+            args.extend(["--without-static-libpython"])
+        return args
+
+    @functools.cached_property
     def log_path(self):
         if self._log_path is not None:
-            return self._log_path
+            if not (path := self._log_path).is_absolute():
+                path = (self.orig_cwd / self._log_path).resolve()
+            return path
 
         return pathlib.Path(tempfile.gettempdir())
+
+    @functools.cached_property
+    def dist_path(self):
+        return self.checkout / "dist"
+
+    @functools.cached_property
+    def archive_stem(self):
+        version_info = self.wasi_build_details["language"]["version_info"]
+        version = f"python-{version_info['major']}.{version_info['minor']}.{version_info['micro']}"
+        if version_info["releaselevel"] != "final":
+            version += version_info["releaselevel"][0] + str(
+                version_info["serial"]
+            )
+
+        return f"{version}-{self.host_triple}"
+
+    @functools.cached_property
+    def archive_dir(self):
+        return self.dist_path / self.archive_stem
+
+    @functools.cached_property
+    def archive_path(self):
+        return self.dist_path / f"{self.archive_stem}.tar.xz"
+
+    @functools.cached_property
+    def dist_python_interpreter(self):
+        version = self.python_version(debug_ok=True)
+        return self.archive_dir / "bin" / f"python{version}.wasmtime"
+
+    def python_version(self, debug_ok=False):
+        """Calculate the M.N part of Python's version.
+
+        If *debug_ok* is True, then "d" is appended as appropriate.
+        """
+        major = self.wasi_build_version["major"]
+        minor = self.wasi_build_version["minor"]
+        version = f"{major}.{minor}"
+        if debug_ok and "d" in self.wasi_build_details["abi"]["flags"]:
+            version += "d"
+        return version
+
+    def call(self, command, *, env=None, quiet=None, **kwargs):
+        """Execute a command.
+
+        Print changes to the execution environment if 'env' is provided.
+        If 'quiet' is None, use the context's setting. If true, redirect
+        stdout and stderr to a temporary file.
+        """
+        if quiet is None:
+            quiet = self.quiet
+
+        if env is not None:
+            env_diff = {}
+            for key, value in env.items():
+                if os.environ.get(key) != value:
+                    env_diff[key] = value
+
+            env_vars = [
+                f"\n     {key}={item}"
+                for key, item in sorted(env_diff.items())
+            ]
+            log("🌎", f"Environment changes:{''.join(env_vars)}")
+
+        log("❯", " ".join(map(str, command)), spacing="  ")
+        if not quiet:
+            stdout = None
+            stderr = None
+        else:
+            log_path = self.log_path
+            log_path.mkdir(parents=True, exist_ok=True)
+            stdout = tempfile.NamedTemporaryFile(
+                "w",
+                encoding="utf-8",
+                delete=False,
+                dir=log_path,
+                prefix="cpython-wasi-",
+                suffix=".log",
+            )
+            stderr = subprocess.STDOUT
+            log("📝", f"Logging output to {stdout.name} (--quiet)...")
+
+        try:
+            subprocess.check_call(
+                command, **kwargs, env=env, stdout=stdout, stderr=stderr
+            )
+        except subprocess.CalledProcessError as error:
+            if quiet:
+                log("❌", f"Exit code {error.returncode}")
+                separator()
+                with open(stdout.name, encoding="utf-8") as file:
+                    lines = file.readlines()
+                    # Inefficient, but the log shouldn't be dramatically large.
+                    print("".join(lines[-10:]), end="")
+                    if not lines[-1].endswith("\n"):
+                        print()
+            sys.exit(error.returncode)
 
 
 def log(emoji, message, *, spacing=None):
@@ -194,3 +306,59 @@ def log(emoji, message, *, spacing=None):
     if spacing is None:
         spacing = " " if len(emoji) == 1 else "  "
     print("".join([emoji, spacing, message]))
+
+
+def separator():
+    """Print a separator line across the terminal width."""
+    try:
+        tput_output = subprocess.check_output(
+            ["tput", "cols"], encoding="utf-8"
+        )
+    except subprocess.CalledProcessError:
+        terminal_width = 80
+    else:
+        terminal_width = int(tput_output.strip())
+    print("⎯" * terminal_width)
+
+
+def updated_env(updates={}):
+    """Create a new dict representing the environment to use."""
+    env_defaults = {}
+    # https://reproducible-builds.org/docs/source-date-epoch/
+    git_epoch_cmd = ["git", "log", "-1", "--pretty=%ct"]
+    try:
+        epoch = subprocess.check_output(
+            git_epoch_cmd, encoding="utf-8"
+        ).strip()
+        env_defaults["SOURCE_DATE_EPOCH"] = epoch
+    except subprocess.CalledProcessError:
+        pass  # Might be building from a tarball.
+    # This layering lets SOURCE_DATE_EPOCH from os.environ takes precedence.
+    environment = env_defaults | os.environ | updates
+
+    return environment
+
+
+def subdir(context_attr, *, clean_ok=False):
+    """Decorator to change to a working directory."""
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(context):
+            nonlocal context_attr
+
+            working_dir = getattr(context, context_attr)
+            separator()
+            log("📁", os.fsdecode(working_dir))
+            if clean_ok and context.clean and working_dir.exists():
+                log("🚮", "Deleting directory (--clean)...")
+                shutil.rmtree(working_dir)
+
+            working_dir.mkdir(parents=True, exist_ok=True)
+
+            with contextlib.chdir(working_dir):
+                return func(context, working_dir)
+
+        return wrapper
+
+    return decorator

@@ -31,7 +31,7 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/checkout@v7.0.1
       with:
         persist-credentials: false
     - name: Runner image version
@@ -51,6 +51,7 @@ jobs:
           --enable-slower-safety \
           --enable-safety \
           ${{ inputs.free-threading && '--disable-gil' || '' }} \
+          --with-tail-call-interp \
           --prefix=/opt/python-dev \
           --with-openssl="$(brew --prefix openssl@3.5)"
     - name: Build CPython

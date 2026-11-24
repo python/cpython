@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 """
 Check that all macros defined by the Python C API have a name starting with
 "Py". Ignore names listed by check_capi_macros_ignored.txt: macros with an
@@ -93,6 +94,7 @@ def main():
              if os.path.basename(filename) not in EXCLUDE_HEADERS]
     files.extend(glob.glob(os.path.join(include_dir, 'cpython', '*.h')))
     files.append(os.path.join(SRC_DIR, 'pyconfig.h.in'))
+    files.append(os.path.join(SRC_DIR, 'PC/pyconfig.h'))
     names = []  # list of (name: str, filename: str, lineno: int, cause: str)
     for filename in files:
         parse_file(filename, names)

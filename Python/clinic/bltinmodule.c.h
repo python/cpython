@@ -279,6 +279,67 @@ PyDoc_STRVAR(builtin_callable__doc__,
 #define BUILTIN_CALLABLE_METHODDEF    \
     {"callable", (PyCFunction)builtin_callable, METH_O, builtin_callable__doc__},
 
+PyDoc_STRVAR(filter_new__doc__,
+"filter(function, iterable, /)\n"
+"--\n"
+"\n"
+"Return an iterator over items of iterable where function(item) is true.\n"
+"\n"
+"If function is None, return the items that are true.");
+
+static PyObject *
+filter_new_impl(PyTypeObject *type, PyObject *func, PyObject *seq);
+
+static PyObject *
+filter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyFilter_Type;
+    PyObject *func;
+    PyObject *seq;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("filter", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("filter", PyTuple_GET_SIZE(args), 2, 2)) {
+        goto exit;
+    }
+    func = PyTuple_GET_ITEM(args, 0);
+    seq = PyTuple_GET_ITEM(args, 1);
+    return_value = filter_new_impl(type, func, seq);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+filter_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *func;
+    PyObject *seq;
+
+    assert(_PyType_CAST(type)->tp_new == filter_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("filter", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("filter", nargs, 2, 2)) {
+        goto exit;
+    }
+    func = args[0];
+    seq = args[1];
+    return_value = filter_new_impl(_PyType_CAST(type), func, seq);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_format__doc__,
 "format($module, value, format_spec=\'\', /)\n"
 "--\n"
@@ -970,86 +1031,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(builtin_aiter__doc__,
-"aiter($module, object, /, [stop_value], *, stop_exception=StopAsyncIteration)\n"
-"--\n"
-"\n"
-"Return an AsyncIterator for an AsyncIterable object.\n"
-"\n"
-"In the second form, the callable is called and its result is awaited\n"
-"until it returns the stop value or raises the specified exception.");
-
-#define BUILTIN_AITER_METHODDEF    \
-    {"aiter", _PyCFunction_CAST(builtin_aiter), METH_FASTCALL|METH_KEYWORDS, builtin_aiter__doc__},
-
-static PyObject *
-builtin_aiter_impl(PyObject *module, PyObject *object, PyObject *stop_value,
-                   PyObject *stop_exception);
-
-static PyObject *
-builtin_aiter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(stop_value), &_Py_ID(stop_exception), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"", "stop_value", "stop_exception", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "aiter",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[3];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    PyObject *object;
-    PyObject *stop_value = NULL;
-    PyObject *stop_exception = NULL;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    object = args[0];
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    if (args[1]) {
-        stop_value = args[1];
-        if (!--noptargs) {
-            goto skip_optional_pos;
-        }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
-    }
-    stop_exception = args[2];
-skip_optional_kwonly:
-    return_value = builtin_aiter_impl(module, object, stop_value, stop_exception);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(builtin_len__doc__,
 "len($module, obj, /)\n"
 "--\n"
@@ -1575,4 +1556,109 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ac4800dc25f87f6e input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(zip_new__doc__,
+"zip(*iterables, strict=False)\n"
+"--\n"
+"\n"
+"Iterate over several iterables in parallel, yielding tuples.\n"
+"\n"
+"The zip object yields n-length tuples, where n is the number of\n"
+"iterables passed as positional arguments to zip().  The i-th element\n"
+"in every tuple comes from the i-th iterable argument to zip().  This\n"
+"continues until the shortest argument is exhausted.\n"
+"\n"
+"If strict is true and one of the arguments is exhausted before the\n"
+"others, raise a ValueError.\n"
+"\n"
+"   >>> list(zip(\'abcdefg\', range(3), range(4)))\n"
+"   [(\'a\', 0, 0), (\'b\', 1, 1), (\'c\', 2, 2)]");
+
+static PyObject *
+zip_new_impl(PyTypeObject *type, PyObject * const *iterables,
+             Py_ssize_t iterables_length, int strict);
+
+static PyObject *
+zip_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(strict), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"strict", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "zip",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t noptargs = 0 + nkw - 0;
+    PyObject * const *iterables;
+    Py_ssize_t iterables_length;
+    int strict = 0;
+
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 1, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    strict = PyObject_IsTrue(fastargs[0]);
+    if (strict < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    iterables = args;
+    iterables_length = nargs;
+    return_value = zip_new_impl(type, iterables, iterables_length, strict);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+zip_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return zip_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+zip_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    assert(_PyType_CAST(type)->tp_new == zip_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    return zip_new_helper(_PyType_CAST(type), args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
+}
+/*[clinic end generated code: output=a67fa5cf74c85d07 input=a9049054013a1b77]*/
