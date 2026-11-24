@@ -6293,6 +6293,9 @@ Miscellaneous System Information
 
    .. versionadded:: 3.13
 
+   .. versionchanged:: 3.16
+      Previously cgroups CPU limits were not used.
+
 
 .. function:: sysconf(name, /)
 
