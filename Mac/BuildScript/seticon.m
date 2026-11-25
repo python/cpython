@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 	[NSApplication sharedApplication];
 
 	[[NSWorkspace sharedWorkspace]
-		setIcon: [[NSImage alloc] initWithContentsOfFile: iconPath]
+		setIcon: [[[NSImage alloc] initWithContentsOfFile: iconPath] autorelease]
 		forFile: filePath
 		options: 0];
 	[pool release];
