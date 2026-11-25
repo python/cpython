@@ -410,7 +410,7 @@ depr_star_init_noinline(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *b;
     PyObject *c = Py_None;
     const char *d = "";
-    Py_ssize_t d_length;
+    Py_ssize_t d_length = 0;
 
     if (nargs > 1 && nargs <= 3) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -654,7 +654,7 @@ depr_kwd_init_noinline(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *b;
     PyObject *c = Py_None;
     const char *d = "";
-    Py_ssize_t d_length;
+    Py_ssize_t d_length = 0;
 
     if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
         &a, &b, &c, &d, &d_length)) {
@@ -1515,7 +1515,7 @@ depr_star_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *b;
     PyObject *c = Py_None;
     const char *d = "";
-    Py_ssize_t d_length;
+    Py_ssize_t d_length = 0;
 
     if (nargs > 1 && nargs <= 3) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -2242,7 +2242,7 @@ depr_kwd_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     PyObject *b;
     PyObject *c = Py_None;
     const char *d = "";
-    Py_ssize_t d_length;
+    Py_ssize_t d_length = 0;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
         &a, &b, &c, &d, &d_length)) {
@@ -2682,4 +2682,4 @@ depr_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=abe0af8d8c637c36 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=17d7bf6d51872e2c input=a9049054013a1b77]*/

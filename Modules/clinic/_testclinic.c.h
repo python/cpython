@@ -1528,7 +1528,7 @@ str_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *a = "a";
     const char *b = "b";
     const char *c = "c";
-    Py_ssize_t c_length;
+    Py_ssize_t c_length = 1;
 
     if (!PyArg_ParseArray(args, nargs, "|sys#:str_converter",
         &a, &b, &c, &c_length)) {
@@ -5309,4 +5309,4 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=b54b37db716469cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1824c307178c9611 input=a9049054013a1b77]*/
