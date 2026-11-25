@@ -73,13 +73,22 @@ class DateTimeTests(unittest.TestCase):
     def test_http2time_two_digit_year(self):
         # RFC 6265 section 5.1.1: two-digit years 00-69 mean 2000-2069 and
         # 70-99 mean 1970-1999, independent of the current date.
-        self.assertEqual(http2time("Thu, 01-Jan-70 00:00:01 GMT"), 1)
-        self.assertEqual(time.gmtime(http2time("01-Jan-69"))[:6],
+        cases = [
+            ("01-Jan-00", (2000, 1, 1, 0, 0, 0.0)),
+            ("01-Jan-69", (2069, 1, 1, 0, 0, 0.0)),
+            ("01-Jan-70", (1970, 1, 1, 0, 0, 0.0)),
+            ("01-Jan-99", (1999, 1, 1, 0, 0, 0.0)),
+            ("01-Jan-1970", (1970, 1, 1, 0, 0, 0.0)),
+            ("01-Jan-2069", (2069, 1, 1, 0, 0, 0.0)),
+            ("01-Jan-2070", (2070, 1, 1, 0, 0, 0.0)),
+        ]
+        for text, expected in cases:
+            with self.subTest(text=text):
+                self.assertEqual(time.gmtime(http2time(text))[:6], expected)
+
+        self.assertEqual(http2time(" \tThu, 01-Jan-70 00:00:01 GMT\n"), 1)
+        self.assertEqual(time.gmtime(http2time(" 01-Jan-69 \n"))[:6],
                          (2069, 1, 1, 0, 0, 0.0))
-        self.assertEqual(time.gmtime(http2time("01-Jan-70"))[:6],
-                         (1970, 1, 1, 0, 0, 0.0))
-        self.assertEqual(time.gmtime(http2time("01-Jan-99"))[:6],
-                         (1999, 1, 1, 0, 0, 0.0))
 
     def test_http2time_formats(self):
         # test http2time for supported dates.  Test cases with 2 digit year
@@ -1557,7 +1566,7 @@ class CookieTests(unittest.TestCase):
         self.assertEqual([cookie.name for cookie in c], ["session"])
         interact_netscape(c, url,
                           "session=; Path=/; Expires=Thu, 01-Jan-70 00:00:01 GMT")
-        self.assertEqual(list(c), [])
+        self.assertListEqual(list(c), [])
 
 
 class LWPCookieTests(unittest.TestCase):

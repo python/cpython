@@ -1,1 +1,1 @@
-Fix ``http.cookiejar.http2time()`` to interpret two-digit years per RFC 6265 section 5.1.1 (70-99 as 1970-1999, 00-69 as 2000-2069) instead of choosing the century closest to the current date. This allows a two-digit ``Expires`` year such as ``01-Jan-70`` to expire a cookie.
+Fix ``http.cookiejar.http2time()`` to interpret two-digit years per :rfc:`6265#5.1.1` (70-99 as 1970-1999, 00-69 as 2000-2069) instead of choosing the century closest to the current date. This allows a two-digit ``Expires`` year such as ``01-Jan-70`` to expire a cookie.
