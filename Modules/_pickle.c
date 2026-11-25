@@ -658,6 +658,11 @@ typedef struct PicklerObject {
     Py_ssize_t weak_only_count; /* Number of memo entries flagged weak-only;
                                    any left at the end of dump() are pickling
                                    errors. */
+    PyObject *weak_referent;    /* Referent of the innermost weak save in
+                                   progress, or NULL.  Borrowed and only
+                                   compared by identity; save_weakref() holds
+                                   a reference while it is set. */
+    Py_ssize_t weak_memo_size;  /* Size of the memo when that save started. */
 } PicklerObject;
 
 typedef struct UnpicklerObject {
@@ -1184,6 +1189,8 @@ _Pickler_New(PickleState *st)
     self->fast_memo = NULL;
     self->buffer_callback = NULL;
     self->weak_only_count = 0;
+    self->weak_referent = NULL;
+    self->weak_memo_size = 0;
 
     PyObject_GC_Track(self);
     return self;
@@ -4699,8 +4706,38 @@ save_weakref(PickleState *st, PicklerObject *self, PyObject *obj)
     if (self->proto < 2 && _Pickler_Write(self, &mark_op, 1) < 0)
         goto done;
 
-    if (save_object(st, self, referent, 0, 1) < 0)
-        goto done;
+    if (anchored || self->fast) {
+        if (save_object(st, self, referent, 0, 1) < 0)
+            goto done;
+    }
+    else {
+        /* The referent is not in the memo yet.  If the innermost weak save in
+           progress is a save of this same referent and nothing has been
+           memoized since it started, saving the referent again would repeat
+           the same steps without end: its reduce arguments contain a weak
+           reference to it, as for an instance of a weakref.ref subclass
+           reduced by copyreg._reduce_ex().  This relies on an object being
+           reduced the same way each time.  Fast mode does not support
+           self-referential objects in any case. */
+        Py_ssize_t memo_size = PyMemoTable_Size(self->memo);
+        if (self->weak_referent == referent &&
+            self->weak_memo_size == memo_size)
+        {
+            PyErr_Format(PyExc_TypeError,
+                         "cannot pickle '%.200s' object",
+                         Py_TYPE(referent)->tp_name);
+            goto done;
+        }
+        PyObject *outer_referent = self->weak_referent;
+        Py_ssize_t outer_memo_size = self->weak_memo_size;
+        self->weak_referent = referent;
+        self->weak_memo_size = memo_size;
+        int res = save_object(st, self, referent, 0, 1);
+        self->weak_referent = outer_referent;
+        self->weak_memo_size = outer_memo_size;
+        if (res < 0)
+            goto done;
+    }
 
     if (!anchored) {
         Py_ssize_t *value = PyMemoTable_Get(self->memo, referent);

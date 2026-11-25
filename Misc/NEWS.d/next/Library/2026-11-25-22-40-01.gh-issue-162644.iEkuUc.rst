@@ -1,0 +1,5 @@
+Fix infinite recursion when pickling an instance of a :class:`weakref.ref`
+subclass with protocol 0 or 1 if the subclass does not define its own
+reduction method. :exc:`TypeError` is raised again instead of
+:exc:`RecursionError`. In most cases this also applies to other objects that
+cannot be created without a weak reference to themselves.

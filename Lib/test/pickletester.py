@@ -1817,6 +1817,10 @@ class WeakrefTarget:
     __hash__ = None
 
 
+class WeakrefSubclass(weakref.ref):
+    pass
+
+
 class AbstractPicklingErrorTests:
     # Subclass must define self.dumps, self.pickler.
 
@@ -1828,6 +1832,31 @@ class AbstractPicklingErrorTests:
         for proto in protocols:
             with self.subTest(proto=proto):
                 self.assertRaises(pickle.PicklingError, self.dumps, wr, proto)
+
+    def test_weakref_subclass(self):
+        # With protocols 0 and 1 the reduce arguments of the instance contain
+        # a weak reference to the instance itself.
+        obj = WeakrefTarget()
+        wr = WeakrefSubclass(obj)
+        msg = "cannot pickle 'WeakrefSubclass' object"
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                with self.assertRaisesRegex(TypeError, msg):
+                    self.dumps([obj, wr], proto)
+                with self.assertRaisesRegex(TypeError, msg):
+                    self.dumps([obj, weakref.ref(wr), wr], proto)
+
+    def test_weakref_to_self_in_reduce_args(self):
+        # The object cannot be created without a weak reference to itself.
+        obj = K(None)
+        obj.value = weakref.ref(obj)
+        msg = "cannot pickle 'K' object"
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                with self.assertRaisesRegex(TypeError, msg):
+                    self.dumps(obj, proto)
+                with self.assertRaisesRegex(TypeError, msg):
+                    self.dumps([obj.value, obj], proto)
 
     def test_weakref_without_strong_ref(self):
         # The error names the distinct referent types: bounded however many
@@ -3650,6 +3679,27 @@ class AbstractPickleTests:
                 # Identity holds regardless of pickling order.
                 wr2, obj2 = self.loads(self.dumps([wr, obj], proto))
                 self.assertIs(wr2(), obj2)
+
+    def test_weakref_in_reduce_args(self):
+        if self.py_version < (3, 16):
+            self.skipTest('not supported in Python < 3.16')
+        # The object is created from a list containing a weak reference to
+        # the object.
+        value = []
+        obj = K(value)
+        wr = weakref.ref(obj)
+        value.append(wr)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                obj2, wr2 = self.loads(self.dumps([obj, wr], proto))
+                self.assertIsInstance(obj2, K)
+                self.assertIs(wr2(), obj2)
+                self.assertIs(obj2.value[0], wr2)
+                # Identity holds regardless of pickling order.
+                wr2, obj2 = self.loads(self.dumps([wr, obj], proto))
+                self.assertIsInstance(obj2, K)
+                self.assertIs(wr2(), obj2)
+                self.assertIs(obj2.value[0], wr2)
 
     def test_weakref_callback(self):
         if self.py_version < (3, 16):

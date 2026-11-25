@@ -489,6 +489,9 @@ class _Pickler:
         # Ids of objects reached so far only through weak references; any
         # left at the end of dump() is an error.  See save_weakref.
         self._weak_only = set()
+        # The id of the referent and the size of the memo at the start of
+        # the innermost weak save in progress, or None.  See save_weakref.
+        self._weak_saving = None
         self.proto = int(protocol)
         self.bin = protocol >= 1
         self.fast = 0
@@ -1306,7 +1309,26 @@ class _Pickler:
         # Build the 1-tuple (referent,); TUPLE1 needs protocol 2.
         if self.proto < 2:
             write(MARK)
-        save(referent, weak=True)
+        if anchored or self.fast:
+            save(referent, weak=True)
+        else:
+            # The referent is not in the memo yet.  If the innermost weak save
+            # in progress is a save of this same referent and nothing has been
+            # memoized since it started, saving the referent again would
+            # repeat the same steps without end: its reduce arguments contain
+            # a weak reference to it, as for an instance of a weakref.ref
+            # subclass reduced by copyreg._reduce_ex().  This relies on an
+            # object being reduced the same way each time.  Fast mode does
+            # not support self-referential objects in any case.
+            saving = id(referent), len(self.memo)
+            if saving == self._weak_saving:
+                raise TypeError(
+                    f"cannot pickle {type(referent).__name__!r} object")
+            outer, self._weak_saving = self._weak_saving, saving
+            try:
+                save(referent, weak=True)
+            finally:
+                self._weak_saving = outer
         if not anchored and id(referent) in self.memo:
             self._weak_only.add(id(referent))
         write(TUPLE1 if self.proto >= 2 else TUPLE)
