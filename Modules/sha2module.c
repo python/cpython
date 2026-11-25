@@ -146,6 +146,7 @@ newSHA384object(sha2_state *state)
         return NULL;
     }
     HASHLIB_INIT_MUTEX(sha);
+    sha->state = NULL; // PyObject_GC_New() does not zero memory
 
     PyObject_GC_Track(sha);
     return sha;
@@ -159,6 +160,7 @@ newSHA512object(sha2_state *state)
         return NULL;
     }
     HASHLIB_INIT_MUTEX(sha);
+    sha->state = NULL; // PyObject_GC_New() does not zero memory
 
     PyObject_GC_Track(sha);
     return sha;
@@ -168,13 +170,13 @@ newSHA512object(sha2_state *state)
 static void
 SHA256_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     SHA256object *ptr = _SHA256object_CAST(op);
     if (ptr->state != NULL) {
         Hacl_Hash_SHA2_free_256(ptr->state);
         ptr->state = NULL;
     }
-    PyTypeObject *tp = Py_TYPE(ptr);
-    PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
     Py_DECREF(tp);
 }
@@ -182,13 +184,13 @@ SHA256_dealloc(PyObject *op)
 static void
 SHA512_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     SHA512object *ptr = _SHA512object_CAST(op);
     if (ptr->state != NULL) {
         Hacl_Hash_SHA2_free_512(ptr->state);
         ptr->state = NULL;
     }
-    PyTypeObject *tp = Py_TYPE(ptr);
-    PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
     Py_DECREF(tp);
 }

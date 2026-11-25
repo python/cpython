@@ -780,6 +780,50 @@ class TestFrameLocals(unittest.TestCase):
 
         self.assertEqual(f(), 2)
 
+    def test_setitem_key_closes_generator(self):
+        # gh-162593: the key lookup can run code which closes the generator
+        # and moves its frame into the frame object.
+        class X:
+            pass
+
+        def gen():
+            a = X()
+            yield
+
+        g = gen()
+        next(g)
+        proxy = g.gi_frame.f_locals
+        old = proxy['a']
+        ref = weakref.ref(old)
+
+        class Key(str):
+            def __hash__(self):
+                g.close()
+                return super().__hash__()
+
+        proxy[Key('a')] = 'new'
+        self.assertEqual(proxy['a'], 'new')
+        del proxy
+        support.gc_collect()
+        self.assertIs(ref(), old)
+
+    def test_setitem_free_var_cleared_frame(self):
+        def outer():
+            c = 1
+            def gen():
+                c
+                yield sys._getframe()
+            return gen()
+
+        g = outer()
+        frame = next(g)
+        proxy = frame.f_locals
+        g.close()
+        frame.clear()
+        self.assertNotIn('c', proxy)
+        proxy['c'] = 2
+        self.assertEqual(proxy['c'], 2)
+
 
 class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):
     """Test that FrameLocalsProxy behaves like a Mapping (with exceptions)"""
@@ -867,13 +911,13 @@ class TestFrameCApi(unittest.TestCase):
             pass
 
         frame_locals = PyEval_GetFrameLocals()
-        self.assertTrue(type(frame_locals), dict)
+        self.assertIs(type(frame_locals), dict)
         self.assertEqual(frame_locals['x'], 1)
         frame_locals['x'] = 2
         self.assertEqual(x, 1)
 
         frame_globals = PyEval_GetFrameGlobals()
-        self.assertTrue(type(frame_globals), dict)
+        self.assertIs(type(frame_globals), dict)
         self.assertIs(frame_globals, globals())
 
         frame_builtins = PyEval_GetFrameBuiltins()
@@ -881,7 +925,7 @@ class TestFrameCApi(unittest.TestCase):
 
         frame = sys._getframe()
         f_locals = PyFrame_GetLocals(frame)
-        self.assertTrue(f_locals['x'], 1)
+        self.assertEqual(f_locals['x'], 1)
         f_locals['x'] = 2
         self.assertEqual(x, 2)
 

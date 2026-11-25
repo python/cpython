@@ -627,7 +627,7 @@ PyDoc_STRVAR(_imp__set_lazy_attributes__doc__,
 "_set_lazy_attributes($module, modobj, name, /)\n"
 "--\n"
 "\n"
-"Sets attributes to lazy submodules on the module, as side effects.");
+"Remove the resolved module name from sys.lazy_modules.");
 
 #define _IMP__SET_LAZY_ATTRIBUTES_METHODDEF    \
     {"_set_lazy_attributes", _PyCFunction_CAST(_imp__set_lazy_attributes), METH_FASTCALL, _imp__set_lazy_attributes__doc__},
@@ -665,4 +665,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=0974db098d601372 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae9cf67e39955555 input=a9049054013a1b77]*/

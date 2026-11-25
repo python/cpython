@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import pathlib
 from collections.abc import Iterable, Iterator, Set
+from enum import Enum, auto
 from typing import Any
 
 
@@ -34,7 +36,16 @@ class Grammar:
                 raise GrammarError(f"Repeated rule {rule.name!r}")
             all_rules[rule.name] = rule
         self.rules = all_rules
-        self.metas = dict(metas)
+        # "@include" can appear more than once, so it is kept apart from the
+        # other metas.
+        metas = list(metas)
+        self.includes: list[str] = []
+        for name, value in metas:
+            if name == "include":
+                if value is None:
+                    raise GrammarError("@include requires a file name")
+                self.includes.append(value)
+        self.metas = {name: value for name, value in metas if name != "include"}
 
     def __str__(self) -> str:
         return "\n".join(str(rule) for name, rule in self.rules.items())
@@ -57,20 +68,51 @@ class Grammar:
 SIMPLE_STR = True
 
 
+class RuleKind(Enum):
+    NORMAL = auto()
+    LOOP0 = auto()
+    LOOP1 = auto()
+    GATHER = auto()
+
+
 class Rule:
-    def __init__(self, name: str, type: str | None, rhs: Rhs, flags: frozenset[str] | None = None):
+    def __init__(
+        self,
+        name: str,
+        type: str | None,
+        rhs: Rhs,
+        flags: frozenset[str] | None = None,
+        *,
+        kind: RuleKind = RuleKind.NORMAL,
+        source: pathlib.Path | None = None,
+    ):
         self.name = name
         self.type = type
         self.rhs = rhs
         self.flags = flags or frozenset()
+        self.memo = "memo" in self.flags
+        self.fastpath: str | None = None
+        for flag in self.flags:
+            name, _, function = flag.partition("=")
+            if name == "fastpath":
+                if not function:
+                    raise ValueError(
+                        f"rule {self.name!r}: fastpath flag needs a function"
+                    )
+                self.fastpath = function
+                break
+        self.kind = kind
+        # The included grammar file that defines this rule, relative to the
+        # root grammar file's directory, or None for the root grammar file itself.
+        self.source: pathlib.Path | None = source
         self.left_recursive = False
         self.leader = False
 
     def is_loop(self) -> bool:
-        return self.name.startswith("_loop")
+        return self.kind in (RuleKind.LOOP0, RuleKind.LOOP1)
 
     def is_gather(self) -> bool:
-        return self.name.startswith("_gather")
+        return self.kind is RuleKind.GATHER
 
     def __str__(self) -> str:
         if SIMPLE_STR or self.type is None:
@@ -84,22 +126,18 @@ class Rule:
         return "\n".join(lines)
 
     def __repr__(self) -> str:
-        return f"Rule({self.name!r}, {self.type!r}, {self.rhs!r})"
+        kind = f", kind=RuleKind.{self.kind.name}" if self.kind is not RuleKind.NORMAL else ""
+        return f"Rule({self.name!r}, {self.type!r}, {self.rhs!r}{kind})"
 
     def __iter__(self) -> Iterator[Rhs]:
         yield self.rhs
 
     def flatten(self) -> Rhs:
         # If it's a single parenthesized group, flatten it.
-        rhs = self.rhs
-        if (
-            not self.is_loop()
-            and len(rhs.alts) == 1
-            and len(rhs.alts[0].items) == 1
-            and isinstance(rhs.alts[0].items[0].item, Group)
-        ):
-            rhs = rhs.alts[0].items[0].item.rhs
-        return rhs
+        match self.rhs:
+            case Rhs(alts=[Alt(items=[NamedItem(item=Group(rhs=rhs))])]) if not self.is_loop():
+                return rhs
+        return self.rhs
 
 
 class Leaf:
@@ -147,12 +185,11 @@ class Rhs:
 
     @property
     def can_be_inlined(self) -> bool:
-        if len(self.alts) != 1 or len(self.alts[0].items) != 1:
-            return False
-        # If the alternative has an action we cannot inline
-        if getattr(self.alts[0], "action", None) is not None:
-            return False
-        return True
+        match self.alts:
+            case [Alt(items=[_], action=None)]:
+                return True
+            case _:
+                return False
 
 
 class Alt:

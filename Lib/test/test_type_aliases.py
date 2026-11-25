@@ -1,7 +1,8 @@
 import pickle
 import types
 import unittest
-from test.support import check_syntax_error, run_code
+import weakref
+from test.support import check_syntax_error, gc_collect, run_code
 from test.typinganndata import mod_generics_cache
 
 from typing import (
@@ -130,6 +131,24 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         self.assertEqual(alias.__parameters__, (T2, *Ts2, P2))
         T, Ts, P = more_generic.__type_params__
         self.assertEqual(alias.__value__, tuple[Callable[P, tuple[T, *Ts]], Callable[P2, tuple[T2, *Ts2]]])
+
+    def test_reentrant_value_does_not_leak(self):
+        class Value:
+            pass
+
+        refs = []
+
+        def compute():
+            value = Value()
+            refs.append(weakref.ref(value))
+            if len(refs) == 1:
+                Alias.__value__
+            return value
+
+        type Alias = compute()
+        self.assertIs(Alias.__value__, refs[0]())
+        gc_collect()
+        self.assertIsNone(refs[1]())
 
     def test_subscripting(self):
         type NonGeneric = int

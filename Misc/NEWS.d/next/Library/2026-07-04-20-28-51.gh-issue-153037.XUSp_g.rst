@@ -1,3 +1,0 @@
-Fix :class:`~compression.zstd.ZstdFile` raising :exc:`AttributeError`
-instead of :exc:`io.UnsupportedOperation` when iterating over a file that
-is not open for reading.

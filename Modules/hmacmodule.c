@@ -271,14 +271,6 @@ get_hmacmodule_state(PyObject *module)
     return (hmacmodule_state *)state;
 }
 
-static inline hmacmodule_state *
-get_hmacmodule_state_by_cls(PyTypeObject *cls)
-{
-    void *state = PyType_GetModuleState(cls);
-    assert(state != NULL);
-    return (hmacmodule_state *)state;
-}
-
 // --- HMAC Object ------------------------------------------------------------
 
 typedef Hacl_Streaming_HMAC_agile_state HACL_HMAC_state;
@@ -387,16 +379,17 @@ narrow_hmac_hash_kind(hmacmodule_state *state, HMAC_Hash_Kind kind)
  *
  * If 'code' represents a successful operation, this returns 0.
  * Otherwise, this sets an appropriate exception and returns -1.
+ *
+ * The caller must have an attached thread state.
  */
 static int
 _hacl_convert_errno(hacl_errno_t code)
 {
-    assert(PyGILState_GetThisThreadState() != NULL);
+    assert(PyThreadState_GetUnchecked() != NULL);
     if (code == Hacl_Streaming_Types_Success) {
         return 0;
     }
 
-    PyGILState_STATE gstate = PyGILState_Ensure();
     switch (code) {
         case Hacl_Streaming_Types_InvalidAlgorithm: {
             PyErr_SetString(PyExc_ValueError, "invalid HACL* algorithm");
@@ -421,7 +414,6 @@ _hacl_convert_errno(hacl_errno_t code)
             break;
         }
     }
-    PyGILState_Release(gstate);
     return -1;
 }
 
@@ -457,39 +449,33 @@ _hacl_hmac_state_free(HACL_HMAC_state *state)
 /*
  * Call the HACL* HMAC-HASH update function on the given data.
  *
- * On DEBUG builds, the update() call is verified.
- *
- * Return 0 on success; otherwise, set an exception and return -1 on failure.
+ * Return the HACL* exit code. No exception is set, so that this
+ * can be called without an attached thread state or with a lock held.
 */
-static int
+static hacl_errno_t
 _hacl_hmac_state_update_once(HACL_HMAC_state *state,
                              uint8_t *buf, uint32_t len)
 {
-#ifndef NDEBUG
-    hacl_errno_t code = Hacl_Streaming_HMAC_update(state, buf, len);
-    return _hacl_convert_errno(code);
-#else
-    (void)Hacl_Streaming_HMAC_update(state, buf, len);
-    return 0;
-#endif
+    return Hacl_Streaming_HMAC_update(state, buf, len);
 }
 
 /*
  * Perform the HMAC-HASH update() operation in a streaming fashion.
  *
- * On DEBUG builds, each update() call is verified.
- *
- * Return 0 on success; otherwise, set an exception and return -1 on failure.
+ * Return the HACL* exit code. No exception is set, so that this
+ * can be called without an attached thread state or with a lock held.
+ * Use _hacl_convert_errno() afterwards to set an appropriate exception.
  */
-static int
+static hacl_errno_t
 _hacl_hmac_state_update(HACL_HMAC_state *state, uint8_t *buf, Py_ssize_t len)
 {
     assert(len >= 0);
 #ifdef Py_HMAC_SSIZE_LARGER_THAN_UINT32
     while (len > UINT32_MAX_AS_SSIZE_T) {
-        if (_hacl_hmac_state_update_once(state, buf, UINT32_MAX) < 0) {
-            assert(PyErr_Occurred());
-            return -1;
+        hacl_errno_t code = _hacl_hmac_state_update_once(state, buf,
+                                                         UINT32_MAX);
+        if (code != Hacl_Streaming_Types_Success) {
+            return code;
         }
         buf += UINT32_MAX;
         len -= UINT32_MAX;
@@ -677,6 +663,24 @@ has_uint32_t_buffer_length(const Py_buffer *buffer)
 // --- HMAC object ------------------------------------------------------------
 
 /*
+ * Create a zero-initialized untracked HMAC object.
+ *
+ * Return NULL on failure with an exception set.
+ */
+static HMACObject *
+hmac_new_object(PyTypeObject *tp)
+{
+    HMACObject *self = (HMACObject *)tp->tp_alloc(tp, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    HASHLIB_INIT_MUTEX(self);
+    // tp_alloc initializes the memory to zero but the unknown kind is -1
+    self->kind = Py_hmac_kind_hash_unknown;
+    return self;
+}
+
+/*
  * Use the HMAC information 'info' to populate the corresponding fields.
  *
  * The real 'kind' for BLAKE-2 is obtained once and depends on both static
@@ -687,7 +691,7 @@ hmac_set_hinfo(hmacmodule_state *state,
                HMACObject *self, const py_hmac_hinfo *info)
 {
     assert(info->display_name != NULL);
-    self->name = Py_NewRef(info->display_name);
+    Py_XSETREF(self->name, Py_NewRef(info->display_name));
     assert_is_static_hmac_hash_kind(info->kind);
     self->kind = narrow_hmac_hash_kind(state, info->kind);
     assert(info->block_size <= Py_hmac_hash_max_block_size);
@@ -756,16 +760,15 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
         return NULL;
     }
 
-    HMACObject *self = PyObject_New(HMACObject, state->hmac_type);
+    HMACObject *self = hmac_new_object(state->hmac_type);
     if (self == NULL) {
         return NULL;
     }
-    HASHLIB_INIT_MUTEX(self);
     hmac_set_hinfo(state, self, info);
     int rc;
     // Create the HACL* internal state with the given key.
     Py_buffer key;
-    GET_BUFFER_VIEW_OR_ERROR(keyobj, &key, goto error_on_key);
+    GET_BUFFER_VIEW_OR_ERROR(keyobj, &key, goto error);
     rc = hmac_new_initial_state(self, key.buf, key.len);
     PyBuffer_Release(&key);
     if (rc < 0) {
@@ -777,24 +780,20 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
         GET_BUFFER_VIEW_OR_ERROR(msgobj, &msg, goto error);
         /* Do not use self->mutex here as this is the constructor
          * where it is not yet possible to have concurrent access. */
+        hacl_errno_t code;
         HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
             msg.len,
-            rc = _hacl_hmac_state_update(self->state, msg.buf, msg.len)
+            code = _hacl_hmac_state_update(self->state, msg.buf, msg.len)
         );
         PyBuffer_Release(&msg);
-#ifndef NDEBUG
+        rc = _hacl_convert_errno(code);
         if (rc < 0) {
             goto error;
         }
-#else
-        (void)rc;
-#endif
     }
     assert(rc == 0);
     return (PyObject *)self;
 
-error_on_key:
-    self->state = NULL;
 error:
     Py_DECREF(self);
     return NULL;
@@ -807,7 +806,7 @@ static void
 hmac_copy_hinfo(HMACObject *out, const HMACObject *src)
 {
     assert(src->name != NULL);
-    out->name = Py_NewRef(src->name);
+    Py_XSETREF(out->name, Py_NewRef(src->name));
     assert(src->kind != Py_hmac_kind_hash_unknown);
     out->kind = src->kind;
     assert(src->block_size <= Py_hmac_hash_max_block_size);
@@ -850,8 +849,7 @@ static PyObject *
 _hmac_HMAC_copy_impl(HMACObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=a955bfa55b65b215 input=17b2c0ad0b147e36]*/
 {
-    hmacmodule_state *state = get_hmacmodule_state_by_cls(cls);
-    HMACObject *copy = PyObject_New(HMACObject, state->hmac_type);
+    HMACObject *copy = hmac_new_object(cls);
     if (copy == NULL) {
         return NULL;
     }
@@ -868,7 +866,6 @@ _hmac_HMAC_copy_impl(HMACObject *self, PyTypeObject *cls)
         return NULL;
     }
 
-    HASHLIB_INIT_MUTEX(copy);
     return (PyObject *)copy;
 }
 
@@ -884,15 +881,15 @@ static PyObject *
 _hmac_HMAC_update_impl(HMACObject *self, PyObject *msgobj)
 /*[clinic end generated code: output=962134ada5e55985 input=7c0ea830efb03367]*/
 {
-    int rc = 0;
+    hacl_errno_t code;
     Py_buffer msg;
     GET_BUFFER_VIEW_OR_ERROUT(msgobj, &msg);
     HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
         self, msg.len,
-        rc = _hacl_hmac_state_update(self->state, msg.buf, msg.len)
+        code = _hacl_hmac_state_update(self->state, msg.buf, msg.len)
     );
     PyBuffer_Release(&msg);
-    return rc < 0 ? NULL : Py_None;
+    return _hacl_convert_errno(code) < 0 ? NULL : Py_None;
 }
 
 /*

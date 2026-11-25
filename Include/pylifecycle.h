@@ -33,10 +33,6 @@ PyAPI_FUNC(void) _Py_NO_RETURN Py_Exit(int);
 PyAPI_FUNC(int) Py_Main(int argc, wchar_t **argv);
 PyAPI_FUNC(int) Py_BytesMain(int argc, char **argv);
 
-/* In pathconfig.c */
-Py_DEPRECATED(3.11) PyAPI_FUNC(void) Py_SetProgramName(const wchar_t *);
-Py_DEPRECATED(3.11) PyAPI_FUNC(void) Py_SetPythonHome(const wchar_t *);
-
 #ifdef MS_WINDOWS
 int _Py_CheckPython3(void);
 #endif
@@ -53,11 +49,11 @@ typedef void (*PyOS_sighandler_t)(int);
 PyAPI_FUNC(PyOS_sighandler_t) PyOS_getsig(int);
 PyAPI_FUNC(PyOS_sighandler_t) PyOS_setsig(int, PyOS_sighandler_t);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 11)
 PyAPI_DATA(const unsigned long) Py_Version;
 #endif
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(int) Py_IsFinalizing(void);
 #endif
 

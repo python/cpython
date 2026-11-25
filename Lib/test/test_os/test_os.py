@@ -84,6 +84,19 @@ else:
 HAVE_WHEEL_GROUP = sys.platform.startswith('freebsd') and os.getgid() == 0
 
 
+def _get_file_attribute_mask():
+    mask = 0
+    for name in dir(stat):
+        if name.startswith("FILE_ATTRIBUTE_"):
+            mask |= getattr(stat, name)
+    return mask
+
+
+# gh-126253: Ignore unknown attributes, such as 0x1_000_0000
+# (Directory flag of DOS file attribute in NTFS)
+FILE_ATTRIBUTE_MASK = _get_file_attribute_mask()
+
+
 def requires_os_func(name):
     return unittest.skipUnless(hasattr(os, name), 'requires os.%s' % name)
 
@@ -178,15 +191,28 @@ class MiscTests(unittest.TestCase):
         def fqdn(obj):
             return (obj.__module__, obj.__qualname__)
 
-        native = os.name
         self.assertEqual(fqdn(os.stat_result), ("os", "stat_result"))
-        self.assertEqual(fqdn(os.times_result), (native, "times_result"))
+        self.assertEqual(fqdn(os.times_result), ("os", "times_result"))
+        self.assertEqual(fqdn(os.DirEntry), ("os", "DirEntry"))
         if hasattr(os, "statvfs_result"):
             self.assertEqual(fqdn(os.statvfs_result), ("os", "statvfs_result"))
+        self.assertEqual(fqdn(os.uname_result), ("os", "uname_result"))
         if hasattr(os, "sched_param"):
-            self.assertEqual(fqdn(os.sched_param), (native, "sched_param"))
+            self.assertEqual(fqdn(os.sched_param), ("os", "sched_param"))
         if hasattr(os, "waitid_result"):
-            self.assertEqual(fqdn(os.waitid_result), (native, "waitid_result"))
+            self.assertEqual(fqdn(os.waitid_result), ("os", "waitid_result"))
+
+    def test_pickle_global_names(self):
+        # Existing pickles name these via os or the platform module (posix
+        # or nt); both must keep loading, as must new pickles.
+        for name in ('stat', 'stat_result', 'statvfs_result', 'times_result',
+                     'uname_result'):
+            with self.subTest(name):
+                obj = getattr(os, name)
+                for module in ('os', os.name):
+                    p = f'c{module}\n{name}\n.'.encode()
+                    self.assertIs(pickle.loads(p), obj)
+                self.assertIs(pickle.loads(pickle.dumps(obj)), obj)
 
 
 # Tests creating TESTFN
@@ -752,13 +778,13 @@ class StatAttributeTests(unittest.TestCase):
                 unpickled = pickle.loads(p)
                 self.assertEqual(result, unpickled)
 
-    def check_statx_attributes(self, filename):
+    def check_statx_attributes(self, filename, follow_symlinks=True):
         maximal_mask = 0
         for name in dir(os):
             if name.startswith('STATX_'):
                 maximal_mask |= getattr(os, name)
-        result = os.statx(filename, maximal_mask)
-        stat_result = os.stat(filename)
+        result = os.statx(filename, maximal_mask, follow_symlinks=follow_symlinks)
+        stat_result = os.stat(filename, follow_symlinks=follow_symlinks)
 
         time_attributes = ('stx_atime', 'stx_btime', 'stx_ctime', 'stx_mtime')
         # gh-83714: stx_btime can be None on tmpfs even if STATX_BTIME mask
@@ -872,6 +898,28 @@ class StatAttributeTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
     def test_statx_attributes(self):
         self.check_statx_attributes(self.fname)
+
+    @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
+    @os_helper.skip_unless_symlink
+    def test_statx_attributes_symlink(self):
+        link = self.fname + '-link'
+        os.symlink(os.path.basename(self.fname), link)
+        self.addCleanup(os_helper.unlink, link)
+
+        with self.subTest(broken=False, follow_symlinks=True):
+            self.check_statx_attributes(link, follow_symlinks=True)
+
+        with self.subTest(broken=False, follow_symlinks=False):
+            self.check_statx_attributes(link, follow_symlinks=False)
+
+        # break the symlink
+        os.unlink(self.fname)
+        with self.subTest(broken=True, follow_symlinks=True):
+            with self.assertRaises(FileNotFoundError):
+                os.statx(link, os.STATX_BASIC_STATS, follow_symlinks=True)
+
+        with self.subTest(broken=True, follow_symlinks=False):
+            self.check_statx_attributes(link, follow_symlinks=False)
 
     @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
     def test_statx_attributes_bytes(self):
@@ -3572,6 +3620,12 @@ class SpawnTests(unittest.TestCase):
         self.assertRaises(ValueError, os.spawnve, os.P_NOWAIT, program, [''], {})
 
     @requires_native_spawnv
+    def test_spawnve_empty_first_arg_message(self):
+        with self.assertRaisesRegex(ValueError,
+                                    r'^spawnve\(\) arg 2 first element'):
+            os.spawnve(os.P_NOWAIT, sys.executable, [''], {})
+
+    @requires_native_spawnv
     def test_spawnv_arg_conversion_errors(self):
         # A non-path argv item gets a TypeError naming the argument...
         with self.assertRaisesRegex(TypeError, 'must contain only strings'):
@@ -5004,8 +5058,15 @@ class TestScandir(unittest.TestCase):
                 if attr in ("st_dev", "st_ino", "st_nlink", "st_ctime",
                             "st_ctime_ns"):
                     continue
-                self.assertEqual(getattr(stat1, attr),
-                                 getattr(stat2, attr),
+                value1 = getattr(stat1, attr)
+                value2 = getattr(stat2, attr)
+                if attr == "st_file_attributes":
+                    # Filesystems may report attribute bits that aren't
+                    # exposed by the stat module.
+                    value1 &= FILE_ATTRIBUTE_MASK
+                    value2 &= FILE_ATTRIBUTE_MASK
+                self.assertEqual(value1,
+                                 value2,
                                  (stat1, stat2, attr))
         else:
             self.assertEqual(stat1, stat2)

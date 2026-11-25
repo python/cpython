@@ -1,3 +1,0 @@
-Fix :class:`html.parser.HTMLParser`: an abruptly closed empty comment
-(``<!-->`` or ``<!--->``) no longer extends up to a later ``-->`` in the same
-:meth:`~html.parser.HTMLParser.feed` call.

@@ -159,5 +159,72 @@ class LargeSetTest(RaceTestBase, unittest.TestCase):
     SET_SIZE = 20  # larger than PySet_MINSIZE
 
 
+class TestSetIteratorExhaustion(unittest.TestCase):
+    def test_racing_shared_iterator_exhaustion(self):
+        # gh-160573: exhausting a set iterator shared between threads must
+        # not release the iterator's reference to the set more than once.
+        for tp in (set, frozenset):
+            cell = [iter(tp(range(8)))]
+
+            def worker():
+                for _ in range(5000):
+                    it = cell[0]
+                    try:
+                        next(it)
+                    except StopIteration:
+                        cell[0] = iter(tp(range(8)))
+
+            with self.subTest(tp=tp):
+                threading_helper.run_concurrently(worker, nthreads=4)
+
+    def test_racing_shared_iterator_exhaustion_contended(self):
+        # Same as above, but the set's lock is contended: other threads
+        # keep mutating and iterating the set while its iterator is shared.
+        s = set(range(8))
+        cell = [iter(s)]
+        done = Event()
+
+        def exhaust():
+            for _ in range(5000):
+                it = cell[0]
+                try:
+                    next(it)
+                except StopIteration:
+                    cell[0] = iter(s)
+                except RuntimeError:
+                    # The set changed size during iteration.
+                    cell[0] = iter(s)
+
+        def mutate():
+            while not done.is_set():
+                s.add(100)
+                s.discard(100)
+
+        def iterate():
+            while not done.is_set():
+                try:
+                    for _ in s:
+                        pass
+                except RuntimeError:
+                    pass
+
+        def run_exhaust():
+            try:
+                threading_helper.run_concurrently(exhaust, nthreads=4)
+            finally:
+                done.set()
+
+        threading_helper.run_concurrently([run_exhaust, mutate, iterate])
+
+    def test_exhausted_iterator_stays_exhausted(self):
+        s = {1}
+        it = iter(s)
+        self.assertEqual(list(it), [1])
+        s.add(2)
+        self.assertRaises(StopIteration, next, it)
+        self.assertEqual(it.__length_hint__(), 0)
+        self.assertEqual(list(it.__reduce__()[1][0]), [])
+
+
 if __name__ == "__main__":
     unittest.main()

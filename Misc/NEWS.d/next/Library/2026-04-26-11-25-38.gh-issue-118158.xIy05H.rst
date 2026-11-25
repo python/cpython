@@ -1,1 +1,0 @@
-Ensure py_compile CLI error messages end with a newline. Contributed by Xiao Yuan.

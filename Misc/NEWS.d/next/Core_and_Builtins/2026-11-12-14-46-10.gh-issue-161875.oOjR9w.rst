@@ -1,0 +1,4 @@
+The :opcode:`GET_ANEXT` instruction now also pushes the ``NULL`` and
+``None`` that start the :opcode:`SEND` loop, so each :keyword:`async for`
+iteration no longer needs separate :opcode:`PUSH_NULL` and ``LOAD_CONST None``
+instructions.

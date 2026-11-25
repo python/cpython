@@ -112,7 +112,7 @@ def py_scanstring(s, end, strict=True,
                 char = _b[esc]
             except KeyError:
                 msg = "Invalid \\escape: {0!r}".format(esc)
-                raise JSONDecodeError(msg, s, end)
+                raise JSONDecodeError(msg, s, end - 1)
             end += 1
         else:
             uni = _decode_uXXXX(s, end)
@@ -314,7 +314,7 @@ class JSONDecoder(object):
         be used along ``object_pairs_hook`` to customize the resulting data
         structure - for example, by setting that to ``frozendict`` and
         ``array_hook`` to ``tuple``, one can get a deep immutable data
-        structute from any JSON data.
+        structure from any JSON data.
 
         ``parse_float``, if specified, will be called with the string
         of every JSON float to be decoded. By default this is equivalent to

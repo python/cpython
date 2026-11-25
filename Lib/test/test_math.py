@@ -287,8 +287,6 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.atanh, NINF)
         self.assertTrue(math.isnan(math.atanh(NAN)))
 
-    @unittest.skipIf(sys.platform.startswith("sunos"),
-                     "skipping, see gh-138573")
     def testAtan2(self):
         self.assertRaises(TypeError, math.atan2)
         self.ftest('atan2(-1, 0)', math.atan2(-1, 0), -math.pi/2)
@@ -350,6 +348,15 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.atan2(NAN, 2.3)))
         self.assertTrue(math.isnan(math.atan2(NAN, INF)))
         self.assertTrue(math.isnan(math.atan2(NAN, NAN)))
+        # overflow and underflow of y/x
+        self.assertEqual(math.atan2(1E-320, 1E300), 0.0)
+        self.assertEqual(math.atan2(-1E-320, 1E300), -0.0)
+        self.assertAlmostEqual(math.atan2(1E300, 1E-320), math.pi/2)
+        self.assertAlmostEqual(math.atan2(1E300, -1E-320), math.pi/2)
+        self.assertAlmostEqual(math.atan2(1E-320, -1E300), math.pi)
+        self.assertAlmostEqual(math.atan2(-1E-320, -1E300), -math.pi)
+        self.assertAlmostEqual(math.atan2(-1E300, 1E-320), -math.pi/2)
+        self.assertAlmostEqual(math.atan2(-1E300, -1E-320), -math.pi/2)
 
     def testCbrt(self):
         self.assertRaises(TypeError, math.cbrt)
@@ -2144,7 +2151,12 @@ class MathTests(unittest.TestCase):
         fail_fmt = "{}: {}{!r}: {}"
 
         failures = []
+        ids = set()
         for id, fn, args, expected, flags in parse_mtestfile(math_testcases):
+            if id in ids:
+                failures.append(f"Duplicate test id {id}")
+            ids.add(id)
+
             func = getattr(math, fn)
 
             if 'invalid' in flags or 'divide-by-zero' in flags:

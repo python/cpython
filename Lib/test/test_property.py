@@ -260,7 +260,7 @@ class PropertyTests(unittest.TestCase):
         for i in (0, 1, 3):
             with self.assertRaisesRegex(
                 TypeError,
-                fr'^__set_name__\(\) takes 2 positional arguments but {i} were given$'
+                fr'^__set_name__ expected 2 arguments?, got {i}$'
             ):
                 p.__set_name__(*([0] * i))
 
