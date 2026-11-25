@@ -7,7 +7,6 @@ import keyword
 import sys
 import types
 
-import _typing
 lazy import typing
 
 __all__ = [
@@ -436,7 +435,7 @@ class _Stringifier:
                 args=[origin_ast, elts],
             )
             return new_ast, extra_names
-        elif type(other) is _typing.Union:
+        elif type(other) is types.UnionType:
             origin = other.__origin__
             args = other.__args__
 
