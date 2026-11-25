@@ -2101,15 +2101,25 @@ diff_to_bool(int diff, int op)
 /* Convert a timedelta to a number of us,
  *      (24*3600*self.days + self.seconds)*1000000 + self.microseconds
  * as a Python int.
- * Doing mixed-radix arithmetic by hand instead is excruciating in C,
- * due to ubiquitous overflow possibilities.
+ * The number of whole seconds always fits in int64_t, and so does the
+ * number of microseconds unless the delta is very large, so compute it
+ * in C when possible and fall back to Python int arithmetic otherwise.
+ * One second is reserved at the limit so that adding the microseconds
+ * field cannot overflow.
  */
 static PyObject *
 delta_to_microseconds(PyDateTime_Delta *self)
 {
+    const int64_t max_seconds = INT64_MAX / 1000000 - 1;
+    int64_t seconds = (int64_t)GET_TD_DAYS(self) * (24 * 3600)
+                      + GET_TD_SECONDS(self);
+    if (-max_seconds <= seconds && seconds <= max_seconds) {
+        return PyLong_FromInt64(seconds * 1000000
+                                + GET_TD_MICROSECONDS(self));
+    }
+
     PyObject *x1 = NULL;
     PyObject *x2 = NULL;
-    PyObject *x3 = NULL;
     PyObject *result = NULL;
 
     PyObject *current_mod;
@@ -2118,42 +2128,23 @@ delta_to_microseconds(PyDateTime_Delta *self)
         return NULL;
     }
 
-    x1 = PyLong_FromLong(GET_TD_DAYS(self));
+    x1 = PyLong_FromInt64(seconds);     /* days and seconds in seconds */
     if (x1 == NULL)
         goto Done;
-    x2 = PyNumber_Multiply(x1, CONST_SEC_PER_DAY(st));        /* days in seconds */
+    x2 = PyNumber_Multiply(x1, CONST_US_PER_SECOND(st));          /* us */
     if (x2 == NULL)
         goto Done;
-    Py_SETREF(x1, NULL);
 
-    /* x2 has days in seconds */
-    x1 = PyLong_FromLong(GET_TD_SECONDS(self));         /* seconds */
+    /* x2 has days+seconds in us */
+    Py_SETREF(x1, PyLong_FromLong(GET_TD_MICROSECONDS(self)));
     if (x1 == NULL)
         goto Done;
-    x3 = PyNumber_Add(x1, x2);          /* days and seconds in seconds */
-    if (x3 == NULL)
-        goto Done;
-    Py_DECREF(x1);
-    Py_DECREF(x2);
-    /* x1 = */ x2 = NULL;
-
-    /* x3 has days+seconds in seconds */
-    x1 = PyNumber_Multiply(x3, CONST_US_PER_SECOND(st));          /* us */
-    if (x1 == NULL)
-        goto Done;
-    Py_SETREF(x3, NULL);
-
-    /* x1 has days+seconds in us */
-    x2 = PyLong_FromLong(GET_TD_MICROSECONDS(self));
-    if (x2 == NULL)
-        goto Done;
-    result = PyNumber_Add(x1, x2);
+    result = PyNumber_Add(x2, x1);
     assert(result == NULL || PyLong_CheckExact(result));
 
 Done:
     Py_XDECREF(x1);
     Py_XDECREF(x2);
-    Py_XDECREF(x3);
     RELEASE_CURRENT_STATE(st, current_mod);
     return result;
 }

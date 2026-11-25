@@ -2148,6 +2148,24 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
+
+PyDoc_STRVAR(_asyncio__clear_caches__doc__,
+"_clear_caches($module, /)\n"
+"--\n"
+"\n"
+"Clear internal caches. Used for internal tests.");
+
+#define _ASYNCIO__CLEAR_CACHES_METHODDEF    \
+    {"_clear_caches", (PyCFunction)_asyncio__clear_caches, METH_NOARGS, _asyncio__clear_caches__doc__},
+
+static PyObject *
+_asyncio__clear_caches_impl(PyObject *module);
+
+static PyObject *
+_asyncio__clear_caches(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio__clear_caches_impl(module);
+}
 #define _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF {"_asyncio_awaited_by", (getter)_asyncio_Future__asyncio_awaited_by_get, (setter)NULL, NULL},
 
 #define _ASYNCIO_FUTURE__ASYNCIO_FUTURE_BLOCKING_GETSETDEF {"_asyncio_future_blocking", (getter)_asyncio_Future__asyncio_future_blocking_get, (setter)_asyncio_Future__asyncio_future_blocking_set, NULL},
@@ -2176,4 +2194,4 @@ exit:
 
 #define _ASYNCIO_TASK__FUT_WAITER_GETSETDEF {"_fut_waiter", (getter)_asyncio_Task__fut_waiter_get, (setter)NULL, NULL},
 
-/*[clinic end generated code: output=ef4c3d8558937e62 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=63cc7803083ab06a input=a9049054013a1b77]*/

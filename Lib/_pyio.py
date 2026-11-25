@@ -1210,7 +1210,8 @@ class BufferedReader(_BufferedIOMixin):
             while written < len(buf):
 
                 # First try to read from internal buffer
-                avail = min(len(self._read_buf) - self._read_pos, len(buf))
+                avail = min(len(self._read_buf) - self._read_pos,
+                            len(buf) - written)
                 if avail:
                     buf[written:written+avail] = \
                         self._read_buf[self._read_pos:self._read_pos+avail]
@@ -1394,8 +1395,12 @@ class BufferedRWPair(BufferedIOBase):
         if not writer.writable():
             raise OSError('"writer" argument must be writable.')
 
-        self.reader = BufferedReader(reader, buffer_size)
-        self.writer = BufferedWriter(writer, buffer_size)
+        new_reader = BufferedReader(reader, buffer_size)
+        new_writer = BufferedWriter(writer, buffer_size)
+        # Release a previous writer before a previous reader so it flushes
+        # before the reader closes a shared raw stream.
+        self.writer = new_writer
+        self.reader = new_reader
 
     def read(self, size=-1):
         if size is None:
@@ -2095,10 +2100,14 @@ class TextIOWrapper(TextIOBase):
     r"""Character and line based layer over a BufferedIOBase object, buffer.
 
     encoding gives the name of the encoding that the stream will be
-    decoded or encoded with. It defaults to locale.getencoding().
+    decoded or encoded with. It defaults to UTF-8; if UTF-8 Mode is
+    disabled, the encoding returned by locale.getencoding() is used
+    instead.  See the codecs module for the list of supported
+    encodings.
 
-    errors determines the strictness of encoding and decoding (see the
-    codecs.register) and defaults to "strict".
+    errors determines the strictness of encoding and decoding (see
+    help(codecs.Codec) or the documentation for codecs.register) and
+    defaults to "strict".
 
     newline can be None, '', '\n', '\r', or '\r\n'.  It controls the
     handling of line endings. If it is None, universal newlines is

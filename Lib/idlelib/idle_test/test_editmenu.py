@@ -23,6 +23,10 @@ class PasteTest(unittest.TestCase):
         cls.entry = tk.Entry(root)
         cls.tentry = ttk.Entry(root)
         cls.spin = tk.Spinbox(root)
+        # Generated events are not delivered to widgets whose window
+        # does not exist yet.
+        for widget in cls.text, cls.entry, cls.tentry, cls.spin:
+            widget.winfo_id()
         root.clipboard_clear()
         root.clipboard_append('two')
 
