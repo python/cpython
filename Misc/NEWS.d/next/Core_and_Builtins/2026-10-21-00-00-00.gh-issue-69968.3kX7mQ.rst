@@ -1,0 +1,3 @@
+Setting :attr:`~BaseException.__context__` to the exception itself now has no
+effect, and setting it to a chain containing the exception moves the
+exception to the start of the chain, preventing cycles.
