@@ -1205,8 +1205,8 @@ Connection objects
           convert to the internal clock type raises :exc:`OverflowError`.
 
           If the retry budget is exhausted, :exc:`OperationalError` is
-          raised.  Its :attr:`~sqlite3.OperationalError.sqlite_errorcode`
-          and :attr:`~sqlite3.OperationalError.sqlite_errorname` attributes
+          raised.  Its :attr:`~sqlite3.Error.sqlite_errorcode` and
+          :attr:`~sqlite3.Error.sqlite_errorname` attributes
           carry the last ``SQLITE_BUSY`` or ``SQLITE_LOCKED`` result from the
           underlying backup step.  An exception raised by *progress* itself
           propagates unchanged and takes precedence over a timeout.
