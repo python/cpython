@@ -31,6 +31,7 @@ Copyright (C) 1994 Steen Lumholt.
 #endif
 
 #include "pycore_long.h"          // _PyLong_IsNegative()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_INT_RELAXED()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8String
 
 #include <signal.h>               // SIGINT
@@ -382,6 +383,7 @@ typedef struct {
     int threaded; /* True if tcl_platform[threaded] */
     Tcl_ThreadId thread_id;
     int dispatching;
+    int quitting; /* Set by quit() to stop mainloop() */
     int event_hook; /* True if counted by EnableEventHook() */
     PyObject *trace;
     /* We cannot include tclInt.h, as this is internal.
@@ -433,9 +435,14 @@ check_tcl_appartment(TkappObject *app)
 /**** Error Handling ****/
 
 static PyObject *Tkinter_TclError;
-static int quitMainLoop = 0;
-static int errorInCmd = 0;
-static PyObject *excInCmd;
+
+/* An exception raised in a Python callback, which should be raised by the
+   event loop (mainloop() or the event hook) that called the callback.
+   Callbacks are only called in the thread of their Tcl interpreter, so it
+   is thread-local. */
+static Tcl_ThreadDataKey excInCmd_key;
+#define excInCmd \
+    (*(PyObject **)Tcl_GetThreadData(&excInCmd_key, sizeof(PyObject *)))
 
 
 static PyObject *Tkapp_UnicodeResult(TkappObject *);
@@ -2664,8 +2671,7 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
     goto done;
 
 error:
-    errorInCmd = 1;
-    excInCmd = PyErr_GetRaisedException();
+    Py_XSETREF(excInCmd, PyErr_GetRaisedException());
 done:
     LEAVE_PYTHON
 
@@ -2903,8 +2909,7 @@ FileHandler(ClientData clientData, int mask)
 
     res = PyObject_CallFunction(func, "Oi", file, mask);
     if (res == NULL) {
-        errorInCmd = 1;
-        excInCmd = PyErr_GetRaisedException();
+        Py_XSETREF(excInCmd, PyErr_GetRaisedException());
     }
     Py_XDECREF(res);
     LEAVE_PYTHON
@@ -3108,8 +3113,7 @@ TimerHandler(ClientData clientData)
     Py_DECREF(v); /* See Tktt_New() */
 
     if (res == NULL) {
-        errorInCmd = 1;
-        excInCmd = PyErr_GetRaisedException();
+        Py_XSETREF(excInCmd, PyErr_GetRaisedException());
     }
     else
         Py_DECREF(res);
@@ -3171,10 +3175,10 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
     CHECK_TCL_APPARTMENT(self);
     self->dispatching = 1;
 
-    quitMainLoop = 0;
+    FT_ATOMIC_STORE_INT_RELAXED(self->quitting, 0);
     while (Tk_GetNumMainWindows() > threshold &&
-           !quitMainLoop &&
-           !errorInCmd)
+           !FT_ATOMIC_LOAD_INT_RELAXED(self->quitting) &&
+           excInCmd == NULL)
     {
         int result;
 
@@ -3204,12 +3208,12 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
             break;
     }
     self->dispatching = 0;
-    quitMainLoop = 0;
+    FT_ATOMIC_STORE_INT_RELAXED(self->quitting, 0);
 
-    if (errorInCmd) {
-        errorInCmd = 0;
-        PyErr_SetRaisedException(excInCmd);
+    PyObject *exc = excInCmd;
+    if (exc != NULL) {
         excInCmd = NULL;
+        PyErr_SetRaisedException(exc);
         return NULL;
     }
     Py_RETURN_NONE;
@@ -3239,11 +3243,32 @@ _tkinter_tkapp_dooneevent_impl(TkappObject *self, int flags)
 _tkinter.tkapp.quit
 [clinic start generated code]*/
 
+static int
+QuitEventProc(Tcl_Event *evPtr, int flags)
+{
+    /* Nothing to do: the event only wakes up the event loop. */
+    return 1;
+}
+
 static PyObject *
 _tkinter_tkapp_quit_impl(TkappObject *self)
 /*[clinic end generated code: output=7f21eeff481f754f input=e03020dc38aff23c]*/
 {
-    quitMainLoop = 1;
+    FT_ATOMIC_STORE_INT_RELAXED(self->quitting, 1);
+    if (self->threaded && self->dispatching &&
+        self->thread_id != Tcl_GetCurrentThread())
+    {
+        /* mainloop() is running in other thread and can wait for an event.
+           Send it an event, so that it checks the flag. */
+        Tcl_Event *ev = (Tcl_Event *)attemptckalloc(sizeof(Tcl_Event));
+        if (ev == NULL) {
+            return PyErr_NoMemory();
+        }
+        memset(ev, 0, sizeof(Tcl_Event));
+        ev->proc = QuitEventProc;
+        Tcl_ThreadQueueEvent(self->thread_id, ev, TCL_QUEUE_TAIL);
+        Tcl_ThreadAlert(self->thread_id);
+    }
     Py_RETURN_NONE;
 }
 
@@ -3771,7 +3796,6 @@ EventHook(void)
     stdin_ready = 0;
 #endif
     PyEval_RestoreThread(tstate);
-    errorInCmd = 0;
 #ifdef MS_WINDOWS
     hStdin = GetStdHandle(STD_INPUT_HANDLE);
     type = GetFileType(hStdin);
@@ -3829,10 +3853,10 @@ EventHook(void)
            instead of returning to the prompt: without readline there is no
            input waiting on stdin yet, so returning here would block in fgets
            until the user hits enter, freezing later callbacks. */
-        if (errorInCmd) {
-            errorInCmd = 0;
-            PyErr_SetRaisedException(excInCmd);
+        PyObject *exc = excInCmd;
+        if (exc != NULL) {
             excInCmd = NULL;
+            PyErr_SetRaisedException(exc);
             PyErr_Print();
         }
         if (result < 0)

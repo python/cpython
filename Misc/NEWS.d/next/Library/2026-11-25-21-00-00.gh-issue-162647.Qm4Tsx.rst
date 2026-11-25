@@ -1,0 +1,4 @@
+Fix :mod:`tkinter` when Tcl interpreters run :meth:`!mainloop` in different
+threads.  :meth:`!quit` no longer stops the main loop of other interpreter,
+and stops the main loop even if it waits for events.  An exception raised in
+a callback is no longer raised by the main loop in other thread.
