@@ -300,6 +300,27 @@ defproperty(Node, "lastChild",  doc="Last child node, or None.")
 defproperty(Node, "localName",  doc="Namespace-local name of this node.")
 
 
+# PubidChar (see XML 1.0, 2.3, [13]).
+_PUBID_CHARS = frozenset(
+    " \r\n-'()+,./:=?;!*#@$_%"
+    "0123456789"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz")
+
+
+def _quote_literal(text):
+    """Quote a system literal or a public identifier.
+
+    A literal is delimited with a quote which it does not contain
+    (see XML 1.0, 2.3, [11] and [12]).
+    """
+    if "'" not in text:
+        return "'%s'" % text
+    if '"' not in text:
+        return '"%s"' % text
+    raise ValueError("a literal cannot contain both quotes: %r" % (text,))
+
+
 def _check_name(name):
     if not xml.is_valid_name(name):
         raise xml.dom.InvalidCharacterErr(
@@ -1228,7 +1249,20 @@ class ProcessingInstruction(Childless, Node):
     nodeName = property(_get_nodeName, _set_nodeName)
 
     def writexml(self, writer, indent="", addindent="", newl=""):
-        writer.write("%s<?%s %s?>%s" % (indent,self.target, self.data, newl))
+        target = self.target
+        # PITarget is a Name, except the names matching "xml" in any case
+        # (see XML 1.0, 2.6, [17]).
+        _check_name(target)
+        if target.lower() == "xml":
+            raise ValueError("%r is a reserved processing instruction target"
+                             % (target,))
+        data = self.data
+        # The data cannot contain "?>", which ends the instruction
+        # (see XML 1.0, 2.6, [16]).
+        if "?>" in data:
+            raise ValueError("'?>' is not allowed in a processing "
+                             "instruction node")
+        writer.write("%s<?%s %s?>%s" % (indent, target, data, newl))
 
 
 class CharacterData(Childless, Node):
@@ -1423,9 +1457,14 @@ class Comment(CharacterData):
         self._data = data
 
     def writexml(self, writer, indent="", addindent="", newl=""):
-        if "--" in self.data:
+        data = self.data
+        # The data cannot contain "--", and cannot end with "-", which
+        # would be fused with the closing "-->" (see XML 1.0, 2.5, [15]).
+        if "--" in data:
             raise ValueError("'--' is not allowed in a comment node")
-        writer.write("%s<!--%s-->%s" % (indent, self.data, newl))
+        if data.endswith("-"):
+            raise ValueError("a comment node cannot end with '-'")
+        writer.write("%s<!--%s-->%s" % (indent, data, newl))
 
 
 class CDATASection(Text):
@@ -1571,10 +1610,20 @@ class DocumentType(Identified, Childless, Node):
         writer.write("<!DOCTYPE ")
         writer.write(self.name)
         if self.publicId:
-            writer.write("%s  PUBLIC '%s'%s  '%s'"
-                         % (newl, self.publicId, newl, self.systemId))
+            if not _PUBID_CHARS.issuperset(self.publicId):
+                raise ValueError("invalid public identifier: %r"
+                                 % (self.publicId,))
+            # ExternalID with a public identifier always includes
+            # a system identifier (see XML 1.0, 4.2.2, [75]).
+            if not self.systemId:
+                raise ValueError("a public identifier requires "
+                                 "a system identifier")
+            writer.write("%s  PUBLIC %s%s  %s"
+                         % (newl, _quote_literal(self.publicId),
+                            newl, _quote_literal(self.systemId)))
         elif self.systemId:
-            writer.write("%s  SYSTEM '%s'" % (newl, self.systemId))
+            writer.write("%s  SYSTEM %s" % (newl,
+                                            _quote_literal(self.systemId)))
         if self.internalSubset is not None:
             writer.write(" [")
             writer.write(self.internalSubset)

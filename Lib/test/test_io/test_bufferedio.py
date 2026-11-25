@@ -306,12 +306,26 @@ class BufferedReaderTest(CommonBufferedTests):
         self.assertEqual(b, b"gf")
         self.assertEqual(bufio.readinto(b), 0)
         self.assertEqual(b, b"gf")
-        rawio = self.MockRawIO((b"abc", None))
-        bufio = self.tp(rawio)
+        rawio = self.MockRawIO((b"abc", None, None, None, None, None))
+        bufio = self.tp(rawio, buffer_size=4)
         self.assertEqual(bufio.readinto(b), 2)
         self.assertEqual(b, b"ab")
         self.assertEqual(bufio.readinto(b), 1)
         self.assertEqual(b, b"cb")
+        self.assertIsNone(bufio.readinto(b))
+        self.assertIsNone(bufio.readinto1(b))
+        # Larger than buffer_size: read directly into b
+        b = bytearray(5)
+        self.assertIsNone(bufio.readinto(b))
+        self.assertIsNone(bufio.readinto1(b))
+
+    def test_readinto_with_remaining_buffered_data(self):
+        bufio = self.tp(self.BytesIO(b"abcd"), buffer_size=2)
+        self.assertEqual(bufio.read(1), b"a")
+        b = bytearray(2)
+        self.assertEqual(bufio.readinto(b), 2)
+        self.assertEqual(b, b"bc")
+        self.assertEqual(bufio.read(), b"d")
 
     def test_readinto1(self):
         buffer_size = 10
@@ -1026,6 +1040,21 @@ class BufferedRWPairTest:
         self.assertEqual(pair.read(0), b'')
         self.assertEqual(pair.write(b''), 0)
 
+    def test_reinit(self):
+        # gh-162246: Calling __init__() again must release the previous
+        # reader and writer, the writer first so it flushes before the
+        # reader closes a shared raw stream.
+        raw = self.MockRawIO()
+        pair = self.tp(raw, raw)
+        pair.write(b"abc")
+        ref = weakref.ref(raw)
+        pair.__init__(self.MockRawIO(), self.MockRawIO())
+        support.gc_collect()
+        self.assertEqual(raw._write_stack, [b"abc"])
+        del raw
+        support.gc_collect()
+        self.assertIsNone(ref())
+
     def test_detach(self):
         pair = self.tp(self.MockRawIO(), self.MockRawIO())
         self.assertRaises(self.UnsupportedOperation, pair.detach)
@@ -1109,6 +1138,15 @@ class BufferedRWPairTest:
         buffer[:] = b"***"  # Overwrite our copy of the data
         pair.flush()
         self.assertEqual(w._write_stack, [b"abc", b"def"])
+
+    def test_destructor_flushes_shared_stream(self):
+        raw = self.MockRawIO()
+        pair = self.tp(raw, raw)
+        pair.write(b"abc")
+        self.assertEqual(raw._write_stack, [])
+        del pair
+        support.gc_collect()
+        self.assertEqual(raw._write_stack, [b"abc"])
 
     def test_peek(self):
         pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
