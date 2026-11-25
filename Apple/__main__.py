@@ -331,7 +331,7 @@ def unpack_deps(
         "OpenSSL-3.5.9-1",
         "XZ-5.6.4-2",
         "mpdecimal-4.0.0-2",
-        "zstd-1.5.7-1",
+        "zstd-1.6.0-1",
     ]:
         filename = f"{name_ver.lower()}-{apple_target(host)}.tar.gz"
         archive_path = download(

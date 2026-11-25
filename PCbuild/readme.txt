@@ -252,6 +252,12 @@ _tkinter
     Win32 and "tcltk64" on x64.  They also copy the Tcl and Tk DLLs
     into the current output directory, which should ensure that Tkinter
     is able to load Tcl/Tk without having to change your PATH.
+
+_zstd
+    Python wrapper for version 1.6.0 of the zstd compression library
+    Homepage:
+        https://facebook.github.io/zstd/
+
 zlib-ng
     Compiles zlib-ng as a static library, which is later included by
     pythoncore.vcxproj. This was generated using CMake against zlib-ng
@@ -262,10 +268,6 @@ zlib-ng
 
     Sources for zlib-ng are imported unmodified into our source
     repository at https://github.com/python/cpython-source-deps.
-_zstd
-    Python wrapper for version 1.5.7 of the Zstandard compression library
-    Homepage:
-        https://facebook.github.io/zstd/
 
 
 Getting External Sources

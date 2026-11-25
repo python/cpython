@@ -196,21 +196,21 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "f24b52470d12f466e9fa4fcc94e6c530625ada51d7b36de7fdc6ed7e6f499c8e"
+          "checksumValue": "eb34eed79af88b8dd7c07481d55192520b9545f865416c31c828b96b01d335d3"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/zstd-1.5.7.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/zstd-1.6.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:facebook:zstandard:1.5.7:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:facebook:zstandard:1.6.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "zstd",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "1.5.7"
+      "versionInfo": "1.6.0"
     }
   ],
   "spdxVersion": "SPDX-2.3"
