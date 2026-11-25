@@ -1281,13 +1281,11 @@ class StreamTests(test_utils.TestCase):
         self.assertEqual(messages, [])
 
     def _basetest_unhandled_exceptions(self, handle_echo):
-        port = socket_helper.find_unused_port()
-
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
-        async def client():
-            rd, wr = await asyncio.open_connection('localhost', port)
+        async def client(addr):
+            rd, wr = await asyncio.open_connection(*addr)
             wr.write(b'test msg')
             await wr.drain()
             wr.close()
@@ -1295,9 +1293,9 @@ class StreamTests(test_utils.TestCase):
 
         async def main():
             server = await asyncio.start_server(
-                handle_echo, 'localhost', port)
+                handle_echo, socket_helper.HOSTv4, 0)
             await server.start_serving()
-            await client()
+            await client(server.sockets[0].getsockname())
             server.close()
             await server.wait_closed()
 
@@ -1321,13 +1319,11 @@ class StreamTests(test_utils.TestCase):
     def test_unhandled_exception_sync_callback(self):
         # An exception raised by a plain-function client_connected_cb is
         # reported like the coroutine case and the transport is closed.
-        port = socket_helper.find_unused_port()
-
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
-        async def client():
-            rd, wr = await asyncio.open_connection('localhost', port)
+        async def client(addr):
+            rd, wr = await asyncio.open_connection(*addr)
             async with asyncio.timeout(60):
                 data = await rd.read()
             self.assertEqual(data, b'')  # the server closed the connection
@@ -1339,9 +1335,9 @@ class StreamTests(test_utils.TestCase):
                 raise Exception('test')
 
             server = await asyncio.start_server(
-                handle_echo, 'localhost', port)
+                handle_echo, socket_helper.HOSTv4, 0)
             await server.start_serving()
-            await client()
+            await client(server.sockets[0].getsockname())
             server.close()
             await server.wait_closed()
 
@@ -1351,7 +1347,22 @@ class StreamTests(test_utils.TestCase):
                     'Unhandled exception in client_connected_cb')
 
     def test_open_connection_happy_eyeball_refcycles(self):
-        port = socket_helper.find_unused_port()
+        # Keep the port bound but not listening on both loopback addresses
+        # that "localhost" may resolve to, so connections fail.
+        reserved = []
+        self.addCleanup(lambda: [s.close() for s in reserved])
+        sock4 = socket.socket()
+        reserved.append(sock4)
+        sock4.bind((socket_helper.HOSTv4, 0))
+        port = sock4.getsockname()[1]
+        if socket_helper.IPV6_ENABLED:
+            sock6 = socket.socket(socket.AF_INET6)
+            reserved.append(sock6)
+            try:
+                sock6.bind((socket_helper.HOSTv6, port))
+            except OSError:
+                self.skipTest(f'cannot bind {socket_helper.HOSTv6} port {port}')
+
         async def main():
             exc = None
             try:
