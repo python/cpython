@@ -245,10 +245,9 @@ class GeckoCollector(Collector):
 
         first_time = times[0]
 
-        # Update interval calculation
-        if self.sample_count > 0 and self.last_sample_time > 0:
-            self.interval = (times[-1] - self.last_sample_time) / self.sample_count
-        self.last_sample_time = times[-1]
+        # Binary replay can deliver batches from different threads out of
+        # order, so keep the latest time seen rather than the last one.
+        self.last_sample_time = max(self.last_sample_time, times[-1])
 
         # Process async tasks
         if stack_frames and hasattr(stack_frames[0], "awaited_by"):
@@ -612,7 +611,7 @@ class GeckoCollector(Collector):
         func_resources.append(resource_idx)
 
         if is_python:
-            filename_idx = self._intern_string(os.path.basename(filename))
+            filename_idx = self._intern_string(filename)
             func_filenames.append(filename_idx)
             func_line_numbers.append(lineno)
         else:
@@ -727,9 +726,6 @@ class GeckoCollector(Collector):
 
     def export(self, filename):
         """Export the profile to a Gecko JSON file."""
-        if self.sample_count > 0 and self.last_sample_time > 0:
-            self.interval = self.last_sample_time / self.sample_count
-
         # Spinner for progress indication
         spinner = itertools.cycle(['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'])
         stop_spinner = threading.Event()
@@ -859,6 +855,8 @@ class GeckoCollector(Collector):
     def _prepare_for_serialization(self):
         if self.exported:
             raise RuntimeError("GeckoCollector has already been exported")
+        if self.sample_count > 0 and self.last_sample_time > 0:
+            self.interval = self.last_sample_time / self.sample_count
         self._finalize_markers()
         for thread_data in self.threads.values():
             thread_data["_spill"].prepare_read()

@@ -1,13 +1,6 @@
 #ifndef Py_PYMACRO_H
 #define Py_PYMACRO_H
 
-// _Py_STDC_VERSION: the version of the C standard.
-// gh-160208: The C++ standard allows __STDC_VERSION__ to be defined to an
-// arbitrary value, which means we can't use __STDC_VERSION__ on C++.
-#if !defined(__cplusplus) && defined(__STDC_VERSION__)
-#  define _Py_STDC_VERSION __STDC_VERSION__
-#endif
-
 // gh-91782: On FreeBSD 12, if the _POSIX_C_SOURCE and _XOPEN_SOURCE macros are
 // defined, <sys/cdefs.h> disables C11 support and <assert.h> does not define
 // the static_assert() macro.
@@ -318,7 +311,6 @@
 #define _Py_IS_TYPE_SIGNED(type) ((type)(-1) <= 0)
 
 // Version helpers. These are primarily macros, but have exported equivalents.
-#define _Py_PACK_VERSION(X, Y) _Py_PACK_FULL_VERSION(X, Y, 0, 0, 0)
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
 PyAPI_FUNC(uint32_t) Py_PACK_FULL_VERSION(int x, int y, int z, int level, int serial);
 PyAPI_FUNC(uint32_t) Py_PACK_VERSION(int x, int y);

@@ -129,6 +129,10 @@ union expat_align {
 
 typedef unsigned long long XmlBigCount;
 
+// NOTE: Type `ssize_t` and macro `SSIZE_MAX` are not guaranteed by C99
+typedef long expat_ssize_t;
+#  define EXPAT_SSIZE_MAX LONG_MAX
+
 void _INTERNAL_trim_to_complete_utf8_characters(const char *from,
                                                 const char **fromLimRef);
 
