@@ -2103,6 +2103,48 @@ class StreamReaderTest(unittest.TestCase):
                 with self.assertRaisesRegex(TypeError, 'StreamReader'):
                     pickle.dumps(f, proto)
 
+    def test_incomplete_final_character_strict(self):
+        # gh-160309: An incomplete character at end of stream must raise
+        # UnicodeDecodeError in strict mode rather than being silently dropped.
+        for encoding in ('utf-8', 'utf-16', 'utf-16-le', 'utf-32', 'utf-32-le', 'utf-8-sig'):
+            with self.subTest(encoding=encoding):
+                data = b'\xe2\x82' if 'utf-8' in encoding else b'a\x00\xe2'
+                reader = codecs.getreader(encoding)(io.BytesIO(data), errors='strict')
+                with self.assertRaises(UnicodeDecodeError):
+                    reader.read()
+
+    def test_incomplete_final_character_replace(self):
+        # gh-160309: In replace mode, an incomplete final character must produce
+        # the replacement character.
+        reader = codecs.getreader('utf-8')(io.BytesIO(b'abc\xe2\x82'), errors='replace')
+        self.assertEqual(reader.read(), 'abc\ufffd')
+
+        # Chunked reading (size > 0)
+        reader = codecs.getreader('utf-8')(io.BytesIO(b'abc\xe2\x82'), errors='replace')
+        chunks = []
+        while True:
+            c = reader.read(2)
+            if not c:
+                break
+            chunks.append(c)
+        self.assertEqual(''.join(chunks), 'abc\ufffd')
+
+    def test_incomplete_final_character_ignore(self):
+        # gh-160309: In ignore mode, the incomplete final bytes are dropped.
+        reader = codecs.getreader('utf-8')(io.BytesIO(b'abc\xe2\x82'), errors='ignore')
+        self.assertEqual(reader.read(), 'abc')
+        self.assertEqual(reader.bytebuffer, b'')
+
+    def test_custom_two_arg_streamreader_subclass(self):
+        # Custom StreamReader subclasses whose decode() method only accepts
+        # 2 arguments (input, errors='strict') should continue to work.
+        class CustomReader(codecs.StreamReader):
+            def decode(self, input, errors='strict'):
+                return input.decode('latin1', errors), len(input)
+
+        reader = CustomReader(io.BytesIO(b'hello'))
+        self.assertEqual(reader.read(), 'hello')
+
 
 class StreamWriterTest(unittest.TestCase):
 

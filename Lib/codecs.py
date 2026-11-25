@@ -530,8 +530,12 @@ class StreamReader(Codec):
                 # now so that the error handler is applied (strict raises,
                 # replace emits the replacement character, ignore drops them).
                 if self.bytebuffer:
-                    newchars, decodedbytes = self.decode(
-                        self.bytebuffer, self.errors)
+                    try:
+                        newchars, decodedbytes = self.decode(
+                            self.bytebuffer, self.errors, True)
+                    except TypeError:
+                        newchars, decodedbytes = self.decode(
+                            self.bytebuffer, self.errors)
                     self.bytebuffer = self.bytebuffer[decodedbytes:]
                     self.charbuffer += newchars
                 break
