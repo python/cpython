@@ -816,7 +816,8 @@ class EventLoopTestsMixin:
     def test_create_connection_local_addr_skip_different_family(self):
         # See https://github.com/python/cpython/issues/86508
         # A bound but non-listening socket reserves a port that refuses
-        # connections; find_unused_port() could be grabbed by another test.
+        # connections (macOS times them out immediately instead);
+        # find_unused_port() could be grabbed by another test.
         with socket.socket() as sock:
             sock.bind(('127.0.0.1', 0))
             port = sock.getsockname()[1]
@@ -834,7 +835,7 @@ class EventLoopTestsMixin:
                 lambda: MyProto(loop=self.loop),
                 '127.0.0.1', port, local_addr=('localhost', 0))
 
-            with self.assertRaises(ConnectionRefusedError):
+            with self.assertRaises((ConnectionRefusedError, TimeoutError)):
                 self.loop.run_until_complete(f)
 
     @socket_helper.skip_if_tcp_blackhole

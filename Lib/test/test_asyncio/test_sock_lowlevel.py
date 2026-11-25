@@ -531,14 +531,15 @@ class BaseSockTestsMixin:
 
     def test_sock_client_fail(self):
         # Keep the port bound but not listening so that no other process
-        # can take it and connections to it are refused.
+        # can take it and connections to it are refused (macOS times them
+        # out immediately instead).
         with socket.socket() as s:
             s.bind(('127.0.0.1', 0))
             address = s.getsockname()
 
             sock = socket.socket()
             sock.setblocking(False)
-            with self.assertRaises(ConnectionRefusedError):
+            with self.assertRaises((ConnectionRefusedError, TimeoutError)):
                 self.loop.run_until_complete(
                     self.loop.sock_connect(sock, address))
             sock.close()

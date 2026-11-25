@@ -1356,7 +1356,7 @@ class StreamTests(test_utils.TestCase):
 
     def test_open_connection_happy_eyeball_refcycles(self):
         # Keep the port bound but not listening on both loopback addresses
-        # that "localhost" may resolve to, so connections are refused.
+        # that "localhost" may resolve to, so connections fail.
         reserved = []
         self.addCleanup(lambda: [s.close() for s in reserved])
         sock4 = socket.socket()
