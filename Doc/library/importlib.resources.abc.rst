@@ -172,14 +172,16 @@
 .. class:: TraversableResources
 
     An abstract base class for resource readers capable of serving
-    the :meth:`importlib.resources.files` interface. Subclasses
-    :class:`ResourceReader` and provides
-    concrete implementations of the :class:`!ResourceReader`'s
-    abstract methods. Therefore, any loader supplying
-    :class:`!TraversableResources` also supplies :class:`!ResourceReader`.
+    the :meth:`importlib.resources.files` interface. This class inherits from
+    :class:`ResourceReader` and provides concrete implementations
+    of the :class:`!ResourceReader`'s abstract methods given the
+    provided ``files`` implementation. Therefore, any loader supplying
+    :class:`!TraversableResources` also supplies
+    :class:`!ResourceReader`.
 
     Loaders that wish to support resource reading are expected to
-    implement this interface.
+    implement this interface, instead of implementing
+    :class:`!ResourceReader` directly.
 
     .. method:: files()
        :abstractmethod:
