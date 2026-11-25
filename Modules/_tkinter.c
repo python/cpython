@@ -288,6 +288,14 @@ Tkinter_TkInit(Tcl_Interp *interp)
    ENTER_TCL/LEAVE_TCL pairs to be contained inside the code between
    ENTER_PYTHON and LEAVE_PYTHON.
 
+   An event handler can also be called when Tcl is not entered with
+   ENTER_TCL, for example from a foreign event loop on Windows, which
+   dispatches a window message to Tk while the Python interpreter lock
+   is released.  Then there is no saved thread state and the lock for
+   Tcl is not held, so ENTER_PYTHON acquires the Python interpreter
+   lock with PyGILState_Ensure() and LEAVE_PYTHON releases it with
+   PyGILState_Release().
+
    These locks expand to several statements and brackets; they should
    not be used in branches of if statements and the like.
 
@@ -337,15 +345,27 @@ static PyThreadState *tcl_tstate = NULL;
     tcl_tstate = NULL; if(tcl_lock)PyThread_release_lock(tcl_lock); }
 
 #define ENTER_PYTHON \
-    { PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; \
-      if(tcl_lock) \
-        PyThread_release_lock(tcl_lock); \
-      PyEval_RestoreThread((tstate)); }
+    { PyThreadState *tstate = tcl_tstate; \
+      PyGILState_STATE gilstate = PyGILState_UNLOCKED; \
+      if (tstate == NULL) { \
+          gilstate = PyGILState_Ensure(); \
+      } \
+      else { \
+          tcl_tstate = NULL; \
+          if(tcl_lock)PyThread_release_lock(tcl_lock); \
+          PyEval_RestoreThread(tstate); \
+      }
 
 #define LEAVE_PYTHON \
-    { PyThreadState *tstate = PyEval_SaveThread(); \
-      if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
-      tcl_tstate = tstate; }
+      if (tstate == NULL) { \
+          PyGILState_Release(gilstate); \
+      } \
+      else { \
+          tstate = PyEval_SaveThread(); \
+          if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
+          tcl_tstate = tstate; \
+      } \
+    }
 
 #ifndef FREECAST
 #define FREECAST (char *)
@@ -362,6 +382,7 @@ typedef struct {
     int threaded; /* True if tcl_platform[threaded] */
     Tcl_ThreadId thread_id;
     int dispatching;
+    int event_hook; /* True if counted by EnableEventHook() */
     PyObject *trace;
     /* We cannot include tclInt.h, as this is internal.
        So we cache interesting types here. */
@@ -644,8 +665,8 @@ Tcl_AppInit(Tcl_Interp *interp)
  * `tkMain.c'.
  */
 
-static void EnableEventHook(void); /* Forward */
-static void DisableEventHook(void); /* Forward */
+static void EnableEventHook(TkappObject *); /* Forward */
+static void DisableEventHook(TkappObject *); /* Forward */
 
 static TkappObject *
 Tkapp_New(const char *screenName, const char *className,
@@ -831,7 +852,7 @@ Tkapp_New(const char *screenName, const char *className,
         return (TkappObject *)result;
     }
 
-    EnableEventHook();
+    EnableEventHook(v);
 
     return v;
 }
@@ -2589,15 +2610,6 @@ typedef struct {
     PyObject *func;
 } PythonCmd_ClientData;
 
-static int
-PythonCmd_Error(Tcl_Interp *interp)
-{
-    errorInCmd = 1;
-    excInCmd = PyErr_GetRaisedException();
-    LEAVE_PYTHON
-    return TCL_ERROR;
-}
-
 /* This is the Tcl command that acts as a wrapper for Python
  * function or method.
  */
@@ -2610,19 +2622,20 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
     int i;
     Tcl_Obj *obj_res;
     int objargs = data->self->wantobjects >= 2;
+    int result = TCL_ERROR;
 
     ENTER_PYTHON
 
     /* Create argument tuple (objv1, ..., objvN) */
     if (!(args = PyTuple_New(objc - 1)))
-        return PythonCmd_Error(interp);
+        goto error;
 
     for (i = 0; i < (objc - 1); i++) {
         PyObject *s = objargs ? FromObj(data->self, objv[i + 1])
                               : unicodeFromTclObj(data->self, objv[i + 1]);
         if (!s) {
             Py_DECREF(args);
-            return PythonCmd_Error(interp);
+            goto error;
         }
         PyTuple_SET_ITEM(args, i, s);
     }
@@ -2631,19 +2644,25 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
     Py_DECREF(args);
 
     if (res == NULL)
-        return PythonCmd_Error(interp);
+        goto error;
 
     obj_res = AsObj(res);
     if (obj_res == NULL) {
         Py_DECREF(res);
-        return PythonCmd_Error(interp);
+        goto error;
     }
     Tcl_SetObjResult(interp, obj_res);
     Py_DECREF(res);
+    result = TCL_OK;
+    goto done;
 
+error:
+    errorInCmd = 1;
+    excInCmd = PyErr_GetRaisedException();
+done:
     LEAVE_PYTHON
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -3390,10 +3409,10 @@ Tkapp_Dealloc(PyObject *op)
         Tcl_DeleteInterp(Tkapp_Interp(self));
         LEAVE_TCL
     }
+    DisableEventHook(self);
     (void)Tkapp_Clear(op);
     tp->tp_free(op);
     Py_DECREF(tp);
-    DisableEventHook();
 }
 
 
@@ -3704,6 +3723,10 @@ static PyMethodDef moduleMethods[] =
 };
 
 #ifdef WAIT_FOR_STDIN
+/* The number of Tcl interpreters which use the event hook. */
+static Py_ssize_t event_hook_users = 0;
+static PyMutex event_hook_mutex = {0};
+
 #ifndef MS_WINDOWS
 
 static int stdin_ready = 0;
@@ -3721,8 +3744,6 @@ MyFileProc(void *clientData, int mask)
 }
 #endif
 
-static PyThreadState *event_tstate = NULL;
-
 static int
 EventHook(void)
 {
@@ -3731,9 +3752,18 @@ EventHook(void)
     DWORD type;
 #else
     int tfile;
+#endif
+    /* The hook is called with the GIL released, usually by PyOS_Readline()
+       in the thread which reads the input.  Use the thread state of that
+       thread, not of the thread which created the Tcl interpreter. */
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
+    if (tstate == NULL) {
+        return 0;
+    }
+#ifndef MS_WINDOWS
     stdin_ready = 0;
 #endif
-    PyEval_RestoreThread(event_tstate);
+    PyEval_RestoreThread(tstate);
     errorInCmd = 0;
 #ifdef MS_WINDOWS
     hStdin = GetStdHandle(STD_INPUT_HANDLE);
@@ -3767,7 +3797,7 @@ EventHook(void)
             /* Tcl is threaded and stdin is watched by MyFileProc, so we
                can wait for an event or input instead of polling. */
             Py_BEGIN_ALLOW_THREADS
-            tcl_tstate = event_tstate;
+            tcl_tstate = tstate;
             result = Tcl_DoOneEvent(0);
             tcl_tstate = NULL;
             Py_END_ALLOW_THREADS
@@ -3777,7 +3807,7 @@ EventHook(void)
         {
             Py_BEGIN_ALLOW_THREADS
             if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1);
-            tcl_tstate = event_tstate;
+            tcl_tstate = tstate;
 
             result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 
@@ -3812,23 +3842,32 @@ EventHook(void)
 #endif
 
 static void
-EnableEventHook(void)
+EnableEventHook(TkappObject *self)
 {
 #ifdef WAIT_FOR_STDIN
+    PyMutex_Lock(&event_hook_mutex);
+    event_hook_users++;
     if (PyOS_InputHook == NULL) {
-        event_tstate = PyThreadState_Get();
         PyOS_InputHook = EventHook;
     }
+    self->event_hook = 1;
+    PyMutex_Unlock(&event_hook_mutex);
 #endif
 }
 
 static void
-DisableEventHook(void)
+DisableEventHook(TkappObject *self)
 {
 #ifdef WAIT_FOR_STDIN
-    if (Tk_GetNumMainWindows() == 0 && PyOS_InputHook == EventHook) {
+    if (!self->event_hook) {
+        return;
+    }
+    PyMutex_Lock(&event_hook_mutex);
+    self->event_hook = 0;
+    if (--event_hook_users == 0 && PyOS_InputHook == EventHook) {
         PyOS_InputHook = NULL;
     }
+    PyMutex_Unlock(&event_hook_mutex);
 #endif
 }
 
