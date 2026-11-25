@@ -3140,7 +3140,7 @@ deimmortalize(PyObject *self, PyObject *op)
         return NULL;
     }
     op->ob_refcnt = _Py_IMMORTAL_MINIMUM_REFCNT - (1 << 20);
-    assert(!_Py_IsImmortal(op));
+    assert(!_Py_IsImmortal(op) || _Py_IsStaticImmortal(op));
     Py_RETURN_NONE;
 }
 #endif

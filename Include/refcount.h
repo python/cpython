@@ -129,7 +129,8 @@ static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
     return (_Py_atomic_load_uint32_relaxed(&op->ob_ref_local) ==
             _Py_IMMORTAL_REFCNT_LOCAL);
 #elif SIZEOF_VOID_P > 4
-    return _Py_CAST(int32_t, op->ob_refcnt) < 0;
+    return (_Py_CAST(int32_t, op->ob_refcnt) < 0)
+        || ((op->ob_flags & _Py_STATICALLY_ALLOCATED_FLAG) != 0);
 #else
     return op->ob_refcnt >= _Py_IMMORTAL_MINIMUM_REFCNT;
 #endif
