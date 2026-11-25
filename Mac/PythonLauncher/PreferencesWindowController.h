@@ -30,9 +30,9 @@
 
 - (void)controlTextDidChange:(NSNotification *)aNotification;
 
-- (unsigned int)comboBox:(NSComboBox *)aComboBox indexOfItemWithStringValue:(NSString *)aString;
-- (id)comboBox:(NSComboBox *)aComboBox objectValueForItemAtIndex:(int)index;
-- (int)numberOfItemsInComboBox:(NSComboBox *)aComboBox;
-
+- (NSUInteger)comboBox:(NSComboBox *)aComboBox
+    indexOfItemWithStringValue:(NSString *)aString;
+- (id)comboBox:(NSComboBox *)aComboBox objectValueForItemAtIndex:(NSInteger)index;
+- (NSUInteger)numberOfItemsInComboBox:(NSComboBox *)aComboBox;
 
 @end
