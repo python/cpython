@@ -37,6 +37,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
+#include "pycore_time.h"          // _PyDeadline_Init(), _PyDeadline_Get()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL
 
 #include <stdbool.h>
@@ -2116,6 +2117,7 @@ _sqlite3.Connection.backup as pysqlite_connection_backup
     progress: object = None
     name: str = "main"
     sleep: double = 0.250
+    timeout: double = -1.0
 
 Makes a backup of the database.
 [clinic start generated code]*/
@@ -2124,13 +2126,50 @@ static PyObject *
 pysqlite_connection_backup_impl(pysqlite_Connection *self,
                                 pysqlite_Connection *target, int pages,
                                 PyObject *progress, const char *name,
-                                double sleep)
-/*[clinic end generated code: output=306a3e6a38c36334 input=c6519d0f59d0fd7f]*/
+                                double sleep, double timeout)
+/*[clinic end generated code: output=d5142d3af19817a7 input=f44c094245616441]*/
 {
     int rc;
     int sleep_ms = (int)(sleep * 1000.0);
     sqlite3 *bck_conn;
     sqlite3_backup *bck_handle;
+
+    /* Only -1 disables the retry deadline; every other negative value and
+       every non-finite value is rejected. */
+    int use_timeout;
+    if (timeout == -1.0) {
+        use_timeout = 0;
+    }
+    else if (Py_IS_NAN(timeout) || Py_IS_INFINITY(timeout) || timeout < 0.0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "timeout must be -1 or a non-negative finite number");
+        return NULL;
+    }
+    else {
+        use_timeout = 1;
+    }
+
+    PyTime_t timeout_ns = 0;
+    PyTime_t deadline = 0;
+    int retry_window_started = 0;
+    int last_lock_rc = SQLITE_BUSY;
+
+    if (use_timeout && timeout != 0.0) {
+        /* _PyTime_FromSecondsDouble() is not exported to shared extensions.
+           Use the exported object-based conversion, as select/socket do.
+           timeout is already validated as non-negative and finite. */
+        PyObject *timeout_obj = PyFloat_FromDouble(timeout);
+        if (timeout_obj == NULL) {
+            return NULL;
+        }
+        int conversion_failed =
+            _PyTime_FromSecondsObject(&timeout_ns, timeout_obj,
+                                      _PyTime_ROUND_CEILING) < 0;
+        Py_DECREF(timeout_obj);
+        if (conversion_failed) {
+            return NULL;
+        }
+    }
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -2166,9 +2205,27 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
     }
 
     do {
+        /* Once a lock-conflict window is open, never start another backup
+           step after its budget has been exhausted. */
+        if (use_timeout && retry_window_started) {
+            if (_PyDeadline_Get(deadline) <= 0) {
+                goto timeout_cleanup;
+            }
+        }
+
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_backup_step(bck_handle, pages);
         Py_END_ALLOW_THREADS
+
+        /* Arm the budget at the first lock conflict, before invoking the
+           callback: time spent in progress() belongs to the retry window.
+           The callback still runs first and its exception still wins. */
+        if (use_timeout && !retry_window_started &&
+            (rc == SQLITE_BUSY || rc == SQLITE_LOCKED))
+        {
+            deadline = _PyDeadline_Init(timeout_ns);
+            retry_window_started = 1;
+        }
 
         if (progress != Py_None) {
             int remaining = sqlite3_backup_remaining(bck_handle);
@@ -2185,12 +2242,38 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
             Py_DECREF(res);
         }
 
+        /* Any progress closes the consecutive-conflict window. */
+        if (rc == SQLITE_OK) {
+            retry_window_started = 0;
+        }
+
         /* Sleep for a while if there are still further pages to copy and
            the engine could not make any progress */
         if (rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
-            Py_BEGIN_ALLOW_THREADS
-            sqlite3_sleep(sleep_ms);
-            Py_END_ALLOW_THREADS
+            last_lock_rc = rc;
+
+            if (use_timeout) {
+                PyTime_t remaining_ns = _PyDeadline_Get(deadline);
+                if (remaining_ns <= 0) {
+                    goto timeout_cleanup;
+                }
+
+                /* Never sleep longer than the remaining budget. */
+                PyTime_t sleep_ns = (PyTime_t)sleep_ms * 1000000;
+                int effective_sleep_ms = sleep_ms;
+                if (remaining_ns < sleep_ns) {
+                    effective_sleep_ms = (int)(remaining_ns / 1000000);
+                }
+
+                Py_BEGIN_ALLOW_THREADS
+                sqlite3_sleep(effective_sleep_ms);
+                Py_END_ALLOW_THREADS
+            }
+            else {
+                Py_BEGIN_ALLOW_THREADS
+                sqlite3_sleep(sleep_ms);
+                Py_END_ALLOW_THREADS
+            }
         }
     } while (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED);
 
@@ -2204,6 +2287,15 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
     }
 
     Py_RETURN_NONE;
+
+timeout_cleanup:
+    /* The deadline is a CPython-side retry limit, not a SQLite error code.
+       Report the last real lock conflict so structured diagnostics are kept. */
+    Py_BEGIN_ALLOW_THREADS
+    (void)sqlite3_backup_finish(bck_handle);
+    Py_END_ALLOW_THREADS
+    set_error_from_code(self->state, last_lock_rc);
+    return NULL;
 }
 
 /*[clinic input]

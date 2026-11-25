@@ -1,0 +1,5 @@
+:meth:`sqlite3.Connection.backup` now accepts a *timeout* keyword-only
+argument.  When positive, it limits the window for retrying after a
+``SQLITE_BUSY`` or ``SQLITE_LOCKED`` lock conflict instead of retrying
+indefinitely.  The default value of ``-1.0`` preserves the existing
+behaviour.

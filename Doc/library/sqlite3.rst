@@ -1153,7 +1153,8 @@ Connection objects
       .. versionchanged:: 3.13
          Added the *filter* parameter.
 
-   .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
+   .. method:: backup(target, *, pages=-1, progress=None, name="main",
+                      sleep=0.250, timeout=-1.0)
 
       Create a backup of an SQLite database.
 
@@ -1188,6 +1189,43 @@ Connection objects
       :param float sleep:
           The number of seconds to sleep between successive attempts
           to back up remaining pages.
+
+      :param float timeout:
+          An optional timeout, in seconds, for retrying while the source
+          database is locked.  Retries start when the first lock conflict is
+          detected and the window is closed whenever the underlying backup
+          step reports ``SQLITE_OK``, so the
+          timeout bounds a *consecutive* run of lock conflicts rather than the
+          total duration of the backup.  The sleep between retries is clipped
+          to the time remaining in the window.
+
+          Defaults to ``-1.0``, which keeps the historical behaviour of
+          retrying indefinitely.  Any other negative value, ``NaN``, or
+          infinity raises :exc:`ValueError`.  A finite value too large to
+          convert to the internal clock type raises :exc:`OverflowError`.
+
+          If the retry budget is exhausted, :exc:`OperationalError` is
+          raised.  Its :attr:`~sqlite3.OperationalError.sqlite_errorcode`
+          and :attr:`~sqlite3.OperationalError.sqlite_errorname` attributes
+          carry the last ``SQLITE_BUSY`` or ``SQLITE_LOCKED`` result from the
+          underlying backup step.  An exception raised by *progress* itself
+          propagates unchanged and takes precedence over a timeout.
+
+          This is a soft, best-effort limit, not a hard real-time deadline.
+          It is checked between calls to the underlying backup step: the
+          first step is not charged to the budget (the window starts only
+          when a lock conflict is detected), while every later step can
+          consume, or run past, the time remaining in the window before the
+          next check.  A step may block while waiting for a file lock (as
+          controlled by the connection's ``timeout`` passed to
+          :func:`connect`), and that wait is not interruptible.  Time spent
+          in the *progress* callback after a conflict has been detected is
+          charged to the window.  Consequently the total wall-clock time can
+          exceed *timeout*, and a lock that is repeatedly released and
+          reacquired can accumulate more than *timeout* of waiting.  The
+          connection's busy-handler configuration is left unchanged.
+
+          .. versionadded:: 3.16
 
       Example 1, copy an existing database into another:
 
