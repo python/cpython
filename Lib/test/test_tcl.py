@@ -2,9 +2,12 @@ import unittest
 import subprocess
 import sys
 import os
+import threading
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import threading_helper
+from test.support.isolation import runInSubprocess
 
 # Skip this test if the _tkinter module wasn't built.
 _tkinter = import_helper.import_module('_tkinter')
@@ -32,6 +35,29 @@ class TkinterTest(unittest.TestCase):
         # (issue44608: there were leaks in the following cases)
         self.assertRaises(TypeError, _tkinter._flatten, 'string')
         self.assertRaises(TypeError, _tkinter._flatten, {'set'})
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         'requires the free-threaded build')
+    @threading_helper.requires_working_threading()
+    @runInSubprocess()
+    def test_create_concurrent(self):
+        # gh-154923: Create Tcl interpreters in different threads at once.
+        # Run in a fresh process, where no interpreter was created yet.
+        nthreads = 16
+        start = threading.Barrier(nthreads)
+        errors = []
+        def worker():
+            try:
+                start.wait()
+                for _ in range(8):
+                    _tkinter.create(None, '', 'Tk', False, 1, False, False,
+                                    None)
+            except Exception as e:
+                errors.append(e)
+        threads = [threading.Thread(target=worker) for _ in range(nthreads)]
+        with threading_helper.start_threads(threads):
+            pass
+        self.assertEqual(errors, [])
 
 
 class TclTest(unittest.TestCase):
