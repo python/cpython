@@ -207,6 +207,11 @@ class BinaryFormatTestBase(unittest.TestCase):
         collector.export(None)
         return filename, collector
 
+    def _read_offset(self, filename, hdr_off):
+        with open(filename, "rb") as raw:
+            raw.seek(hdr_off)
+            return struct.unpack("=Q", raw.read(8))[0]
+
     def read_block_columns(self, filename):
         """Return the header flags and (decoded size, encoding) per column.
 
@@ -1246,6 +1251,9 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
         samples = [[make_interpreter(0, [make_thread(1, stack)])]
                    for stack in stacks]
         filename = self.create_binary_file(samples)
+        sample_size = (self._read_offset(filename, self.HDR_OFF_STR_TABLE)
+                       - self.FILE_HEADER_PLACEHOLDER_SIZE)
+        self.assertGreater(sample_size, 2 * 1024 * 1024)
         with BinaryReader(filename) as reader:
             first = StackCollector()
             second = StackCollector()
@@ -1648,11 +1656,6 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
     MIN_STRING_ENTRY_SIZE = 1
     MIN_FRAME_ENTRY_SIZE = 7
 
-    def _read_offset(self, filename, hdr_off):
-        with open(filename, "rb") as raw:
-            raw.seek(hdr_off)
-            return struct.unpack("=Q", raw.read(8))[0]
-
     def _patch_footer_count(self, filename, ftr_off, value):
         size = os.path.getsize(filename)
         with open(filename, "r+b") as raw:
@@ -2050,6 +2053,8 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
             ("zstd frame size does not match the decoded size",
              frame, len(instructions) + 1),
             ("zstd decompression error: ", bad_checksum, len(instructions)),
+            ("Invalid sample block: stored columns exceed the block limit",
+             b"\x00" * (self.MAX_BLOCK_SIZE + 1), len(instructions)),
         ]
         for message, stored, decoded_size in cases:
             with self.subTest(message):

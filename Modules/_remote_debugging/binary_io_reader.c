@@ -36,7 +36,7 @@
 #define FRAME_INFO_CACHE_SIZE 1024
 
 #if !USE_MMAP
-/* A block on disk is at most MAX_BLOCK_SIZE plus a small header */
+/* The block parser limits stored columns to MAX_BLOCK_SIZE */
 #define MAX_STORED_BLOCK_SIZE (MAX_BLOCK_SIZE + 1024)
 /* Replay reads samples through a window that fits any block */
 #define SAMPLE_WINDOW_SIZE (2 * MAX_BLOCK_SIZE)
@@ -1018,6 +1018,7 @@ reader_parse_block_header(BinaryReader *reader, const ByteBuffer *section,
     }
 
     size_t decoded_total = 0;
+    size_t stored_total = 0;
     for (unsigned column = 0; column < COLUMN_COUNT; column++) {
         ColumnDescriptor *descriptor = &header->columns[column];
         /* Decoded size (varint) and encoding (1 byte) */
@@ -1058,7 +1059,11 @@ reader_parse_block_header(BinaryReader *reader, const ByteBuffer *section,
         if (descriptor->decoded_size > MAX_BLOCK_SIZE - decoded_total) {
             return block_error("decoded columns exceed the block limit");
         }
+        if (descriptor->stored_size > MAX_BLOCK_SIZE - stored_total) {
+            return block_error("stored columns exceed the block limit");
+        }
         decoded_total += descriptor->decoded_size;
+        stored_total += descriptor->stored_size;
     }
 
     /* Each sample needs at least one byte of stream index and residual */
@@ -1657,7 +1662,8 @@ reader_load_samples(BinaryReader *reader, size_t pos, ByteBuffer *section,
     ByteBuffer *window = &reader->sample_window;
     if (pos == 0) {
         /* A new replay starts at the first block */
-        if (buffer_reserve(window, SAMPLE_WINDOW_SIZE) < 0) {
+        if (buffer_reserve(window, Py_MIN(SAMPLE_WINDOW_SIZE,
+                                          reader->sample_data_size)) < 0) {
             return -1;
         }
         if (FSEEK64(reader->fp, FILE_HEADER_PLACEHOLDER_SIZE, SEEK_SET) != 0) {

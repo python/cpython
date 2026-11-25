@@ -120,11 +120,12 @@ network streams.
 ## Sample Data
 
 Sample data begins at offset 64 and extends to `string_table_offset`. Samples
-are grouped into blocks of at most 1 MiB of decoded data. Within a block,
-samples use delta compression to minimize redundancy when consecutive samples
-from the same thread have identical or similar call stacks. Each block can be
-decoded on its own once the string and frame tables are loaded, so a reader
-only needs to decode one block at a time.
+are grouped into blocks, and each block holds at most 1 MiB of decoded data
+and takes at most 1 MiB on disk. Within a block, samples use delta compression
+to minimize redundancy when consecutive samples from the same thread have
+identical or similar call stacks. Each block can be decoded on its own once
+the string and frame tables are loaded, so a reader only needs to decode one
+block at a time.
 
 ### Block Format
 
@@ -659,16 +660,25 @@ patterns benefit from kernel read-ahead.
 
 The implementation uses `madvise()` to hint the access pattern to the kernel:
 `MADV_SEQUENTIAL` indicates the file will be read linearly, enabling
-aggressive read-ahead. `MADV_WILLNEED` requests pre-faulting of pages.
-On Linux, `MAP_POPULATE` pre-faults all pages at mmap time rather than on
-first access, moving page fault overhead from the parsing loop to the
-initial mapping for more predictable performance. For large files (over
-32 MB), `MADV_HUGEPAGE` requests transparent huge pages (2 MB instead of
-4 KB) to reduce TLB pressure when accessing large amounts of data.
+aggressive read-ahead. For large files (over 32 MB), `MADV_HUGEPAGE` requests
+transparent huge pages (2 MB instead of 4 KB) to reduce TLB pressure when
+accessing large amounts of data. Pages are not loaded up front, only when
+replay reaches them.
 
-On Windows, the implementation falls back to standard file I/O with full
-file buffering. Profiling data files are typically small enough (tens to
-hundreds of megabytes) that this is acceptable.
+On Linux, the reader also gives back memory it no longer needs. Once the
+string and frame tables have been parsed, and after each sample block has
+been replayed, it uses `MADV_DONTNEED` to tell the kernel those pages can be
+dropped. The mapping is read-only, so if a dropped page is needed again, the
+kernel reads it back from the file. This keeps the memory used for sample
+data small, however large the file is.
+
+On Windows, the reader uses standard file I/O instead. When a file is opened,
+it only reads the header and the part after the sample data, which holds the
+string and frame tables, the statistics and the footer. During replay,
+samples are read into a reusable buffer. The buffer is 2 MiB, twice the
+maximum block size, or the size of the sample data if that is smaller, so a
+complete block always fits. When the buffer runs low, the bytes not yet
+replayed are moved to the start and the rest is filled from the file.
 
 The writer buffers samples in the current block and writes each completed
 block with a single call, so individual samples never cause a write.
