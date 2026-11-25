@@ -379,6 +379,13 @@ class ShlexTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             shlex_instance.punctuation_chars = False
 
+    def testLineNumbers(self):
+        """Test that tokens have correct line number attributes."""
+        source = '1\n2 "2\n3" 3\n4 "4\n5\n6"'
+        expected = [(1, 1), (2, 2), (2, 3), (3, 3), (4, 4), (4, 6)]
+        found = [(t.startline, t.endline) for t in shlex.split(source)]
+        self.assertEqual(expected, found)
+
     def testLinenoAfterNewLine(self):
         s = shlex.shlex("line 1\nline 2")
         self.assertEqual(s.lineno, 1)  # before consumption
