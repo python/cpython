@@ -112,7 +112,7 @@ def setup_tests(runtests: RunTests) -> None:
     support.PGO = runtests.pgo
     support.PGO_EXTENDED = runtests.pgo_extended
 
-    set_match_tests(runtests.match_tests)
+    set_match_tests(runtests.match_tests, runtests.match_labels)
 
     reporter = get_reporter()
     reporter.run_started(runtests)
