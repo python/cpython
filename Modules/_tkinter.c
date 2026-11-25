@@ -671,6 +671,11 @@ Tkapp_New(const char *screenName, const char *className,
     if (v == NULL)
         return NULL;
 
+    /* Without the GIL, two threads could both free tcl_lock below, and
+       the first-time initialization in Tcl_CreateInterp() is not
+       thread-safe either.  Serialize them. */
+    static PyMutex tcl_create_mutex;
+    PyMutex_Lock(&tcl_create_mutex);
     v->interp = Tcl_CreateInterp();
     v->wantobjects = wantobjects;
 #if TCL_MAJOR_VERSION >= 9
@@ -685,6 +690,7 @@ Tkapp_New(const char *screenName, const char *className,
 
 #ifndef TCL_THREADS
     if (v->threaded) {
+        PyMutex_Unlock(&tcl_create_mutex);
         PyErr_SetString(PyExc_RuntimeError,
                         "Tcl is threaded but _tkinter is not");
         Py_DECREF(v);
@@ -696,6 +702,7 @@ Tkapp_New(const char *screenName, const char *className,
         PyThread_free_lock(tcl_lock);
         tcl_lock = NULL;
     }
+    PyMutex_Unlock(&tcl_create_mutex);
 
     v->OldBooleanType = Tcl_GetObjType("boolean");
     {
