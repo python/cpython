@@ -359,8 +359,8 @@ framelocalsproxy_setfast_lock_held(PyFrameObject *frame, int i,
     PyObject *cell = NULL;
     if (kind == CO_FAST_FREE) {
         // The cell was set when the frame was created from
-        // the function's closure.
-        assert(!PyStackRef_IsNull(oldvalue) && PyCell_Check(PyStackRef_AsPyObjectBorrow(oldvalue)));
+        // the function's closure, unless the frame has been cleared.
+        assert(PyStackRef_IsNull(oldvalue) || PyCell_Check(PyStackRef_AsPyObjectBorrow(oldvalue)));
         cell = PyStackRef_AsPyObjectBorrow(oldvalue);
     } else if (kind & CO_FAST_CELL && !PyStackRef_IsNull(oldvalue)) {
         PyObject *as_obj = PyStackRef_AsPyObjectBorrow(oldvalue);
