@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 import contextlib
+import errno
 import itertools
 import operator
 import pathlib
@@ -46,7 +47,10 @@ class ZipReader(abc.TraversableResources):
         try:
             return super().open_resource(resource)
         except KeyError as exc:
-            raise FileNotFoundError(exc.args[0])
+            if resource == exc.args[0]:
+                raise FileNotFoundError(errno.ENOENT, 'No such resource', resource)
+            else:
+                raise FileNotFoundError(errno.ENOENT, exc.args[0])
 
     def is_resource(self, path):
         """
@@ -72,9 +76,11 @@ class MultiplexedPath(abc.Traversable):
         self._paths = list(map(_ensure_traversable, remove_duplicates(paths)))
         if not self._paths:
             message = 'MultiplexedPath must contain at least one path'
-            raise FileNotFoundError(message)
-        if not all(path.is_dir() for path in self._paths):
-            raise NotADirectoryError('MultiplexedPath only supports directories')
+            raise FileNotFoundError(errno.ENOENT, message)
+        for path in self._paths:
+            if not path.is_dir():
+                message = 'MultiplexedPath only supports directories'
+                raise NotADirectoryError(errno.ENOTDIR, message, path)
 
     def iterdir(self):
         children = (child for path in self._paths for child in path.iterdir())
@@ -83,10 +89,10 @@ class MultiplexedPath(abc.Traversable):
         return map(self._follow, (locs for name, locs in groups))
 
     def read_bytes(self):
-        raise FileNotFoundError(f'{self} is not a file')
+        raise FileNotFoundError(errno.ENOENT, f'{self} is not a file')
 
     def read_text(self, *args, **kwargs):
-        raise FileNotFoundError(f'{self} is not a file')
+        raise FileNotFoundError(errno.ENOENT, f'{self} is not a file')
 
     def is_dir(self):
         return True
@@ -122,7 +128,7 @@ class MultiplexedPath(abc.Traversable):
                 return next(one_file)
 
     def open(self, *args, **kwargs):
-        raise FileNotFoundError(f'{self} is not a file')
+        raise FileNotFoundError(errno.ENOENT, f'{self} is not a file')
 
     @property
     def name(self):

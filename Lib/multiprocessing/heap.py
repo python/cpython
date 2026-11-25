@@ -9,6 +9,7 @@
 
 import bisect
 from collections import defaultdict
+import errno
 import mmap
 import os
 import sys
@@ -45,7 +46,7 @@ if sys.platform == 'win32':
                 # We have reopened a preexisting mmap.
                 buf.close()
             else:
-                raise FileExistsError('Cannot find name for new mmap')
+                raise FileExistsError(errno.EEXIST, 'Cannot find name for new mmap')
             self.name = name
             self.buffer = buf
             self._state = (self.size, self.name)

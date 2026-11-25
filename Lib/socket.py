@@ -399,7 +399,8 @@ class socket(_socket.socket):
         try:
             while True:
                 if timeout and not selector_select(timeout):
-                    raise TimeoutError('timed out')
+                    raise TimeoutError(errno.ETIMEDOUT,
+                                       os.strerror(errno.ETIMEDOUT))
                 if count:
                     blocksize = min(count - total_sent, blocksize)
                     if blocksize <= 0:
