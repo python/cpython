@@ -3182,8 +3182,8 @@ static PyTypeObject PyDateTime_DeltaType = {
     0,                                                  /* tp_init */
     0,                                                  /* tp_alloc */
     delta_new,                                          /* tp_new */
-    .tp_vectorcall = delta_vectorcall,
     0,                                                  /* tp_free */
+    .tp_vectorcall = delta_vectorcall,
 };
 
 // XXX Can we make this const?
