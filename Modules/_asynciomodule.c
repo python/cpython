@@ -4235,7 +4235,6 @@ _asyncio__clear_caches_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
-
 static int
 module_traverse(PyObject *mod, visitproc visit, void *arg)
 {

@@ -337,11 +337,12 @@ def clear_caches():
         _asyncio._clear_caches()
 
     try:
-       asyncio_coroutines = sys.modules['asyncio.coroutines']
+        asyncio_coroutines = sys.modules['asyncio.coroutines']
     except KeyError:
         pass
     else:
         asyncio_coroutines._iscoroutine_typecache.clear()
+
 
 def get_build_info():
     # Get most important configure and build options as a list of strings.
