@@ -1,0 +1,3 @@
+The :mod:`tkinter` event loop running at the interactive prompt no longer
+polls on Unix if Tcl is threaded.  It now waits for events or input, so the
+process does not wake up every few milliseconds while idle.
