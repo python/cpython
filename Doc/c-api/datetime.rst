@@ -13,7 +13,7 @@ the module initialisation function.  The macro puts a pointer to a C structure
 into a static variable, :c:data:`PyDateTimeAPI`, that is used by the following
 macros.
 
-.. c:macro:: PyDateTime_IMPORT()
+.. c:macro:: PyDateTime_IMPORT
 
    Import the datetime C API.
 
@@ -51,7 +51,7 @@ macros.
    .. versionchanged:: 3.15
 
       This variable should not be accessed directly as direct access is not thread-safe.
-      Use :c:func:`PyDateTime_IMPORT` instead.
+      Use :c:macro:`PyDateTime_IMPORT` instead.
 
 .. c:type:: PyDateTime_Date
 

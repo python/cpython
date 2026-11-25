@@ -260,7 +260,7 @@ their completion.
 
          *stdin* gets closed when ``input=None`` too.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
 
          If :meth:`!communicate` is cancelled, the output that was
          already read is now preserved and returned by a subsequent

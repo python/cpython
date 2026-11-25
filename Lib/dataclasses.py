@@ -806,7 +806,11 @@ def _get_type_from_annotation(annotation, cls):
     path = match[1].split(".")
     root = sys.modules.get(cls.__module__)
     for path_item in path:
-        root = getattr(root, path_item.strip(), None)
+        try:
+            root = getattr(root, path_item.strip(), None)
+        except Exception:
+            # Like annotationlib, ignore lazy imports that cannot be resolved.
+            return None
         if root is None:
             return None
 

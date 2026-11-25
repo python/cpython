@@ -81,6 +81,7 @@ class RunTests:
     fail_fast: bool
     fail_env_changed: bool
     match_tests: TestFilter
+    match_labels: TestFilter
     match_tests_dict: FilterDict | None
     rerun: bool
     forever: bool
@@ -93,6 +94,8 @@ class RunTests:
     hunt_refleak: HuntRefleak | None
     test_dir: StrPath | None
     use_junit: bool
+    # Failed tests are not re-run after this run
+    final_run: bool
     coverage: bool
     memory_limit: str | None
     gc_threshold: int | None

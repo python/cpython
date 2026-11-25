@@ -38,6 +38,27 @@ exit:
     return return_value;
 }
 
+static PyObject *
+simplequeue_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    assert(_PyType_CAST(type)->tp_new == simplequeue_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoPositionalStack("SimpleQueue", nargs) ||
+        !_PyArg_NoKwnames("SimpleQueue", kwnames)) {
+        goto exit;
+    }
+    return_value = simplequeue_new_impl(_PyType_CAST(type));
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_queue_SimpleQueue_put__doc__,
 "put($self, /, item, block=True, timeout=None)\n"
 "--\n"
@@ -390,4 +411,4 @@ _queue_SimpleQueue___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8219fe2f2ed5f068 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab7862d3ec0c03c4 input=a9049054013a1b77]*/

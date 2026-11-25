@@ -119,7 +119,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    .. versionchanged:: 3.3
       *no_block* has no effect anymore.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       Submodules are now imported if needed.
 
 

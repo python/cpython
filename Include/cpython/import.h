@@ -17,6 +17,8 @@ PyAPI_FUNC(PyObject *) PyImport_CreateModuleFromInitfunc(
     PyObject *spec,
     PyObject *(*initfunc)(void));
 
+/* This structure is included verbatim in the public documentation
+   (Doc/c-api/import.rst). */
 struct _frozen {
     const char *name;                 /* ASCII encoded string */
     const unsigned char *code;

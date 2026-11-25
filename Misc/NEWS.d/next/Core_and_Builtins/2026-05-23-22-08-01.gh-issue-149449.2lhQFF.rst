@@ -1,3 +1,0 @@
-Fix a use-after-free crash when the :mod:`unicodedata` module was removed
-from :data:`sys.modules` and garbage-collected between calls that decode
-``\N{...}`` escapes or use the ``namereplace`` codec error handler.

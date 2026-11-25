@@ -4,10 +4,11 @@ import json
 import marshal
 import opcode
 import os
+import sys
 import tempfile
 import unittest
 
-from test.support import is_emscripten
+from test.support import is_emscripten, run_with_limited_c_stack, set_recursion_limit
 
 try:
     import _remote_debugging  # noqa: F401
@@ -466,6 +467,46 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn(stack1_expected, lines)
         self.assertIn(stack2_expected, lines)
 
+    def test_collapsed_stack_collector_export_synthetic_frames(self):
+        collapsed_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, collapsed_out)
+
+        for name in ("<GC>", "<native>", "<unreadable frame>"):
+            with self.subTest(name=name):
+                collector = CollapsedStackCollector(1000)
+                collector.collect([
+                    MockInterpreterInfo(0, [MockThreadInfo(1, [
+                        _remote_debugging.FrameInfo(("~", None, name, None)),
+                        MockFrameInfo("app.py", 10, "main"),
+                    ])])
+                ])
+                with captured_stdout():
+                    collector.export(collapsed_out.name)
+                with open(collapsed_out.name, encoding="utf-8") as f:
+                    self.assertEqual(f.read(), f"tid:1;app.py:main:10;{name} 1\n")
+
+    def test_collapsed_stack_collector_export_non_ascii_names(self):
+        # gh-156810: frame names are written verbatim, so the output must be
+        # opened with an encoding that can represent non-ASCII and
+        # surrogate-escaped (undecodable-path) names.
+        collapsed_out = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(close_and_unlink, collapsed_out)
+
+        collector = CollapsedStackCollector(1000)
+        frame = MockFrameInfo("/tmp/ba\udc80d.py", 5, "计算")
+        collector.collect([
+            MockInterpreterInfo(0, [MockThreadInfo(1, [frame])])
+        ])
+
+        with captured_stdout(), captured_stderr():
+            collector.export(collapsed_out.name)
+
+        with open(collapsed_out.name, encoding="utf-8",
+                  errors="surrogatepass") as f:
+            content = f.read()
+        self.assertIn("计算", content)
+        self.assertIn("ba\udc80d.py", content)
+
     def test_flamegraph_collector_basic(self):
         """Test basic FlamegraphCollector functionality."""
         collector = FlamegraphCollector(1000)
@@ -573,6 +614,47 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn('"sample_interval_usec": 10000', content)
         self.assertIn("samples * data.stats.sample_interval_usec / 1000", content)
 
+    def test_flamegraph_escapes_special_chars_in_funcname(self):
+        # Function names with <, >, & must be escaped in the HTML.
+        flamegraph_out = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=False
+        )
+        self.addCleanup(close_and_unlink, flamegraph_out)
+
+        collector = FlamegraphCollector(1000)
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [MockFrameInfo("test.py", 1, "root"),
+                     MockFrameInfo("test.py", 2, '</script><lambda>&')]
+                )],
+            )
+        ]
+        collector.collect(frames)
+
+        with captured_stdout(), captured_stderr():
+            export_ok = collector.export(flamegraph_out.name)
+        self.assertTrue(export_ok)
+
+        with open(flamegraph_out.name, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # The funcname's </script> must be escaped in the embedded data so it
+        # cannot close the inline <script> block; the raw form must be absent.
+        self.assertIn(
+            r"\u003c/script\u003e\u003clambda\u003e\u0026", content
+        )
+        self.assertNotIn("</script><lambda>", content)
+
+        # The tooltip inserts the function name as HTML after resolving it.
+        self.assertIn(
+            "const funcname = escapeHtml("
+            'resolveString(d.data.funcname) || resolveString(d.data.name) || "");',
+            content,
+        )
+
     def test_flamegraph_collector_empty_export_fails(self):
         """Test empty flamegraph export reports no output."""
         flamegraph_out = tempfile.NamedTemporaryFile(
@@ -587,6 +669,39 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         self.assertFalse(export_ok)
         self.assertEqual(os.path.getsize(flamegraph_out.name), 0)
+
+    @run_with_limited_c_stack(size=1024 * 1024)
+    def test_flamegraph_deep_stack_export(self):
+        flamegraph_out = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=False
+        )
+        self.addCleanup(close_and_unlink, flamegraph_out)
+
+        collector = FlamegraphCollector(1000)
+        # Deeper than the default recursion limit.
+        frames = [MockFrameInfo("f.py", i + 1, f"f{i}") for i in range(1536)]
+        collector.collect(
+            [MockInterpreterInfo(0, [MockThreadInfo(1, frames)])])
+
+        with set_recursion_limit(1000), captured_stdout(), captured_stderr():
+            export_ok = collector.export(flamegraph_out.name)
+            self.assertEqual(sys.getrecursionlimit(), 1000)
+
+        self.assertTrue(export_ok)
+        self.assertGreater(os.path.getsize(flamegraph_out.name), 0)
+
+    def test_flamegraph_export_restores_recursion_limit(self):
+        collector = FlamegraphCollector(1000)
+        frame = MockFrameInfo("f.py", 1, "f")
+        with set_recursion_limit(500), captured_stdout(), captured_stderr():
+            self.assertFalse(collector.export(None))
+            self.assertEqual(sys.getrecursionlimit(), 500)
+            collector.collect([
+                MockInterpreterInfo(0, [MockThreadInfo(1, [
+                    frame, MockFrameInfo("f.py", 2, "caller")])])])
+            with self.assertRaises(TypeError):
+                collector.export(None)
+            self.assertEqual(sys.getrecursionlimit(), 500)
 
     def test_gecko_collector_basic(self):
         """Test basic GeckoCollector functionality."""
@@ -684,6 +799,51 @@ class TestSampleProfilerComponents(unittest.TestCase):
         stack_table = thread_data["stackTable"]
         self.assertGreater(stack_table["length"], 0)
         self.assertGreater(len(stack_table["frame"]), 0)
+
+    def test_gecko_collector_preserves_source_file_paths(self):
+        """Test that GeckoCollector preserves source file paths and distinguishes
+        files with the same basename in different directories."""
+        collector = GeckoCollector(1000)
+        file_a = os.path.join("pkg_a", "__init__.py")
+        file_b = os.path.join("pkg_b", "__init__.py")
+
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo(file_a, 10, "func_a"),
+                            MockFrameInfo(file_b, 20, "func_b"),
+                        ],
+                        status=THREAD_STATUS_MAIN_THREAD,
+                    )
+                ],
+            )
+        ]
+        collector.collect(test_frames)
+        profile_data = collector._build_profile()
+
+        string_array = profile_data["shared"]["stringArray"]
+        func_table = profile_data["threads"][0]["funcTable"]
+
+        self.assertEqual(func_table["length"], 2)
+
+        funcs_by_name = {
+            string_array[func_table["name"][i]]: (
+                func_table["fileName"][i],
+                string_array[func_table["fileName"][i]],
+            )
+            for i in range(func_table["length"])
+        }
+
+        file_idx_a, resolved_file_a = funcs_by_name["func_a"]
+        file_idx_b, resolved_file_b = funcs_by_name["func_b"]
+
+        self.assertEqual(resolved_file_a, file_a)
+        self.assertEqual(resolved_file_b, file_b)
+        self.assertNotEqual(file_idx_a, file_idx_b)
 
     def test_gecko_collector_async_aware(self):
         collector = GeckoCollector(1000)
@@ -1015,6 +1175,36 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 0,
                 f"Marker {i} should have valid category",
             )
+
+    def test_gecko_collector_replay_out_of_order_batches(self):
+        """Open markers are closed at the latest replayed sample."""
+        collector = GeckoCollector(1000)
+        # Binary replay can send thread 2's last batch after thread 1's later
+        # samples
+        batches = [
+            (1, [1000], THREAD_STATUS_ON_CPU),
+            (2, [1500], 0),
+            (1, [2000], THREAD_STATUS_ON_CPU),
+            (1, [3000, 4000], 0),
+            (2, [2500], 0),
+        ]
+        for tid, timestamps, status in batches:
+            frames = [MockFrameInfo(f"t{tid}.py", 10, f"func{tid}")]
+            collector.collect(
+                [MockInterpreterInfo(0, [MockThreadInfo(tid, frames, status=status)])],
+                timestamps_us=timestamps,
+            )
+
+        profile_data = collector._build_profile()
+
+        end_times = []
+        for thread_data in profile_data["threads"]:
+            markers = thread_data["markers"]
+            for start_time, end_time in zip(markers["startTime"],
+                                            markers["endTime"]):
+                self.assertLessEqual(start_time, end_time)
+                end_times.append(end_time)
+        self.assertEqual(max(end_times), 3.0)
 
     def test_pstats_collector_export(self):
         collector = PstatsCollector(
@@ -1608,7 +1798,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
             ])
         ]
 
-        # Baseline: 2 samples, current: 4, scale = 2.0
+        # Baseline: 2 samples, current: 4. Profiles are compared in absolute
+        # time rather than normalized to the same total duration.
         diff = make_diff_collector_with_mock_baseline(
             [hot_leaf_sample, cold_leaf_sample]
         )
@@ -1618,7 +1809,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         data = diff._convert_to_flamegraph_format()
         strings = data.get("strings", [])
-        self.assertAlmostEqual(data["stats"]["baseline_scale"], 2.0)
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 1.0)
 
         children = data.get("children", [])
         hot_node = find_child_by_name(children, strings, "hot_leaf")
@@ -1626,20 +1817,64 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIsNotNone(hot_node)
         self.assertIsNotNone(cold_node)
 
-        # hot_leaf regressed (+50%)
-        self.assertAlmostEqual(hot_node["baseline"], 2.0)
+        # hot_leaf regressed (+200%)
+        self.assertAlmostEqual(hot_node["baseline"], 1.0)
         self.assertEqual(hot_node["self_time"], 3)
-        self.assertAlmostEqual(hot_node["diff"], 1.0)
-        self.assertAlmostEqual(hot_node["diff_pct"], 50.0)
+        self.assertAlmostEqual(hot_node["diff"], 2.0)
+        self.assertAlmostEqual(hot_node["diff_pct"], 200.0)
 
-        # cold_leaf improved (-50%)
-        self.assertAlmostEqual(cold_node["baseline"], 2.0)
+        # cold_leaf is unchanged
+        self.assertAlmostEqual(cold_node["baseline"], 1.0)
         self.assertEqual(cold_node["self_time"], 1)
-        self.assertAlmostEqual(cold_node["diff"], -1.0)
-        self.assertAlmostEqual(cold_node["diff_pct"], -50.0)
+        self.assertAlmostEqual(cold_node["diff"], 0.0)
+        self.assertAlmostEqual(cold_node["diff_pct"], 0.0)
 
-    def test_diff_flamegraph_scale_factor(self):
-        """Scale factor adjusts when sample counts differ."""
+    def test_diff_flamegraph_rejects_mismatched_profiling_modes(self):
+        from profiling.sampling.binary_collector import BinaryCollector
+        from profiling.sampling.stack_collector import DiffFlamegraphCollector
+
+        bin_file = tempfile.NamedTemporaryFile(suffix=".bin", delete=False)
+        self.addCleanup(close_and_unlink, bin_file)
+        writer = BinaryCollector(
+            bin_file.name,
+            sample_interval_usec=1000,
+            compression="none",
+            mode=PROFILING_MODE_CPU,
+        )
+        writer.export(None)
+
+        diff = DiffFlamegraphCollector(
+            1000,
+            baseline_binary_path=bin_file.name,
+            mode=PROFILING_MODE_WALL,
+        )
+        with self.assertRaisesRegex(ValueError, "profiling mode"):
+            diff._convert_to_flamegraph_format()
+
+    def test_diff_flamegraph_rejects_mismatched_capture_config(self):
+        from profiling.sampling.binary_collector import BinaryCollector
+        from profiling.sampling.stack_collector import DiffFlamegraphCollector
+
+        bin_file = tempfile.NamedTemporaryFile(suffix=".bin", delete=False)
+        self.addCleanup(close_and_unlink, bin_file)
+        writer = BinaryCollector(
+            bin_file.name,
+            sample_interval_usec=1000,
+            compression="none",
+            capture_config={"all_threads": True},
+        )
+        writer.export(None)
+
+        diff = DiffFlamegraphCollector(
+            1000,
+            baseline_binary_path=bin_file.name,
+            capture_config={"all_threads": False},
+        )
+        with self.assertRaisesRegex(ValueError, "all_threads"):
+            diff._convert_to_flamegraph_format()
+
+    def test_diff_flamegraph_does_not_normalize_duration(self):
+        """A longer current run is compared in absolute time."""
         baseline_frames = [
             MockInterpreterInfo(0, [
                 MockThreadInfo(1, [
@@ -1654,15 +1889,74 @@ class TestSampleProfilerComponents(unittest.TestCase):
             diff.collect(baseline_frames)
 
         data = diff._convert_to_flamegraph_format()
-        self.assertAlmostEqual(data["stats"]["baseline_scale"], 4.0)
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 1.0)
 
         children = data.get("children", [])
         self.assertEqual(len(children), 1)
         func1_node = children[0]
         self.assertEqual(func1_node["self_time"], 4)
-        self.assertAlmostEqual(func1_node["baseline"], 4.0)
-        self.assertAlmostEqual(func1_node["diff"], 0.0)
-        self.assertAlmostEqual(func1_node["diff_pct"], 0.0)
+        self.assertAlmostEqual(func1_node["baseline"], 1.0)
+        self.assertAlmostEqual(func1_node["diff"], 3.0)
+        self.assertAlmostEqual(func1_node["diff_pct"], 300.0)
+
+    def test_diff_flamegraph_scale_factor_uses_sample_intervals(self):
+        """Baseline samples are converted to current sample units."""
+        frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [MockFrameInfo("file.py", 10, "func1")])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline(
+            [frames] * 10,
+            baseline_interval=1000,
+            current_interval=10000,
+        )
+        diff.collect(frames)
+
+        data = diff._convert_to_flamegraph_format()
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 0.1)
+        self.assertAlmostEqual(data["baseline"], 1.0)
+        self.assertEqual(data["self_time"], 1)
+        self.assertAlmostEqual(data["diff"], 0.0)
+        self.assertAlmostEqual(data["diff_pct"], 0.0)
+
+    def test_diff_flamegraph_elided_values_use_current_interval(self):
+        """Elided geometry and metadata use the same sample units."""
+        baseline_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 10, "old_func"),
+                    MockFrameInfo("file.py", 30, "parent"),
+                ])
+            ])
+        ]
+        current_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [
+                    MockFrameInfo("file.py", 20, "new_func"),
+                    MockFrameInfo("file.py", 30, "parent"),
+                ])
+            ])
+        ]
+
+        diff = make_diff_collector_with_mock_baseline(
+            [baseline_frames] * 10,
+            baseline_interval=1000,
+            current_interval=10000,
+        )
+        diff.collect(current_frames)
+
+        data = diff._convert_to_flamegraph_format()
+        elided = data["stats"]["elided_flamegraph"]
+        self.assertAlmostEqual(elided["value"], 1.0)
+        self.assertEqual(elided["self"], 0)
+        self.assertAlmostEqual(elided["baseline_total"], 1.0)
+        child, = elided["children"]
+        self.assertAlmostEqual(child["value"], 1.0)
+        self.assertAlmostEqual(child["self"], 1.0)
+        self.assertAlmostEqual(child["baseline"], 1.0)
+        self.assertAlmostEqual(child["diff"], -1.0)
 
     def test_diff_flamegraph_elided_stacks(self):
         """Paths in baseline but not current produce elided stacks."""
@@ -1965,7 +2259,11 @@ class TestSampleProfilerComponents(unittest.TestCase):
             ])
         ]
 
-        diff = make_diff_collector_with_mock_baseline([baseline_frames])
+        diff = make_diff_collector_with_mock_baseline(
+            [baseline_frames] * 10,
+            baseline_interval=1000,
+            current_interval=10000,
+        )
         # Don't collect anything in current
 
         data = diff._convert_to_flamegraph_format()
@@ -1975,6 +2273,11 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertTrue(data["stats"]["is_differential"])
         # All baseline paths should be elided since current is empty
         self.assertGreater(data["stats"]["elided_count"], 0)
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 0.1)
+        elided = data["stats"]["elided_flamegraph"]
+        self.assertAlmostEqual(elided["value"], 1.0)
+        self.assertAlmostEqual(elided["baseline"], 1.0)
+        self.assertAlmostEqual(elided["diff"], -1.0)
 
     def test_diff_flamegraph_empty_baseline(self):
         """Empty baseline with non-empty current uses scale=1.0 fallback."""
@@ -2141,7 +2444,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
             make_frame("file.py", 20, "caller"),
         ])])]
 
-        # Baseline: 2 samples, current: 4, scale = 2.0
+        # Baseline: 2 samples, current: 4. Profiles are compared in absolute
+        # time rather than normalized to the same total duration.
         bin_file = tempfile.NamedTemporaryFile(suffix=".bin", delete=False)
         self.addCleanup(close_and_unlink, bin_file)
 
@@ -2171,7 +2475,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         strings = data.get("strings", [])
 
         self.assertTrue(data["stats"]["is_differential"])
-        self.assertAlmostEqual(data["stats"]["baseline_scale"], 2.0)
+        self.assertAlmostEqual(data["stats"]["baseline_scale"], 1.0)
 
         children = data.get("children", [])
         hot_node = find_child_by_name(children, strings, "hot_leaf")
@@ -2179,17 +2483,17 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIsNotNone(hot_node)
         self.assertIsNotNone(cold_node)
 
-        # hot_leaf regressed (+50%)
-        self.assertAlmostEqual(hot_node["baseline"], 2.0)
+        # hot_leaf regressed (+200%)
+        self.assertAlmostEqual(hot_node["baseline"], 1.0)
         self.assertEqual(hot_node["self_time"], 3)
-        self.assertAlmostEqual(hot_node["diff"], 1.0)
-        self.assertAlmostEqual(hot_node["diff_pct"], 50.0)
+        self.assertAlmostEqual(hot_node["diff"], 2.0)
+        self.assertAlmostEqual(hot_node["diff_pct"], 200.0)
 
-        # cold_leaf improved (-50%)
-        self.assertAlmostEqual(cold_node["baseline"], 2.0)
+        # cold_leaf is unchanged
+        self.assertAlmostEqual(cold_node["baseline"], 1.0)
         self.assertEqual(cold_node["self_time"], 1)
-        self.assertAlmostEqual(cold_node["diff"], -1.0)
-        self.assertAlmostEqual(cold_node["diff_pct"], -50.0)
+        self.assertAlmostEqual(cold_node["diff"], 0.0)
+        self.assertAlmostEqual(cold_node["diff_pct"], 0.0)
 
     def test_jsonl_collector_export_exact_output(self):
         jsonl_out = tempfile.NamedTemporaryFile(delete=False)
@@ -2786,20 +3090,6 @@ class TestLocationHelpers(unittest.TestCase):
     def test_extract_lineno_from_none(self):
         """Test extracting lineno from None (synthetic frames)."""
         self.assertEqual(extract_lineno(None), 0)
-
-    def test_extract_lineno_from_int(self):
-        """Test extracting lineno from a bare integer line number.
-
-        Mirrors normalize_location's int contract so callers like the
-        collapsed/flamegraph collectors do not crash on a bare-int location.
-        """
-        self.assertEqual(extract_lineno(42), 42)
-        self.assertEqual(extract_lineno(0), 0)
-
-    def test_normalize_location_with_int(self):
-        """Test normalize_location expands a legacy integer line number."""
-        result = normalize_location(42)
-        self.assertEqual(result, (42, 42, -1, -1))
 
     def test_normalize_location_with_location_info(self):
         """Test normalize_location passes through LocationInfo."""

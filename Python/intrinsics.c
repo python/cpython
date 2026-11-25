@@ -287,6 +287,25 @@ add_conditional_annotation(PyThreadState* tstate, PyObject *conditional_annotati
     Py_RETURN_NONE;
 }
 
+static PyObject *
+match_class_isinstance(PyThreadState* tstate, PyObject *subject, PyObject *type)
+{
+    /* Fast path for class patterns with no sub-patterns, e.g. `case C():`
+       Equivalent to the isinstance check performed by _PyEval_MatchClass,
+       including the same TypeError when the pattern does not refer to a
+       class. */
+    if (!PyType_Check(type)) {
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "class pattern must refer to a class");
+        return NULL;
+    }
+    int res = PyObject_IsInstance(subject, type);
+    if (res < 0) {
+        return NULL;
+    }
+    return res ? Py_True : Py_False;
+}
+
 const intrinsic_func2_info
 _PyIntrinsics_BinaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_2_INVALID, no_intrinsic2)
@@ -296,6 +315,7 @@ _PyIntrinsics_BinaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_FUNCTION_TYPE_PARAMS, _Py_set_function_type_params)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_TYPEPARAM_DEFAULT, _Py_set_typeparam_default)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_ADD_CONDITIONAL_ANNOTATION, add_conditional_annotation)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_MATCH_CLASS_ISINSTANCE, match_class_isinstance)
 };
 
 #undef INTRINSIC_FUNC_ENTRY

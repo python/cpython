@@ -272,6 +272,8 @@ class TestRaces(TestBase):
         do_race(set_value, mutate)
 
     def test_racing_recursion_limit(self):
+        self.addCleanup(sys.setrecursionlimit, sys.getrecursionlimit())
+
         def something_recursive():
             def count(n):
                 if n > 0:
@@ -285,6 +287,22 @@ class TestRaces(TestBase):
                 sys.setrecursionlimit(limit)
 
         do_race(something_recursive, set_recursion_limit)
+
+    def test_racing_intern_queued_for_merge(self):
+        # gh-152276: an object may become immortal while it is queued for
+        # its owning thread to merge its reference count.
+        # The same strings are used on every run, so that reruns do not
+        # create new immortal strings.
+        for i in range(10):
+            strings = [f"test_racing_intern_queued_for_merge_{i}_{j}"
+                       for j in range(1000)]
+            shared = list(strings)
+            # Dropping the references from another thread queues the strings
+            # to be merged by this thread, which is busy interning them.
+            thread = threading.Thread(target=shared.clear)
+            thread.start()
+            list(map(sys.intern, strings))
+            thread.join()
 
 
 @threading_helper.requires_working_threading()

@@ -175,6 +175,9 @@ other coroutines::
    * a *coroutine object*: an object returned by calling a
      *coroutine function*.
 
+   Generator-based coroutines, created with :func:`types.coroutine`, are
+   covered by neither term and are not supported by asyncio.
+
 
 .. rubric:: Tasks
 
@@ -356,7 +359,7 @@ and reliable way to wait for all tasks in the group to finish.
       The signature matches that of :func:`asyncio.create_task`.
       If the task group is inactive (e.g. not yet entered,
       already finished, or in the process of shutting down),
-      we will close the given ``coro``.
+      we will close the given ``coro`` and raise :exc:`RuntimeError`.
 
       .. versionchanged:: 3.13
 
@@ -662,6 +665,10 @@ Eager task factory
         scheduled to the event loop. This change may introduce behavior
         changes to existing applications. For example,
         the application's task execution order is likely to change.
+
+        During the eager step, call graph introspection reports the creating
+        task as an awaiter, even for a plain :func:`create_task` call.
+        This relationship is removed when the eager step finishes.
 
     .. versionadded:: 3.12
 
@@ -1219,6 +1226,10 @@ Introspection
    Return ``True`` if *obj* is a coroutine object.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.12
+      Generator-based coroutines are no longer supported, and ``False``
+      is returned for them.
 
 .. _asyncio-task-obj:
 

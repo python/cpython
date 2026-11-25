@@ -8,6 +8,7 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(memoryview__doc__,
 "memoryview(object)\n"
@@ -19,7 +20,8 @@ static PyObject *
 memoryview_impl(PyTypeObject *type, PyObject *object);
 
 static PyObject *
-memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+memoryview_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -51,10 +53,9 @@ memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *object;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -63,6 +64,38 @@ memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     return_value = memoryview_impl(type, object);
 
 exit:
+    return return_value;
+}
+
+static PyObject *
+memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return memoryview_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+memoryview_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *object;
+
+    assert(_PyType_CAST(type)->tp_new == memoryview);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs < 1 || nargs > 1) {
+        return memoryview_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    object = args[0];
+    return_value = memoryview_impl(_PyType_CAST(type), object);
+
     return return_value;
 }
 
@@ -145,6 +178,34 @@ static PyObject *
 memoryview_release(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return memoryview_release_impl((PyMemoryViewObject *)self);
+}
+
+PyDoc_STRVAR(memoryview___exit____doc__,
+"__exit__($self, /, *exc_info)\n"
+"--\n"
+"\n"
+"Release the underlying buffer exposed by the memoryview object.");
+
+#define MEMORYVIEW___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(memoryview___exit__), METH_FASTCALL, memoryview___exit____doc__},
+
+static PyObject *
+memoryview___exit___impl(PyMemoryViewObject *self,
+                         PyObject * const *exc_info,
+                         Py_ssize_t exc_info_length);
+
+static PyObject *
+memoryview___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject * const *exc_info;
+    Py_ssize_t exc_info_length;
+
+    exc_info = args;
+    exc_info_length = nargs;
+    return_value = memoryview___exit___impl((PyMemoryViewObject *)self, exc_info, exc_info_length);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(memoryview_cast__doc__,
@@ -345,13 +406,8 @@ memoryview_tobytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         order = NULL;
     }
     else if (PyUnicode_Check(args[0])) {
-        Py_ssize_t order_length;
-        order = PyUnicode_AsUTF8AndSize(args[0], &order_length);
+        order = _PyUnicode_AsUTF8NoNUL(args[0]);
         if (order == NULL) {
-            goto exit;
-        }
-        if (strlen(order) != (size_t)order_length) {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -532,4 +588,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=17a403895f4f778c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cdca13a132752f15 input=a9049054013a1b77]*/

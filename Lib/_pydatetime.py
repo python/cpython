@@ -90,67 +90,32 @@ assert _DI400Y == 4 * _DI100Y + 1
 # pasting together 25 4-year cycles.
 assert _DI100Y == 25 * _DI4Y - 1
 
-def _ord2ymd(n):
+def _ord2ymd(ordinal):
     "ordinal -> (year, month, day), considering 01-Jan-0001 as day 1."
 
-    # n is a 1-based index, starting at 1-Jan-1.  The pattern of leap years
-    # repeats exactly every 400 years.  The basic strategy is to find the
-    # closest 400-year boundary at or before n, then work with the offset
-    # from that boundary to n.  Life is much clearer if we subtract 1 from
-    # n first -- then the values of n at 400-year boundaries are exactly
-    # those divisible by _DI400Y:
+    # Neri and Schneider's algorithm, https://doi.org/10.1002/spe.3172.
+    # ord_to_ymd() in Modules/_datetimemodule.c does the same steps.
     #
-    #     D  M   Y            n              n-1
-    #     -- --- ----        ----------     ----------------
-    #     31 Dec -400        -_DI400Y       -_DI400Y -1
-    #      1 Jan -399         -_DI400Y +1   -_DI400Y      400-year boundary
-    #     ...
-    #     30 Dec  000        -1             -2
-    #     31 Dec  000         0             -1
-    #      1 Jan  001         1              0            400-year boundary
-    #      2 Jan  001         2              1
-    #      3 Jan  001         3              2
-    #     ...
-    #     31 Dec  400         _DI400Y        _DI400Y -1
-    #      1 Jan  401         _DI400Y +1     _DI400Y      400-year boundary
-    n -= 1
-    n400, n = divmod(n, _DI400Y)
-    year = n400 * 400 + 1   # ..., -399, 1, 401, ...
+    # Count days from 0000-03-01, so that the leap day is the last day of
+    # its year. 0001-01-01 is day 306.
+    days = ordinal + 305
 
-    # Now n is the (non-negative) offset, in days, from January 1 of year, to
-    # the desired date.  Now compute how many 100-year cycles precede n.
-    # Note that it's possible for n100 to equal 4!  In that case 4 full
-    # 100-year cycles precede the desired day, which implies the desired
-    # day is December 31 at the end of a 400-year cycle.
-    n100, n = divmod(n, _DI100Y)
+    # Centuries average _DI400Y/4 days: three of 36524, then one of 36525.
+    century, rest = divmod(4 * days + 3, _DI400Y)
+    day_of_century = rest // 4
 
-    # Now compute how many 4-year cycles precede it.
-    n4, n = divmod(n, _DI4Y)
+    # Likewise, years average _DI4Y/4 days: three of 365, then one of 366.
+    year_of_century, rest = divmod(4 * day_of_century + 3, _DI4Y)
+    day_of_year = rest // 4
 
-    # And now how many single years.  Again n1 can be 4, and again meaning
-    # that the desired day is December 31 at the end of the 4-year cycle.
-    n1, n = divmod(n, 365)
-
-    year += n100 * 100 + n4 * 4 + n1
-    if n1 == 4 or n100 == 4:
-        assert n == 0
-        return year-1, 12, 31
-
-    # Now the year is correct, and n is the offset from January 1.  We find
-    # the month via an estimate that's either exact or one too large.
-    leapyear = n1 == 3 and (n4 != 24 or n100 == 3)
-    assert leapyear == _is_leap(year)
-    month = (n + 50) >> 5
-    preceding = _DAYS_BEFORE_MONTH[month] + (month > 2 and leapyear)
-    if preceding > n:  # estimate is too large
-        month -= 1
-        preceding -= _DAYS_IN_MONTH[month] + (month == 2 and leapyear)
-    n -= preceding
-    assert 0 <= n < _days_in_month(year, month)
-
-    # Now the year and month are correct, and n is the offset from the
-    # start of that month:  we're done!
-    return year, month, n+1
+    # From March, month lengths repeat 31, 30, 31, 30, 31 (153 days).
+    # 461 = 3*153 + 2 numbers the months from 3 (March) to 14 (February).
+    month, rest = divmod(5 * day_of_year + 461, 153)
+    day = rest // 5 + 1
+    year = 100 * century + year_of_century
+    if month > 12:
+        return year + 1, month - 12, day
+    return year, month, day
 
 # Month and day names.  For localized versions, see the calendar module.
 _MONTHNAMES = [None, "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -237,6 +202,13 @@ def _wrap_strftime(object, format, timetuple):
                         freplace = '%06d' % getattr(object,
                                                     'microsecond', 0)
                     newformat.append(freplace)
+                elif ch in '123456' and format[i:i+1] == 'f':
+                    i += 1
+                    if freplace is None:
+                        freplace = '%06d' % getattr(object,
+                                                    'microsecond', 0)
+                    precision = int(ch)
+                    newformat.append(freplace[:precision])
                 elif ch == 'z':
                     if zreplace is None:
                         if hasattr(object, "utcoffset"):
@@ -389,6 +361,10 @@ def _parse_isoformat_date(dtstr):
             pos += has_sep
 
             dayno = _read_isoformat_component(dtstr[pos:pos + 1], 1)
+            pos += 1
+
+        if pos != len(dtstr):
+            raise ValueError("Invalid isoformat string")
 
         return list(_isoweek_to_gregorian(year, weekno, dayno))
     else:
@@ -399,6 +375,10 @@ def _parse_isoformat_date(dtstr):
 
         pos += has_sep
         day = _read_isoformat_component(dtstr[pos:pos + 2], 2)
+        pos += 2
+
+        if pos != len(dtstr):
+            raise ValueError("Invalid isoformat string")
 
         return [year, month, day]
 
@@ -656,14 +636,6 @@ class timedelta:
 
     def __new__(cls, days=0, seconds=0, microseconds=0,
                 milliseconds=0, minutes=0, hours=0, weeks=0):
-        # Doing this efficiently and accurately in C is going to be difficult
-        # and error-prone, due to ubiquitous overflow possibilities, and that
-        # C double doesn't have enough bits of precision to represent
-        # microseconds over 10K years faithfully.  The code here tries to make
-        # explicit where go-fast assumptions can be relied on, in order to
-        # guide the C implementation; it's way more convoluted than speed-
-        # ignoring auto-overflow-to-long idiomatic Python could be.
-
         for name, value in (
             ("days", days),
             ("seconds", seconds),
@@ -678,80 +650,35 @@ class timedelta:
                     f"unsupported type for timedelta {name} component: {type(value).__name__}"
                 )
 
-        # Final values, all integer.
-        # s and us fit in 32-bit signed ints; d isn't bounded.
-        d = s = us = 0
+        # Sum the exact number of microseconds, like the C implementation:
+        # the integer part of each float is converted exactly, and only the
+        # fractional microseconds left over are added up as a float and
+        # rounded (half to even) at the end.
+        us = 0
+        leftover = 0.0
+        for value, factor in (
+            (microseconds, 1),
+            (milliseconds, 1000),
+            (seconds, 1000000),
+            (minutes, 60*1000000),
+            (hours, 3600*1000000),
+            (days, 24*3600*1000000),
+            (weeks, 7*24*3600*1000000)
+        ):
+            if isinstance(value, float):
+                frac, whole = _math.modf(value)
+                us += int(whole) * factor
+                frac, whole = _math.modf(frac * factor)
+                us += int(whole)
+                leftover += frac
+            else:
+                us += int(value * factor)
+        if leftover:
+            n, m = leftover.as_integer_ratio()
+            us = _divide_and_round(us * m + n, m)
 
-        # Normalize everything to days, seconds, microseconds.
-        days += weeks*7
-        seconds += minutes*60 + hours*3600
-        microseconds += milliseconds*1000
-
-        # Get rid of all fractions, and normalize s and us.
-        # Take a deep breath <wink>.
-        if isinstance(days, float):
-            dayfrac, days = _math.modf(days)
-            daysecondsfrac, daysecondswhole = _math.modf(dayfrac * (24.*3600.))
-            assert daysecondswhole == int(daysecondswhole)  # can't overflow
-            s = int(daysecondswhole)
-            assert days == int(days)
-            d = int(days)
-        else:
-            daysecondsfrac = 0.0
-            d = days
-        assert isinstance(daysecondsfrac, float)
-        assert abs(daysecondsfrac) <= 1.0
-        assert isinstance(d, int)
-        assert abs(s) <= 24 * 3600
-        # days isn't referenced again before redefinition
-
-        if isinstance(seconds, float):
-            secondsfrac, seconds = _math.modf(seconds)
-            assert seconds == int(seconds)
-            seconds = int(seconds)
-            secondsfrac += daysecondsfrac
-            assert abs(secondsfrac) <= 2.0
-        else:
-            secondsfrac = daysecondsfrac
-        # daysecondsfrac isn't referenced again
-        assert isinstance(secondsfrac, float)
-        assert abs(secondsfrac) <= 2.0
-
-        assert isinstance(seconds, int)
-        days, seconds = divmod(seconds, 24*3600)
-        d += days
-        s += int(seconds)    # can't overflow
-        assert isinstance(s, int)
-        assert abs(s) <= 2 * 24 * 3600
-        # seconds isn't referenced again before redefinition
-
-        usdouble = secondsfrac * 1e6
-        assert abs(usdouble) < 2.1e6    # exact value not critical
-        # secondsfrac isn't referenced again
-
-        if isinstance(microseconds, float):
-            microseconds = round(microseconds + usdouble)
-            seconds, microseconds = divmod(microseconds, 1000000)
-            days, seconds = divmod(seconds, 24*3600)
-            d += days
-            s += seconds
-        else:
-            microseconds = int(microseconds)
-            seconds, microseconds = divmod(microseconds, 1000000)
-            days, seconds = divmod(seconds, 24*3600)
-            d += days
-            s += seconds
-            microseconds = round(microseconds + usdouble)
-        assert isinstance(s, int)
-        assert isinstance(microseconds, int)
-        assert abs(s) <= 3 * 24 * 3600
-        assert abs(microseconds) < 3.1e6
-
-        # Just a little bit of carrying possible for microseconds and seconds.
-        seconds, us = divmod(microseconds, 1000000)
-        s += seconds
-        days, s = divmod(s, 24*3600)
-        d += days
+        s, us = divmod(us, 1000000)
+        d, s = divmod(s, 24*3600)
 
         assert isinstance(d, int)
         assert isinstance(s, int) and 0 <= s < 24*3600
@@ -1570,10 +1497,11 @@ class time:
                 return 2 # arbitrary non-zero value
             else:
                 raise TypeError("cannot compare naive and aware times")
-        myhhmm = self._hour * 60 + self._minute - myoff//timedelta(minutes=1)
-        othhmm = other._hour * 60 + other._minute - otoff//timedelta(minutes=1)
-        return _cmp((myhhmm, self._second, self._microsecond),
-                    (othhmm, other._second, other._microsecond))
+        myus = (((self._hour * 60 + self._minute) * 60 + self._second) * 1000000
+                + self._microsecond - myoff._to_microseconds())
+        otus = (((other._hour * 60 + other._minute) * 60 + other._second) * 1000000
+                + other._microsecond - otoff._to_microseconds())
+        return _cmp(myus, otus)
 
     def __hash__(self):
         """Hash."""
@@ -1583,17 +1511,13 @@ class time:
             else:
                 t = self
             tzoff = t.utcoffset()
-            if not tzoff:  # zero or None
+            if tzoff is None:
                 self._hashcode = hash(t._getstate()[0])
             else:
-                h, m = divmod(timedelta(hours=self.hour, minutes=self.minute) - tzoff,
-                              timedelta(hours=1))
-                assert not m % timedelta(minutes=1), "whole minute"
-                m //= timedelta(minutes=1)
-                if 0 <= h < 24:
-                    self._hashcode = hash(time(h, m, self.second, self.microsecond))
-                else:
-                    self._hashcode = hash((h, m, self.second, self.microsecond))
+                self._hashcode = hash(timedelta(hours=t.hour,
+                                                minutes=t.minute,
+                                                seconds=t.second,
+                                                microseconds=t.microsecond) - tzoff)
         return self._hashcode
 
     # Conversion to string
@@ -1980,7 +1904,7 @@ class datetime(date):
             raise ValueError(
                 f'Invalid isoformat string: {date_string!r}') from None
 
-        if tstr:
+        if separator_location < len(date_string):
             try:
                 (time_components,
                  became_next_day,
@@ -2534,6 +2458,11 @@ class timezone(tzinfo):
             return self._name
         raise TypeError("tzname() argument must be a datetime instance"
                         " or None")
+
+    @property
+    def name(self):
+        """Name given when the timezone was created."""
+        return self._name
 
     def dst(self, dt):
         if isinstance(dt, datetime) or dt is None:

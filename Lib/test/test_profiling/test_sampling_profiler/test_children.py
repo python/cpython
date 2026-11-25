@@ -3,6 +3,7 @@
 import argparse
 import io
 import os
+import shutil
 import signal
 import subprocess
 import sys
@@ -16,6 +17,7 @@ from test.support import (
     SHORT_TIMEOUT,
     reap_children,
     requires_remote_subprocess_debugging,
+    sleeping_retry,
 )
 
 # Guard imports that require _remote_debugging module.
@@ -84,29 +86,12 @@ def _readline_with_timeout(file_obj, timeout):
     return result[0]
 
 
-def _wait_for_process_ready(proc, timeout):
-    # Wait for a subprocess to be ready using polling instead of fixed sleep.
-    # Returns True if process is ready, False if it exited or timeout.
-    deadline = time.time() + timeout
-    poll_interval = 0.01
-
-    while time.time() < deadline:
-        if proc.poll() is not None:
-            return False
-
-        try:
-            if sys.platform == "linux":
-                if os.path.exists(f"/proc/{proc.pid}/exe"):
-                    return True
-            else:
-                return True
-        except OSError:
-            pass
-
-        time.sleep(poll_interval)
-        poll_interval = min(poll_interval * 2, 0.1)
-
-    return proc.poll() is None
+def _wait_for_process_exec(proc, executable, timeout):
+    # Wait until a child process calls exec() to replace the forked process
+    # executable. Raise AssertionError on timeout.
+    for _ in sleeping_retry(timeout, max_delay=0.1):
+        if os.path.samefile(f"/proc/{proc.pid}/exe", executable):
+            break
 
 
 @unittest.skipIf(
@@ -632,19 +617,18 @@ class TestIsPythonProcess(unittest.TestCase):
     @unittest.skipUnless(sys.platform == "linux", "Linux only test")
     def test_is_python_process_non_python_subprocess(self):
         """Test that a non-Python subprocess is not detected as Python."""
+        executable = shutil.which("sleep")
+        if executable is None:
+            self.skipTest("sleep command not found")
         # Start a non-Python subprocess (sleep command)
         proc = subprocess.Popen(
-            ["sleep", "10"],
+            [executable, "60"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
 
         try:
-            # Wait for process to be ready using polling
-            self.assertTrue(
-                _wait_for_process_ready(proc, SHORT_TIMEOUT),
-                f"Process {proc.pid} should be ready within {SHORT_TIMEOUT}s",
-            )
+            _wait_for_process_exec(proc, executable, SHORT_TIMEOUT)
 
             self.assertFalse(
                 is_python_process(proc.pid),

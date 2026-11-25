@@ -116,7 +116,6 @@ def itemclass(kind):
     return decorator
 
 @itemclass('function')
-@itemclass('macro')
 @itemclass('data')
 @itemclass('const')
 @itemclass('typedef')
@@ -143,6 +142,11 @@ class FeatureMacro(ABIItem):
 class Struct(ABIItem):
     struct_abi_kind: str
     members: list = None
+
+@itemclass('macro')
+@dataclasses.dataclass
+class Macro(ABIItem):
+    is_static_inline_function: bool = False
 
 
 def parse_manifest(file):
@@ -227,13 +231,13 @@ def gen_python3dll(manifest, args, outfile):
             key=sort_key):
         write(f'EXPORT_DATA({item.name})')
 
-ITEM_KIND_TO_DOC_ROLE = {
-    'function': 'func',
-    'data': 'data',
-    'struct': 'type',
-    'macro': 'macro',
-    'const': 'macro',
-    'typedef': 'type',
+DOC_KINDS = {
+    'function',
+    'data',
+    'struct',
+    'macro',
+    'const',
+    'typedef',
 }
 
 @generator("doc_list", 'Doc/data/stable_abi.dat')
@@ -245,17 +249,16 @@ def gen_doc_annotations(manifest, args, outfile):
     """
     writer = csv.DictWriter(
         outfile,
-        ['role', 'name', 'added', 'ifdef_note', 'struct_abi_kind'],
+        ['kind', 'name', 'added', 'ifdef_note', 'struct_abi_kind'],
         lineterminator='\n')
     writer.writeheader()
-    kinds = set(ITEM_KIND_TO_DOC_ROLE)
-    for item in manifest.select(kinds, include_abi_only=False):
+    for item in manifest.select(DOC_KINDS, include_abi_only=False):
         if item.ifdef:
             ifdef_note = manifest.contents[item.ifdef].doc
         else:
             ifdef_note = None
         row = {
-            'role': ITEM_KIND_TO_DOC_ROLE[item.kind],
+            'kind': item.kind,
             'name': item.name,
             'added': item.added,
             'ifdef_note': ifdef_note,
@@ -265,7 +268,7 @@ def gen_doc_annotations(manifest, args, outfile):
             row['struct_abi_kind'] = item.struct_abi_kind
             for member_name in item.members or ():
                 rows.append({
-                    'role': 'member',
+                    'kind': 'member',
                     'name': f'{item.name}.{member_name}',
                     'added': item.added,
                 })
@@ -408,7 +411,10 @@ def do_unixy_check(manifest, args):
     feature_macros &= present_macros
 
     # Check that we have all needed macros
-    expected_macros = {item.name for item in manifest.select({'macro'})}
+    expected_macros = {
+        item.name for item in manifest.select({'macro'})
+        if not item.is_static_inline_function
+    }
     missing_macros = expected_macros - present_macros
     okay &= _report_unexpected_items(
         missing_macros,

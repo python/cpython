@@ -1026,7 +1026,7 @@ class MIMEPart(Message):
             if subtype in preferencelist:
                 yield (preferencelist.index(subtype), part)
             return
-        if maintype != 'multipart' or not self.is_multipart():
+        if maintype != 'multipart' or not part.is_multipart():
             return
         if subtype != 'related':
             for subpart in part.iter_parts():

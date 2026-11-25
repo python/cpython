@@ -279,12 +279,9 @@ class TestPartial:
         self.assertEqual(len(actual_kwds), 1)
         self.assertIs(actual_kwds['a'], ALWAYS_EQ)
 
-    def test_construct_placeholder_singleton(self):
+    def test_placeholder_is_sentinel(self):
         PH = self.module.Placeholder
-        tp = type(PH)
-        self.assertIs(tp(), PH)
-        self.assertRaises(TypeError, tp, 1, 2)
-        self.assertRaises(TypeError, tp, a=1, b=2)
+        self.assertIsInstance(PH, sentinel)
 
     def test_repr(self):
         args = (object(), object())
@@ -3370,6 +3367,34 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEndsWith(str(exc.exception),
             'int | typing.Iterable[str] not all arguments are classes.'
         )
+
+    def test_return_annotation_deprecated(self):
+        msg = (
+            "Using the return annotation to infer the dispatch type "
+            r"is deprecated and will raise TypeError in Python 3\.21\."
+        )
+
+        @functools.singledispatch
+        def func(arg):
+            return "base"
+        def impl(arg) -> int:
+            return "int"
+        with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+            func.register(impl)
+        self.assertEqual(cm.filename, __file__)
+        self.assertIs(func.registry[int], impl)
+
+        class C:
+            @functools.singledispatchmethod
+            def method(self, arg):
+                return "base"
+        def method_impl(self) -> str:
+            return "str"
+        with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+            C.method.register(method_impl)
+        self.assertEqual(cm.filename, __file__)
+        dispatcher = C.__dict__['method'].dispatcher
+        self.assertIs(dispatcher.registry[str], method_impl)
 
     def test_invalid_positional_argument(self):
         @functools.singledispatch

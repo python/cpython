@@ -11,9 +11,10 @@ should you go to learn more?
 This tutorial is part of Python's documentation set.   Some other documents in
 the set are:
 
-* :ref:`library-index`:
+* :ref:`builtins-index`: gives details about Python's built-in types and
+  functions.
 
-  You should browse through this manual, which gives complete (though terse)
+* :ref:`library-index`: gives complete (though terse)
   reference material about types, functions, and the modules in the standard
   library.  The standard Python distribution includes a *lot* of additional code.
   There are modules to read Unix mailboxes, retrieve documents via HTTP, generate
