@@ -1153,8 +1153,7 @@ Connection objects
       .. versionchanged:: 3.13
          Added the *filter* parameter.
 
-   .. method:: backup(target, *, pages=-1, progress=None, name="main",
-                      sleep=0.250, timeout=-1.0)
+   .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250, timeout=-1.0)
 
       Create a backup of an SQLite database.
 
@@ -1225,7 +1224,7 @@ Connection objects
           reacquired can accumulate more than *timeout* of waiting.  The
           connection's busy-handler configuration is left unchanged.
 
-          .. versionadded:: 3.16
+      .. versionadded:: 3.16
 
       Example 1, copy an existing database into another:
 
