@@ -515,44 +515,19 @@ for example, call :c:func:`Py_DecRef` through a pointer instead of using
   the same way, and not next to :file:`libpython3.so`.
   To choose the exact file, pass the absolute path of the versioned library
   to ``dlopen()`` instead.
-* ``RTLD_GLOBAL`` makes Python's symbols available to the extension modules
-  that Python imports, which are normally not linked against a Python library.
+* ``RTLD_GLOBAL`` is required.
+  Extension modules are generally not linked against a Python library,
+  so Python can only import them if its symbols are visible globally.
 
-.. rubric:: Unsupported alternative: renaming the dependency after linking
+.. rubric:: Unsupported workaround: renaming the dependency after linking
 
-Loading Python at run time, as described above,
-is the preferred way to run one binary with several Python versions,
-and it does not need anything described below.
-
-The following is a packaging workaround for an existing application that
-calls the C API directly and cannot easily be changed.
-It is unsupported and not recommended; use it at your own risk.
-
-Such an application is linked as described :ref:`above <compiling>`.
-The dependency recorded in the executable is then renamed, for example with
-`patchelf <https://github.com/NixOS/patchelf>`__:
-
-.. code-block:: shell-session
-
-   $ patchelf --replace-needed libpython3.12.so.1.0 libpython3.so myapp
+Some applications are instead linked against a versioned library as described
+:ref:`above <compiling>`, and the dependency recorded in the executable is
+then renamed to :file:`libpython3.so`, for example with ``patchelf``.
 
 .. warning::
 
-   Renaming the dependency does not make the application compatible with
-   other Python versions, and it has additional limitations and caveats:
-
-   * Renaming the dependency does not check that the application uses only
-     the Stable ABI.
-     Compile it with :c:macro:`Py_LIMITED_API` defined, as described in
-     :ref:`abi3-compiling`.
-   * If the application refers to a Python data symbol directly, for example
-     ``&PyLong_Type``, the linker may have used a copy relocation.
-     This reserves space for the object in the executable, using its size in
-     the Python version that the application was linked against.
-     That size is not part of the Stable ABI and can differ between versions.
-     Look for such relocations with ``readelf -rW myapp | grep COPY``, and
-     compile the application as position-independent code (``-fPIC``) to
-     avoid them.
-   * The dynamic loader must find :file:`libpython3.so` in its search path
-     when the application starts.
-     Otherwise the application does not start at all.
+   Renaming the dependency this way is unsupported.
+   Nothing checks that such an executable only uses the Stable ABI, and it
+   can contain copies of Python data, such as ``PyLong_Type``, whose size
+   differs between Python versions.
