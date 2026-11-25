@@ -149,7 +149,12 @@ def _copy(master_fd, master_read=_read, stdin_read=_read):
             i_buf = i_buf[n:]
 
         if stdin_avail and STDIN_FILENO in rfds:
-            data = stdin_read(STDIN_FILENO)
+            # Some OSes signal EOF by returning an empty byte string,
+            # some throw OSErrors.
+            try:
+                data = stdin_read(STDIN_FILENO)
+            except OSError:
+                data = b""
             if not data:
                 stdin_avail = False
             else:
