@@ -5063,6 +5063,16 @@ find_first_nonascii(const unsigned char *start, const unsigned char *end)
         }
 #endif
 
+        // Long ASCII runs: test eight words per branch.
+        for (; end - p >= 8 * SIZEOF_SIZE_T; p += 8 * SIZEOF_SIZE_T) {
+            const size_t *w = (const size_t *)p;
+            if ((w[0] | w[1] | w[2] | w[3] |
+                 w[4] | w[5] | w[6] | w[7]) & ASCII_CHAR_MASK)
+            {
+                break;
+            }
+        }
+
         const unsigned char *e = end - SIZEOF_SIZE_T;
         while (p <= e) {
             size_t u = (*(const size_t *)p) & ASCII_CHAR_MASK;
@@ -10444,10 +10454,10 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
     PyObject *item;
     Py_ssize_t sz, i, res_offset;
     Py_UCS4 maxchar;
-    Py_UCS4 item_maxchar;
+    /* kinds is the bitwise OR of the PyUnicode_KIND() values (1, 2, 4). */
+    unsigned int kinds = 0, all_ascii = 1;
     int use_memcpy;
     unsigned char *res_data = NULL, *sep_data = NULL;
-    PyObject *last_obj;
     int kind = 0;
 
     /* If empty sequence, return u"". */
@@ -10456,14 +10466,12 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
     }
 
     /* If singleton sequence with an exact Unicode, return that. */
-    last_obj = NULL;
     if (seqlen == 1) {
         if (PyUnicode_CheckExact(items[0])) {
             res = items[0];
             return Py_NewRef(res);
         }
         seplen = 0;
-        maxchar = 0;
     }
     else {
         /* Set up sep and seplen */
@@ -10473,7 +10481,6 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
             if (!sep)
                 goto onError;
             seplen = 1;
-            maxchar = 32;
         }
         else {
             if (!PyUnicode_Check(separator)) {
@@ -10485,12 +10492,12 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
             }
             sep = separator;
             seplen = PyUnicode_GET_LENGTH(separator);
-            maxchar = PyUnicode_MAX_CHAR_VALUE(separator);
             /* inc refcount to keep this code path symmetric with the
                above case of a blank separator */
             Py_INCREF(sep);
         }
-        last_obj = sep;
+        kinds = PyUnicode_KIND(sep);
+        all_ascii = PyUnicode_IS_ASCII(sep);
     }
 
     /* There are at least two things to join, or else we have a subclass
@@ -10514,23 +10521,34 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
                          i, Py_TYPE(item)->tp_name);
             goto onError;
         }
-        add_sz = PyUnicode_GET_LENGTH(item);
-        item_maxchar = PyUnicode_MAX_CHAR_VALUE(item);
-        maxchar = Py_MAX(maxchar, item_maxchar);
-        if (i != 0) {
-            add_sz += seplen;
-        }
+        /* Count one separator per item; the extra one is removed below. */
+        add_sz = (size_t)PyUnicode_GET_LENGTH(item) + (size_t)seplen;
+        kinds |= PyUnicode_KIND(item);
+        all_ascii &= PyUnicode_IS_ASCII(item);
         if (add_sz > (size_t)(PY_SSIZE_T_MAX - sz)) {
             PyErr_SetString(PyExc_OverflowError,
                             "join() result is too long for a Python string");
             goto onError;
         }
         sz += add_sz;
-        if (use_memcpy && last_obj != NULL) {
-            if (PyUnicode_KIND(last_obj) != PyUnicode_KIND(item))
-                use_memcpy = 0;
-        }
-        last_obj = item;
+    }
+    sz -= seplen;
+    /* memcpy() can be used if the separator and all items have the same
+       kind: the result then has that kind too. */
+    if (kinds & (kinds - 1)) {
+        use_memcpy = 0;
+    }
+    if (all_ascii) {
+        maxchar = 0x7f;
+    }
+    else if (kinds & PyUnicode_4BYTE_KIND) {
+        maxchar = MAX_UNICODE;
+    }
+    else if (kinds & PyUnicode_2BYTE_KIND) {
+        maxchar = 0xffff;
+    }
+    else {
+        maxchar = 0xff;
     }
 
     res = PyUnicode_New(sz, maxchar);
@@ -14727,7 +14745,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     /* Statically allocated strings must be already interned. */
     assert(!_PyUnicode_STATE(s).statically_allocated);
 
-#if Py_GIL_DISABLED
+#ifdef Py_GIL_DISABLED
     /* In the free-threaded build, all interned strings are immortal */
     immortalize = 1;
 #endif

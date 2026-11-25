@@ -1,2 +1,0 @@
-Skip tests which use MD5 algorithm for WWW-Authenticate challenges when
-libssl is in FIPS mode.

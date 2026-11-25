@@ -1,1 +1,0 @@
-Avoid a crash when a module filename cannot be encoded as UTF-8.

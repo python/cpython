@@ -483,6 +483,18 @@ module_exec(PyObject *module)
         return -1;
     }
 #endif
+
+#ifdef Py_LIMITED_API
+    if (PyModule_AddIntMacro(module, Py_LIMITED_API) < 0) {
+        return -1;
+    }
+#endif
+#ifdef Py_TARGET_ABI3T
+    if (PyModule_AddIntMacro(module, Py_TARGET_ABI3T) < 0) {
+        return -1;
+    }
+#endif
+
     // Ignore "unused argument" warning when none of these macros is defined
     (void)module;
     return 0;

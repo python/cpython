@@ -5,6 +5,13 @@
 #include "pycore_runtime.h"       // _Py_STR()
 #include "pycore_template.h"
 
+#include "clinic/templateobject.c.h"
+
+/*[clinic input]
+class Template "templateobject *" "&_PyTemplate_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ee41f8d8c49f0271]*/
+
 typedef struct {
     PyObject_HEAD
     PyObject *stringsiter;
@@ -89,21 +96,24 @@ typedef struct {
 #define templateobject_CAST(op) \
     (assert(_PyTemplate_CheckExact(op)), _Py_CAST(templateobject*, (op)))
 
-static PyObject *
-template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    if (kwds != NULL) {
-        PyErr_SetString(PyExc_TypeError, "Template.__new__ only accepts *args arguments");
-        return NULL;
-    }
+/*[clinic input]
+@vectorcall
+@classmethod
+Template.__new__ as template_new
+    *args: array
+[clinic start generated code]*/
 
-    Py_ssize_t argslen = PyTuple_GET_SIZE(args);
+static PyObject *
+template_new_impl(PyTypeObject *type, PyObject * const *args,
+                  Py_ssize_t args_length)
+/*[clinic end generated code: output=5831a1056a1a68d5 input=65f04e91969ffccd]*/
+{
     Py_ssize_t stringslen = 0;
     Py_ssize_t interpolationslen = 0;
     int last_was_str = 0;
 
-    for (Py_ssize_t i = 0; i < argslen; i++) {
-        PyObject *item = PyTuple_GET_ITEM(args, i);
+    for (Py_ssize_t i = 0; i < args_length; i++) {
+        PyObject *item = args[i];
         if (PyUnicode_Check(item)) {
             if (!last_was_str) {
                 stringslen++;
@@ -142,8 +152,8 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     last_was_str = 0;
     Py_ssize_t stringsidx = 0, interpolationsidx = 0;
-    for (Py_ssize_t i = 0; i < argslen; i++) {
-        PyObject *item = PyTuple_GET_ITEM(args, i);
+    for (Py_ssize_t i = 0; i < args_length; i++) {
+        PyObject *item = args[i];
         if (PyUnicode_Check(item)) {
             if (last_was_str) {
                 PyObject *laststring = PyTuple_GET_ITEM(strings, stringsidx - 1);
@@ -391,6 +401,7 @@ PyTypeObject _PyTemplate_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_as_sequence = &template_as_sequence,
     .tp_new = template_new,
+    .tp_vectorcall = template_vectorcall,
     .tp_alloc = PyType_GenericAlloc,
     .tp_dealloc = template_dealloc,
     .tp_clear = template_clear,
