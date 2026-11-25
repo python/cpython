@@ -504,6 +504,11 @@ class FlamegraphCollector(StackTraceCollector):
             # The C encoder can exhaust the C stack independently of the
             # Python recursion limit. iterencode() uses the Python encoder.
             data_json = "".join(json.JSONEncoder().iterencode(data))
+        data_json = (
+            data_json.replace("<", "\\u003c")
+            .replace(">", "\\u003e")
+            .replace("&", "\\u0026")
+        )
 
         template_dir = importlib.resources.files(__package__)
         vendor_dir = template_dir / "_vendor"

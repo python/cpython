@@ -507,7 +507,10 @@ PyDoc_STRVAR(_io_TextIOWrapper___init____doc__,
 "Character and line based layer over a BufferedIOBase object, buffer.\n"
 "\n"
 "encoding gives the name of the encoding that the stream will be\n"
-"decoded or encoded with. It defaults to locale.getencoding().\n"
+"decoded or encoded with. It defaults to UTF-8; if UTF-8 Mode is\n"
+"disabled, the encoding returned by locale.getencoding() is used\n"
+"instead.  See the codecs module for the list of supported\n"
+"encodings.\n"
 "\n"
 "errors determines the strictness of encoding and decoding (see\n"
 "help(codecs.Codec) or the documentation for codecs.register) and\n"
@@ -1327,4 +1330,4 @@ _io_TextIOWrapper_buffer_get(PyObject *self, void *Py_UNUSED(context))
 
 #define _IO_TEXTIOWRAPPER_BUFFER_GETSETDEF {"buffer", (getter)_io_TextIOWrapper_buffer_get, (setter)NULL, NULL},
 
-/*[clinic end generated code: output=ea77f719ad508581 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d96cd0f7c06f36f5 input=a9049054013a1b77]*/
