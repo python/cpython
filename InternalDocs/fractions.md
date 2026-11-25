@@ -393,7 +393,7 @@ $$\gcd\left(p, b/g\right)
 and similarly\
 $$\gcd\left(p, d/g\right) = \gcd\left(c\left(b/g\right), d/g\right) = 1$$
 
-Above allows us optimize reduction of the result to lowest
+The above allows us optimize reduction of the result to lowest
 terms.  Indeed,\
 $$h = \gcd\left(p, q\right)
 =\gcd\left(p, \left(b/g\right)\left(d/g\right) g\right)
