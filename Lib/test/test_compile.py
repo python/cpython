@@ -2062,6 +2062,14 @@ class TestSpecifics(unittest.TestCase):
                 pass
             finally:
                 for x in y:
+                    def f():
+                        return 42
+            """),
+        textwrap.dedent("""
+            try:
+                pass
+            finally:
+                for x in y:
                     break
             """),
         textwrap.dedent("""

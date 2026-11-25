@@ -2984,6 +2984,57 @@ class SyntaxWarningTest(unittest.TestCase):
             """)
         self.check_warning(source, "'return' in a 'finally' block")
 
+    def test_return_in_loop_in_finally(self):
+        # gh-162575: a return in a loop also leaves the finally block
+        sources = [
+            """
+            def f():
+                try:
+                    pass
+                finally:
+                    for x in y:
+                        return 42
+            """,
+            """
+            def f():
+                try:
+                    pass
+                finally:
+                    while x:
+                        return 42
+            """,
+            """
+            def f():
+                try:
+                    pass
+                finally:
+                    for x in y:
+                        while x:
+                            return 42
+            """,
+            """
+            def f():
+                for x in y:
+                    try:
+                        pass
+                    finally:
+                        for z in x:
+                            return 42
+            """,
+            """
+            async def f():
+                try:
+                    pass
+                finally:
+                    async for x in y:
+                        return 42
+            """,
+        ]
+        for source in sources:
+            with self.subTest(source=source):
+                self.check_warning(textwrap.dedent(source),
+                                   "'return' in a 'finally' block")
+
     def test_break_and_continue_in_finally(self):
         for kw in ('break', 'continue'):
 

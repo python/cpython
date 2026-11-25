@@ -1,0 +1,3 @@
+Emit a :exc:`SyntaxWarning` for a :keyword:`return` in a :keyword:`for` or
+:keyword:`while` loop in a :keyword:`finally` block. Before, the :pep:`765`
+warning was missed when the :keyword:`!return` was inside a loop.
