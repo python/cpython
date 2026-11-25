@@ -556,13 +556,6 @@ cp437_table = (
     '\xb0\u2219\xb7\u221a\u207f\xb2\u25a0\xa0'
 )
 
-# ZIP compression methods supported by zipimport.  bz2 and lzma could be
-# added, but are largely obsolete.
-_ZIP_STORED = 0
-_ZIP_DEFLATED = 8
-_ZIP_ZSTANDARD = 93
-_RAW_DEFLATE_WBITS = -15
-
 _importing_zlib = False
 _zlib_decompress = None
 _zlib_decompressobj = None
@@ -664,11 +657,14 @@ _PREFIX_READ_CHUNK = 1024
 # is positioned at the member's data, until at least min_bytes decompressed
 # bytes are available (or the member ends), and return them.
 def _decompress_prefix(fp, compress, data_size, min_bytes):
-    if compress == _ZIP_DEFLATED:
-        _get_zlib_decompress_func()
-        decomp = _zlib_decompressobj(_RAW_DEFLATE_WBITS)
-    else:
-        decomp = _get_zstd_decompressor_class()()
+    match compress:
+        case 8:  # deflate aka zlib
+            _get_zlib_decompress_func()
+            decomp = _zlib_decompressobj(-15)
+        case 93:  # zstd
+            decomp = _get_zstd_decompressor_class()()
+        case _:
+            raise ZipImportError(f"zipimport: unsupported compression {compress}")
     result = b''
     remaining = data_size
     pending = b''
@@ -684,10 +680,11 @@ def _decompress_prefix(fp, compress, data_size, min_bytes):
         try:
             result += decomp.decompress(chunk, needed)
         except Exception:
-            if compress == _ZIP_DEFLATED:
-                raise
-            raise ZipImportError("could not decompress zstd data")
-        if compress == _ZIP_ZSTANDARD and decomp.eof:
+            # As in _get_data(): zlib errors propagate, zstd errors are wrapped.
+            if compress == 93:
+                raise ZipImportError("could not decompress zstd data")
+            raise
+        if compress == 93 and decomp.eof:
             # Concatenated zstd frames: continue with a fresh decompressor.
             pending = decomp.unused_data
             decomp = _get_zstd_decompressor_class()()
@@ -699,8 +696,6 @@ def _decompress_prefix(fp, compress, data_size, min_bytes):
 # result may be longer, or shorter if the data is.
 def _get_data(archive, toc_entry, min_bytes=-1):
     datapath, compress, data_size, file_size, file_offset, time, date, crc = toc_entry
-    if compress not in (_ZIP_STORED, _ZIP_DEFLATED, _ZIP_ZSTANDARD):
-        raise ZipImportError(f"zipimport: unsupported compression {compress}")
     if data_size < 0:
         raise ZipImportError('negative data size')
 
@@ -727,7 +722,7 @@ def _get_data(archive, toc_entry, min_bytes=-1):
         except OSError:
             raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
         if min_bytes >= 0:
-            if compress == _ZIP_STORED:
+            if compress == 0:  # stored
                 data_size = min(min_bytes, data_size)
             else:
                 return _decompress_prefix(fp, compress, data_size, min_bytes)
@@ -735,19 +730,23 @@ def _get_data(archive, toc_entry, min_bytes=-1):
         if len(raw_data) != data_size:
             raise OSError("zipimport: can't read data")
 
-    if compress == _ZIP_STORED:
-        return raw_data
-    elif compress == _ZIP_DEFLATED:
-        try:
-            decompress = _get_zlib_decompress_func()
-        except Exception:
-            raise ZipImportError("can't decompress data; zlib not available")
-        return decompress(raw_data, _RAW_DEFLATE_WBITS)
-    else:
-        try:
-            return _zstd_decompress(raw_data)
-        except Exception:
-            raise ZipImportError("could not decompress zstd data")
+    match compress:
+        case 0:  # stored
+            return raw_data
+        case 8:  # deflate aka zlib
+            try:
+                decompress = _get_zlib_decompress_func()
+            except Exception:
+                raise ZipImportError("can't decompress data; zlib not available")
+            return decompress(raw_data, -15)
+        case 93:  # zstd
+            try:
+                return _zstd_decompress(raw_data)
+            except Exception:
+                raise ZipImportError("could not decompress zstd data")
+        # bz2 and lzma could be added, but are largely obsolete.
+        case _:
+            raise ZipImportError(f"zipimport: unsupported compression {compress}")
 
 
 # Lenient date/time comparison function. The precision of the mtime
