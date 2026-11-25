@@ -1148,7 +1148,8 @@ class _SelectorSocketTransport(_SelectorTransport):
                 # Not all data was written
                 self._buffer.appendleft(buffer[n:])
         except (BlockingIOError, InterruptedError):
-            pass
+            self._buffer.appendleft(buffer)
+            return
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:
