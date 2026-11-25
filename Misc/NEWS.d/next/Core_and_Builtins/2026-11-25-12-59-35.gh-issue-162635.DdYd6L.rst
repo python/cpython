@@ -1,0 +1,3 @@
+Clear the ``external`` flag when CPython creates or copies an interpreter
+frame, so external frame evaluators can reliably identify the frames they
+push.
