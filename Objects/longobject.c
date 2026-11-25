@@ -3755,7 +3755,13 @@ x_add(PyLongObject *a, PyLongObject *b)
             size_a = size_b;
             size_b = size_temp; }
     }
-    z = long_alloc(size_a+1);
+    assert(size_a >= 1);
+    /* A carry out of the top digit is only possible if the top digits sum
+       to at least PyLong_MASK; only then allocate a digit for it. */
+    digit top_sum = a->long_value.ob_digit[size_a - 1]
+        + (size_b == size_a ? b->long_value.ob_digit[size_b - 1] : 0);
+    int extra_digit = top_sum >= PyLong_MASK;
+    z = long_alloc(size_a + extra_digit);
     if (z == NULL)
         return NULL;
     for (i = 0; i < size_b; ++i) {
@@ -3768,8 +3774,13 @@ x_add(PyLongObject *a, PyLongObject *b)
         z->long_value.ob_digit[i] = carry & PyLong_MASK;
         carry >>= PyLong_SHIFT;
     }
-    z->long_value.ob_digit[i] = carry;
-    return long_normalize(z);
+    if (extra_digit) {
+        z->long_value.ob_digit[i] = carry;
+        return long_normalize(z);
+    }
+    assert(carry == 0);
+    assert(z->long_value.ob_digit[i - 1] != 0);
+    return z;
 }
 
 /* Subtract the absolute values of two integers. */
@@ -4193,6 +4204,12 @@ k_mul(PyLongObject *a, PyLongObject *b)
 
     if (a == b) {
         t2 = (PyLongObject*)Py_NewRef(t1);
+    }
+    else if (_PyLong_IsZero(bh)) {
+        /* b can be an unnormalized slice made by k_lopsided_mul(), so bh
+         * (and bl too) can be zero, and x_add() needs a nonzero operand.
+         */
+        t2 = (PyLongObject*)Py_NewRef(bl);
     }
     else if ((t2 = x_add(bh, bl)) == NULL) {
         Py_DECREF(t1);

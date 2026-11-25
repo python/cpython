@@ -921,6 +921,12 @@ class CosmeticTestCase(ASTTestCase):
 
         self.check_ast_roundtrip("""f"{x:\\\\\\\\ }" """)
 
+    def test_braces_in_format_spec(self):
+        for prefix in "ft":
+            self.check_ast_roundtrip(prefix + r'"{value:\x7b>3}"')
+            self.check_ast_roundtrip(prefix + r'"{value:\x7d>3}"')
+        self.check_ast_roundtrip(r't"{value:\x7bwidth\x7d}"')
+
     def test_quote_in_format_spec(self):
         self.check_ast_roundtrip("""f"{x:'}" """)
         self.check_ast_roundtrip("""f"{x:\\'}" """)

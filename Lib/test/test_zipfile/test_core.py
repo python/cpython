@@ -4415,6 +4415,17 @@ class OtherTests(unittest.TestCase):
         caught."""
         self.assertRaises(NotImplementedError, zipfile.ZipFile, TESTFN, "w", -1)
 
+    def test_mismatched_compression_method(self):
+        fp = io.BytesIO()
+        with zipfile.ZipFile(fp, "w", zipfile.ZIP_STORED) as zipf:
+            zipf.writestr("foo.txt", b"hello")
+
+        fp.seek(8)  # Compression method in the local file header.
+        fp.write(struct.pack("<H", zipfile.ZIP_DEFLATED))
+        with zipfile.ZipFile(fp) as zipf:
+            with self.assertRaisesRegex(zipfile.BadZipFile, "Compression method"):
+                zipf.open("foo.txt")
+
     def test_unsupported_compression(self):
         # data is declared as shrunk, but actually deflated
         data = (b'PK\x03\x04.\x00\x00\x00\x01\x00\xe4C\xa1@\x00\x00\x00'
@@ -4538,6 +4549,66 @@ class OtherTests(unittest.TestCase):
         except:
             self.fail("Unable to create empty ZIP file in 'a' mode")
         zipf.close()
+
+    def test_append_preserves_ascii_utf8_flag(self):
+        comments = (b'', 'caf\N{LATIN SMALL LETTER E WITH ACUTE}'.encode('utf-8'))
+        updates = (
+            ('append', lambda zf: zf.writestr('added.txt', b'added')),
+            ('comment', lambda zf: setattr(zf, 'comment', b'archive comment')),
+        )
+        for comment, (operation, update) in itertools.product(comments, updates):
+            with self.subTest(comment=comment, operation=operation):
+                stream = io.BytesIO()
+                with zipfile.ZipFile(stream, 'w') as archive:
+                    entry = zipfile.ZipInfo('file.txt')
+                    entry.comment = comment
+                    archive.writestr(entry, b'payload')
+                original = bytearray(stream.getvalue())
+                central_offset = original.index(b'PK\x01\x02')
+                struct.pack_into('<H', original, 6, 1 << 11)
+                struct.pack_into('<H', original, central_offset + 8, 1 << 11)
+                stream = io.BytesIO(original)
+                with zipfile.ZipFile(stream, 'a') as archive:
+                    update(archive)
+                with zipfile.ZipFile(stream) as archive:
+                    entry = archive.getinfo('file.txt')
+                    self.assertEqual(entry.flag_bits, 1 << 11)
+                    self.assertEqual(entry.comment, comment)
+                    self.assertEqual(archive.read('file.txt'), b'payload')
+                    self.assertIsNone(archive.testzip())
+                self.assertEqual(stream.getvalue()[:central_offset],
+                                 original[:central_offset])
+
+    def test_new_entry_filename_encoding_flags(self):
+        cases = (
+            ('file.txt', b'\x82', 0, 'cp437', 0,
+             '\N{LATIN SMALL LETTER E WITH ACUTE}'),
+            ('caf\N{LATIN SMALL LETTER E WITH ACUTE}.txt', b'\xc3\xa9',
+             0, 'utf-8', 1 << 11,
+             '\N{LATIN SMALL LETTER E WITH ACUTE}'),
+            ('file.txt', b'\xc3\xa9', 1 << 11, 'utf-8', 1 << 11,
+             '\N{LATIN SMALL LETTER E WITH ACUTE}'),
+            ('file.txt', b'', 1 << 11, 'utf-8', 1 << 11, ''),
+            ('file.txt', b'ascii', 1 << 11, 'utf-8', 1 << 11, 'ascii'),
+        )
+        for (name, comment, initial_flags, encoding, expected_flags,
+             expected_comment) in cases:
+            with self.subTest(name=name, comment=comment,
+                              initial_flags=initial_flags):
+                stream = io.BytesIO()
+                with zipfile.ZipFile(stream, 'w') as archive:
+                    entry = zipfile.ZipInfo(name)
+                    entry.flag_bits = initial_flags
+                    entry.comment = comment
+                    archive.writestr(entry, b'payload')
+                with zipfile.ZipFile(stream) as archive:
+                    entry = archive.getinfo(name)
+                    self.assertEqual(entry.flag_bits, expected_flags)
+                    self.assertEqual(entry.comment, comment)
+                    self.assertEqual(entry.comment.decode(encoding),
+                                     expected_comment)
+                    self.assertEqual(archive.read(name), b'payload')
+                    self.assertIsNone(archive.testzip())
 
     def test_open_empty_file(self):
         # Issue 1710703: Check that opening a file with less than 22 bytes

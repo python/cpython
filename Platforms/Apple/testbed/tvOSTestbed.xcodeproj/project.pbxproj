@@ -236,7 +236,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\n\nsource $PROJECT_DIR/Python{{abiflags}}.xcframework/build/utils.sh\n\ninstall_python Python{{abiflags}}.xcframework app app_packages\n";
+			shellScript = "set -e\n\nsource \"$PROJECT_DIR/Python{{abiflags}}.xcframework/build/utils.sh\"\n\ninstall_python Python{{abiflags}}.xcframework app app_packages\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
