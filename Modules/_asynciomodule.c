@@ -4218,6 +4218,24 @@ _asyncio_future_discard_from_awaited_by_impl(PyObject *module, PyObject *fut,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_asyncio._clear_caches
+
+Clear internal caches. Used for internal tests.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio__clear_caches_impl(PyObject *module)
+/*[clinic end generated code: output=9691a293f83d4303 input=6e1ae31e51dc906c]*/
+{
+    asyncio_state *state = get_asyncio_state(module);
+    if (PySet_Clear(state->iscoroutine_typecache) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 static int
 module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
@@ -4389,6 +4407,7 @@ static PyMethodDef asyncio_methods[] = {
     _ASYNCIO_ALL_TASKS_METHODDEF
     _ASYNCIO_FUTURE_ADD_TO_AWAITED_BY_METHODDEF
     _ASYNCIO_FUTURE_DISCARD_FROM_AWAITED_BY_METHODDEF
+    _ASYNCIO__CLEAR_CACHES_METHODDEF
     {NULL, NULL}
 };
 
