@@ -681,10 +681,9 @@ Tkapp_New(const char *screenName, const char *className,
     if (v == NULL)
         return NULL;
 
-    /* Tcl's first CreateInterp() runs process-wide lazy init (including
-       Tcl_MutexLock initializing a static mutex). Concurrent callers race
-       that init under free-threading; two threads can also both free
-       tcl_lock. Serialize both (gh-154923). */
+    /* Without the GIL, two threads could both free tcl_lock below, and
+       the first-time initialization in Tcl_CreateInterp() is not
+       thread-safe either.  Serialize them. */
     static PyMutex tcl_create_mutex;
     PyMutex_Lock(&tcl_create_mutex);
     v->interp = Tcl_CreateInterp();
