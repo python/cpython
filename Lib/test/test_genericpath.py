@@ -114,6 +114,53 @@ class GenericTest:
 
         create_file(filename, b'Hello World!')
         self.assertEqual(self.pathmodule.getsize(filename), 12)
+        os.remove(filename)
+
+        open(filename, 'xb', 0).close()
+        os.truncate(filename, 512)
+        self.assertEqual(self.pathmodule.getsize(filename), 512)
+
+    @unittest.skipUnless(hasattr(os, 'DEV_BSIZE'),
+                         "os.DEV_BSIZE not available on this platform")
+    def test_getsize_actual(self):
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+
+        # DEV_BSIZE varies across platforms
+        if support.is_android:
+            expected = 8192
+        elif support.is_wasi:
+            expected = 0
+        else:
+            expected = 4096
+
+        create_file(filename, b'Hello')
+        self.assertEqual(self.pathmodule.getsize(filename, apparent=False), expected)
+        os.remove(filename)
+
+        create_file(filename, b'Hello World!')
+        self.assertEqual(self.pathmodule.getsize(filename, apparent=False), expected)
+        os.remove(filename)
+
+        # DEV_BSIZE varies across platforms
+        if support.is_android:
+            expected = 4096
+        else:
+            expected = 0
+
+        open(filename, 'xb', 0).close()
+        os.truncate(filename, 512)
+        self.assertEqual(self.pathmodule.getsize(filename, apparent=False), expected)
+
+    @unittest.skipIf(hasattr(os, 'DEV_BSIZE'),
+                     "os.DEV_BSIZE is available on this platform")
+    def test_getsize_actual_not_supported(self):
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+
+        create_file(filename, b'Hello')
+        with self.assertRaises(NotImplementedError):
+            self.pathmodule.getsize(filename, apparent=False)
 
     def test_filetime(self):
         filename = os_helper.TESTFN
