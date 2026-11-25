@@ -2053,7 +2053,7 @@ tstate_delete_common(PyThreadState *tstate, int release_gil, int is_unlinked)
     assert(tstate_impl->refcounts.values == NULL);
 #endif
 
-#if _Py_TIER2
+#ifdef _Py_TIER2
     _PyJit_TracerFree((_PyThreadStateImpl *)tstate);
 #endif
 

@@ -102,7 +102,7 @@ typedef struct _PyThreadStateImpl {
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
     Py_ssize_t reftotal;  // this thread's total refcount operations
 #endif
-#if _Py_TIER2
+#if defined(_Py_TIER2)
     struct _PyJitTracerState *jit_tracer_state;
 #endif
 
