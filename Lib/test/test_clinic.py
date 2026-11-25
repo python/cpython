@@ -1847,6 +1847,15 @@ class ClinicParserTest(TestCase):
         """)
         self.assertEqual("os_stat_fn", function.c_basename)
 
+    def test_var_keyword_c_name(self):
+        function = self.parse_function("""
+            module foo
+            foo.bar
+                **kwargs as kwds: dict
+        """)
+        p = function.parameters['kwargs_as_kwds']
+        self.assertEqual("kwds", p.converter.name)
+
     def test_base_invalid_syntax(self):
         block = """
             module os
@@ -5846,6 +5855,20 @@ class VectorcallFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.VcKwOnly()
 
+    def test_vc_kwds(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcKwds()
+        with self.assertRaises(TypeError):
+            ac_tester.VcKwds(y='y')
+        with self.assertRaises(TypeError):
+            ac_tester.VcKwds(1, 2, 3)
+        self.assertEqual(ac_tester.VcKwds(1), (1, None, None))
+        self.assertEqual(ac_tester.VcKwds(1, 2), (1, 2, None))
+        self.assertEqual(ac_tester.VcKwds(1, a='a', b='b'),
+                         (1, None, {'a': 'a', 'b': 'b'}))
+        kwds = {'y': 'y', 'z': 'z'}
+        self.assertEqual(ac_tester.VcKwds(1, 2, **kwds), (1, 2, kwds))
+
     def test_parse_errors_match_slot(self):
         # tp_vectorcall and tp_new/tp_init slot should match in argument parsing
         # error messages. Explicit calls to __new__ and __init__, as well as
@@ -5871,6 +5894,7 @@ class VectorcallFunctionalTest(unittest.TestCase):
             through_new(ac_tester.VcNew),
             through_new(ac_tester.VcNewBase),
             through_new(ac_tester.VcKwOnly),
+            through_new(ac_tester.VcKwds),
             through_init(ac_tester.VcInit),
         ]
         invalid_calls = [
