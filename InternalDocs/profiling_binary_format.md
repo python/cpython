@@ -119,13 +119,12 @@ network streams.
 
 ## Sample Data
 
-Sample data begins at offset 64 and extends to `string_table_offset`. Samples
-are grouped into blocks, and each block holds at most 1 MiB of decoded data
-and takes at most 1 MiB on disk. Within a block, samples use delta compression
-to minimize redundancy when consecutive samples from the same thread have
-identical or similar call stacks. Each block can be decoded on its own once
-the string and frame tables are loaded, so a reader only needs to decode one
-block at a time.
+Sample data begins at offset 64 and extends to `string_table_offset`. Each
+block has a header followed by its columns. The columns together take at most
+1 MiB on disk and at most 1 MiB when decoded. Within a block, samples use
+delta compression to minimize redundancy when consecutive samples from the
+same thread have identical or similar call stacks. Once the reader loads the
+string and frame tables, it can decode each block on its own.
 
 ### Block Format
 
@@ -675,9 +674,9 @@ data small, however large the file is.
 On Windows, the reader uses standard file I/O instead. When a file is opened,
 it only reads the header and the part after the sample data, which holds the
 string and frame tables, the statistics and the footer. During replay,
-samples are read into a reusable buffer. The buffer is 2 MiB, twice the
-maximum block size, or the size of the sample data if that is smaller, so a
-complete block always fits. When the buffer runs low, the bytes not yet
+samples are read into a reusable buffer. The reader requests the smaller of
+2 MiB and the sample section size. A complete block, including its header,
+fits in this buffer. When the buffer runs low, the bytes not yet
 replayed are moved to the start and the rest is filled from the file.
 
 The writer buffers samples in the current block and writes each completed
