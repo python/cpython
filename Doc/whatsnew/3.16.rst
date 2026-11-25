@@ -1258,7 +1258,10 @@ mimetypes
   Valid extensions must now start with a ``'.'`` or be empty;
   undotted extensions raise a :exc:`ValueError`.
   (Contributed by Nikita Sobolev in :gh:`149720`.)
-* Add more MIME types
+
+* Add more built-in MIME types. The ``.vcf`` extension now maps to
+  ``text/vcard``. Passing ``strict=False`` to :func:`mimetypes.guess_extension`
+  still returns ``.vcf`` for the legacy ``text/x-vcard`` type.
   (Contributed by Charlie Lin in :gh:`146344`.)
 
 shutil
