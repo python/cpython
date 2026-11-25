@@ -438,7 +438,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. availability:: WASI.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: pycache_prefix
@@ -862,9 +862,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. function:: getandroidapilevel()
 
-   Return the build-time API level of Android as an integer. This represents the
-   minimum version of Android this build of Python can run on. For runtime
-   version information, see :func:`platform.android_ver`.
+   Return the major component of the Android API level that Python was built
+   against, as an integer. For runtime version information, see
+   :func:`platform.android_ver`.
 
    .. availability:: Android.
 
@@ -1650,6 +1650,24 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. seealso::
       * Module :mod:`site` This describes how to use .pth files to
         extend :data:`sys.path`.
+
+.. data:: _path0
+
+   Path prepended to :data:`sys.path` at Python startup:
+
+   * Current directory if running a module
+     with ``python -m module`` command line.
+   * Script's directory if running a script
+     with ``python script.py``.
+   * Otherwise an empty string, which means the current working directory,
+     for ``python -c code`` or ``python`` (REPL) command line.
+
+   If :option:`-P` or :option:`-I` command line options are used or if
+   :envvar:`PYTHONSAFEPATH` environment variable is used, :data:`sys._path0` is
+   ``None`` and :data:`sys.path` is left unchanged.
+
+   .. versionadded:: 3.16
+
 
 .. data:: path_hooks
 

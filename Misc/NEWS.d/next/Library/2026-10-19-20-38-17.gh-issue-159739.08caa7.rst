@@ -1,2 +1,0 @@
-Fix incorrect :mod:`ctypes` scalar values after :func:`ctypes.resize` enlarges
-the object.

@@ -1,3 +1,0 @@
-Fix a strict aliasing issue in the :c:func:`!memcpy` implementation of
-:c:macro:`Py_SETREF`, :c:macro:`Py_XSETREF` and :c:macro:`Py_CLEAR` macros.
-Patch by Nathan Goldbaum and Victor Stinner.

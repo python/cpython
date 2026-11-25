@@ -40,6 +40,10 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
+try:
+    from _hashlib import get_fips_mode
+except ImportError:
+    def get_fips_mode(): return False
 
 
 ssl = import_helper.import_module("ssl")
@@ -2478,6 +2482,9 @@ class ECHTests(unittest.TestCase):
         self.assertEqual(server.selected_alpn_protocol(), 'h2')
 
     @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    # At 2026-11-13 (OpenSSL 4.0.3 on Fedora 45), the test is incompatible
+    # with FIPS mode: https://github.com/openssl/openssl/issues/33724
+    @unittest.skipIf(get_fips_mode(), 'gh-161932: test incompatible with FIPS')
     def test_outer_alpn_without_ech_config(self):
         for options in (0, ssl.OP_ECH_GREASE):
             client_ctx, server_ctx, hostname = testing_context()
@@ -2491,6 +2498,9 @@ class ECHTests(unittest.TestCase):
             self.assertEqual(server.selected_alpn_protocol(), 'h2')
 
     @unittest.skipUnless(ssl.HAS_ECH, 'requires ECH')
+    # At 2026-11-13 (OpenSSL 4.0.3 on Fedora 45), the test is incompatible
+    # with FIPS mode: https://github.com/openssl/openssl/issues/33724
+    @unittest.skipIf(get_fips_mode(), 'gh-161932: test incompatible with FIPS')
     def test_grease(self):
         client_ctx, server_ctx, hostname = testing_context()
         client_ctx.options |= ssl.OP_ECH_GREASE
@@ -4217,8 +4227,6 @@ class ThreadedTests(unittest.TestCase):
                 s.connect((HOST, server.port))
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
-                cipher = s.cipher()[0].split('-')
-                self.assertTrue(cipher[:2], ('ECDHE', 'ECDSA'))
 
     @unittest.skipUnless(IS_OPENSSL_3_0_0,
                          "test requires RFC 5280 check added in OpenSSL 3.0+")
@@ -4276,7 +4284,7 @@ class ThreadedTests(unittest.TestCase):
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
                 cipher = s.cipher()[0].split('-')
-                self.assertTrue(cipher[:2], ('ECDHE', 'ECDSA'))
+                self.assertEqual(cipher[:2], ['ECDHE', 'ECDSA'])
 
     def test_check_hostname_idn(self, warnings_filters=True):
         if support.verbose:

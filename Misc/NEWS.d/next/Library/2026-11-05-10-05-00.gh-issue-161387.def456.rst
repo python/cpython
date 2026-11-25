@@ -1,2 +1,0 @@
-Fix a crash in :mod:`decimal` when the internal ``decimal_context``
-:class:`contextvars.ContextVar` holds a value that is not a context.

@@ -28,7 +28,7 @@ class ReturnFuncPtrTestCase(unittest.TestCase):
         # _CFuncPtr instances are now callable with an integer argument
         # which denotes a function address:
         strchr = CFUNCTYPE(c_char_p, c_char_p, c_char)(addr)
-        self.assertTrue(strchr(b"abcdef", b"b"), "bcdef")
+        self.assertEqual(strchr(b"abcdef", b"b"), b"bcdef")
         self.assertEqual(strchr(b"abcdef", b"x"), None)
         self.assertRaises(ArgumentError, strchr, b"abcdef", 3.0)
         self.assertRaises(TypeError, strchr, b"abcdef")
@@ -38,7 +38,7 @@ class ReturnFuncPtrTestCase(unittest.TestCase):
         # _CFuncPtr instances are now callable with a tuple argument
         # which denotes a function name and a dll:
         strchr = CFUNCTYPE(c_char_p, c_char_p, c_char)(("my_strchr", dll))
-        self.assertTrue(strchr(b"abcdef", b"b"), "bcdef")
+        self.assertEqual(strchr(b"abcdef", b"b"), b"bcdef")
         self.assertEqual(strchr(b"abcdef", b"x"), None)
         self.assertRaises(ArgumentError, strchr, b"abcdef", 3.0)
         self.assertRaises(TypeError, strchr, b"abcdef")
@@ -57,7 +57,7 @@ class ReturnFuncPtrTestCase(unittest.TestCase):
         # which denotes a function name and a dll:
         strchr = CFUNCTYPE(c_char_p, c_char_p, c_char)(
                 BadSequence(("my_strchr", CDLL(_ctypes_test.__file__))))
-        self.assertTrue(strchr(b"abcdef", b"b"), "bcdef")
+        self.assertEqual(strchr(b"abcdef", b"b"), b"bcdef")
         self.assertEqual(strchr(b"abcdef", b"x"), None)
         self.assertRaises(ArgumentError, strchr, b"abcdef", 3.0)
         self.assertRaises(TypeError, strchr, b"abcdef")

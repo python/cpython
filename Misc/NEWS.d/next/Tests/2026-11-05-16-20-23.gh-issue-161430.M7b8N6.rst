@@ -1,2 +1,0 @@
-No longer list tests expected to be skipped in the final report. Patch by
-Victor Stinner.

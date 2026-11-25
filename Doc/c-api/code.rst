@@ -50,7 +50,7 @@ bound into a function.
    free variables of a code object. The names are in the same order as the
    values returned by :c:func:`PyUnstable_InterpreterFrame_GetLocal`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 .. c:function:: PyCodeObject* PyUnstable_Code_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 

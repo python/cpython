@@ -1,0 +1,2 @@
+Speed up :c:func:`PyFloat_AsDouble` for exact :class:`int` arguments. Patch by
+Maurycy Pawłowski-Wieroński.
