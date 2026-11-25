@@ -395,7 +395,6 @@ Modules/xxmodule.c	-	ErrorObject	-
 
 ## state
 Modules/_datetimemodule.c	-	_datetime_global_state	-
-Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
 Modules/_tkinter.c	-	trbInCmd	-
