@@ -302,15 +302,6 @@ abc_table_snapshot(abc_table *table)
     return list;
 }
 
-static int
-abc_table_traverse(abc_table *table, visitproc visit, void *arg)
-{
-    for (size_t i = 0; i <= table->mask; i++) {
-        Py_VISIT(table->entries[i].ref);
-    }
-    return 0;
-}
-
 
 // Internal state of an ABC, stored in its _abc_impl attribute.
 
@@ -347,13 +338,9 @@ static int
 abc_data_traverse(PyObject *op, visitproc visit, void *arg)
 {
     _abc_data *self = _abc_data_CAST(op);
+    // The tables only hold weakrefs without callbacks which cannot
+    // be part of a reference cycle.
     Py_VISIT(Py_TYPE(self));
-    if (abc_table_traverse(self->registry, visit, arg) < 0
-        || abc_table_traverse(self->cache, visit, arg) < 0
-        || abc_table_traverse(self->negative_cache, visit, arg) < 0)
-    {
-        return -1;
-    }
     return 0;
 }
 
@@ -540,22 +527,19 @@ lookup_caches(_abcmodule_state *state, _abc_data *impl, PyObject *subclass)
 }
 
 // Clear the negative cache if register() was called since it was last
-// validated. Returns 1 if it was cleared.
-static int
+// validated.
+static void
 validate_negative_cache(_abc_data *impl, uint64_t counter)
 {
-    if (get_cache_version(impl) == counter) {
-        return 0;
+    if (get_cache_version(impl) >= counter) {
+        return;
     }
-    int cleared = 0;
     Py_BEGIN_CRITICAL_SECTION(impl);
-    if (impl->negative_cache_version != counter) {
+    if (impl->negative_cache_version < counter) {
         abc_table_clear(&impl->negative_cache);
         set_cache_version(impl, counter);
-        cleared = 1;
     }
     Py_END_CRITICAL_SECTION();
-    return cleared;
 }
 
 
@@ -1123,13 +1107,7 @@ check_subclasses(_abcmodule_state *state, PyObject *self, PyObject *subclass)
                           state->type_subclasses))
     {
         // __subclasses__() is not overridden, get the subclasses directly.
-        PyTypeObject *type = (PyTypeObject *)self;
-        if (!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN)
-            && FT_ATOMIC_LOAD_PTR_RELAXED(type->tp_subclasses) == NULL)
-        {
-            return 0;
-        }
-        subclasses = _PyType_GetSubclasses(type);
+        subclasses = _PyType_GetSubclasses((PyTypeObject *)self);
         native = 1;
     }
     else {
@@ -1177,23 +1155,18 @@ subclasscheck(_abcmodule_state *state, _abc_data *impl,
     uint64_t counter = get_invalidation_counter(state);
 
     /* 1. Check cache. 2. Check negative cache; may have to invalidate. */
-    if (!validate_negative_cache(impl, counter)) {
-        cache_result incache = lookup_caches(state, impl, subclass);
-        if (incache != CACHE_UNKNOWN) {
-            return incache;
-        }
-    }
-    else {
-        abc_table *cache = FT_ATOMIC_LOAD_PTR_ACQUIRE(impl->cache);
-        if (abc_table_contains(cache, subclass)) {
-            return 1;
-        }
+    validate_negative_cache(impl, counter);
+    cache_result incache = lookup_caches(state, impl, subclass);
+    if (incache != CACHE_UNKNOWN) {
+        return incache;
     }
 
     /* 3. Check the subclass hook. */
     // The default hook always returns NotImplemented, skip the call.
     if (!(PyType_Check(self)
           && type_lookup_is((PyTypeObject *)self, &_Py_ID(__subclasshook__),
+                            state->object_subclasshook)
+          && type_lookup_is(Py_TYPE(self), &_Py_ID(__subclasshook__),
                             state->object_subclasshook)))
     {
         PyObject *ok = PyObject_CallMethodOneArg(
@@ -1240,11 +1213,8 @@ subclasscheck(_abcmodule_state *state, _abc_data *impl,
 
 negative:
     /* No dice; update negative cache. */
-    // The result can be stale if register() was called in the meantime.
-    if (!nested && get_invalidation_counter(state) == counter) {
-        if (add_to_negative_cache(impl, subclass, counter) < 0) {
-            return -1;
-        }
+    if (!nested && add_to_negative_cache(impl, subclass, counter) < 0) {
+        return -1;
     }
     return 0;
 
