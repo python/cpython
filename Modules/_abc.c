@@ -497,6 +497,26 @@ add_to_table(_abc_data *impl, abc_table **ptable, PyObject *cls)
     return res;
 }
 
+// Add cls to the negative cache if it is still valid for counter.
+static int
+add_to_negative_cache(_abc_data *impl, PyObject *cls, uint64_t counter)
+{
+    PyObject *ref = PyWeakref_NewRef(cls, NULL);
+    if (ref == NULL) {
+        return -1;
+    }
+    int res = 0;
+    Py_BEGIN_CRITICAL_SECTION(impl);
+    if (impl->negative_cache_version == counter) {
+        res = abc_table_add(&impl->negative_cache, cls, ref);
+    }
+    else {
+        Py_DECREF(ref);
+    }
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
 typedef enum {
     CACHE_UNKNOWN = -1,  // not cached or stale
     CACHE_NEGATIVE = 0,  // in the negative cache
@@ -959,11 +979,6 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
 /*[clinic end generated code: output=b8b5148f63b6b56f input=0bbc8da0ea346719]*/
 {
     _abcmodule_state *state = get_abc_state(module);
-    PyObject *subtype = (PyObject *)Py_TYPE(instance);
-    // subclass is either subtype, which is kept alive by instance, or
-    // subclass_owned. The fast path doesn't incref subtype to avoid
-    // refcount contention between threads.
-    PyObject *subclass = subtype;
     PyObject *subclass_owned = NULL;
     PyObject *result = NULL;
 
@@ -972,13 +987,16 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
                                      &subclass_owned) < 0) {
             return NULL;
         }
-        /* Fall back to the type when the instance has no __class__,
-           matching the behaviour of the built-in isinstance()
-           (gh-153772). */
-        if (subclass_owned != NULL) {
-            subclass = subclass_owned;
-        }
     }
+    // The __class__ lookup can change the type of the instance.
+    PyObject *subtype = (PyObject *)Py_TYPE(instance);
+    // subclass is either subtype, which is kept alive by instance, or
+    // subclass_owned. The fast path doesn't incref subtype to avoid
+    // refcount contention between threads.
+    /* Fall back to the type when the instance has no __class__,
+       matching the behaviour of the built-in isinstance()
+       (gh-153772). */
+    PyObject *subclass = subclass_owned != NULL ? subclass_owned : subtype;
 
     // Fast path: cache hits don't need any locking.
     PyThreadState *tstate = _PyThreadState_GET();
@@ -1224,7 +1242,7 @@ negative:
     /* No dice; update negative cache. */
     // The result can be stale if register() was called in the meantime.
     if (!nested && get_invalidation_counter(state) == counter) {
-        if (add_to_table(impl, &impl->negative_cache, subclass) < 0) {
+        if (add_to_negative_cache(impl, subclass, counter) < 0) {
             return -1;
         }
     }
@@ -1294,8 +1312,8 @@ _abc__set_subclasscheck(PyObject *module, PyObject *func)
 /*[clinic end generated code: output=1dc657738311dea5 input=c2e47dd519524e44]*/
 {
     _abcmodule_state *state = get_abc_state(module);
-    assert(state->subclasscheck_func == NULL);
-    state->subclasscheck_func = Py_NewRef(func);
+    // abc can be reloaded.
+    Py_XSETREF(state->subclasscheck_func, Py_NewRef(func));
     Py_RETURN_NONE;
 }
 
