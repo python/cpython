@@ -55,6 +55,7 @@ the `Python Package Index <https://pypi.org>`_.
    allos.rst
    cmdlinelibs.rst
    concurrency.rst
+   threadsafety.rst
    ipc.rst
    netdata.rst
    markup.rst
