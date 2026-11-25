@@ -795,11 +795,19 @@ class EventLoopTestsMixin:
 
     def test_create_connection_local_addr(self):
         with test_utils.run_test_server() as httpd:
-            port = socket_helper.find_unused_port()
-            f = self.loop.create_connection(
-                lambda: MyProto(loop=self.loop),
-                *httpd.address, local_addr=(httpd.address[0], port))
-            tr, pr = self.loop.run_until_complete(f)
+            # The port can be taken by another process before we bind it.
+            for try_count in range(5):
+                port = socket_helper.find_unused_port()
+                f = self.loop.create_connection(
+                    lambda: MyProto(loop=self.loop),
+                    *httpd.address, local_addr=(httpd.address[0], port))
+                try:
+                    tr, pr = self.loop.run_until_complete(f)
+                except OSError as ex:
+                    if ex.errno != errno.EADDRINUSE or try_count == 4:
+                        raise
+                else:
+                    break
             expected = pr.transport.get_extra_info('sockname')[1]
             self.assertEqual(port, expected)
             tr.close()

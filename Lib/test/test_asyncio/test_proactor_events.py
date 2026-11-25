@@ -1071,9 +1071,8 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def prepare(self):
         sock = self.make_socket()
         proto = self.MyProto(self.loop)
-        port = socket_helper.find_unused_port()
         srv_sock = self.make_socket(cleanup=False)
-        srv_sock.bind(('127.0.0.1', port))
+        srv_sock.bind(('127.0.0.1', 0))
         server = self.run_loop(self.loop.create_server(
             lambda: proto, sock=srv_sock))
         self.run_loop(self.loop.sock_connect(sock, srv_sock.getsockname()))
