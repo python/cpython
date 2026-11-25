@@ -176,9 +176,9 @@ class SockSendfileMixin(SendfileBase):
 
     def prepare_socksendfile(self):
         proto = MyProto(self.loop)
-        port = socket_helper.find_unused_port()
         srv_sock = self.make_socket(cleanup=False)
-        srv_sock.bind((socket_helper.HOST, port))
+        srv_sock.bind((socket_helper.HOST, 0))
+        port = srv_sock.getsockname()[1]
         server = self.run_loop(self.loop.create_server(
             lambda: proto, sock=srv_sock))
         self.reduce_receive_buffer_size(srv_sock)
@@ -308,7 +308,6 @@ class SendfileMixin(SendfileBase):
     # Note: sendfile via SSL transport is equal to sendfile fallback
 
     def prepare_sendfile(self, *, is_ssl=False, close_after=0):
-        port = socket_helper.find_unused_port()
         srv_proto = MySendfileProto(loop=self.loop,
                                     close_after=close_after)
         if is_ssl:
@@ -320,7 +319,8 @@ class SendfileMixin(SendfileBase):
             srv_ctx = None
             cli_ctx = None
         srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        srv_sock.bind((socket_helper.HOST, port))
+        srv_sock.bind((socket_helper.HOST, 0))
+        port = srv_sock.getsockname()[1]
         server = self.run_loop(self.loop.create_server(
             lambda: srv_proto, sock=srv_sock, ssl=srv_ctx))
         self.reduce_receive_buffer_size(srv_sock)

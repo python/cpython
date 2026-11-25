@@ -1,0 +1,2 @@
+Fix a crash when creating Tcl interpreters concurrently in different
+threads in the :term:`free-threaded build`.
