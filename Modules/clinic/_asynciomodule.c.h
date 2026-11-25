@@ -2257,4 +2257,22 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6a0d02bd421248aa input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_asyncio__clear_caches__doc__,
+"_clear_caches($module, /)\n"
+"--\n"
+"\n"
+"Clear internal caches. Used for internal tests.");
+
+#define _ASYNCIO__CLEAR_CACHES_METHODDEF    \
+    {"_clear_caches", (PyCFunction)_asyncio__clear_caches, METH_NOARGS, _asyncio__clear_caches__doc__},
+
+static PyObject *
+_asyncio__clear_caches_impl(PyObject *module);
+
+static PyObject *
+_asyncio__clear_caches(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio__clear_caches_impl(module);
+}
+/*[clinic end generated code: output=c4ad412387312d3a input=a9049054013a1b77]*/

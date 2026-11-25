@@ -307,6 +307,20 @@ def clear_caches():
     else:
         importlib_metadata.FastPath.__new__.cache_clear()
 
+    try:
+        _asyncio = sys.modules['_asyncio']
+    except KeyError:
+        pass
+    else:
+        _asyncio._clear_caches()
+
+    try:
+        asyncio_coroutines = sys.modules['asyncio.coroutines']
+    except KeyError:
+        pass
+    else:
+        asyncio_coroutines._iscoroutine_typecache.clear()
+
 
 def get_build_info():
     # Get most important configure and build options as a list of strings.
