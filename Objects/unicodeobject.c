@@ -114,11 +114,6 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 #  define _PyUnicode_CHECK(op) PyUnicode_Check(op)
 #endif
 
-static inline char* _PyUnicode_UTF8(PyObject *op)
-{
-    return FT_ATOMIC_LOAD_PTR_ACQUIRE(_PyCompactUnicodeObject_CAST(op)->utf8);
-}
-
 static inline char* PyUnicode_UTF8(PyObject *op)
 {
     assert(_PyUnicode_CHECK(op));
@@ -173,15 +168,6 @@ static inline int _PyUnicode_SHARE_UTF8(PyObject *op)
     assert(_PyUnicode_CHECK(op));
     assert(!PyUnicode_IS_COMPACT_ASCII(op));
     return (_PyUnicode_UTF8(op) == PyUnicode_DATA(op));
-}
-
-/* true if the Unicode object has an allocated UTF-8 memory block
-   (not shared with other data) */
-static inline int _PyUnicode_HAS_UTF8_MEMORY(PyObject *op)
-{
-    return (!PyUnicode_IS_COMPACT_ASCII(op)
-            && _PyUnicode_UTF8(op) != NULL
-            && _PyUnicode_UTF8(op) != PyUnicode_DATA(op));
 }
 
 
@@ -1251,8 +1237,10 @@ const void *_PyUnicode_data(void *unicode_raw) {
     printf("compact %d\n", PyUnicode_IS_COMPACT(unicode));
     printf("compact ascii %d\n", PyUnicode_IS_COMPACT_ASCII(unicode));
     printf("ascii op %p\n", (void*)(_PyASCIIObject_CAST(unicode) + 1));
-    printf("compact op %p\n", (void*)(_PyCompactUnicodeObject_CAST(unicode) + 1));
-    printf("compact data %p\n", _PyUnicode_COMPACT_DATA(unicode));
+    if (!PyUnicode_IS_COMPACT_ASCII(unicode)) {
+        printf("compact op %p\n", (void*)(_PyCompactUnicodeObject_CAST(unicode) + 1));
+        printf("compact data %p\n", _PyUnicode_COMPACT_DATA(unicode));
+    }
     return PyUnicode_DATA(unicode);
 }
 
@@ -1260,25 +1248,21 @@ void
 _PyUnicode_Dump(PyObject *op)
 {
     PyASCIIObject *ascii = _PyASCIIObject_CAST(op);
-    PyCompactUnicodeObject *compact = _PyCompactUnicodeObject_CAST(op);
-    PyUnicodeObject *unicode = _PyUnicodeObject_CAST(op);
-    const void *data;
 
-    if (ascii->state.compact)
-    {
-        if (ascii->state.ascii)
-            data = (ascii + 1);
-        else
-            data = (compact + 1);
-    }
-    else
-        data = unicode->data.any;
-    printf("%s: len=%zu, ", unicode_kind_name(op), ascii->length);
+    printf("%s: len=%zu", unicode_kind_name(op), ascii->length);
 
     if (!ascii->state.ascii) {
-        printf("utf8=%p (%zu)", (void *)compact->utf8, compact->utf8_length);
+        PyCompactUnicodeObject *compact = _PyCompactUnicodeObject_CAST(op);
+        if (compact->utf8 == NULL) {
+            printf(", utf8=NULL");
+        }
+        else {
+            printf(", utf8=%p", (void *)compact->utf8);
+        }
+        printf(" (%zu)", compact->utf8_length);
     }
-    printf(", data=%p\n", data);
+    printf(", data=%p\n", PyUnicode_DATA(op));
+    fflush(stdout);
 }
 #endif
 
@@ -1767,6 +1751,9 @@ _PyUnicode_IsModifiable(PyObject *unicode)
         return 0;
     if (PyUnicode_CHECK_INTERNED(unicode))
         return 0;
+    if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
+        return 0;
+    }
 #ifdef Py_DEBUG
     /* singleton refcount is greater than 1 */
     assert(!unicode_is_singleton(unicode));
@@ -5075,6 +5062,16 @@ find_first_nonascii(const unsigned char *start, const unsigned char *end)
             p++;
         }
 #endif
+
+        // Long ASCII runs: test eight words per branch.
+        for (; end - p >= 8 * SIZEOF_SIZE_T; p += 8 * SIZEOF_SIZE_T) {
+            const size_t *w = (const size_t *)p;
+            if ((w[0] | w[1] | w[2] | w[3] |
+                 w[4] | w[5] | w[6] | w[7]) & ASCII_CHAR_MASK)
+            {
+                break;
+            }
+        }
 
         const unsigned char *e = end - SIZEOF_SIZE_T;
         while (p <= e) {
@@ -10457,10 +10454,10 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
     PyObject *item;
     Py_ssize_t sz, i, res_offset;
     Py_UCS4 maxchar;
-    Py_UCS4 item_maxchar;
+    /* kinds is the bitwise OR of the PyUnicode_KIND() values (1, 2, 4). */
+    unsigned int kinds = 0, all_ascii = 1;
     int use_memcpy;
     unsigned char *res_data = NULL, *sep_data = NULL;
-    PyObject *last_obj;
     int kind = 0;
 
     /* If empty sequence, return u"". */
@@ -10469,14 +10466,12 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
     }
 
     /* If singleton sequence with an exact Unicode, return that. */
-    last_obj = NULL;
     if (seqlen == 1) {
         if (PyUnicode_CheckExact(items[0])) {
             res = items[0];
             return Py_NewRef(res);
         }
         seplen = 0;
-        maxchar = 0;
     }
     else {
         /* Set up sep and seplen */
@@ -10486,7 +10481,6 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
             if (!sep)
                 goto onError;
             seplen = 1;
-            maxchar = 32;
         }
         else {
             if (!PyUnicode_Check(separator)) {
@@ -10498,12 +10492,12 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
             }
             sep = separator;
             seplen = PyUnicode_GET_LENGTH(separator);
-            maxchar = PyUnicode_MAX_CHAR_VALUE(separator);
             /* inc refcount to keep this code path symmetric with the
                above case of a blank separator */
             Py_INCREF(sep);
         }
-        last_obj = sep;
+        kinds = PyUnicode_KIND(sep);
+        all_ascii = PyUnicode_IS_ASCII(sep);
     }
 
     /* There are at least two things to join, or else we have a subclass
@@ -10527,23 +10521,34 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
                          i, Py_TYPE(item)->tp_name);
             goto onError;
         }
-        add_sz = PyUnicode_GET_LENGTH(item);
-        item_maxchar = PyUnicode_MAX_CHAR_VALUE(item);
-        maxchar = Py_MAX(maxchar, item_maxchar);
-        if (i != 0) {
-            add_sz += seplen;
-        }
+        /* Count one separator per item; the extra one is removed below. */
+        add_sz = (size_t)PyUnicode_GET_LENGTH(item) + (size_t)seplen;
+        kinds |= PyUnicode_KIND(item);
+        all_ascii &= PyUnicode_IS_ASCII(item);
         if (add_sz > (size_t)(PY_SSIZE_T_MAX - sz)) {
             PyErr_SetString(PyExc_OverflowError,
                             "join() result is too long for a Python string");
             goto onError;
         }
         sz += add_sz;
-        if (use_memcpy && last_obj != NULL) {
-            if (PyUnicode_KIND(last_obj) != PyUnicode_KIND(item))
-                use_memcpy = 0;
-        }
-        last_obj = item;
+    }
+    sz -= seplen;
+    /* memcpy() can be used if the separator and all items have the same
+       kind: the result then has that kind too. */
+    if (kinds & (kinds - 1)) {
+        use_memcpy = 0;
+    }
+    if (all_ascii) {
+        maxchar = 0x7f;
+    }
+    else if (kinds & PyUnicode_4BYTE_KIND) {
+        maxchar = MAX_UNICODE;
+    }
+    else if (kinds & PyUnicode_2BYTE_KIND) {
+        maxchar = 0xffff;
+    }
+    else {
+        maxchar = 0xff;
     }
 
     res = PyUnicode_New(sz, maxchar);
@@ -14740,7 +14745,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     /* Statically allocated strings must be already interned. */
     assert(!_PyUnicode_STATE(s).statically_allocated);
 
-#if Py_GIL_DISABLED
+#ifdef Py_GIL_DISABLED
     /* In the free-threaded build, all interned strings are immortal */
     immortalize = 1;
 #endif

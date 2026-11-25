@@ -54,6 +54,7 @@
 
 #include "expat_config.h"
 
+#include <assert.h>
 #include <stddef.h>
 #include <string.h> /* memcpy */
 #include <stdbool.h>
@@ -137,12 +138,8 @@
            : ((p)[1] & 0x80) == 0                                              \
                  || ((*p) == 0xF4 ? (p)[1] > 0x8F : ((p)[1] & 0xC0) == 0xC0)))
 
-static int
-isNever(const ENCODING *enc, const char *p) {
-  UNUSED_P(enc);
-  UNUSED_P(p);
-  return 0;
-}
+static const uint8_t b_0000_0111 = 0x07;
+static const uint8_t b_0011_1111 = 0x3F;
 
 static int
 utf8_isName2(const ENCODING *enc, const char *p) {
@@ -156,7 +153,7 @@ utf8_isName3(const ENCODING *enc, const char *p) {
   return UTF8_GET_NAMING3(namePages, (const unsigned char *)p);
 }
 
-#define utf8_isName4 isNever
+#define utf8_isName4 utf8_isNmstrt4
 
 static int
 utf8_isNmstrt2(const ENCODING *enc, const char *p) {
@@ -170,7 +167,18 @@ utf8_isNmstrt3(const ENCODING *enc, const char *p) {
   return UTF8_GET_NAMING3(nmstrtPages, (const unsigned char *)p);
 }
 
-#define utf8_isNmstrt4 isNever
+static int
+utf8_isNmstrt4(const ENCODING *enc, const char *p) {
+  UNUSED_P(enc);
+
+  // This is a four-byte-unit UTF-8 decoder but:
+  // - We only need the two upper bytes for the check below
+  // - Malformed continuation bytes have been rejected before
+  const unsigned codepoint
+      = ((p[0] & b_0000_0111) << 18) | ((p[1] & b_0011_1111) << 12);
+
+  return ((codepoint >= 0x10000) && (codepoint <= 0xEFFFF));
+}
 
 static int
 utf8_isInvalid2(const ENCODING *enc, const char *p) {
@@ -645,20 +653,31 @@ unicode_byte_type(char hi, char lo) {
       unsigned short **toP, const unsigned short *toLim) {                     \
     enum XML_Convert_Result res = XML_CONVERT_COMPLETED;                       \
     UNUSED_P(enc);                                                             \
-    fromLim = *fromP + (((fromLim - *fromP) >> 1) << 1); /* shrink to even */  \
-    /* Avoid copying the first half (2 bytes) of surrogate pairs (4 bytes) */  \
-    if (fromLim - *fromP > ((toLim - *toP) << 1)                               \
-        && /* are the last two bytes a high surrogate (0xD800-0xDBFF)? */      \
-        (GET_HI(fromLim - 2) & 0xFC) == 0xD8) {                                \
-      fromLim -= 2;                                                            \
-      res = XML_CONVERT_INPUT_INCOMPLETE;                                      \
+    const size_t maxBytesToCopy = (toLim - *toP) * sizeof(short);              \
+                                                                               \
+    if ((size_t)(fromLim - *fromP) > maxBytesToCopy) {                         \
+      /* Shrink to the (even) maximum amount able to copy */                   \
+      fromLim = *fromP + maxBytesToCopy;                                       \
+      res = XML_CONVERT_OUTPUT_EXHAUSTED;                                      \
+    } else {                                                                   \
+      /* Shrink to even number of bytes */                                     \
+      fromLim = *fromP + (((fromLim - *fromP) >> 1) << 1);                     \
     }                                                                          \
+                                                                               \
+    /* Avoid copying the first half (2 bytes) of surrogate pairs (4 bytes) */  \
+    /* Are the last about-to-be-copied two bytes a high surrogate              \
+     * (0xD800-0xDBFF)? */                                                     \
+    if ((fromLim - *fromP) >= 2 && (GET_HI(fromLim - 2) & 0xFC) == 0xD8) {     \
+      fromLim -= 2;                                                            \
+      if (res != XML_CONVERT_OUTPUT_EXHAUSTED)                                 \
+        res = XML_CONVERT_INPUT_INCOMPLETE;                                    \
+    }                                                                          \
+                                                                               \
+    /* Copy bytes respecting endianness */                                     \
     for (; *fromP < fromLim && *toP < toLim; *fromP += 2)                      \
       *(*toP)++ = (GET_HI(*fromP) << 8) | GET_LO(*fromP);                      \
-    if ((*toP == toLim) && (*fromP < fromLim))                                 \
-      return XML_CONVERT_OUTPUT_EXHAUSTED;                                     \
-    else                                                                       \
-      return res;                                                              \
+                                                                               \
+    return res;                                                                \
   }
 
 #define GET_LO(ptr) ((unsigned char)(ptr)[0])
@@ -683,6 +702,7 @@ DEFINE_UTF16_TO_UTF16(big2_)
   ((p)[1] == 0 ? SB_BYTE_TYPE(enc, p) : unicode_byte_type((p)[1], (p)[0]))
 #define LITTLE2_BYTE_TO_ASCII(p) ((p)[1] == 0 ? (p)[0] : -1)
 #define LITTLE2_CHAR_MATCHES(p, c) ((p)[1] == 0 && (p)[0] == (c))
+#define LITTLE2_IS_NAME_CHAR(enc, p, n) LITTLE2_IS_NMSTRT_CHAR(enc, p, n)
 #define LITTLE2_IS_NAME_CHAR_MINBPC(p)                                         \
   UCS2_GET_NAMING(namePages, (unsigned char)p[1], (unsigned char)p[0])
 #define LITTLE2_IS_NMSTRT_CHAR_MINBPC(p)                                       \
@@ -693,6 +713,20 @@ DEFINE_UTF16_TO_UTF16(big2_)
 #define LITTLE2_IS_INVALID_CHAR(p, n)                                          \
   ((n) == 4 && ((unsigned char)(p)[3] & 0xFC) != 0xDC)
 
+static bool
+LITTLE2_IS_NMSTRT_CHAR(const ENCODING *enc, const char *p, size_t n) {
+  UNUSED_P(enc);
+  assert(n == 4);
+  const uint8_t *const source = (const uint8_t *)p;
+
+  const uint16_t high = (source[1] << 8) | source[0];
+  const uint16_t low = (source[3] << 8) | source[2];
+
+  const unsigned codepoint = (high - 0xD800) * 0x400 + (low - 0xDC00) + 0x10000;
+
+  return ((codepoint >= 0x10000) && (codepoint <= 0xEFFFF));
+}
+
 #undef PREFIX
 #define PREFIX(ident) little2_##ident
 #define MINBPC(enc) 2
@@ -700,9 +734,9 @@ DEFINE_UTF16_TO_UTF16(big2_)
 #define BYTE_TYPE(enc, p) LITTLE2_BYTE_TYPE(enc, p)
 #define BYTE_TO_ASCII(enc, p) LITTLE2_BYTE_TO_ASCII(p)
 #define CHAR_MATCHES(enc, p, c) LITTLE2_CHAR_MATCHES(p, c)
-#define IS_NAME_CHAR(enc, p, n) 0
+#define IS_NAME_CHAR(enc, p, n) LITTLE2_IS_NAME_CHAR(enc, p, n)
 #define IS_NAME_CHAR_MINBPC(enc, p) LITTLE2_IS_NAME_CHAR_MINBPC(p)
-#define IS_NMSTRT_CHAR(enc, p, n) (0)
+#define IS_NMSTRT_CHAR(enc, p, n) LITTLE2_IS_NMSTRT_CHAR(enc, p, n)
 #define IS_NMSTRT_CHAR_MINBPC(enc, p) LITTLE2_IS_NMSTRT_CHAR_MINBPC(p)
 #define IS_INVALID_CHAR(enc, p, n) LITTLE2_IS_INVALID_CHAR(p, n)
 
@@ -784,6 +818,7 @@ static const struct normal_encoding internal_little2_encoding
   ((p)[0] == 0 ? SB_BYTE_TYPE(enc, p + 1) : unicode_byte_type((p)[0], (p)[1]))
 #define BIG2_BYTE_TO_ASCII(p) ((p)[0] == 0 ? (p)[1] : -1)
 #define BIG2_CHAR_MATCHES(p, c) ((p)[0] == 0 && (p)[1] == (c))
+#define BIG2_IS_NAME_CHAR(enc, p, n) BIG2_IS_NMSTRT_CHAR(enc, p, n)
 #define BIG2_IS_NAME_CHAR_MINBPC(p)                                            \
   UCS2_GET_NAMING(namePages, (unsigned char)p[0], (unsigned char)p[1])
 #define BIG2_IS_NMSTRT_CHAR_MINBPC(p)                                          \
@@ -794,6 +829,20 @@ static const struct normal_encoding internal_little2_encoding
 #define BIG2_IS_INVALID_CHAR(p, n)                                             \
   ((n) == 4 && ((unsigned char)(p)[2] & 0xFC) != 0xDC)
 
+static bool
+BIG2_IS_NMSTRT_CHAR(const ENCODING *enc, const char *p, size_t n) {
+  UNUSED_P(enc);
+  assert(n == 4);
+  const uint8_t *const source = (const uint8_t *)p;
+
+  const uint16_t high = (source[0] << 8) | source[1];
+  const uint16_t low = (source[2] << 8) | source[3];
+
+  const unsigned codepoint = (high - 0xD800) * 0x400 + (low - 0xDC00) + 0x10000;
+
+  return ((codepoint >= 0x10000) && (codepoint <= 0xEFFFF));
+}
+
 #undef PREFIX
 #define PREFIX(ident) big2_##ident
 #define MINBPC(enc) 2
@@ -801,9 +850,9 @@ static const struct normal_encoding internal_little2_encoding
 #define BYTE_TYPE(enc, p) BIG2_BYTE_TYPE(enc, p)
 #define BYTE_TO_ASCII(enc, p) BIG2_BYTE_TO_ASCII(p)
 #define CHAR_MATCHES(enc, p, c) BIG2_CHAR_MATCHES(p, c)
-#define IS_NAME_CHAR(enc, p, n) 0
+#define IS_NAME_CHAR(enc, p, n) BIG2_IS_NAME_CHAR(enc, p, n)
 #define IS_NAME_CHAR_MINBPC(enc, p) BIG2_IS_NAME_CHAR_MINBPC(p)
-#define IS_NMSTRT_CHAR(enc, p, n) (0)
+#define IS_NMSTRT_CHAR(enc, p, n) BIG2_IS_NMSTRT_CHAR(enc, p, n)
 #define IS_NMSTRT_CHAR_MINBPC(enc, p) BIG2_IS_NMSTRT_CHAR_MINBPC(p)
 #define IS_INVALID_CHAR(enc, p, n) BIG2_IS_INVALID_CHAR(p, n)
 
@@ -1283,13 +1332,17 @@ unknown_toUtf8(const ENCODING *enc, const char **fromP, const char *fromLim,
     utf8 = uenc->utf8[(unsigned char)**fromP];
     n = *utf8++;
     if (n == 0) {
+      const size_t readLen
+          = (AS_NORMAL_ENCODING(enc)->type[(unsigned char)**fromP]
+             - (BT_LEAD2 - 2));
+      if (readLen > (size_t)(fromLim - *fromP))
+        return XML_CONVERT_INPUT_INCOMPLETE;
       int c = uenc->convert(uenc->userData, *fromP);
       n = XmlUtf8Encode(c, buf);
       if (n > toLim - *toP)
         return XML_CONVERT_OUTPUT_EXHAUSTED;
       utf8 = buf;
-      *fromP += (AS_NORMAL_ENCODING(enc)->type[(unsigned char)**fromP]
-                 - (BT_LEAD2 - 2));
+      *fromP += readLen;
     } else {
       if (n > toLim - *toP)
         return XML_CONVERT_OUTPUT_EXHAUSTED;
@@ -1307,9 +1360,13 @@ unknown_toUtf16(const ENCODING *enc, const char **fromP, const char *fromLim,
   while (*fromP < fromLim && *toP < toLim) {
     unsigned short c = uenc->utf16[(unsigned char)**fromP];
     if (c == 0) {
+      const size_t readLen
+          = (AS_NORMAL_ENCODING(enc)->type[(unsigned char)**fromP]
+             - (BT_LEAD2 - 2));
+      if (readLen > (size_t)(fromLim - *fromP))
+        return XML_CONVERT_INPUT_INCOMPLETE;
       c = (unsigned short)uenc->convert(uenc->userData, *fromP);
-      *fromP += (AS_NORMAL_ENCODING(enc)->type[(unsigned char)**fromP]
-                 - (BT_LEAD2 - 2));
+      *fromP += readLen;
     } else
       (*fromP)++;
     *(*toP)++ = c;
@@ -1317,8 +1374,8 @@ unknown_toUtf16(const ENCODING *enc, const char **fromP, const char *fromLim,
 
   if ((*toP == toLim) && (*fromP < fromLim))
     return XML_CONVERT_OUTPUT_EXHAUSTED;
-  else
-    return XML_CONVERT_COMPLETED;
+
+  return XML_CONVERT_COMPLETED;
 }
 
 ENCODING *

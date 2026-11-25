@@ -1061,6 +1061,44 @@ class StreamReadTest(CommonReadTest, unittest.TestCase):
         finally:
             tar1.close()
 
+    def test_ignore_zeros_concatenated(self):
+        # gh-159643: reading past the end of the compressed data
+        # must not raise EOFError.
+        with self.open(tmpname, "wb") as fobj:
+            for name in ("a", "b"):
+                with tarfile.open(fileobj=fobj, mode="w") as tar:
+                    tar.addfile(tarfile.TarInfo(name))
+        with tarfile.open(tmpname, self.mode, ignore_zeros=True) as tar:
+            self.assertEqual(tar.getnames(), ["a", "b"])
+
+    def test_no_end_of_archive_blocks(self):
+        # gh-159643
+        tarinfo = tarfile.TarInfo("a")
+        tarinfo.size = 5
+        with self.open(tmpname, "wb") as fobj:
+            fobj.write(tarinfo.tobuf())
+            fobj.write(b"hello".ljust(tarfile.BLOCKSIZE, b"\0"))
+        with tarfile.open(tmpname, self.mode) as tar:
+            self.assertEqual(tar.getnames(), ["a"])
+
+    def test_data_after_end_of_stream(self):
+        # gh-159643: with a small bufsize, the compressed data spans
+        # several reads of the file and the padding that follows it
+        # is not read together with the end of the compressed data.
+        bufsize = tarfile.BLOCKSIZE
+        data = Random(0).randbytes(8 * bufsize)
+        tarinfo = tarfile.TarInfo("a")
+        tarinfo.size = len(data)
+        with self.open(tmpname, "wb") as fobj:
+            with tarfile.open(fileobj=fobj, mode="w") as tar:
+                tar.addfile(tarinfo, io.BytesIO(data))
+        with open(tmpname, "ab") as fobj:
+            fobj.write(bytes(4 * bufsize))
+        with tarfile.open(tmpname, self.mode, bufsize=bufsize,
+                          ignore_zeros=True) as tar:
+            members = [(m.name, tar.extractfile(m).read()) for m in tar]
+        self.assertEqual(members, [("a", data)])
+
 class GzipStreamReadTest(GzipTest, GzipReadTestBase, StreamReadTest):
     pass
 
@@ -1510,6 +1548,34 @@ class GNUReadTest(LongnameTest, ReadTest, unittest.TestCase):
         with tarfile.open(fileobj=io.BytesIO(buf)) as tar:
             self.assertEqual(tar.getnames(), ["sparse", "last"])
             self.assertEqual(tar.extractfile("last").read(), data)
+
+    def test_pax_size_with_gnu_longname(self):
+        # gh-159435: a GNU long-name header between a pax header and its
+        # member must not make the member header get read a second time.
+        long_name = "long-name-" * 12 + "file.txt"
+
+        def header(name, type, size):
+            info = tarfile.TarInfo(name)
+            info.type = type
+            info.size = size
+            return info.tobuf(tarfile.USTAR_FORMAT)
+
+        def padded(data):
+            return data + b"\0" * (-len(data) % tarfile.BLOCKSIZE)
+
+        pax_record = b"9 size=5\n"
+        buf = header("././@PaxHeader", tarfile.XHDTYPE, len(pax_record))
+        buf += padded(pax_record)
+        longname = long_name.encode() + b"\0"
+        buf += header("././@LongLink", tarfile.GNUTYPE_LONGNAME, len(longname))
+        buf += padded(longname)
+        buf += header("member-short", tarfile.REGTYPE, 5) + padded(b"hello")
+        buf += header("next.txt", tarfile.REGTYPE, 3) + padded(b"bye")
+        buf += b"\0" * (tarfile.BLOCKSIZE * 2)
+
+        with tarfile.open(fileobj=io.BytesIO(buf)) as tar:
+            self.assertEqual(tar.getnames(), [long_name, "next.txt"])
+            self.assertEqual(tar.extractfile("next.txt").read(), b"bye")
 
     @staticmethod
     def _fs_supports_holes():

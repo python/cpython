@@ -37,13 +37,13 @@ jobs:
           sanitizer: ${{ inputs.sanitizer }}
       - name: Upload crash
         if: failure() && steps.build.outcome == 'success'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: ${{ inputs.sanitizer }}-artifacts
           path: ./out/artifacts
       - name: Upload SARIF
         if: always() && steps.build.outcome == 'success'
-        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        uses: github/codeql-action/upload-sarif@v4.38.2
         with:
           sarif_file: cifuzz-sarif/results.sarif
           checkout_path: cifuzz-sarif

@@ -92,7 +92,7 @@ following functions:
    the *timer* argument. This must be a function that returns a single number
    representing the current time. If the number is an integer, the *timeunit*
    specifies a multiplier that specifies the duration of each unit of time. For
-   example, if the timer returns times measured in thousands of seconds, the
+   example, if the timer returns times measured in thousandths of seconds, the
    time unit would be ``.001``.
 
    Directly using the :class:`Profile` class allows formatting profile results
@@ -345,7 +345,7 @@ you are using :class:`profile.Profile` or :class:`profiling.tracing.Profile`,
    ``your_time_func`` should return a single number.  If it returns integers,
    you can also invoke the class constructor with a second argument specifying
    the real duration of one unit of time.  For example, if
-   ``your_integer_time_func`` returns times measured in thousands of seconds,
+   ``your_integer_time_func`` returns times measured in thousandths of seconds,
    you would construct the :class:`Profile` instance as follows::
 
       pr = profiling.tracing.Profile(your_integer_time_func, 0.001)
