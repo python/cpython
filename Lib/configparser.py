@@ -454,9 +454,9 @@ class BasicInterpolation(Interpolation):
     _KEYCRE = re.compile(r"%\(([^)]+)\)s")
 
     def before_get(self, parser, section, option, value, defaults):
-        L = []
-        self._interpolate_some(parser, option, L, value, section, defaults, 1)
-        return ''.join(L)
+        return ''.join(
+            self._interpolate_some(parser, option, value, section, defaults, 1)
+        )
 
     def before_set(self, parser, section, option, value):
         tmp_value = value.replace('%%', '')  # escaped percent signs
@@ -468,28 +468,28 @@ class BasicInterpolation(Interpolation):
             )
         return value
 
-    def _interpolate_some(self, parser, option, accum, rest, section, map, depth):
+    def _interpolate_some(self, parser, option, rest, section, map, depth):
         rawval = parser.get(section, option, raw=True, fallback=rest)
         if depth > MAX_INTERPOLATION_DEPTH:
             raise InterpolationDepthError(option, section, rawval)
         while (pos := rest.find("%")) >= 0:
             if pos > 0:
-                accum.append(rest[:pos])
+                yield rest[:pos]
                 rest = rest[pos:]
             next_char = rest[1:2]
             if next_char == "%":
-                accum.append("%")
+                yield "%"
                 rest = rest[2:]
             elif next_char == "(":
                 v, rest, _, _ = self._do_one_interpolation(
                     rest, rawval, parser, section, option, map
                 )
                 if "%" in v:
-                    self._interpolate_some(
-                        parser, option, accum, v, section, map, depth + 1
+                    yield from self._interpolate_some(
+                        parser, option, v, section, map, depth + 1
                     )
                 else:
-                    accum.append(v)
+                    yield v
             else:
                 raise InterpolationSyntaxError(
                     option,
@@ -497,7 +497,7 @@ class BasicInterpolation(Interpolation):
                     f"'%' must be followed by '%' or '(', found: {rest!r}",
                 )
         if rest:
-            accum.append(rest)
+            yield rest
 
     def _do_one_interpolation(
         self, value, rawval, parser, section, option, map
@@ -530,9 +530,9 @@ class ExtendedInterpolation(Interpolation):
     _KEYCRE = re.compile(r"\$\{([^}]+)\}")
 
     def before_get(self, parser, section, option, value, defaults):
-        L = []
-        self._interpolate_some(parser, option, L, value, section, defaults, 1)
-        return ''.join(L)
+        return ''.join(
+            self._interpolate_some(parser, option, value, section, defaults, 1)
+        )
 
     def before_set(self, parser, section, option, value):
         tmp_value = value.replace('$$', '')  # escaped dollar signs
@@ -545,18 +545,18 @@ class ExtendedInterpolation(Interpolation):
         return value
 
     def _interpolate_some(
-        self, parser, option, accum, rest, section, map, depth
+        self, parser, option, rest, section, map, depth
     ):
         rawval = parser.get(section, option, raw=True, fallback=rest)
         if depth > MAX_INTERPOLATION_DEPTH:
             raise InterpolationDepthError(option, section, rawval)
         while (pos := rest.find("$")) >= 0:
             if pos > 0:
-                accum.append(rest[:pos])
+                yield rest[:pos]
                 rest = rest[pos:]
             next_char = rest[1:2]
             if next_char == "$":
-                accum.append("$")
+                yield "$"
                 rest = rest[2:]
             elif next_char == "{":
                 v, rest, ref_section, ref_option = self._do_one_interpolation(
@@ -565,17 +565,16 @@ class ExtendedInterpolation(Interpolation):
                 if v is None:
                     continue
                 if "$" in v:
-                    self._interpolate_some(
+                    yield from self._interpolate_some(
                         parser,
                         ref_option,
-                        accum,
                         v,
                         ref_section,
                         dict(parser.items(ref_section, raw=True)),
                         depth + 1,
                     )
                 else:
-                    accum.append(v)
+                    yield v
             else:
                 raise InterpolationSyntaxError(
                     option,
@@ -583,7 +582,7 @@ class ExtendedInterpolation(Interpolation):
                     f"'$' must be followed by '$' or '{{', found: {rest!r}",
                 )
         if rest:
-            accum.append(rest)
+            yield rest
 
     def _do_one_interpolation(
         self, value, rawval, parser, section, option, map
