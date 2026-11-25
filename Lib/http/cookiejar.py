@@ -255,8 +255,9 @@ def http2time(text):
     The parser ignores leading and trailing whitespace.  The time may be
     absent.
 
-    If the year is given with only 2 digits, the function will select the
-    century that makes the year closest to the current date.
+    If the year is given with only 2 digits, 00-69 are interpreted as
+    2000-2069 and 70-99 as 1970-1999, as specified by RFC 6265 section 5.1.1
+    for cookie expiry dates.
 
     """
     # fast exit for strictly conforming string
@@ -283,6 +284,13 @@ def http2time(text):
         day, mon, yr, hr, min, sec, tz = m.groups()
     else:
         return None  # bad format
+
+    # RFC 6265 section 5.1.1: a two-digit year is relative to a fixed
+    # pivot, not to the current date, so that cookie expiry dates such as
+    # "01-Jan-70" continue to mean 1970.
+    if len(yr) == 2:
+        yr = int(yr)
+        yr += 1900 if yr >= 70 else 2000
 
     return _str2time(day, mon, yr, hr, min, sec, tz)
 
