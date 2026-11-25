@@ -268,7 +268,7 @@ _tkinter
     is able to load Tcl/Tk without having to change your PATH.
 
 _zstd
-    Python wrapper for version 1.5.7 of the zstd compression library
+    Python wrapper for version 1.6.0 of the zstd compression library
     Homepage:
         https://facebook.github.io/zstd/
 
