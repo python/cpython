@@ -472,20 +472,15 @@ class BasicInterpolation(Interpolation):
         rawval = parser.get(section, option, raw=True, fallback=rest)
         if depth > MAX_INTERPOLATION_DEPTH:
             raise InterpolationDepthError(option, section, rawval)
-        while rest:
-            p = rest.find("%")
-            if p < 0:
-                accum.append(rest)
-                return
-            if p > 0:
-                accum.append(rest[:p])
-                rest = rest[p:]
-            # p is no longer used
-            c = rest[1:2]
-            if c == "%":
+        while (pos := rest.find("%")) >= 0:
+            if pos > 0:
+                accum.append(rest[:pos])
+                rest = rest[pos:]
+            next_char = rest[1:2]
+            if next_char == "%":
                 accum.append("%")
                 rest = rest[2:]
-            elif c == "(":
+            elif next_char == "(":
                 v, rest, _, _ = self._do_one_interpolation(
                     rest, rawval, parser, section, option, map
                 )
@@ -501,6 +496,8 @@ class BasicInterpolation(Interpolation):
                     section,
                     f"'%' must be followed by '%' or '(', found: {rest!r}",
                 )
+        if rest:
+            accum.append(rest)
 
     def _do_one_interpolation(
         self, value, rawval, parser, section, option, map
@@ -553,20 +550,15 @@ class ExtendedInterpolation(Interpolation):
         rawval = parser.get(section, option, raw=True, fallback=rest)
         if depth > MAX_INTERPOLATION_DEPTH:
             raise InterpolationDepthError(option, section, rawval)
-        while rest:
-            p = rest.find("$")
-            if p < 0:
-                accum.append(rest)
-                return
-            if p > 0:
-                accum.append(rest[:p])
-                rest = rest[p:]
-            # p is no longer used
-            c = rest[1:2]
-            if c == "$":
+        while (pos := rest.find("$")) >= 0:
+            if pos > 0:
+                accum.append(rest[:pos])
+                rest = rest[pos:]
+            next_char = rest[1:2]
+            if next_char == "$":
                 accum.append("$")
                 rest = rest[2:]
-            elif c == "{":
+            elif next_char == "{":
                 v, rest, ref_section, ref_option = self._do_one_interpolation(
                     rest, rawval, parser, section, option, map
                 )
@@ -590,6 +582,8 @@ class ExtendedInterpolation(Interpolation):
                     section,
                     f"'$' must be followed by '$' or '{{', found: {rest!r}",
                 )
+        if rest:
+            accum.append(rest)
 
     def _do_one_interpolation(
         self, value, rawval, parser, section, option, map
