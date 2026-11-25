@@ -35,7 +35,7 @@ The :mod:`!http` module also defines the following enums that help you work with
 
       >>> from http import HTTPStatus
       >>> HTTPStatus.OK
-      HTTPStatus.OK
+      <HTTPStatus.OK: 200>
       >>> HTTPStatus.OK == 200
       True
       >>> HTTPStatus.OK.value
@@ -45,7 +45,7 @@ The :mod:`!http` module also defines the following enums that help you work with
       >>> HTTPStatus.OK.description
       'Request fulfilled, document follows'
       >>> list(HTTPStatus)
-      [HTTPStatus.CONTINUE, HTTPStatus.SWITCHING_PROTOCOLS, ...]
+      [<HTTPStatus.CONTINUE: 100>, <HTTPStatus.SWITCHING_PROTOCOLS: 101>, ...]
 
 .. _http-status-codes:
 
