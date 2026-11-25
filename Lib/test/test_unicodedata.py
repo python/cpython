@@ -55,9 +55,9 @@ def download_test_data_file(filename):
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = ('2bb59305a65254fee9cd6ef981cc3cab7551c60e'
+    expectedchecksum = ('a95371700ebbde3c78130d5e713bfdb6958dfb12'
                         if quicktest else
-                        'bb69894a259aee5971445eca8e617a1686a432e2')
+                        '56aaa60dc1f94b8876d521937c5788aa3dd62cc3')
 
     def test_method_checksum(self):
         h = hashlib.sha1()
