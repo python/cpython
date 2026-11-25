@@ -530,21 +530,18 @@ class BaseSockTestsMixin:
             self._basetest_sock_recv_into(httpd, sock)
 
     def test_sock_client_fail(self):
-        # Make sure that we will get an unused port
-        address = None
-        try:
-            s = socket.socket()
+        # Keep the port bound but not listening so that no other process
+        # can take it and connections to it are refused.
+        with socket.socket() as s:
             s.bind(('127.0.0.1', 0))
             address = s.getsockname()
-        finally:
-            s.close()
 
-        sock = socket.socket()
-        sock.setblocking(False)
-        with self.assertRaises(ConnectionRefusedError):
-            self.loop.run_until_complete(
-                self.loop.sock_connect(sock, address))
-        sock.close()
+            sock = socket.socket()
+            sock.setblocking(False)
+            with self.assertRaises(ConnectionRefusedError):
+                self.loop.run_until_complete(
+                    self.loop.sock_connect(sock, address))
+            sock.close()
 
     def test_sock_accept(self):
         listener = socket.socket()
