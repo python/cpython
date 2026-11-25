@@ -455,7 +455,7 @@ class BasicInterpolation(Interpolation):
 
     def before_get(self, parser, section, option, value, defaults):
         return ''.join(
-            self._interpolate_some(parser, option, value, section, defaults, 1)
+            self._interpolate_some(parser, section, option, value, defaults, 1)
         )
 
     def before_set(self, parser, section, option, value):
@@ -468,7 +468,7 @@ class BasicInterpolation(Interpolation):
             )
         return value
 
-    def _interpolate_some(self, parser, option, rest, section, map, depth):
+    def _interpolate_some(self, parser, section, option, rest, map, depth):
         rawval = parser.get(section, option, raw=True, fallback=rest)
         if depth > MAX_INTERPOLATION_DEPTH:
             raise InterpolationDepthError(option, section, rawval)
@@ -482,11 +482,11 @@ class BasicInterpolation(Interpolation):
                 rest = rest[2:]
             elif next_char == "(":
                 v, rest, _, _ = self._do_one_interpolation(
-                    rest, rawval, parser, section, option, map
+                    parser, section, option, rest, rawval, map
                 )
                 if "%" in v:
                     yield from self._interpolate_some(
-                        parser, option, v, section, map, depth + 1
+                        parser, section, option, v, map, depth + 1
                     )
                 else:
                     yield v
@@ -500,7 +500,7 @@ class BasicInterpolation(Interpolation):
             yield rest
 
     def _do_one_interpolation(
-        self, value, rawval, parser, section, option, map
+        self, parser, section, option, value, rawval, map
     ):
         m = self._KEYCRE.match(value)
         if m is None:
@@ -531,7 +531,7 @@ class ExtendedInterpolation(Interpolation):
 
     def before_get(self, parser, section, option, value, defaults):
         return ''.join(
-            self._interpolate_some(parser, option, value, section, defaults, 1)
+            self._interpolate_some(parser, section, option, value, defaults, 1)
         )
 
     def before_set(self, parser, section, option, value):
@@ -544,9 +544,7 @@ class ExtendedInterpolation(Interpolation):
             )
         return value
 
-    def _interpolate_some(
-        self, parser, option, rest, section, map, depth
-    ):
+    def _interpolate_some(self, parser, section, option, rest, map, depth):
         rawval = parser.get(section, option, raw=True, fallback=rest)
         if depth > MAX_INTERPOLATION_DEPTH:
             raise InterpolationDepthError(option, section, rawval)
@@ -560,16 +558,16 @@ class ExtendedInterpolation(Interpolation):
                 rest = rest[2:]
             elif next_char == "{":
                 v, rest, ref_section, ref_option = self._do_one_interpolation(
-                    rest, rawval, parser, section, option, map
+                    parser, section, option, rest, rawval, map
                 )
                 if v is None:
                     continue
                 if "$" in v:
                     yield from self._interpolate_some(
                         parser,
+                        ref_section,
                         ref_option,
                         v,
-                        ref_section,
                         dict(parser.items(ref_section, raw=True)),
                         depth + 1,
                     )
@@ -585,7 +583,7 @@ class ExtendedInterpolation(Interpolation):
             yield rest
 
     def _do_one_interpolation(
-        self, value, rawval, parser, section, option, map
+        self, parser, section, option, value, rawval, map
     ):
         m = self._KEYCRE.match(value)
         if m is None:
