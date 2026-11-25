@@ -271,13 +271,19 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
 {
     /* Merge locals into fast locals */
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
-    _PyStackRef *fast = _PyFrame_GetLocalsArray(frame->f_frame);
-    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
     int i = framelocalsproxy_getkeyindex(frame, key, false, NULL);
     if (i == -2) {
         return -1;
     }
+    // gh-162593: the key lookup above calls PyObject_Hash() and
+    // PyObject_RichCompareBool(), which can execute arbitrary Python code.
+    // That code may close a generator and cause the frame to be relocated
+    // into its frame object (take_ownership()), which invalidates any
+    // locals-array pointer obtained before the lookup.  Fetch it afterwards.
+    _PyStackRef *fast = _PyFrame_GetLocalsArray(frame->f_frame);
+    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+
     if (i >= 0) {
         if (value == NULL) {
             PyErr_SetString(PyExc_ValueError, "cannot remove local variables from FrameLocalsProxy");

@@ -1,0 +1,1 @@
+Fix a crash in :class:`types.FrameType` locals proxies when a key's __hash__ or __eq__ closes a generator during item assignment.  The frame can be relocated into its frame object at that point; the assignment now re-fetches the locals array instead of using a stale pointer, avoiding a use-after-free.\n

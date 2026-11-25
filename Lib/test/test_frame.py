@@ -780,6 +780,31 @@ class TestFrameLocals(unittest.TestCase):
 
         self.assertEqual(f(), 2)
 
+    def test_setitem_after_frame_relocation(self):
+        # gh-162593: a key's __hash__ may close the generator whose frame
+        # the proxy refers to.  Closing moves the interpreter frame into the
+        # frame object, so a locals pointer cached before the key lookup is
+        # stale.  The assignment must go to the relocated frame.
+        def gen():
+            a = [1, 2, 3]
+            yield sys._getframe()
+
+        g = gen()
+        f = next(g)
+        p = f.f_locals
+
+        class Key:
+            def __hash__(self):
+                g.close()  # relocate frame during the lookup
+                return hash("a")
+
+            def __eq__(self, other):
+                return other == "a"
+
+        p[Key()] = "NEW"
+        self.assertEqual(g.gi_frame, None)
+        self.assertEqual(p["a"], "NEW")
+
 
 class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):
     """Test that FrameLocalsProxy behaves like a Mapping (with exceptions)"""
