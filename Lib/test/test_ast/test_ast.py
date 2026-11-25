@@ -25,6 +25,7 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
+from test.support import isolation
 from test.support import os_helper
 from test.support import (skip_emscripten_stack_overflow,
                           skip_wasi_stack_overflow,
@@ -104,6 +105,10 @@ class AST_Tests(unittest.TestCase):
             ast.AST(2)
 
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    # gh-161354: Run the test in a subprocess to make it more deterministic.
+    # Inline values depend on Constant_type.ht_cached_keys which changes when
+    # ast.Constant instances are created, so they depend on other run tests.
+    @isolation.runInSubprocess()
     def test_nodes_have_inline_values(self):
         tree = ast.parse("x = f(y, z=1)")
         for node in ast.walk(tree):

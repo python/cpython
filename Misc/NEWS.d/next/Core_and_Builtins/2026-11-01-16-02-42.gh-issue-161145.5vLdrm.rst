@@ -1,0 +1,2 @@
+Speed up UTF-8 decoding of long ASCII runs, such as in :meth:`bytes.decode`,
+by up to 1.5x.

@@ -1,2 +1,0 @@
-Fix :meth:`io.IOBase.readline` returning more bytes than requested when a
-stream supports :meth:`!peek` and returns short reads.

@@ -1738,7 +1738,7 @@ constructor that will create a  :c:expr:`PyObject *` pointer.  A simple usage::
    d = {}
    ctypes.pythonapi.PyObject_SetItem(ctypes.py_object(d),
              ctypes.py_object("abc"),  ctypes.py_object(1))
-   # d is now {'abc', 1}.
+   # d is now {'abc': 1}.
 
 Don't forget to use :func:`~ctypes.py_object`; if it's omitted you end  up with a
 segmentation fault.
@@ -2182,7 +2182,7 @@ Changes to Python's build process and to the C API include:
   specified *type* and uses a fast-calling qualifier.
   :c:macro:`Py_LOCAL_INLINE` does the same thing and also requests the
   function be inlined.  If macro :c:macro:`!PY_LOCAL_AGGRESSIVE` is defined before
-  :file:`python.h` is included, a set of more aggressive optimizations are enabled
+  :file:`Python.h` is included, a set of more aggressive optimizations are enabled
   for the module; you should benchmark the results to find out if these
   optimizations actually make the code faster.  (Contributed by Fredrik Lundh at
   the NeedForSpeed sprint.)

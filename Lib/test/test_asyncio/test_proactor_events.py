@@ -13,7 +13,6 @@ from asyncio.proactor_events import _ProactorWritePipeTransport
 from asyncio.proactor_events import _ProactorDuplexPipeTransport
 from asyncio.proactor_events import _ProactorDatagramTransport
 from test.support import os_helper
-from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 
 
@@ -335,6 +334,20 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         tr._call_connection_lost(None)
         self.assertTrue(self.protocol.connection_lost.called)
         self.assertTrue(self.sock.close.called)
+
+    def test_call_connection_lost_shutdown_reset(self):
+        # gh-160429: a ConnectionResetError from shutdown() must not skip
+        # closing the socket and detaching the transport from its server.
+        server = mock.Mock()
+        tr = _ProactorSocketTransport(self.loop, self.sock, self.protocol,
+                                      server=server)
+        self.sock.shutdown.side_effect = ConnectionResetError
+        tr._call_connection_lost(None)
+        self.protocol.connection_lost.assert_called_once_with(None)
+        self.sock.close.assert_called_once_with()
+        server._detach.assert_called_once_with(tr)
+        self.assertIsNone(tr._sock)
+        self.assertTrue(tr._called_connection_lost)
 
     def test_write_eof(self):
         tr = self.socket_transport()
@@ -1057,9 +1070,8 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def prepare(self):
         sock = self.make_socket()
         proto = self.MyProto(self.loop)
-        port = socket_helper.find_unused_port()
         srv_sock = self.make_socket(cleanup=False)
-        srv_sock.bind(('127.0.0.1', port))
+        srv_sock.bind(('127.0.0.1', 0))
         server = self.run_loop(self.loop.create_server(
             lambda: proto, sock=srv_sock))
         self.run_loop(self.loop.sock_connect(sock, srv_sock.getsockname()))

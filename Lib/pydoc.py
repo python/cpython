@@ -2012,7 +2012,6 @@ class Helper:
         ':=': 'ASSIGNMENTEXPRESSIONS',
         '_': 'PRIVATENAMES',
         '__': 'PRIVATENAMES SPECIALMETHODS',
-        '`': 'BACKQUOTES',
         '(': 'TUPLES FUNCTIONS CALLS',
         ')': 'TUPLES FUNCTIONS CALLS',
         '[': 'LISTS SUBSCRIPTS SLICINGS',
@@ -2029,12 +2028,12 @@ class Helper:
 
     topics = {
         'TYPES': ('types', 'STRINGS UNICODE NUMBERS SEQUENCES MAPPINGS '
-                  'FUNCTIONS CLASSES MODULES FILES inspect'),
+                  'FUNCTIONS CLASSES MODULES inspect'),
         'STRINGS': ('strings', 'str UNICODE SEQUENCES STRINGMETHODS '
                     'FORMATTING TYPES'),
         'STRINGMETHODS': ('string-methods', 'STRINGS FORMATTING'),
         'FORMATTING': ('formatstrings', 'OPERATORS'),
-        'UNICODE': ('strings', 'encodings unicode SEQUENCES STRINGMETHODS '
+        'UNICODE': ('strings', 'encodings SEQUENCES STRINGMETHODS '
                     'FORMATTING TYPES'),
         'NUMBERS': ('numbers', 'INTEGER FLOAT COMPLEX TYPES'),
         'INTEGER': ('integers', 'int range'),

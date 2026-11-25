@@ -1,4 +1,0 @@
-Fix :class:`asyncio.ProactorEventLoop` servers that stopped accepting new
-connections on Windows when a client reset its connection before it was
-accepted (``WinError 64``, ``ERROR_NETNAME_DELETED``).  The listening socket is
-now kept open and the server continues to accept connections.

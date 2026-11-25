@@ -1,3 +1,0 @@
-Fix the check that disables ``PR_SET_VMA_ANON_NAME`` on musl libc: it tested
-an unset variable, so it never had any effect and the build could fail with
-a redefinition of ``struct prctl_mm_map``.
