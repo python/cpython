@@ -3569,18 +3569,31 @@ EventHook(void)
         else if (type == FILE_TYPE_DISK) {
             break;
         }
+#else
+        if (tcl_lock == NULL) {
+            /* Tcl is threaded and stdin is watched by MyFileProc, so we
+               can wait for an event or input instead of polling. */
+            Py_BEGIN_ALLOW_THREADS
+            tcl_tstate = tstate;
+            result = Tcl_DoOneEvent(0);
+            tcl_tstate = NULL;
+            Py_END_ALLOW_THREADS
+        }
+        else
 #endif
-        Py_BEGIN_ALLOW_THREADS
-        if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1);
-        tcl_tstate = tstate;
+        {
+            Py_BEGIN_ALLOW_THREADS
+            if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1);
+            tcl_tstate = tstate;
 
-        result = Tcl_DoOneEvent(TCL_DONT_WAIT);
+            result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 
-        tcl_tstate = NULL;
-        if(tcl_lock)PyThread_release_lock(tcl_lock);
-        if (result == 0)
-            Sleep(Tkinter_busywaitinterval);
-        Py_END_ALLOW_THREADS
+            tcl_tstate = NULL;
+            if(tcl_lock)PyThread_release_lock(tcl_lock);
+            if (result == 0)
+                Sleep(Tkinter_busywaitinterval);
+            Py_END_ALLOW_THREADS
+        }
 
         /* Report an exception raised in a callback, but keep pumping events
            instead of returning to the prompt: without readline there is no
