@@ -122,12 +122,15 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument.
 
-.. function:: copystat(src, dst, *, follow_symlinks=True)
+.. function:: copystat(src, dst, *, follow_symlinks=True, preserve_timestamps=True)
 
-   Copy the permission bits, last access time, last modification time, and
-   flags from *src* to *dst*.  On Linux, :func:`copystat` also copies the
-   "extended attributes" where possible.  The file contents, owner, and
-   group are unaffected.  *src* and *dst* are :term:`path-like objects <path-like object>` or path
+   Copy the permission bits and flags from *src* to *dst*; the last access
+   time and last modification time are also copied if *preserve_timestamps*
+   is true (on Windows platforms, *preserve_timestamps* is ignored).
+   On Linux, :func:`copystat` also copies the "extended attributes"
+   where possible. The file contents, owner, and group are unaffected.
+
+   *src* and *dst* are :term:`path-like objects <path-like object>` or path
    names given as strings.
 
    If *follow_symlinks* is false, and *src* and *dst* both
@@ -169,6 +172,9 @@ Directory and files operations
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument and support for Linux extended attributes.
 
+   .. versionchanged:: next
+      Added the *preserve_timestamps* argument.
+
 .. function:: copy(src, dst, *, follow_symlinks=True)
 
    Copies the file *src* to the file or directory *dst*.  *src* and *dst*
@@ -201,7 +207,7 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
-.. function:: copy2(src, dst, *, follow_symlinks=True)
+.. function:: copy2(src, dst, *, follow_symlinks=True, preserve_timestamps=True)
 
    Identical to :func:`~shutil.copy` except that :func:`copy2`
    also attempts to preserve file metadata.
@@ -214,6 +220,9 @@ Directory and files operations
    unavailable, :func:`copy2` will preserve all the metadata
    it can; :func:`copy2` never raises an exception because it
    cannot preserve file metadata.
+
+   On non-Windows platforms, if *preserve_timestamps* is false,
+   the last access time and last modification time are not copied.
 
    :func:`copy2` uses :func:`copystat` to copy the file metadata.
    Please see :func:`copystat` for more information
@@ -232,6 +241,9 @@ Directory and files operations
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+
+   .. versionadded:: next
+      Added the *preserve_timestamps* argument.
 
 .. function:: ignore_patterns(*patterns)
 
