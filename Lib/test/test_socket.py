@@ -51,6 +51,7 @@ support.requires_working_socket(module=True)
 HOST = socket_helper.HOST
 # test unicode string and carriage return
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
+MSG2 = 'Monty Python test'.encode('utf-8')
 
 VSOCKPORT = 1234
 AIX = platform.system() == "AIX"
@@ -3308,20 +3309,32 @@ class BasicUDPTest(ThreadedUDPSocketTest):
     @requireAttrs(socket, "MSG_TRUNC")
     @unittest.skipIf(sys.platform == "win32", "Windows raises WSAEMSGSIZE")
     def testRecvTrunc(self):
-        msg = self.serv.recv(2, socket.MSG_TRUNC)
-        self.assertEqual(msg, MSG[:2])
+        # Truncated read where recv() returns the real size of the datagram
+        msg = self.serv.recv(5, socket.MSG_TRUNC)
+        self.assertEqual(msg, MSG[:5])
+
+        # Read the whole second datagram
+        msg = self.serv.recv(len(MSG2) + 5, socket.MSG_TRUNC)
+        self.assertEqual(msg, MSG2)
 
     def _testRecvTrunc(self):
         self.cli.sendto(MSG, 0, (HOST, self.port))
+        self.cli.sendto(MSG2, 0, (HOST, self.port))
 
     @requireAttrs(socket, "MSG_TRUNC")
     @unittest.skipIf(sys.platform == "win32", "Windows raises WSAEMSGSIZE")
     def testRecvFromTrunc(self):
-        msg, addr = self.serv.recvfrom(2, socket.MSG_TRUNC)
-        self.assertEqual(msg, MSG[:2])
+        # Truncated read where recvfrom() returns the real size of the datagram
+        msg, addr = self.serv.recvfrom(5, socket.MSG_TRUNC)
+        self.assertEqual(msg, MSG[:5])
+
+        # Read the whole second datagram
+        msg, addr = self.serv.recvfrom(len(MSG2) + 5, socket.MSG_TRUNC)
+        self.assertEqual(msg, MSG2)
 
     def _testRecvFromTrunc(self):
         self.cli.sendto(MSG, 0, (HOST, self.port))
+        self.cli.sendto(MSG2, 0, (HOST, self.port))
 
 
 @unittest.skipUnless(HAVE_SOCKET_UDPLITE,

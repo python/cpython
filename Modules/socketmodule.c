@@ -4066,7 +4066,8 @@ _socket_socket_recv_impl(PySocketSockObject *s, Py_ssize_t recvlen,
         PyBytesWriter_Discard(writer);
         return NULL;
     }
-    /* With MSG_TRUNC, recv() can return the real length of the datagram,
+
+    /* With MSG_TRUNC, recv() returns the real size of the datagram,
        which may be larger than the buffer.  Only recvlen bytes were
        written. */
     if (outlen > recvlen) {
@@ -4248,7 +4249,10 @@ _socket_socket_recvfrom_impl(PySocketSockObject *s, Py_ssize_t recvlen,
         PyBytesWriter_Discard(writer);
         goto error;
     }
-    /* See the comment in _socket_socket_recv_impl(). */
+
+    /* With MSG_TRUNC, recvfrom() returns the real size of the datagram,
+       which may be larger than the buffer.  Only recvlen bytes were
+       written. */
     if (outlen > recvlen) {
         outlen = recvlen;
     }
