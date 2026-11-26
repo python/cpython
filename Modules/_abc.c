@@ -565,6 +565,9 @@ _abc__reset_registry(PyObject *module, PyObject *self)
     if (impl != NULL) {
         Py_BEGIN_CRITICAL_SECTION(impl);
         abc_table_clear(&impl->registry);
+        // Registered classes are also in the cache, and register()
+        // does nothing for a class which is cached as a subclass.
+        abc_table_clear(&impl->cache);
         Py_END_CRITICAL_SECTION();
     }
     _PyThreadState_PopCStackRef(tstate, &cref);
