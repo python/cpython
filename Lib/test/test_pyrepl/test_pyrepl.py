@@ -707,6 +707,43 @@ class TestPyReplAutoindent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
 
+    def test_dont_reuse_colon_after_complete_string(self):
+        # fmt: off
+        events = code_to_events(
+            "if True:\n"
+                "'s'\n\n"
+        )
+
+        output_code = (
+            "if True:\n"
+            "    's'\n"
+            "    "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_dont_reuse_colon_in_unterminated_string(self):
+        # The colon of a one-line suite must not trigger indentation while
+        # the string that follows it is still being typed.
+        # fmt: off
+        events = code_to_events(
+            "if True: '''s\n"
+            "'''\n\n"
+        )
+
+        output_code = (
+            "if True: '''s\n"
+            "'''\n"
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
 
 class TestPyReplOutput(ScreenEqualMixin, TestCase):
     def prepare_reader(self, events):

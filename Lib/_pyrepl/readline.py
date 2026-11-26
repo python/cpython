@@ -268,9 +268,14 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
         if buffer_str[i] in " \t\n":
             i -= 1
             continue
-        if in_span(i, string_spans) or in_span(i, comment_spans):
+        if in_span(i, comment_spans):
             i -= 1
             continue
+        if in_span(i, string_spans):
+            # A string is an expression, whether already closed or still
+            # being typed.  Stop here instead of skipping past it and
+            # reusing a colon from an earlier line or one-line suite.
+            return False
         break
     return i >= 0 and buffer_str[i] == ":"
 
