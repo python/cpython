@@ -1,2 +1,0 @@
-Insert ``import`` after ``from x.y.z <tab>`` in the :term:`REPL`
-auto-completion.

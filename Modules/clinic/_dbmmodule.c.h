@@ -22,6 +22,36 @@ dbm_length(PyObject *self)
 }
 
 static int
+dbm_bool_impl(dbmobject *self);
+
+static int
+dbm_bool(PyObject *self)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_bool_impl((dbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+dbm_subscript_impl(dbmobject *self, PyObject *key);
+
+static PyObject *
+dbm_subscript(PyObject *self, PyObject *key)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_subscript_impl((dbmobject *)self, key);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static int
 dbm_ass_sub_impl(dbmobject *self, PyObject *v, PyObject *w);
 
 static int
@@ -86,6 +116,21 @@ _dbm_dbm_keys(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize
     Py_END_CRITICAL_SECTION();
 
 exit:
+    return return_value;
+}
+
+static int
+dbm_contains_impl(dbmobject *self, PyObject *arg);
+
+static int
+dbm_contains(PyObject *self, PyObject *arg)
+{
+    int return_value = -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = dbm_contains_impl((dbmobject *)self, arg);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -279,4 +324,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=da6b5d201f8d3853 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4fa1cc840de2abd3 input=a9049054013a1b77]*/

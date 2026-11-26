@@ -531,7 +531,7 @@ remove_module(PyThreadState *tstate, PyObject *name)
 Py_ssize_t
 _PyImport_GetNextModuleIndex(void)
 {
-    return _Py_atomic_add_ssize(&LAST_MODULE_INDEX, 1) + 1;
+    return _Py_atomic_add_ssize_relaxed(&LAST_MODULE_INDEX, 1) + 1;
 }
 
 #ifndef NDEBUG
@@ -1300,50 +1300,68 @@ del_extensions_cache_value(void *raw)
     }
 }
 
-static void *
-hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
-{
-    const char *str1_data = _PyUnicode_AsUTF8NoNUL(str1);
-    const char *str2_data = _PyUnicode_AsUTF8NoNUL(str2);
-    if (str1_data == NULL || str2_data == NULL) {
-        return NULL;
-    }
-    Py_ssize_t str1_len = strlen(str1_data);
-    Py_ssize_t str2_len = strlen(str2_data);
+/* The key of the extensions cache: the raw content of two strings.
 
-    /* Make sure sep and the NULL byte won't cause an overflow. */
-    assert(SIZE_MAX - str1_len - str2_len > 2);
-    size_t size = str1_len + 1 + str2_len + 1;
+   The UTF-8 encoding is not used, because the strings can contain lone
+   surrogates, e.g. a file name undecodable in the filesystem encoding. */
+struct hashtable_key {
+    size_t size;        /* the total size of the key */
+    unsigned char kind1;
+    unsigned char kind2;
+    Py_ssize_t len1;
+    /* followed by the raw content of both strings */
+};
+
+static void *
+hashtable_key_from_2_strings(PyObject *str1, PyObject *str2)
+{
+    Py_ssize_t len1 = PyUnicode_GET_LENGTH(str1);
+    Py_ssize_t len2 = PyUnicode_GET_LENGTH(str2);
+    int kind1 = PyUnicode_KIND(str1);
+    int kind2 = PyUnicode_KIND(str2);
+    size_t size1 = (size_t)len1 * kind1;
+    size_t size2 = (size_t)len2 * kind2;
+
+    assert(SIZE_MAX - sizeof(struct hashtable_key) - size1 > size2);
+    size_t size = sizeof(struct hashtable_key) + size1 + size2;
 
     // XXX Use a buffer if it's a temp value (every case but "set").
-    char *key = PyMem_RawMalloc(size);
+    struct hashtable_key *key = PyMem_RawMalloc(size);
     if (key == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
 
-    memcpy(key, str1_data, str1_len);
-    key[str1_len] = sep;
-    memcpy(key + str1_len + 1, str2_data, str2_len);
-    key[size - 1] = '\0';
-    assert(strlen(key) == size - 1);
+    /* Clear the padding: the key is hashed and compared as raw bytes. */
+    memset(key, 0, sizeof(struct hashtable_key));
+    key->size = size;
+    key->kind1 = (unsigned char)kind1;
+    key->kind2 = (unsigned char)kind2;
+    key->len1 = len1;
+    char *data = (char *)(key + 1);
+    memcpy(data, PyUnicode_DATA(str1), size1);
+    memcpy(data + size1, PyUnicode_DATA(str2), size2);
     return key;
 }
 
 static Py_uhash_t
-hashtable_hash_str(const void *key)
+hashtable_hash_key(const void *key)
 {
-    return Py_HashBuffer(key, strlen((const char *)key));
+    return Py_HashBuffer(key, ((const struct hashtable_key *)key)->size);
 }
 
 static int
-hashtable_compare_str(const void *key1, const void *key2)
+hashtable_compare_key(const void *key1, const void *key2)
 {
-    return strcmp((const char *)key1, (const char *)key2) == 0;
+    size_t size = ((const struct hashtable_key *)key1)->size;
+    if (size != ((const struct hashtable_key *)key2)->size) {
+        return 0;
+    }
+    return memcmp(key1, key2, size) == 0;
 }
 
 static void
-hashtable_destroy_str(void *ptr)
+hashtable_destroy_key(void *ptr)
 {
     PyMem_RawFree(ptr);
 }
@@ -1383,16 +1401,15 @@ _find_cached_def(PyModuleDef *def)
 }
 #endif
 
-#define HTSEP ':'
 
 static int
 _extensions_cache_init(void)
 {
     _Py_hashtable_allocator_t alloc = {PyMem_RawMalloc, PyMem_RawFree};
     EXTENSIONS.hashtable = _Py_hashtable_new_full(
-        hashtable_hash_str,
-        hashtable_compare_str,
-        hashtable_destroy_str,  // key
+        hashtable_hash_key,
+        hashtable_compare_key,
+        hashtable_destroy_key,  // key
         del_extensions_cache_value,  // value
         &alloc
     );
@@ -1410,7 +1427,7 @@ _extensions_cache_find_unlocked(PyObject *path, PyObject *name,
     if (EXTENSIONS.hashtable == NULL) {
         return NULL;
     }
-    void *key = hashtable_key_from_2_strings(path, name, HTSEP);
+    void *key = hashtable_key_from_2_strings(path, name);
     if (key == NULL) {
         return NULL;
     }
@@ -1420,7 +1437,7 @@ _extensions_cache_find_unlocked(PyObject *path, PyObject *name,
         *p_key = key;
     }
     else {
-        hashtable_destroy_str(key);
+        hashtable_destroy_key(key);
     }
     return entry;
 }
@@ -1558,7 +1575,7 @@ finally:
 finally_oldvalue:
     extensions_lock_release();
     if (key != NULL) {
-        hashtable_destroy_str(key);
+        hashtable_destroy_key(key);
     }
 
     return value;
@@ -1602,7 +1619,6 @@ _extensions_cache_clear_all(void)
     EXTENSIONS.hashtable = NULL;
 }
 
-#undef HTSEP
 
 
 static bool
@@ -2507,26 +2523,15 @@ lookup_inittab_entry(const struct _Py_ext_module_loader_info* info)
 
 static PyObject*
 create_builtin(
-    PyThreadState *tstate, PyObject *name,
+    PyThreadState *tstate,
+    PyObject *name, /* if NULL, get from spec */
     PyObject *spec,
     PyModInitFunction initfunc)
 {
     struct _Py_ext_module_loader_info info;
-    if (_Py_ext_module_loader_info_init_for_builtin(&info, name) < 0) {
+    _Py_ext_module_origin origin = _Py_ext_module_origin_BUILTIN;
+    if (_Py_ext_module_loader_info_init(&info, name, spec, origin) < 0) {
         return NULL;
-    }
-    if (initfunc != NULL) {
-        /* An explicitly provided init function (see
-         * PyImport_CreateModuleFromInitfunc()) may belong to a submodule
-         * whose single-phase init creates the module using only the last
-         * component of the name (as e.g. pybind11 does).  Set the package
-         * context so that PyModule_Create() resolves the full name, the
-         * same as for dynamically loaded extensions. */
-        info.newcontext = PyUnicode_AsUTF8(info.name);
-        if (info.newcontext == NULL) {
-            _Py_ext_module_loader_info_clear(&info);
-            return NULL;
-        }
     }
 
     struct extensions_cache_value *cached = NULL;
@@ -2558,7 +2563,7 @@ create_builtin(
         struct _inittab *entry = lookup_inittab_entry(&info);
         if (entry == NULL) {
             mod = NULL;
-            _PyErr_SetModuleNotFoundError(name);
+            _PyErr_SetModuleNotFoundError(info.name);
             goto finally;
         }
 
@@ -2610,20 +2615,7 @@ PyImport_CreateModuleFromInitfunc(
 
     PyThreadState *tstate = _PyThreadState_GET();
 
-    PyObject *name = PyObject_GetAttr(spec, &_Py_ID(name));
-    if (name == NULL) {
-        return NULL;
-    }
-
-    if (!PyUnicode_Check(name)) {
-        PyErr_Format(PyExc_TypeError,
-                     "spec name must be string, not %T", name);
-        Py_DECREF(name);
-        return NULL;
-    }
-
-    PyObject *mod = create_builtin(tstate, name, spec, initfunc);
-    Py_DECREF(name);
+    PyObject *mod = create_builtin(tstate, NULL, spec, initfunc);
     return mod;
 }
 
@@ -2835,8 +2827,8 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
             Py_FatalError("no current interpreter");
         }
 
-        external= PyObject_GetAttrString(IMPORTLIB(interp),
-                                         "_bootstrap_external");
+        external= PyObject_GetAttr(IMPORTLIB(interp),
+                                   &_Py_ID(_bootstrap_external));
         if (external != NULL) {
             pathobj = PyObject_CallMethodOneArg(
                 external, &_Py_ID(_get_sourcefile), cpathobj);
@@ -2920,8 +2912,8 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
     if (pathname == NULL) {
         pathname = ((PyCodeObject *)co)->co_filename;
     }
-    external = PyObject_GetAttrString(IMPORTLIB(tstate->interp),
-                                      "_bootstrap_external");
+    external = PyObject_GetAttr(IMPORTLIB(tstate->interp),
+                                &_Py_ID(_bootstrap_external));
     if (external == NULL) {
         Py_DECREF(d);
         return NULL;
@@ -3499,8 +3491,8 @@ PyObject *
 _PyImport_GetImportlibExternalLoader(PyInterpreterState *interp,
                                      const char *loader_name)
 {
-    PyObject *bootstrap = PyObject_GetAttrString(IMPORTLIB(interp),
-                                                 "_bootstrap_external");
+    PyObject *bootstrap = PyObject_GetAttr(IMPORTLIB(interp),
+                                           &_Py_ID(_bootstrap_external));
     if (bootstrap == NULL) {
         return NULL;
     }
@@ -3513,8 +3505,8 @@ _PyImport_GetImportlibExternalLoader(PyInterpreterState *interp,
 PyObject *
 _PyImport_BlessMyLoader(PyInterpreterState *interp, PyObject *module_globals)
 {
-    PyObject *external = PyObject_GetAttrString(IMPORTLIB(interp),
-                                                "_bootstrap_external");
+    PyObject *external = PyObject_GetAttr(IMPORTLIB(interp),
+                                          &_Py_ID(_bootstrap_external));
     if (external == NULL) {
         return NULL;
     }
@@ -5017,8 +5009,15 @@ static PyObject *
 _imp_acquire_lock_impl(PyObject *module)
 /*[clinic end generated code: output=1aff58cb0ee1b026 input=60e9c1b4ab471ead]*/
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyImport_AcquireLock(interp);
+    PyThreadState *tstate = _PyThreadState_GET();
+    // Leave enough stack for importlib to release the lock.
+    if (_Py_ReachedRecursionLimitWithMargin(tstate, 2)) {
+        _PyErr_SetString(tstate, PyExc_RecursionError,
+                         "maximum recursion depth exceeded while "
+                         "acquiring the import lock");
+        return NULL;
+    }
+    _PyImport_AcquireLock(tstate->interp);
     Py_RETURN_NONE;
 }
 
@@ -5085,27 +5084,7 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    PyObject *name = PyObject_GetAttrString(spec, "name");
-    if (name == NULL) {
-        return NULL;
-    }
-
-    if (!PyUnicode_Check(name)) {
-        PyErr_Format(PyExc_TypeError,
-                     "name must be string, not %.200s",
-                     Py_TYPE(name)->tp_name);
-        Py_DECREF(name);
-        return NULL;
-    }
-
-    if (PyUnicode_GetLength(name) == 0) {
-        PyErr_Format(PyExc_ValueError, "name must not be empty");
-        Py_DECREF(name);
-        return NULL;
-    }
-
-    PyObject *mod = create_builtin(tstate, name, spec, NULL);
-    Py_DECREF(name);
+    PyObject *mod = create_builtin(tstate, NULL, spec, NULL);
     return mod;
 }
 
@@ -5437,7 +5416,8 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     PyThreadState *tstate = _PyThreadState_GET();
 
     struct _Py_ext_module_loader_info info;
-    if (_Py_ext_module_loader_info_init_from_spec(&info, spec) < 0) {
+    _Py_ext_module_origin origin = _Py_ext_module_origin_DYNAMIC;
+    if (_Py_ext_module_loader_info_init(&info, NULL, spec, origin) < 0) {
         return NULL;
     }
 

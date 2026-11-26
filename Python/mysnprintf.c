@@ -2,13 +2,10 @@
 
 /* snprintf() and vsnprintf() wrappers.
 
-   If the platform has vsnprintf, we use it, else we
-   emulate it in a half-hearted way.  Even if the platform has it, we wrap
-   it because platforms differ in what vsnprintf does in case the buffer
-   is too small:  C99 behavior is to return the number of characters that
-   would have been written had the buffer not been too small, and to set
-   the last byte of the buffer to \0.  At least MS _vsnprintf returns a
-   negative value instead, and fills the entire buffer with non-\0 data.
+   We wrap vsnprintf() to guarantee consistent behavior in corner cases:
+   C99 behavior is to return the number of characters that would have been
+   written had the buffer not been too small, and to set the last byte of the
+   buffer to \0.
    Unlike C99, our wrappers do not support passing a null buffer.
 
    The wrappers ensure that str[size-1] is always \0 upon return.
@@ -28,10 +25,7 @@
 
     When rv < 0, "something bad happened".  str[size-1] is \0 in this
     case too, but the rest of str is unreliable.  It could be that
-    an error in format codes was detected by libc, or on platforms
-    with a non-C99 vsnprintf simply that the buffer wasn't big enough
-    to avoid truncation, or on platforms without any vsnprintf that
-    PyMem_Malloc couldn't obtain space for a temp buffer.
+    an error in format codes was detected by libc.
 
    CAUTION:  Unlike C99, str != NULL and size > 0 are required.
    Also, size must be smaller than INT_MAX.
@@ -66,11 +60,7 @@ PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va)
         goto Done;
     }
 
-#if defined(_MSC_VER)
-    len = _vsnprintf(str, size, format, va);
-#else
     len = vsnprintf(str, size, format, va);
-#endif
 
 Done:
     if (size > 0) {

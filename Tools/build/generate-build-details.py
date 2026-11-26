@@ -10,6 +10,7 @@ import collections
 import importlib.machinery
 import json
 import os
+import re
 import sys
 import sysconfig
 
@@ -18,15 +19,96 @@ if TYPE_CHECKING:
     from typing import Any
 
 
+PATCHLEVEL_H = os.path.join(
+    os.path.dirname(__file__), '..', '..', 'Include', 'patchlevel.h',
+)
+RELEASE_LEVELS = {0xA: 'alpha', 0xB: 'beta', 0xC: 'candidate', 0xF: 'final'}
+
+
 def version_info_to_dict(obj: sys._version_info) -> dict[str, Any]:
     field_names = ('major', 'minor', 'micro', 'releaselevel', 'serial')
     return {field: getattr(obj, field) for field in field_names}
+
+
+def get_version_info() -> dict[str, Any]:
+    """Return the target's version as a version_info dict.
+
+    sys.version_info describes the running interpreter, which under
+    --with-build-python can differ from the target in micro version and
+    release level. Read Include/patchlevel.h instead when it is available.
+    """
+    try:
+        with open(PATCHLEVEL_H, encoding='utf-8') as f:
+            patchlevel = f.read()
+    except FileNotFoundError:
+        return version_info_to_dict(sys.version_info)
+    defines = dict(re.findall(r'^#define\s+(PY_\w+)\s+(\S+)', patchlevel, re.M))
+    # PY_RELEASE_LEVEL is defined as another macro, e.g. PY_RELEASE_LEVEL_ALPHA.
+    level = int(defines[defines['PY_RELEASE_LEVEL']], 16)
+    return {
+        'major': int(defines['PY_MAJOR_VERSION']),
+        'minor': int(defines['PY_MINOR_VERSION']),
+        'micro': int(defines['PY_MICRO_VERSION']),
+        'releaselevel': RELEASE_LEVELS[level],
+        'serial': int(defines['PY_RELEASE_SERIAL']),
+    }
+
+
+def hexversion(version_info: dict[str, Any]) -> int:
+    level = {name: value for value, name in RELEASE_LEVELS.items()}
+    return int(
+        version_info['major'] << 24
+        | version_info['minor'] << 16
+        | version_info['micro'] << 8
+        | level[version_info['releaselevel']] << 4
+        | version_info['serial']
+    )
 
 
 def get_dict_key(container: dict[str, Any], key: str) -> dict[str, Any]:
     for part in key.split('.'):
         container = container[part]
     return container
+
+
+def get_extension_suffixes() -> list[str]:
+    """Return the extension module suffixes of the target interpreter.
+
+    importlib.machinery.EXTENSION_SUFFIXES describes the running interpreter,
+    which is not the target under --with-build-python. On POSIX, rebuild the
+    list from the target configuration instead, following
+    _PyImport_DynLoadFiletab in Python/dynload_*.c. The two are kept in sync
+    by test_build_details.BuildDetailsTargetTests.test_native_extension_suffixes.
+    """
+    if os.name != 'posix':
+        return importlib.machinery.EXTENSION_SUFFIXES
+
+    dynloadfile = sysconfig.get_config_var('DYNLOADFILE')
+    if dynloadfile == 'dynload_stub.o':
+        return []
+    if dynloadfile == 'dynload_hpux.o':
+        return [sysconfig.get_config_var('EXT_SUFFIX'), '.sl']
+    if dynloadfile != 'dynload_shlib.o':
+        raise ValueError(f'Unsupported DYNLOADFILE: {dynloadfile!r}')
+
+    soabi = sysconfig.get_config_var('SOABI')
+    if sysconfig.get_config_var('MACHDEP') == 'cygwin':
+        return [f'.{soabi}.dll', '.dll']
+
+    suffixes = [f'.{soabi}.so']
+    alt_soabi = sysconfig.get_config_var('ALT_SOABI')
+    if alt_soabi:
+        suffixes.append(f'.{alt_soabi}.so')
+    platform = sysconfig.get_config_var('SOABI_PLATFORM')
+    if not sysconfig.get_config_var('Py_GIL_DISABLED'):
+        if platform:
+            suffixes.append(f'.abi3-{platform}.so')
+        suffixes.append('.abi3.so')
+    if platform:
+        suffixes.append(f'.abi3t-{platform}.so')
+    suffixes.append('.abi3t.so')
+    suffixes.append('.so')
+    return suffixes
 
 
 def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
@@ -54,22 +136,30 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     )
     data['platform'] = sysconfig.get_platform()
 
+    version_info = get_version_info()
     data['language']['version'] = sysconfig.get_python_version()
-    data['language']['version_info'] = version_info_to_dict(sys.version_info)
+    data['language']['version_info'] = version_info
 
     data['implementation'] = vars(sys.implementation).copy()
-    data['implementation']['version'] = version_info_to_dict(sys.implementation.version)
+    data['implementation']['version'] = version_info
+    data['implementation']['hexversion'] = hexversion(version_info)
     # Fix cross-compilation
     if '_multiarch' in data['implementation']:
         data['implementation']['_multiarch'] = sysconfig.get_config_var('MULTIARCH')
+    if 'supports_isolated_interpreters' in data['implementation']:
+        # Mirrors Python/sysmodule.c.
+        data['implementation']['supports_isolated_interpreters'] = (
+            sysconfig.get_config_var('MACHDEP') not in ('wasi', 'emscripten')
+        )
 
-    data['abi']['flags'] = list(sys.abiflags)
+    data['abi']['flags'] = list(sysconfig.get_config_var('ABIFLAGS'))
 
     data['suffixes']['source'] = importlib.machinery.SOURCE_SUFFIXES
     data['suffixes']['bytecode'] = importlib.machinery.BYTECODE_SUFFIXES
     #data['suffixes']['optimized_bytecode'] = importlib.machinery.OPTIMIZED_BYTECODE_SUFFIXES
     #data['suffixes']['debug_bytecode'] = importlib.machinery.DEBUG_BYTECODE_SUFFIXES
-    data['suffixes']['extensions'] = importlib.machinery.EXTENSION_SUFFIXES
+    extension_suffixes = get_extension_suffixes()
+    data['suffixes']['extensions'] = extension_suffixes
 
     LIBDIR = sysconfig.get_config_var('LIBDIR')
     LIBPL = sysconfig.get_config_var('LIBPL')
@@ -93,6 +183,13 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
         # The static library is only installed into LIBDIR when it is also
         # LDLIBRARY; otherwise it is only installed into LIBPL.
         static_library_dir = LIBPL if has_dynamic_library else LIBDIR
+        # In framework builds, LDLIBRARY is the path of the framework library
+        # relative to PYTHONFRAMEWORKPREFIX (e.g.
+        # Python.framework/Versions/3.X/Python), not a file in LIBDIR.
+        if sysconfig.get_config_var('PYTHONFRAMEWORK'):
+            dynamic_library_dir = sysconfig.get_config_var('PYTHONFRAMEWORKPREFIX')
+        else:
+            dynamic_library_dir = LIBDIR
     elif os.name == 'nt':
         # Windows can only use a dynamic library or a static library.
         # If it's using a dynamic library, sys.dllhandle will be set.
@@ -101,6 +198,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
         has_dynamic_library = hasattr(sys, 'dllhandle')
         has_static_library = not has_dynamic_library
         static_library_dir = LIBDIR
+        dynamic_library_dir = LIBDIR
     else:
         raise NotADirectoryError(f'Unknown platform: {os.name}')
 
@@ -110,18 +208,17 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     # regardless.
     #
     # We only want to set abi.extension_suffix and stable_abi_suffix if
-    # extension modules are supported.
-    if has_dynamic_library:
+    # extension modules are supported, regardless of how libpython is built.
+    if extension_suffixes:
         data['abi']['extension_suffix'] = sysconfig.get_config_var('EXT_SUFFIX')
 
-        # EXTENSION_SUFFIXES has been constant for a long time, and currently we
-        # don't have a better information source to find the stable ABI suffix.
-        for suffix in importlib.machinery.EXTENSION_SUFFIXES:
+        for suffix in extension_suffixes:
             if suffix.startswith('.abi'):
                 data['abi']['stable_abi_suffix'] = suffix
                 break
 
-        data['libpython']['dynamic'] = os.path.join(LIBDIR, LDLIBRARY)
+    if has_dynamic_library:
+        data['libpython']['dynamic'] = os.path.join(dynamic_library_dir, LDLIBRARY)
         # FIXME: Not sure if windows has a different dll for the stable ABI, and
         #        even if it does, currently we don't have a way to get its name.
         if PY3LIBRARY:
@@ -142,11 +239,12 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
 
 
 def make_paths_relative(data: dict[str, Any], config_path: str | None = None) -> None:
-    # Make base_prefix relative to the config_path directory
-    if config_path:
-        data['base_prefix'] = relative_path(data['base_prefix'],
-                                            os.path.dirname(config_path))
     base_prefix = data['base_prefix']
+    # Make base_prefix relative to the config_path directory.  The other paths
+    # are still made relative to the absolute base_prefix below.
+    if config_path:
+        data['base_prefix'] = relative_path(base_prefix,
+                                            os.path.dirname(config_path))
 
     # Update path values to make them relative to base_prefix
     PATH_KEYS = (
@@ -207,10 +305,20 @@ def main() -> None:
         default=None,
         help='If specified, ``base_prefix`` will be set as a relative path to the given config file path.',
     )
+    parser.add_argument(
+        '--installed-location',
+        action='store_true',
+        help='Use the path the file is installed to as ``--config-file-path``.',
+    )
 
     args = parser.parse_args()
 
     data = generate_data(args.schema_version)
+    if args.installed_location:
+        # Not taken from the Makefile: `make install prefix=...` changes
+        # LIBDEST, but not the prefix that sysconfig reports.
+        args.config_file_path = os.path.join(
+            sysconfig.get_path('stdlib'), 'build-details.json')
     if args.relative_paths:
         make_paths_relative(data, args.config_file_path)
 

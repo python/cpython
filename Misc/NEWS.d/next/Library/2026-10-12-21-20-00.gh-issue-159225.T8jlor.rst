@@ -1,1 +1,0 @@
-Prevent ``input`` calls in PyREPL from modifying readline history.

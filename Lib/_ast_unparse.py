@@ -638,13 +638,15 @@ class Unparser(NodeVisitor):
             for value in node.values:
                 self._write_ftstring_inner(value, is_format_spec=is_format_spec)
         elif isinstance(node, Constant) and isinstance(node.value, str):
-            value = node.value.replace("{", "{{").replace("}", "}}")
-
+            value = node.value
             if is_format_spec:
                 value = value.replace("\\", "\\\\")
+                value = value.replace("{", "\\x7b").replace("}", "\\x7d")
                 value = value.replace("'", "\\'")
                 value = value.replace('"', '\\"')
                 value = value.replace("\n", "\\n")
+            else:
+                value = value.replace("{", "{{").replace("}", "}}")
             self.write(value)
         elif isinstance(node, FormattedValue):
             self.visit_FormattedValue(node)

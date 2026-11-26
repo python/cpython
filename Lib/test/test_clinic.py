@@ -2,7 +2,7 @@
 # Copyright 2012-2013 by Larry Hastings.
 # Licensed to the PSF under a contributor agreement.
 
-from functools import partial
+from functools import partial, wraps
 from test import support, test_tools
 from test.support import force_not_colorized_test_class
 from test.support import os_helper
@@ -15,7 +15,6 @@ import os.path
 import re
 import sys
 import unittest
-from unittest import mock
 import warnings
 
 test_tools.skip_if_missing('clinic')
@@ -34,8 +33,8 @@ with test_tools.imports_under_tool('clinic'):
     from libclinic.return_converters import return_converters, int_return_converter
     from libclinic.block_parser import Block, BlockParser
     from libclinic.codegen import BlockPrinter, Destination
-    from libclinic.dsl_parser import DSLParser, unsupported_special_methods
-    from libclinic.slots import SlotSpec, SLOTS
+    from libclinic.dsl_parser import DSLParser
+    from libclinic.slots import SLOTS
     from libclinic.cli import parse_file, Clinic
 
 
@@ -856,12 +855,8 @@ class ClinicWholeFileTest(TestCase):
             self.assertNotIn(text, generated)
 
     def test_slot_with_parameters_and_return_type(self):
-        # Slots which take arguments or return something else than an
-        # object are not supported yet; check the machinery with them.
-        slots = {
-            '__contains__': SlotSpec(return_converter='int'),
-            '__bool__': SlotSpec(return_converter='int'),
-        }
+        # Check the machinery with slots which take arguments or return
+        # something else than an object.
         block = """
             /*[clinic input]
             output everything block
@@ -877,8 +872,7 @@ class ClinicWholeFileTest(TestCase):
             Foo.__bool__
             [clinic start generated code]*/
         """
-        with mock.patch.dict(SLOTS, slots):
-            generated = self.clinic.parse(dedent(block))
+        generated = self.clinic.parse(dedent(block))
         self.assertIn(dedent("""
             static int
             Foo_contains(PyObject *self, PyObject *value)
@@ -1852,6 +1846,15 @@ class ClinicParserTest(TestCase):
             os.stat as os_stat_fn
         """)
         self.assertEqual("os_stat_fn", function.c_basename)
+
+    def test_var_keyword_c_name(self):
+        function = self.parse_function("""
+            module foo
+            foo.bar
+                **kwargs as kwds: dict
+        """)
+        p = function.parameters['kwargs_as_kwds']
+        self.assertEqual("kwds", p.converter.name)
 
     def test_base_invalid_syntax(self):
         block = """
@@ -3356,9 +3359,23 @@ class ClinicParserTest(TestCase):
         self.assertEqual(function.return_converter.type, "PyObject *")
         self.assertEqual(list(function.parameters), ["self"])
 
+    def test_slot_coexist_is_a_method(self):
+        # dict.__contains__ is a METH_COEXIST method, not the slot.
+        function = self.parse_function("""
+            module foo
+            class Foo "FooObject *" ""
+            @coexist
+            Foo.__contains__
+                key: object
+                /
+        """, signatures_in_block=3, function_index=2)
+        self.assertIs(function.kind, FunctionKind.CALLABLE)
+        self.assertIsNone(function.slot)
+        self.assertIn("METH_COEXIST", function.methoddef_flags)
+
     def test_slot_parameters(self):
-        # __getitem__ is not supported yet; its parameter gives the slot
-        # (Py_ssize_t for sq_item, object for mp_subscript) and is not parsed.
+        # The parameter of __getitem__ gives the slot (Py_ssize_t for
+        # sq_item, object for mp_subscript) and is not parsed.
         block = """
             module foo
             class Foo "FooObject *" ""
@@ -3372,21 +3389,17 @@ class ClinicParserTest(TestCase):
             ("Foo.__getitem__\n    key: object = None\n    /",
              "The parameters of '__getitem__' cannot have a default value"),
         ]
-        supported = unsupported_special_methods - {'__getitem__'}
-        with (mock.patch.dict(SLOTS, {'__getitem__': SlotSpec(return_converter='object')}),
-              mock.patch.object(libclinic.dsl_parser,
-                                'unsupported_special_methods', supported)):
-            for converter in "Py_ssize_t", "object":
-                with self.subTest(converter=converter):
-                    function = self.parse_function(
-                        block.format(converter=converter),
-                        signatures_in_block=3, function_index=2)
-                    self.assertIs(function.kind, FunctionKind.SLOT)
-                    self.assertEqual(list(function.parameters), ["self", "key"])
-            for body, err in errors:
-                with self.subTest(block=body):
-                    body = 'class Foo "FooObject *" "&Foo_Type"\n' + body
-                    self.expect_failure(body, err)
+        for converter in ["Py_ssize_t", "object"]:
+            with self.subTest(converter=converter):
+                function = self.parse_function(
+                    block.format(converter=converter),
+                    signatures_in_block=3, function_index=2)
+                self.assertIs(function.kind, FunctionKind.SLOT)
+                self.assertEqual(list(function.parameters), ["self", "key"])
+        for body, err in errors:
+            with self.subTest(block=body):
+                body = 'class Foo "FooObject *" "&Foo_Type"\n' + body
+                self.expect_failure(body, err)
 
     def test_slot_errors(self):
         cases = [
@@ -3396,8 +3409,6 @@ class ClinicParserTest(TestCase):
              "'__next__' must be a normal method"),
             ("@getter\nFoo.__next__",
              "'__next__' must be a normal method"),
-            ("@coexist\nFoo.__next__",
-             "@coexist cannot be applied to '__next__'"),
             ("@vectorcall\nFoo.__next__",
              "@vectorcall can only be used with __init__ and __new__"),
             ("Foo.__next__ -> int",
@@ -3498,8 +3509,6 @@ class ClinicParserTest(TestCase):
             class Foo "FooObject *" "Foo_Type"
             @vectorcall
             Foo.__init__
-                iterable: object = NULL
-                /
         """
         func = self.parse_function(block, signatures_in_block=3,
                                    function_index=2)
@@ -3530,14 +3539,16 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_vectorcall_without_type_object(self):
-        err = "@vectorcall requires the type object of 'Foo'"
+        # Heap types have no C pointer to name, so the type object is optional.
         block = """
             module m
             class Foo "FooObject *" ""
             @vectorcall
             Foo.__init__
         """
-        self.expect_failure(block, err, lineno=3)
+        func = self.parse_function(block, signatures_in_block=3,
+                                   function_index=2)
+        self.assertTrue(func.vectorcall)
 
     def test_vectorcall_unsupported_converter(self):
         # str(encoding=...) has no parse_arg() implementation.
@@ -3567,6 +3578,18 @@ class ClinicParserTest(TestCase):
                 /
         """
         self.expect_failure(block, err, lineno=7)
+
+    def test_vectorcall_with_deprecated_parameters(self):
+        err = "@vectorcall does not support deprecated parameters"
+        block = """
+            module m
+            class Foo "FooObject *" "Foo_Type"
+            @vectorcall
+            Foo.__init__
+                a: object = None
+                / [from 3.14]
+        """
+        self.expect_failure(block, err, lineno=5)
 
     def test_unused_param(self):
         block = self.parse("""
@@ -4294,6 +4317,7 @@ class ClinicExternalTest(TestCase):
                 int()
                 long()
                 object()
+                Py_hash_t()
                 Py_ssize_t()
                 size_t()
                 unsigned_int()
@@ -4617,6 +4641,16 @@ try:
     import _testclinic as ac_tester
 except ImportError:
     ac_tester = None
+
+def static_and_heap(test):
+    # Run test with both a static type and a heap type.
+    @wraps(test)
+    def wrapper(self):
+        for cls in ac_tester.TestClass, ac_tester.HeapTestClass:
+            with self.subTest(cls=cls):
+                test(self, cls)
+    return wrapper
+
 
 @unittest.skipIf(ac_tester is None, "_testclinic is missing")
 class ClinicFunctionalTest(unittest.TestCase):
@@ -5292,43 +5326,46 @@ class ClinicFunctionalTest(unittest.TestCase):
                 func = getattr(ac_tester, name)
                 self.assertEqual(func(), name)
 
-    def test_get_defining_class(self):
-        obj = ac_tester.TestClass()
+    @static_and_heap
+    def test_get_defining_class(self, cls):
+        obj = cls()
         meth = obj.get_defining_class
-        self.assertIs(obj.get_defining_class(), ac_tester.TestClass)
+        self.assertIs(obj.get_defining_class(), cls)
 
         # 'defining_class' argument is a positional only argument
         with self.assertRaises(TypeError):
-            obj.get_defining_class_arg(cls=ac_tester.TestClass)
+            obj.get_defining_class_arg(cls=cls)
 
         check = partial(self.assertRaisesRegex, TypeError, "no arguments")
         check(meth, 1)
         check(meth, a=1)
 
-    def test_get_defining_class_capi(self):
+    @static_and_heap
+    def test_get_defining_class_capi(self, cls):
         from _testcapi import pyobject_vectorcall
-        obj = ac_tester.TestClass()
+        obj = cls()
         meth = obj.get_defining_class
         pyobject_vectorcall(meth, None, None)
         pyobject_vectorcall(meth, (), None)
         pyobject_vectorcall(meth, (), ())
         pyobject_vectorcall(meth, None, ())
-        self.assertIs(pyobject_vectorcall(meth, (), ()), ac_tester.TestClass)
+        self.assertIs(pyobject_vectorcall(meth, (), ()), cls)
 
         check = partial(self.assertRaisesRegex, TypeError, "no arguments")
         check(pyobject_vectorcall, meth, (1,), None)
         check(pyobject_vectorcall, meth, (1,), ("a",))
 
-    def test_get_defining_class_arg(self):
-        obj = ac_tester.TestClass()
+    @static_and_heap
+    def test_get_defining_class_arg(self, cls):
+        obj = cls()
         self.assertEqual(obj.get_defining_class_arg("arg"),
-                         (ac_tester.TestClass, "arg"))
+                         (cls, "arg"))
         self.assertEqual(obj.get_defining_class_arg(arg=123),
-                         (ac_tester.TestClass, 123))
+                         (cls, 123))
 
         # 'defining_class' argument is a positional only argument
         with self.assertRaises(TypeError):
-            obj.get_defining_class_arg(cls=ac_tester.TestClass, arg="arg")
+            obj.get_defining_class_arg(cls=cls, arg="arg")
 
         # wrong number of arguments
         with self.assertRaises(TypeError):
@@ -5336,9 +5373,9 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             obj.get_defining_class_arg("arg1", "arg2")
 
-    def test_defclass_varpos(self):
+    @static_and_heap
+    def test_defclass_varpos(self, cls):
         # fn(*args)
-        cls = ac_tester.TestClass
         obj = cls()
         fn = obj.defclass_varpos
         self.assertEqual(fn(), (cls, ()))
@@ -5348,9 +5385,9 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(fn(obj), (cls, ()))
         self.assertEqual(fn(obj, 1, 2), (cls, (1, 2)))
 
-    def test_defclass_posonly_varpos(self):
+    @static_and_heap
+    def test_defclass_posonly_varpos(self, cls):
         # fn(a, b, /, *args)
-        cls = ac_tester.TestClass
         obj = cls()
         fn = obj.defclass_posonly_varpos
         errmsg = 'expected at least 2 arguments'
@@ -5705,7 +5742,7 @@ class ClinicFunctionalTest(unittest.TestCase):
     def test_lone_kwds(self):
         with self.assertRaises(TypeError):
             ac_tester.lone_kwds(1, 2)
-        self.assertEqual(ac_tester.lone_kwds(), ({},))
+        self.assertEqual(ac_tester.lone_kwds(), (None,))
         self.assertEqual(ac_tester.lone_kwds(y='y'), ({'y': 'y'},))
         kwds = {'y': 'y', 'z': 'z'}
         self.assertEqual(ac_tester.lone_kwds(y='y', z='z'), (kwds,))
@@ -5718,7 +5755,7 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.kwds_with_pos_only(y='y')
         with self.assertRaises(TypeError):
             ac_tester.kwds_with_pos_only(1, y='y')
-        self.assertEqual(ac_tester.kwds_with_pos_only(1, 2), (1, 2, {}))
+        self.assertEqual(ac_tester.kwds_with_pos_only(1, 2), (1, 2, None))
         self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, y='y'), (1, 2, {'y': 'y'}))
         kwds = {'y': 'y', 'z': 'z'}
         self.assertEqual(ac_tester.kwds_with_pos_only(1, 2, y='y', z='z'), (1, 2, kwds))
@@ -5729,16 +5766,16 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.kwds_with_optional_pos_only()
         with self.assertRaises(TypeError):
             ac_tester.kwds_with_optional_pos_only(y='y')
-        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1), (1, None, {}))
-        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1, 2), (1, 2, {}))
+        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1), (1, None, None))
+        self.assertEqual(ac_tester.kwds_with_optional_pos_only(1, 2), (1, 2, None))
         self.assertEqual(ac_tester.kwds_with_optional_pos_only(1, y='y'),
                          (1, None, {'y': 'y'}))
         self.assertEqual(ac_tester.kwds_with_optional_pos_only(1, 2, y='y'),
                          (1, 2, {'y': 'y'}))
 
     def test_kwds_with_stararg(self):
-        self.assertEqual(ac_tester.kwds_with_stararg(), ((), {}))
-        self.assertEqual(ac_tester.kwds_with_stararg(1, 2), ((1, 2), {}))
+        self.assertEqual(ac_tester.kwds_with_stararg(), ((), None))
+        self.assertEqual(ac_tester.kwds_with_stararg(1, 2), ((1, 2), None))
         self.assertEqual(ac_tester.kwds_with_stararg(y='y'), ((), {'y': 'y'}))
         args = (1, 2)
         kwds = {'y': 'y', 'z': 'z'}
@@ -5750,7 +5787,7 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.kwds_with_pos_only_and_stararg()
         with self.assertRaises(TypeError):
             ac_tester.kwds_with_pos_only_and_stararg(y='y')
-        self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2), (1, 2, (), {}))
+        self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2), (1, 2, (), None))
         self.assertEqual(ac_tester.kwds_with_pos_only_and_stararg(1, 2, y='y'), (1, 2, (), {'y': 'y'}))
         args = ('lobster', 'thermidor')
         kwds = {'y': 'y', 'z': 'z'}
@@ -5818,6 +5855,20 @@ class VectorcallFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ac_tester.VcKwOnly()
 
+    def test_vc_kwds(self):
+        with self.assertRaises(TypeError):
+            ac_tester.VcKwds()
+        with self.assertRaises(TypeError):
+            ac_tester.VcKwds(y='y')
+        with self.assertRaises(TypeError):
+            ac_tester.VcKwds(1, 2, 3)
+        self.assertEqual(ac_tester.VcKwds(1), (1, None, None))
+        self.assertEqual(ac_tester.VcKwds(1, 2), (1, 2, None))
+        self.assertEqual(ac_tester.VcKwds(1, a='a', b='b'),
+                         (1, None, {'a': 'a', 'b': 'b'}))
+        kwds = {'y': 'y', 'z': 'z'}
+        self.assertEqual(ac_tester.VcKwds(1, 2, **kwds), (1, 2, kwds))
+
     def test_parse_errors_match_slot(self):
         # tp_vectorcall and tp_new/tp_init slot should match in argument parsing
         # error messages. Explicit calls to __new__ and __init__, as well as
@@ -5843,6 +5894,7 @@ class VectorcallFunctionalTest(unittest.TestCase):
             through_new(ac_tester.VcNew),
             through_new(ac_tester.VcNewBase),
             through_new(ac_tester.VcKwOnly),
+            through_new(ac_tester.VcKwds),
             through_init(ac_tester.VcInit),
         ]
         invalid_calls = [

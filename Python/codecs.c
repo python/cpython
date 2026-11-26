@@ -64,24 +64,21 @@ PyCodec_Unregister(PyObject *search_function)
 
     PyObject *codec_search_path = interp->codecs.search_path;
     assert(PyList_CheckExact(codec_search_path));
+    FT_MUTEX_LOCK(&interp->codecs.search_path_mutex);
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(codec_search_path); i++) {
-        FT_MUTEX_LOCK(&interp->codecs.search_path_mutex);
-        PyObject *item = PyList_GetItemRef(codec_search_path, i);
-        int ret = 1;
-        if (item == search_function) {
-            // We hold a reference to the item, so its destructor can't run
-            // while we hold search_path_mutex.
-            ret = PyList_SetSlice(codec_search_path, i, i+1, NULL);
-        }
-        FT_MUTEX_UNLOCK(&interp->codecs.search_path_mutex);
-        Py_DECREF(item);
-        if (ret != 1) {
+        if (PyList_GET_ITEM(codec_search_path, i) == search_function) {
+            // Keep the function alive until after releasing the mutex.
+            Py_INCREF(search_function);
+            int ret = PyList_SetSlice(codec_search_path, i, i+1, NULL);
+            FT_MUTEX_UNLOCK(&interp->codecs.search_path_mutex);
+            Py_DECREF(search_function);
             assert(interp->codecs.search_cache != NULL);
             assert(PyDict_CheckExact(interp->codecs.search_cache));
             PyDict_Clear(interp->codecs.search_cache);
             return ret;
         }
     }
+    FT_MUTEX_UNLOCK(&interp->codecs.search_path_mutex);
     return 0;
 }
 
@@ -142,7 +139,10 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(interp->codecs.initialized);
+    if (!interp->codecs.initialized) {
+        PyErr_SetString(PyExc_SystemError, "Codecs are not initialized");
+        return NULL;
+    }
 
     /* Convert the encoding to a normalized Python string: all
        ASCII letters are converted to lower case, spaces are

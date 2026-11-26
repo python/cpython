@@ -42,7 +42,7 @@ rules:
    .. warning::
       If a type adds the Py_TPFLAGS_HAVE_GC, then it *must* implement at least
       a :c:member:`~PyTypeObject.tp_traverse` handler or explicitly use one
-      from its subclass or subclasses.
+      from a base class.
 
       When calling :c:func:`PyType_Ready` or some of the APIs that indirectly
       call it like :c:func:`PyType_FromSpecWithBases` or
@@ -127,7 +127,7 @@ rules:
 
 .. c:macro:: PyObject_GC_Resize(TYPE, op, newsize)
 
-   Resize an object allocated by :c:macro:`PyObject_NewVar`.
+   Resize an object allocated by :c:macro:`PyObject_GC_NewVar`.
    Returns the resized object of type ``TYPE*`` (refers to any C type)
    or ``NULL`` on failure.
 
@@ -251,6 +251,14 @@ The :c:member:`~PyTypeObject.tp_traverse` handler must have the following type:
    to the handler.  The *visit* function must not be called with a ``NULL``
    object argument.  If *visit* returns a non-zero value, that value should be
    returned immediately.
+   Otherwise, return zero.
+
+   The garbage collector can call :c:member:`~PyTypeObject.tp_traverse` more
+   than once for the same object during a collection.  If the object's
+   references do not change, each traversal must visit the same references.
+   In particular, do not skip a reference because a lock is busy.
+   If one traversal visits a reference and a later traversal skips it, the
+   collector can clear an object that is still reachable.
 
    A typical :c:member:`!tp_traverse` function calls the :c:func:`Py_VISIT`
    convenience macro on each of the instance's members that are Python
@@ -362,7 +370,7 @@ implementation must name its arguments exactly *visit* and *arg*:
    This corresponds roughly to::
 
       #define Py_VISIT(o)                             \
-         if (op) {                                    \
+         if (o) {                                    \
             int visit_result = visit(o, arg);         \
             if (visit_result != 0) {                  \
                return visit_result;                   \

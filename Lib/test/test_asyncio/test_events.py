@@ -27,6 +27,7 @@ if sys.platform not in ('win32', 'vxworks'):
     import tty
 
 import asyncio
+from asyncio import constants
 from asyncio import coroutines
 from asyncio import events
 from asyncio import selector_events
@@ -794,11 +795,19 @@ class EventLoopTestsMixin:
 
     def test_create_connection_local_addr(self):
         with test_utils.run_test_server() as httpd:
-            port = socket_helper.find_unused_port()
-            f = self.loop.create_connection(
-                lambda: MyProto(loop=self.loop),
-                *httpd.address, local_addr=(httpd.address[0], port))
-            tr, pr = self.loop.run_until_complete(f)
+            # The port can be taken by another process before we bind it.
+            for try_count in range(5):
+                port = socket_helper.find_unused_port()
+                f = self.loop.create_connection(
+                    lambda: MyProto(loop=self.loop),
+                    *httpd.address, local_addr=(httpd.address[0], port))
+                try:
+                    tr, pr = self.loop.run_until_complete(f)
+                except OSError as ex:
+                    if ex.errno != errno.EADDRINUSE or try_count == 4:
+                        raise
+                else:
+                    break
             expected = pr.transport.get_extra_info('sockname')[1]
             self.assertEqual(port, expected)
             tr.close()
@@ -806,24 +815,28 @@ class EventLoopTestsMixin:
     @socket_helper.skip_if_tcp_blackhole
     def test_create_connection_local_addr_skip_different_family(self):
         # See https://github.com/python/cpython/issues/86508
-        port1 = socket_helper.find_unused_port()
-        port2 = socket_helper.find_unused_port()
-        getaddrinfo_orig = self.loop.getaddrinfo
+        # A bound but non-listening socket reserves a port that refuses
+        # connections (macOS times them out immediately instead);
+        # find_unused_port() could be grabbed by another test.
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', 0))
+            port = sock.getsockname()[1]
+            getaddrinfo_orig = self.loop.getaddrinfo
 
-        async def getaddrinfo(host, port, *args, **kwargs):
-            if port == port2:
-                return [(socket.AF_INET6, socket.SOCK_STREAM, 0, '', ('::1', 0, 0, 0)),
-                        (socket.AF_INET, socket.SOCK_STREAM, 0, '', ('127.0.0.1', 0))]
-            return await getaddrinfo_orig(host, port, *args, **kwargs)
+            async def getaddrinfo(host, port, *args, **kwargs):
+                if host == 'localhost':
+                    return [(socket.AF_INET6, socket.SOCK_STREAM, 0, '', ('::1', 0, 0, 0)),
+                            (socket.AF_INET, socket.SOCK_STREAM, 0, '', ('127.0.0.1', 0))]
+                return await getaddrinfo_orig(host, port, *args, **kwargs)
 
-        self.loop.getaddrinfo = getaddrinfo
+            self.loop.getaddrinfo = getaddrinfo
 
-        f = self.loop.create_connection(
-            lambda: MyProto(loop=self.loop),
-            'localhost', port1, local_addr=('localhost', port2))
+            f = self.loop.create_connection(
+                lambda: MyProto(loop=self.loop),
+                '127.0.0.1', port, local_addr=('localhost', 0))
 
-        with self.assertRaises(OSError):
-            self.loop.run_until_complete(f)
+            with self.assertRaises((ConnectionRefusedError, TimeoutError)):
+                self.loop.run_until_complete(f)
 
     @socket_helper.skip_if_tcp_blackhole
     def test_create_connection_local_addr_nomatch_family(self):
@@ -1202,12 +1215,13 @@ class EventLoopTestsMixin:
                                             '(?i)certificate.verify.failed'):
                     self.loop.run_until_complete(f_c)
 
-            # execute the loop to log the connection error
-            test_utils.run_briefly(self.loop)
+            # close connection: wait until the server-side transport of the
+            # failed handshake is closed as well, otherwise its socket may
+            # still be open when the loop is closed (gh-159123).
+            server.close()
+            self.loop.run_until_complete(server.wait_closed())
 
-        # close connection
         self.assertIsNone(proto.transport)
-        server.close()
 
     @socket_helper.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
@@ -1232,12 +1246,13 @@ class EventLoopTestsMixin:
                                             '(?i)certificate.verify.failed'):
                     self.loop.run_until_complete(f_c)
 
-            # execute the loop to log the connection error
-            test_utils.run_briefly(self.loop)
+            # close connection: wait until the server-side transport of the
+            # failed handshake is closed as well, otherwise its socket may
+            # still be open when the loop is closed (gh-159123).
+            server.close()
+            self.loop.run_until_complete(server.wait_closed())
 
-        # close connection
         self.assertIsNone(proto.transport)
-        server.close()
 
     @unittest.skipIf(ssl is None, 'No ssl module')
     def test_create_server_ssl_match_failed(self):
@@ -1268,10 +1283,14 @@ class EventLoopTestsMixin:
                 with self.assertRaisesRegex(ssl.CertificateError, regex):
                     self.loop.run_until_complete(f_c)
 
-        # close connection
+            # close connection: wait until the server-side transport of the
+            # failed handshake is closed as well, otherwise its socket may
+            # still be open when the loop is closed (gh-159123).
+            server.close()
+            self.loop.run_until_complete(server.wait_closed())
+
         # transport is None because TLS ALERT aborted the handshake
         self.assertIsNone(proto.transport)
-        server.close()
 
     @socket_helper.skip_unless_bind_unix_socket
     @unittest.skipIf(ssl is None, 'No ssl module')
@@ -2308,7 +2327,7 @@ class EventLoopTestsMixin:
         # of the clock used by the kernel. Tolerate a few useless calls on
         # these platforms.
         self.assertLessEqual(self.loop._run_once_counter, 20,
-            {'clock_resolution': self.loop._clock_resolution,
+            {'clock_resolution': constants.CLOCK_RESOLUTION,
              'selector': self.loop._selector.__class__.__name__})
 
     def test_remove_fds_after_closing(self):

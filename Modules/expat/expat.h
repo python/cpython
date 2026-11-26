@@ -21,6 +21,7 @@
    Copyright (c) 2024      Taichi Haradaguchi <20001722@ymail.ne.jp>
    Copyright (c) 2025      Matthew Fernandez <matthew.fernandez@gmail.com>
    Copyright (c) 2026      Braian Plaku <braianplaku@gmail.com>
+   Copyright (c) 2026      Xisco Fauli <xiscofauli@libreoffice.org>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -780,20 +781,27 @@ XML_GetIdAttributeIndex(XML_Parser parser);
 /* Parses some input. Returns XML_STATUS_ERROR if a fatal error is
    detected.  The last call to XML_Parse must have isFinal true; len
    may be zero for this call (or any other).
-
-   Though the return values for these functions has always been
-   described as a Boolean value, the implementation, at least for the
-   1.95.x series, has always returned exactly one of the XML_Status
-   values.
 */
 XMLPARSEAPI(enum XML_Status)
 XML_Parse(XML_Parser parser, const char *s, int len, int isFinal);
 
+// Added in Expat 2.11.0.
+XMLPARSEAPI(enum XML_Status)
+XML_Parse64(XML_Parser parser, const char *s, size_t len, XML_Bool isFinal);
+
 XMLPARSEAPI(void *)
 XML_GetBuffer(XML_Parser parser, int len);
 
+// Added in Expat 2.11.0.
+XMLPARSEAPI(void *)
+XML_GetBuffer64(XML_Parser parser, size_t len);
+
 XMLPARSEAPI(enum XML_Status)
 XML_ParseBuffer(XML_Parser parser, int len, int isFinal);
+
+// Added in Expat 2.11.0.
+XMLPARSEAPI(enum XML_Status)
+XML_ParseBuffer64(XML_Parser parser, size_t len, XML_Bool isFinal);
 
 /* Stops parsing, causing XML_Parse() or XML_ParseBuffer() to return.
    Must be called from within a call-back handler, except when aborting
@@ -1084,7 +1092,7 @@ enum XML_Parser_Property {
 #  if defined(XML_TESTING)
   XML_PROP_INVALID = 0,
 #  endif
-#  if XML_GE == 1
+#  if defined(XML_GE) && XML_GE == 1
   XML_PROP_ALLOC_TRACKER_ACTIVATION_THRESHOLD = 1,   // of type `uint64_t`
   XML_PROP_ALLOC_TRACKER_MAXIMUM_AMPLIFICATION = 2,  // of type `double`
   XML_PROP_BILLION_LAUGHS_ACTIVATION_THRESHOLD = 3,  // of type `uint64_t`
@@ -1146,7 +1154,7 @@ XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
    See https://semver.org
 */
 #  define XML_MAJOR_VERSION 2
-#  define XML_MINOR_VERSION 9
+#  define XML_MINOR_VERSION 11
 #  define XML_MICRO_VERSION 0
 
 #  ifdef __cplusplus

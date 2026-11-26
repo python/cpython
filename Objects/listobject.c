@@ -273,10 +273,11 @@ PyList_New(Py_ssize_t size)
             return NULL;
         }
     }
-    if (size <= 0) {
-        op->ob_item = NULL;
-    }
-    else {
+    op->ob_item = NULL;
+    op->allocated = 0;
+    Py_SET_SIZE(op, size);
+
+    if (size > 0) {
 #ifdef Py_GIL_DISABLED
         _PyListArray *array = list_allocate_array(size);
         if (array == NULL) {
@@ -293,7 +294,7 @@ PyList_New(Py_ssize_t size)
             return PyErr_NoMemory();
         }
     }
-    Py_SET_SIZE(op, size);
+
     op->allocated = size;
     _PyObject_GC_TRACK(op);
     return (PyObject *) op;
@@ -869,8 +870,18 @@ _PyList_Concat(PyObject *aa, PyObject *bb)
     return ret;
 }
 
+/*[clinic input]
+@critical_section
+list.__mul__ as list_repeat
+
+    a: self(type="PyListObject *")
+    n: Py_ssize_t
+    /
+[clinic start generated code]*/
+
 static PyObject *
-list_repeat_lock_held(PyListObject *a, Py_ssize_t n)
+list_repeat_impl(PyListObject *a, Py_ssize_t n)
+/*[clinic end generated code: output=65bb40ed76d3e733 input=dfef16e067b2abb6]*/
 {
     const Py_ssize_t input_size = Py_SIZE(a);
     if (input_size == 0 || n <= 0)
@@ -909,17 +920,6 @@ list_repeat_lock_held(PyListObject *a, Py_ssize_t n)
 
     Py_SET_SIZE(np, output_size);
     return (PyObject *) np;
-}
-
-static PyObject *
-list_repeat(PyObject *aa, Py_ssize_t n)
-{
-    PyObject *ret;
-    PyListObject *a = (PyListObject *)aa;
-    Py_BEGIN_CRITICAL_SECTION(a);
-    ret = list_repeat_lock_held(a, n);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 static void
@@ -1171,20 +1171,22 @@ list_inplace_repeat_lock_held(PyListObject *self, Py_ssize_t n)
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+list.__imul__ as list_inplace_repeat
+
+    n: Py_ssize_t
+    /
+[clinic start generated code]*/
+
 static PyObject *
-list_inplace_repeat(PyObject *_self, Py_ssize_t n)
+list_inplace_repeat_impl(PyListObject *self, Py_ssize_t n)
+/*[clinic end generated code: output=d318a9f047b4fcaf input=530d74de0e4a61f0]*/
 {
-    PyObject *ret;
-    PyListObject *self = (PyListObject *) _self;
-    Py_BEGIN_CRITICAL_SECTION(self);
     if (list_inplace_repeat_lock_held(self, n) < 0) {
-        ret = NULL;
+        return NULL;
     }
-    else {
-        ret = Py_NewRef(self);
-    }
-    Py_END_CRITICAL_SECTION();
-    return ret;
+    return Py_NewRef(self);
 }
 
 /*[clinic input]
@@ -3599,7 +3601,7 @@ static int
 list___init___impl(PyListObject *self, PyObject *iterable)
 /*[clinic end generated code: output=0f3c21379d01de48 input=b3f3fe7206af8f6b]*/
 {
-    /* Verify list invariants established by PyType_GenericAlloc() */
+    /* Verify list invariants */
     assert(0 <= Py_SIZE(self));
     assert(Py_SIZE(self) <= self->allocated || self->allocated == -1);
     assert(self->ob_item != NULL ||
@@ -3631,7 +3633,10 @@ list_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    PyObject *list = PyType_GenericAlloc(_PyType_CAST(type), 0);
+    /* use PyList_New() to make exact lists from the freelist. */
+    PyObject *list = (type == (PyObject *)&PyList_Type
+                      ? PyList_New(0)
+                      : PyType_GenericAlloc(_PyType_CAST(type), 0));
     if (list == NULL) {
         return NULL;
     }
@@ -3657,10 +3662,12 @@ list___sizeof___impl(PyListObject *self)
 {
     size_t res = _PyObject_SIZE(Py_TYPE(self));
 #ifdef Py_GIL_DISABLED
-    PyObject **ob_item = _Py_atomic_load_ptr(&self->ob_item);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    PyObject **ob_item = self->ob_item;
     if (ob_item != NULL) {
         res += list_capacity(ob_item) * sizeof(PyObject *);
     }
+    Py_END_CRITICAL_SECTION();
 #else
     res += (size_t)self->allocated * sizeof(PyObject *);
 #endif

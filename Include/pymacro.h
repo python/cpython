@@ -18,8 +18,8 @@
 // behaviour. So only define if building as C, not C++ (if __cplusplus is
 // not defined), and only for C11-17.
 #if !defined(static_assert) && (defined(__GNUC__) || defined(__clang__)) \
-     && !defined(__cplusplus) && defined(__STDC_VERSION__) \
-     && __STDC_VERSION__ >= 201112L && __STDC_VERSION__ <= 201710L
+     && defined(_Py_STDC_VERSION) \
+     && _Py_STDC_VERSION >= 201112L && _Py_STDC_VERSION <= 201710L
 #  define static_assert _Static_assert
 #endif
 
@@ -75,9 +75,9 @@
 #        endif
 #    elif defined(_MSC_VER)
 #        define _Py_ALIGNED_DEF(N, T) __declspec(align(N)) T
-#    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#    elif defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 202311L
 #        define _Py_ALIGNED_DEF(N, T) alignas(N) alignas(T) T
-#    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#    elif defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 201112L
 #        define _Py_ALIGNED_DEF(N, T)  _Alignas(N) _Alignas(T) T
 #    elif (defined(__GNUC__) || defined(__clang__))
 #        define _Py_ALIGNED_DEF(N, T) __attribute__((aligned(N))) T
@@ -100,7 +100,7 @@
 // predefined value of _Py_ANONYMOUS if it exists.
 #ifndef _Py_ANONYMOUS
 #   if (defined(__GNUC__) || defined(__clang__)) \
-          && !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+          && !(defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 201112L)
 #       define _Py_ANONYMOUS __extension__
 #   else
 #       define _Py_ANONYMOUS
@@ -162,7 +162,7 @@
 /* Argument must be a char or an int in [-128, 127] or [0, 255]. */
 #define Py_CHARMASK(c) ((unsigned char)((c) & 0xff))
 
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L \
+#if (defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 201112L \
      && !defined(__cplusplus) && !defined(_MSC_VER))
 #  define Py_BUILD_ASSERT_EXPR(cond) \
     ((void)sizeof(struct { int dummy; _Static_assert(cond, #cond); }), \
@@ -185,7 +185,7 @@
     (sizeof(char [1 - 2*!(cond)]) - 1)
 #endif
 
-#if ((defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L) \
+#if ((defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 201112L) \
      || (defined(__cplusplus) && __cplusplus >= 201103L))
    // Use static_assert() on C11 and newer
 #  define Py_BUILD_ASSERT(cond) \
@@ -311,7 +311,6 @@
 #define _Py_IS_TYPE_SIGNED(type) ((type)(-1) <= 0)
 
 // Version helpers. These are primarily macros, but have exported equivalents.
-#define _Py_PACK_VERSION(X, Y) _Py_PACK_FULL_VERSION(X, Y, 0, 0, 0)
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
 PyAPI_FUNC(uint32_t) Py_PACK_FULL_VERSION(int x, int y, int z, int level, int serial);
 PyAPI_FUNC(uint32_t) Py_PACK_VERSION(int x, int y);

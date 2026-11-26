@@ -260,24 +260,20 @@ _tkinter
     is able to load Tcl/Tk without having to change your PATH.
 
 _zstd
-    Python wrapper for version 1.5.7 of the zstd compression library
+    Python wrapper for version 1.6.0 of the zstd compression library
     Homepage:
         https://facebook.github.io/zstd/
 
 zlib-ng
     Compiles zlib-ng as a static library, which is later included by
     pythoncore.vcxproj. This was generated using CMake against zlib-ng
-    version 2.2.4, and should be minimally updated as needed to adapt
+    version 2.2.5, and should be minimally updated as needed to adapt
     to changes in their source layout. The zbuild.h, zconf.h and
     zconf-ng.h file in the PC directory were likewise generated and
     vendored.
 
     Sources for zlib-ng are imported unmodified into our source
     repository at https://github.com/python/cpython-source-deps.
-_zstd
-    Python wrapper for version 1.5.7 of the Zstandard compression library
-    Homepage:
-        https://facebook.github.io/zstd/
 
 
 Getting External Sources

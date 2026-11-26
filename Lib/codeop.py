@@ -57,6 +57,7 @@ def _maybe_compile(compiler, source, filename, symbol, flags):
         if symbol != "eval":
             source = "pass"     # Replace it with a 'pass' statement
 
+    incomplete_input = False
     # Disable compiler warnings when checking for incomplete input.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", (SyntaxWarning, DeprecationWarning))
@@ -64,10 +65,11 @@ def _maybe_compile(compiler, source, filename, symbol, flags):
             compiler(source, filename, symbol, flags=flags)
         except _IncompleteInputError:
             return None
-        except SyntaxError:  # Let other compile() errors propagate.
-            pass
+        except SyntaxError as error:  # Let other compile() errors propagate.
+            # Preserve escape errors that a missing closing quote can hide.
+            incomplete_input = error.msg.startswith("(unicode error)")
 
-    return compiler(source, filename, symbol, incomplete_input=False)
+    return compiler(source, filename, symbol, incomplete_input=incomplete_input)
 
 def _compile(source, filename, symbol, incomplete_input=True, *, flags=0):
     if incomplete_input:

@@ -496,9 +496,9 @@ Move and draw
    of the turtle; *extent*, an angle, determines which part of the circle is
    drawn. If *extent* is not given, draw the entire circle. If *extent* is
    not a full circle, one endpoint of the arc is the current pen position.
-   Draw the arc in counterclockwise direction if *radius* is positive,
-   otherwise in clockwise direction. Finally, the turtle's heading is changed
-   by *extent*.
+   Draw the arc in the counterclockwise direction if *radius* is positive,
+   otherwise in the clockwise direction. Finally, the turtle's heading is
+   changed by *extent*.
 
    As the circle is approximated by an inscribed regular polygon, *steps*
    determines the number of steps to use. If not given, it will be calculated
@@ -551,9 +551,9 @@ Move and draw
 
 .. function:: stamp()
 
-   Stamp a copy of the turtle shape onto the canvas at the current turtle
-   position.  Return a stamp_id for that stamp, which can be used to delete
-   it by calling ``clearstamp(stamp_id)``.
+   Stamp a copy of the turtle shape onto the canvas and return its id. The
+   stamp is placed at the current turtle position. The returned id can be
+   used to delete the stamp with :func:`clearstamp`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -565,10 +565,10 @@ Move and draw
 
 .. function:: clearstamp(stampid)
 
-   :param stampid: an integer, must be return value of previous
-                   :func:`stamp` call
+   :param stampid: an integer
 
-   Delete stamp with given *stampid*.
+   Delete the stamp with the given *stampid*. *stampid* must be the return
+   value of a previous :func:`stamp` call.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -587,11 +587,11 @@ Move and draw
 
 .. function:: clearstamps(n=None)
 
-   :param n: an integer (or ``None``)
+   :param n: an integer or ``None``
 
-   Delete all or first/last *n* of turtle's stamps.  If *n* is ``None``, delete
-   all stamps, if *n* > 0 delete first *n* stamps, else if *n* < 0 delete
-   last *n* stamps.
+   Delete all or the first or last *n* of the turtle's stamps. If *n* is not
+   given, delete all stamps. If *n* is positive, delete the first *n* stamps.
+   If *n* is negative, delete the last *n* stamps, so -2 deletes the last two.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -606,8 +606,9 @@ Move and draw
 
 .. function:: undo()
 
-   Undo (repeatedly) the last turtle action(s).  Number of available
-   undo actions is determined by the size of the undobuffer.
+   Undo the last turtle action. Calling :func:`!undo` repeatedly undoes one
+   action at a time. The number of actions that can be undone is set by the
+   size of the undo buffer, see :func:`setundobuffer`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -625,8 +626,9 @@ Move and draw
 
    Return or set the turtle's speed. If *speed* is not given, return the
    current speed. Otherwise set the turtle's speed to an integer from 0 to 10.
-   If *speed* is a number greater than 10 or smaller than 0.5, the speed is
-   set to 0. You can also use these names instead of numbers:
+   A number above 0.5 and below 10.5 is rounded to the nearest integer. Any
+   other number sets the speed to 0. You can also use these names instead of
+   numbers:
 
    * "fastest": 0
    * "fast": 10
@@ -845,46 +847,49 @@ Drawing state
 
 .. function:: pen(pen=None, **pendict)
 
-   :param pen: a dictionary with some or all of the below listed keys
-   :param pendict: one or more keyword-arguments with the below listed keys as keywords
+   :param pen: a dictionary or ``None``
+   :param pendict: keyword arguments with the keys below
 
-   Return or set the pen's attributes in a "pen-dictionary" with the following
-   key/value pairs:
+   Return or set the pen's attributes. The attributes are returned as a
+   dictionary with the following keys and values:
 
-   * "shown": True/False
-   * "pendown": True/False
-   * "pencolor": color-string or color-tuple
-   * "fillcolor": color-string or color-tuple
-   * "pensize": positive number
-   * "speed": number in range 0..10
-   * "resizemode": "auto" or "user" or "noresize"
-   * "stretchfactor": (positive number, positive number)
-   * "outline": positive number
-   * "tilt": number
+   * "shown": ``True`` or ``False``
+   * "pendown": ``True`` or ``False``
+   * "pencolor": a color string or a color tuple
+   * "fillcolor": a color string or a color tuple
+   * "pensize": a positive number
+   * "speed": a number from 0 to 10
+   * "resizemode": "auto", "user" or "noresize"
+   * "stretchfactor": a pair of positive numbers
+   * "shearfactor": a number
+   * "outline": a positive number
+   * "tilt": a number
 
-   This dictionary can be used as argument for a subsequent call to :func:`pen`
-   to restore the former pen-state.  Moreover one or more of these attributes
-   can be provided as keyword-arguments.  This can be used to set several pen
-   attributes in one statement.
+   Such a dictionary can be passed as *pen* to restore a former pen state. The
+   attributes can also be given as keyword arguments, which can be used to set
+   several of them in one statement.
 
    .. doctest::
       :skipif: _tkinter is None
       :options: +NORMALIZE_WHITESPACE
 
       >>> turtle.pen(fillcolor="black", pencolor="red", pensize=10)
-      >>> sorted(turtle.pen().items())
-      [('fillcolor', 'black'), ('outline', 1), ('pencolor', 'red'),
-       ('pendown', True), ('pensize', 10), ('resizemode', 'noresize'),
-       ('shearfactor', 0.0), ('shown', True), ('speed', 9),
-       ('stretchfactor', (1.0, 1.0)), ('tilt', 0.0)]
-      >>> penstate=turtle.pen()
+      >>> turtle.pen()
+      {'shown': True, 'pendown': True, 'pencolor': 'red', 'fillcolor': 'black',
+       'pensize': 10, 'speed': 9, 'resizemode': 'noresize',
+       'stretchfactor': (1.0, 1.0), 'shearfactor': 0.0, 'outline': 1,
+       'tilt': 0.0}
+      >>> penstate = turtle.pen()
       >>> turtle.color("yellow", "")
       >>> turtle.penup()
-      >>> sorted(turtle.pen().items())[:3]
-      [('fillcolor', ''), ('outline', 1), ('pencolor', 'yellow')]
+      >>> turtle.pen()["pencolor"]
+      'yellow'
+      >>> # restore the saved pen state, but with a green fill
       >>> turtle.pen(penstate, fillcolor="green")
-      >>> sorted(turtle.pen().items())[:3]
-      [('fillcolor', 'green'), ('outline', 1), ('pencolor', 'red')]
+      >>> turtle.pen()["pencolor"]
+      'red'
+      >>> turtle.pen()["fillcolor"]
+      'green'
 
 .. function:: isdown()
 
@@ -1051,6 +1056,7 @@ Filling
 
    >>> turtle.home()
 
+
 .. function:: filling()
 
    Return ``True`` if the turtle is filling, ``False`` otherwise.
@@ -1064,9 +1070,10 @@ Filling
       ... else:
       ...    turtle.pensize(3)
 
+
 .. function:: fill()
 
-   Fill the shape drawn in the ``with turtle.fill():`` block.
+   Fill the shape drawn in the :keyword:`with` block.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1075,8 +1082,8 @@ Filling
       >>> with turtle.fill():
       ...     turtle.circle(80)
 
-   Using :func:`!fill` is equivalent to adding the :func:`begin_fill` before the
-   fill-block and :func:`end_fill` after the fill-block:
+   :func:`fill` is a :term:`context manager`, so using it is the same as
+   calling :func:`begin_fill` before the block and :func:`end_fill` after it:
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1091,17 +1098,18 @@ Filling
 
 .. function:: begin_fill()
 
-   To be called just before drawing a shape to be filled.
+   Call just before drawing a shape to be filled. The shape is filled by the
+   next call to :func:`end_fill`.
 
 
 .. function:: end_fill()
 
    Fill the shape drawn after the last call to :func:`begin_fill`.
 
-   Whether or not overlap regions for self-intersecting polygons
-   or multiple shapes are filled depends on the operating system graphics,
-   type of overlap, and number of overlaps.  For example, the Turtle star
-   above may be either all yellow or have some white regions.
+   If the shape crosses itself or several shapes overlap, whether the
+   overlapping parts are filled depends on the operating system, the type of
+   overlap and how many there are. For example, the turtle star above may be
+   either all yellow or have some white regions.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1144,15 +1152,16 @@ More drawing control
 
 .. function:: write(arg, move=False, align="left", font=("Arial", 8, "normal"))
 
-   :param arg: object to be written to the TurtleScreen
-   :param move: True/False
-   :param align: one of the strings "left", "center" or right"
-   :param font: a triple (fontname, fontsize, fonttype)
+   :param arg: an object
+   :param move: a boolean
+   :param align: a string
+   :param font: a tuple of a string, an integer and a string
 
-   Write text - the string representation of *arg* - at the current turtle
-   position according to *align* ("left", "center" or "right") and with the given
-   font.  If *move* is true, the pen is moved to the bottom-right corner of the
-   text.  By default, *move* is ``False``.
+   Write text at the current turtle position. The text is the string
+   representation of *arg*. *align* is one of the strings "left", "center" or
+   "right" and says how the text is placed relative to the turtle position.
+   *font* is a triple of font name, font size and font type. If *move* is
+   ``True``, the pen is moved to the bottom-right corner of the text.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1203,7 +1212,7 @@ Appearance
 
    Set the turtle shape to the named shape. If *name* is not given, return the
    name of the current shape. The shape must exist in the
-   :class:`TurtleScreen`'s shape dictionary. Initially there are the following
+   :class:`TurtleScreen`'s shape list. Initially there are the following
    shapes: "arrow", "turtle", "circle", "square", "triangle" and "classic". To
    add shapes, see the :class:`Screen` method :func:`register_shape`.
 
@@ -1280,14 +1289,15 @@ Appearance
 
 .. function:: shearfactor(shear=None)
 
-   :param shear: number (optional)
+   :param shear: a number or ``None``
 
-   Set or return the current shearfactor. Shear the turtleshape according to
-   the given shearfactor shear, which is the tangent of the shear angle.
-   Do *not* change the turtle's heading (direction of movement).
-   If shear is not given: return the current shearfactor, i. e. the
-   tangent of the shear angle, by which lines parallel to the
-   heading of the turtle are sheared.
+   Return or set the current shear factor. Shearing slants the turtle shape,
+   like the slant of italic letters. The shear factor says how much it is
+   slanted: 0 is not slanted at all, and the larger the number, the stronger
+   the slant. Negative numbers slant the other way. If *shear* is not given,
+   return the current shear factor. Otherwise slant the turtle shape
+   accordingly and set resizemode to "user". The turtle's heading does not
+   change. Precisely, the shear factor is the tangent of the shear angle.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1303,8 +1313,9 @@ Appearance
 
    :param angle: a number
 
-   Rotate the turtleshape by *angle* from its current tilt-angle, but do *not*
-   change the turtle's heading (direction of movement).
+   Turn the turtle shape by *angle* from its current tilt angle. The turtle's
+   heading does not change, so the turtle keeps moving in the same direction.
+   See :func:`tiltangle`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1320,15 +1331,15 @@ Appearance
 
 .. function:: tiltangle(angle=None)
 
-   :param angle: a number (optional)
+   :param angle: a number or ``None``
 
-   Set or return the current tilt-angle. If angle is given, rotate the
-   turtleshape to point in the direction specified by angle,
-   regardless of its current tilt-angle. Do *not* change the turtle's
-   heading (direction of movement).
-   If angle is not given: return the current tilt-angle, i. e. the angle
-   between the orientation of the turtleshape and the heading of the
-   turtle (its direction of movement).
+   Return or set the current tilt angle. The tilt angle is the angle between
+   the direction the turtle shape points in and the direction the turtle moves
+   in. Normally the shape points in the direction of movement, so the tilt
+   angle is 0. If *angle* is given, turn the turtle shape to that tilt angle,
+   no matter what it was before, and set resizemode to "user". The turtle's
+   heading does not change. If *angle* is not given, return the current tilt
+   angle.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1343,21 +1354,18 @@ Appearance
 
 .. function:: shapetransform(t11=None, t12=None, t21=None, t22=None)
 
-   :param t11: a number (optional)
-   :param t12: a number (optional)
-   :param t21: a number (optional)
-   :param t12: a number (optional)
+   :param t11: a number or ``None``
+   :param t12: a number or ``None``
+   :param t21: a number or ``None``
+   :param t22: a number or ``None``
 
-   Set or return the current transformation matrix of the turtle shape.
-
-   If none of the matrix elements are given, return the transformation
-   matrix as a tuple of 4 elements.
-   Otherwise set the given elements and transform the turtleshape
-   according to the matrix consisting of first row t11, t12 and
-   second row t21, t22. The determinant t11 * t22 - t12 * t21 must not be
-   zero, otherwise an error is raised.
-   Modify stretchfactor, shearfactor and tiltangle according to the
-   given matrix.
+   Return or set the transformation matrix of the turtle shape. The matrix
+   combines the stretch factors, the shear factor and the tilt angle of the
+   turtle shape into four numbers: *t11* and *t12* form its first row, *t21*
+   and *t22* its second. If none of them are given, return the current matrix
+   as a tuple of four numbers. Otherwise set the given elements and update the
+   stretch factors, shear factor and tilt angle accordingly.
+   ``t11 * t22 - t12 * t21`` must not be zero, otherwise an error is raised.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1372,8 +1380,9 @@ Appearance
 
 .. function:: get_shapepoly()
 
-   Return the current shape polygon as tuple of coordinate pairs. This
-   can be used to define a new shape or components of a compound shape.
+   Return the points that form the outline of the current turtle shape
+   as a tuple of ``(x, y)`` coordinate pairs. These points can be used
+   to define a new shape or parts of a :ref:`compound shape <compound-shapes>`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1398,7 +1407,7 @@ Using events
    coordinates of the clicked point on the canvas. If *fun* is ``None``,
    existing bindings are removed. *btn* is the number of the mouse button and
    defaults to 1, the left mouse button. If *add* is ``True``, a new binding
-   is added, otherwise it replaces a former binding. Example for the
+   is added, otherwise it replaces a previous binding. Example for the
    anonymous turtle, that is, the procedural way:
 
    .. doctest::
@@ -1413,14 +1422,16 @@ Using events
 
 .. function:: onrelease(fun, btn=1, add=None)
 
-   :param fun: a function with two arguments which will be called with the
-               coordinates of the clicked point on the canvas
-   :param btn: number of the mouse-button, defaults to 1 (left mouse button)
-   :param add: ``True`` or ``False`` -- if ``True``, a new binding will be
-               added, otherwise it will replace a former binding
+   :param fun: a function with two arguments or ``None``
+   :param btn: an integer
+   :param add: a boolean or ``None``
 
-   Bind *fun* to mouse-button-release events on this turtle.  If *fun* is
-   ``None``, existing bindings are removed.
+   Bind *fun* to mouse-button-release events on this turtle. *fun* is called
+   with the coordinates of the point on the canvas where the mouse button is
+   released. If *fun* is ``None``, existing bindings are removed. *btn* is the
+   number of the mouse button and defaults to 1, the left mouse button. If
+   *add* is ``True``, a new binding is added, otherwise it replaces a previous
+   binding.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1428,6 +1439,7 @@ Using events
       >>> class MyTurtle(Turtle):
       ...     def glow(self,x,y):
       ...         self.fillcolor("red")
+      ...
       ...     def unglow(self,x,y):
       ...         self.fillcolor("")
       ...
@@ -1438,25 +1450,25 @@ Using events
 
 .. function:: ondrag(fun, btn=1, add=None)
 
-   :param fun: a function with two arguments which will be called with the
-               coordinates of the clicked point on the canvas
-   :param btn: number of the mouse-button, defaults to 1 (left mouse button)
-   :param add: ``True`` or ``False`` -- if ``True``, a new binding will be
-               added, otherwise it will replace a former binding
+   :param fun: a function with two arguments or ``None``
+   :param btn: an integer
+   :param add: a boolean or ``None``
 
-   Bind *fun* to mouse-move events on this turtle.  If *fun* is ``None``,
-   existing bindings are removed.
-
-   Remark: Every sequence of mouse-move-events on a turtle is preceded by a
-   mouse-click event on that turtle.
+   Bind *fun* to mouse-move events on this turtle. *fun* is called with the
+   coordinates of the mouse pointer on the canvas. If *fun* is ``None``,
+   existing bindings are removed. *btn* is the number of the mouse button and
+   defaults to 1, the left mouse button. If *add* is ``True``, a new binding
+   is added, otherwise it replaces a previous binding. Every sequence of
+   mouse-move events on a turtle is preceded by a mouse-click event on that
+   turtle.
 
    .. doctest::
       :skipif: _tkinter is None
 
       >>> turtle.ondrag(turtle.goto)
 
-   Subsequently, clicking and dragging the Turtle will move it across
-   the screen thereby producing handdrawings (if pen is down).
+   Clicking and dragging the turtle then moves it across the screen, drawing
+   by hand if the pen is down.
 
 
 Special Turtle methods
@@ -1464,8 +1476,8 @@ Special Turtle methods
 
 .. function:: poly()
 
-   Record the vertices of a polygon drawn in the ``with turtle.poly():`` block.
-   The first and last vertices will be connected.
+   Record the vertices of a polygon drawn in the :keyword:`with` block. The
+   first and last vertices will be connected.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1474,6 +1486,18 @@ Special Turtle methods
       ...     turtle.forward(100)
       ...     turtle.right(60)
       ...     turtle.forward(100)
+
+   :func:`poly` is a :term:`context manager`, so using it is the same as
+   calling :func:`begin_poly` before the block and :func:`end_poly` after it:
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> turtle.begin_poly()
+      >>> turtle.forward(100)
+      >>> turtle.right(60)
+      >>> turtle.forward(100)
+      >>> turtle.end_poly()
 
    .. versionadded:: 3.14
 
@@ -1574,8 +1598,8 @@ Special Turtle methods
    .. doctest::
       :skipif: _tkinter is None
 
-      >>> while undobufferentries():
-      ...     undo()
+      >>> while turtle.undobufferentries():
+      ...     turtle.undo()
 
 
 .. _methods-of-turtlescreen-screen:
@@ -1638,19 +1662,19 @@ Window control
 
 .. function:: bgpic(picname=None)
 
-   :param picname: a string, name of an image file (PNG, GIF, PGM, and PPM)
-                   or ``"nopic"``, or ``None``
+   :param picname: a string or ``None``
 
-   Set background image or return name of current backgroundimage.  If *picname*
-   is a filename, set the corresponding image as background.  If *picname* is
-   ``"nopic"``, delete background image, if present.  If *picname* is ``None``,
-   return the filename of the current backgroundimage. ::
+   Set the background image or return the name of the current one. If
+   *picname* is the name of an image file (PNG, GIF, PGM, and PPM), set that
+   image as the background. If *picname* is ``"nopic"``, delete the background
+   image, if present. If *picname* is ``None``, return the filename of the
+   current background image. ::
 
       >>> screen.bgpic()
       'nopic'
       >>> screen.bgpic("landscape.gif")
       >>> screen.bgpic()
-      "landscape.gif"
+      'landscape.gif'
 
 
 .. function:: clear()
@@ -1685,15 +1709,19 @@ Window control
 
 .. function:: screensize(canvwidth=None, canvheight=None, bg=None)
 
-   :param canvwidth: positive integer, new width of canvas in pixels
-   :param canvheight: positive integer, new height of canvas in pixels
-   :param bg: colorstring or color-tuple, new background color
+   :param canvwidth: a positive integer or ``None``
+   :param canvheight: a positive integer or ``None``
+   :param bg: a colorstring or ``None``
 
-   If no arguments are given, return current (canvaswidth, canvasheight).  Else
-   resize the canvas the turtles are drawing on.  Do not alter the drawing
-   window.  To observe hidden parts of the canvas, use the scrollbars. With this
-   method, one can make visible those parts of a drawing which were outside the
-   canvas before.
+   Resize the canvas the turtles are drawing on. *canvwidth* and *canvheight*
+   are the new width and height of the canvas in pixels, and *bg* is the new
+   background color. If no arguments are given, return the current canvas
+   width and height.
+
+   The drawing window is not altered. To see hidden parts of the canvas, use
+   the scrollbars. This can make visible those parts of a drawing which were
+   outside the canvas before, for example to find a turtle that has wandered
+   off the canvas.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1703,8 +1731,6 @@ Window control
       >>> screen.screensize(2000,1500)
       >>> screen.screensize()
       (2000, 1500)
-
-   e.g. to search for an erroneously escaped turtle ;-)
 
 
 .. function:: setworldcoordinates(llx, lly, urx, ury)
@@ -1805,7 +1831,7 @@ Animation control
 
 .. function:: update()
 
-   Perform a TurtleScreen update. To be used when tracer is turned off.
+   Perform a TurtleScreen update. To be used when :func:`tracer` is turned off.
 
 See also the RawTurtle/Turtle method :func:`speed`.
 
@@ -1815,19 +1841,24 @@ Using screen events
 
 .. function:: listen(xdummy=None, ydummy=None)
 
-   Set focus on TurtleScreen (in order to collect key-events).  Dummy arguments
-   are provided in order to be able to pass :func:`listen` to the onclick method.
+   :param xdummy: ignored
+   :param ydummy: ignored
+
+   Set focus on the :class:`TurtleScreen` so that it receives key events. The
+   two dummy arguments are only there so that :func:`listen` can be passed to
+   :func:`onclick`.
 
 
 .. function:: onkey(fun, key)
               onkeyrelease(fun, key)
 
    :param fun: a function with no arguments or ``None``
-   :param key: a string: key (e.g. "a") or key-symbol (e.g. "space")
+   :param key: a string
 
-   Bind *fun* to key-release event of key.  If *fun* is ``None``, event bindings
-   are removed. Remark: in order to be able to register key-events, TurtleScreen
-   must have the focus. (See method :func:`listen`.)
+   Bind *fun* to the key-release event of *key*. *key* is a key, such as
+   "a", or a key symbol, such as "space". If *fun* is ``None``, the event
+   binding is removed. To be able to receive key events, the
+   :class:`TurtleScreen` must have focus, see :func:`listen`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1839,25 +1870,33 @@ Using screen events
       >>> screen.onkey(f, "Up")
       >>> screen.listen()
 
+   The turtle can then be moved by repeatedly pressing the up-arrow key,
+   drawing a hexagon.
+
 
 .. function:: onkeypress(fun, key=None)
 
    :param fun: a function with no arguments or ``None``
-   :param key: a string: key (e.g. "a") or key-symbol (e.g. "space")
+   :param key: a string or ``None``
 
-   Bind *fun* to key-press event of key if key is given,
-   or to any key-press-event if no key is given.
-   Remark: in order to be able to register key-events, TurtleScreen
-   must have focus. (See method :func:`listen`.)
+   Bind *fun* to the key-press event of *key*. *key* is a key, such as "a",
+   or a key symbol, such as "space". If *key* is not given, *fun* is bound to
+   the key-press event of any key. If *fun* is ``None``, the event binding is
+   removed. To be able to receive key events, the :class:`TurtleScreen` must
+   have focus, see :func:`listen`.
 
    .. doctest::
       :skipif: _tkinter is None
 
       >>> def f():
       ...     fd(50)
+      ...     lt(60)
       ...
-      >>> screen.onkey(f, "Up")
+      >>> screen.onkeypress(f, "Up")
       >>> screen.listen()
+
+   The turtle can then be moved by pressing or holding down the up-arrow key,
+   drawing a hexagon.
 
 
 .. function:: onclick(fun, btn=1, add=None)
@@ -1871,7 +1910,7 @@ Using screen events
    coordinates of the clicked point on the canvas. If *fun* is ``None``,
    existing bindings are removed. *btn* is the number of the mouse button and
    defaults to 1, the left mouse button. If *add* is ``True``, a new binding
-   is added, otherwise it replaces a former binding.
+   is added, otherwise it replaces a previous binding.
 
    Example for a TurtleScreen instance named ``screen`` and a Turtle instance
    named ``turtle``:
@@ -1892,7 +1931,7 @@ Using screen events
 .. function:: ontimer(fun, t=0)
 
    :param fun: a function with no arguments
-   :param t: a number >= 0
+   :param t: a nonnegative number
 
    Install a timer that calls *fun* after *t* milliseconds.
 
@@ -1905,7 +1944,7 @@ Using screen events
       ...         fd(50)
       ...         lt(60)
       ...         screen.ontimer(f, 250)
-      >>> f()   ### makes the turtle march around
+      >>> f()  # makes the turtle march around
       >>> running = False
 
 
@@ -1944,10 +1983,10 @@ Input methods
    Pop up a dialog window for input of a number. *title* is the title of the
    dialog window and *prompt* is a text describing what numerical information
    to input. *default* is the default value, *minval* and *maxval* are the
-   minimum and maximum values for input. If these are given, the number
-   entered must be between *minval* and *maxval*. If not, a hint is issued
-   and the dialog remains open for correction. Return the number entered. If
-   the dialog is canceled, return ``None``. ::
+   minimum and maximum values for input. If these are given and the number
+   entered is not between *minval* and *maxval*, a hint is issued and the
+   dialog remains open for correction. Return the number entered. If the
+   dialog is canceled, return ``None``. ::
 
       >>> screen.numinput("Poker", "Your stakes:", 1000, minval=10, maxval=10000)
 
@@ -1997,7 +2036,7 @@ Settings and special methods
       >>> turtle.pencolor(240, 160, 80)
       Traceback (most recent call last):
            ...
-      TurtleGraphicsError: bad color sequence: (240, 160, 80)
+      turtle.TurtleGraphicsError: bad color sequence: (240, 160, 80)
       >>> screen.colormode()
       1.0
       >>> screen.colormode(255)
@@ -2097,6 +2136,26 @@ Settings and special methods
       640
 
 
+.. function:: save(filename, *, overwrite=False)
+
+   :param filename: a string
+   :param overwrite: a boolean
+
+   Save the current drawing and the turtles as a PostScript file. *filename*
+   is the path of the file to create. It must end with ``".ps"`` or
+   ``".eps"``. If a file with that name already exists, a
+   :exc:`FileExistsError` is raised, unless *overwrite* is ``True``.
+   *overwrite* must be given by name, as in ``overwrite=True``.
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> screen.save("my_drawing.ps")
+      >>> screen.save("my_drawing.ps", overwrite=True)
+
+   .. versionadded:: 3.14
+
+
 .. _screenspecific:
 .. _methods-specific-to-screen-not-inherited-from-turtlescreen:
 
@@ -2110,59 +2169,40 @@ Screen-only methods
 
 .. function:: exitonclick()
 
-   Bind ``bye()`` method to mouse clicks on the Screen.
-
-
-   If the value "using_IDLE" in the configuration dictionary is ``False``
-   (default value), also enter mainloop.  Remark: If IDLE with the ``-n`` switch
-   (no subprocess) is used, this value should be set to ``True`` in
-   :file:`turtle.cfg`.  In this case IDLE's own mainloop is active also for the
-   client script.
-
-
-.. function:: save(filename, overwrite=False)
-
-   Save the current turtle drawing (and turtles) as a PostScript file.
-
-   :param filename: the path of the saved PostScript file
-   :param overwrite: if ``False`` and there already exists a file with the given
-                     filename, then the function will raise a
-                     ``FileExistsError``. If it is ``True``, the file will be
-                     overwritten.
-
-   .. doctest::
-      :skipif: _tkinter is None
-
-      >>> screen.save("my_drawing.ps")
-      >>> screen.save("my_drawing.ps", overwrite=True)
-
-   .. versionadded:: 3.14
+   Bind :func:`bye` to mouse clicks on the screen and start the event loop.
+   Clicking on the screen then closes the turtle graphics window. If the
+   configuration value ``using_IDLE`` is ``True``, the event loop is not
+   started, see :func:`mainloop`.
 
 
 .. function:: setup(width=_CFG["width"], height=_CFG["height"], startx=_CFG["leftright"], starty=_CFG["topbottom"])
 
-   Set the size and position of the main window.  Default values of arguments
-   are stored in the configuration dictionary and can be changed via a
-   :file:`turtle.cfg` file.
+   :param width: an integer or a float
+   :param height: an integer or a float
+   :param startx: an integer or ``None``
+   :param starty: an integer or ``None``
 
-   :param width: if an integer, a size in pixels, if a float, a fraction of the
-                 screen; default is 50% of screen
-   :param height: if an integer, the height in pixels, if a float, a fraction of
-                  the screen; default is 75% of screen
-   :param startx: if positive, starting position in pixels from the left
-                  edge of the screen, if negative from the right edge, if ``None``,
-                  center window horizontally
-   :param starty: if positive, starting position in pixels from the top
-                  edge of the screen, if negative from the bottom edge, if ``None``,
-                  center window vertically
+   Set the size and position of the main window.
+
+   *width* and *height* are the size of the window. As integers they are sizes
+   in pixels, as floats they are fractions of the screen, so 0.5 is half the
+   screen. The defaults are 50% of the screen width and 75% of its height.
+
+   *startx* and *starty* are the position of the window. If positive, they are
+   the distance in pixels from the left and top edges of the screen, if
+   negative from the right and bottom edges. If ``None``, the window is
+   centered in that direction.
+
+   The default values of all arguments are stored in the configuration
+   dictionary and can be changed with a :file:`turtle.cfg` file.
 
    .. doctest::
       :skipif: _tkinter is None
 
-      >>> screen.setup (width=200, height=200, startx=0, starty=0)
-      >>>              # sets window to 200x200 pixels, in upper left of screen
-      >>> screen.setup(width=.75, height=0.5, startx=None, starty=None)
-      >>>              # sets window to 75% of screen by 50% of screen and centers
+      >>> screen.setup(width=200, height=200, startx=0, starty=0)
+      >>> # sets window to 200x200 pixels, in upper left of screen
+      >>> screen.setup(width=0.75, height=0.5)
+      >>> # sets window to 75% of screen by 50% of screen and centers
 
 
 .. function:: title(titlestring)
@@ -2187,8 +2227,8 @@ Public classes
    :param canvas: a :class:`!tkinter.Canvas`, a :class:`ScrolledCanvas` or a
                   :class:`TurtleScreen`
 
-   Create a turtle.  The turtle has all methods described above as "methods of
-   Turtle/RawTurtle".
+   Create a turtle. The turtle has all the methods described in
+   :ref:`turtle-methods`.
 
 
 .. class:: Turtle()
@@ -2201,8 +2241,8 @@ Public classes
 
    :param cv: a :class:`!tkinter.Canvas`
 
-   Provides screen oriented methods like :func:`bgcolor` etc. that are described
-   above.
+   Provides the screen-oriented methods, such as :func:`bgcolor`, that are
+   described above.
 
 
 .. class:: Screen()
@@ -2215,13 +2255,13 @@ Public classes
 
 .. class:: ScrolledCanvas(master)
 
-   :param master: some Tkinter widget to contain the ScrolledCanvas, i.e.
-      a Tkinter-canvas with scrollbars added
+   :param master: a Tkinter widget
 
-   Used by class Screen, which thus automatically provides a ScrolledCanvas as
-   playground for the turtles.
+   A Tkinter canvas with scrollbars added. *master* is the widget that contains
+   it. Used by class :class:`Screen`, which thus automatically provides a
+   ScrolledCanvas as playground for the turtles.
 
-.. class:: Shape(type_, data)
+.. class:: Shape(type_, data=None)
 
    :param type\_: a string
    :param data: depends on *type_*
@@ -2353,7 +2393,7 @@ below:
       >>> poly2 = ((0,0), (10,-5), (-10,-5))
       >>> s.addcomponent(poly2, "blue", "red")
 
-3. Now add the Shape to the Screen's shapelist and use it:
+3. Now add the Shape to the Screen's shape list and use it:
 
    .. doctest::
       :skipif: _tkinter is None
@@ -2456,38 +2496,52 @@ via docstrings.  So these can be used as online-help via the Python help
 facilities:
 
 - When using IDLE, tooltips show the signatures and first lines of the
-  docstrings of typed in function-/method calls.
+  docstrings of typed in function/method calls.
 
 - Calling :func:`help` on methods or functions displays the docstrings::
 
-     >>> help(Screen.bgcolor)
-     Help on method bgcolor in module turtle:
+     >>> help(TurtleScreen.bgcolor)
+     Help on function bgcolor in module turtle:
 
-     bgcolor(self, *args) unbound turtle.Screen method
-         Set or return backgroundcolor of the TurtleScreen.
+     bgcolor(self, *args)
+         Return or set the background color of the TurtleScreen.
 
-         Arguments (if given): a color string or three numbers
-         in the range 0..colormode or a 3-tuple of such numbers.
+         Four input formats are allowed:
+           - bgcolor()
+             Return the current background color as a color specification
+             string or as a tuple (see example).  May be used as input
+             to another color(), pencolor(), fillcolor() or bgcolor() call.
+           - bgcolor(colorstring)
+             Set the background color to colorstring, which is a Tk color
+             specification string, such as "red", "yellow", or "#33cc8c".
+           - bgcolor((r, g, b))
+             Set the background color to the RGB color represented by
+             the tuple of r, g, and b.  Each of r, g, and b must be
+             between 0 and colormode, where colormode is either 1.0 or 255
+             (see colormode()).
+           - bgcolor(r, g, b)
+             Set the background color to the RGB color represented by
+             r, g, and b.  Each of r, g, and b must be between 0 and
+             colormode.
 
-
-         >>> screen.bgcolor("orange")
-         >>> screen.bgcolor()
-         "orange"
-         >>> screen.bgcolor(0.5,0,0.5)
-         >>> screen.bgcolor()
-         "#800080"
+         Example (for a TurtleScreen instance named screen):
+             >>> screen.bgcolor("orange")
+             >>> screen.bgcolor()
+             'orange'
+             >>> screen.colormode(255)
+             >>> screen.bgcolor("#800080")
+             >>> screen.bgcolor()
+             (128.0, 0.0, 128.0)
 
      >>> help(Turtle.penup)
-     Help on method penup in module turtle:
+     Help on function penup in module turtle:
 
-     penup(self) unbound turtle.Turtle method
-         Pull the pen up -- no drawing when moving.
+     penup(self)
+         Lift the pen.
 
          Aliases: penup | pu | up
 
-         No argument
-
-         >>> turtle.penup()
+         The turtle does not draw when it moves.
 
 - The docstrings of the functions which are derived from methods have a modified
   form::
@@ -2496,32 +2550,44 @@ facilities:
      Help on function bgcolor in module turtle:
 
      bgcolor(*args)
-         Set or return backgroundcolor of the TurtleScreen.
+         Return or set the background color of the TurtleScreen.
 
-         Arguments (if given): a color string or three numbers
-         in the range 0..colormode or a 3-tuple of such numbers.
+         Four input formats are allowed:
+           - bgcolor()
+             Return the current background color as a color specification
+             string or as a tuple (see example).  May be used as input
+             to another color(), pencolor(), fillcolor() or bgcolor() call.
+           - bgcolor(colorstring)
+             Set the background color to colorstring, which is a Tk color
+             specification string, such as "red", "yellow", or "#33cc8c".
+           - bgcolor((r, g, b))
+             Set the background color to the RGB color represented by
+             the tuple of r, g, and b.  Each of r, g, and b must be
+             between 0 and colormode, where colormode is either 1.0 or 255
+             (see colormode()).
+           - bgcolor(r, g, b)
+             Set the background color to the RGB color represented by
+             r, g, and b.  Each of r, g, and b must be between 0 and
+             colormode.
 
-         Example::
-
-           >>> bgcolor("orange")
-           >>> bgcolor()
-           "orange"
-           >>> bgcolor(0.5,0,0.5)
-           >>> bgcolor()
-           "#800080"
+         Example:
+             >>> bgcolor("orange")
+             >>> bgcolor()
+             'orange'
+             >>> colormode(255)
+             >>> bgcolor("#800080")
+             >>> bgcolor()
+             (128.0, 0.0, 128.0)
 
      >>> help(penup)
      Help on function penup in module turtle:
 
      penup()
-         Pull the pen up -- no drawing when moving.
+         Lift the pen.
 
          Aliases: penup | pu | up
 
-         No argument
-
-         Example:
-         >>> penup()
+         The turtle does not draw when it moves.
 
 These modified docstrings are created automatically together with the function
 definitions that are derived from the methods at import time.
@@ -2575,13 +2641,12 @@ running version are ignored.
 
 .. function:: write_docstringdict(filename="turtle_docstringdict")
 
-   :param filename: a string, used as filename
+   :param filename: a string
 
-   Create and write docstring-dictionary to a Python script with the given
-   filename.  This function has to be called explicitly (it is not used by the
-   turtle graphics classes).  The docstring dictionary will be written to the
-   Python script :file:`{filename}.py`.  It is intended to serve as a template
-   for translation of the docstrings into different languages.
+   Write the docstring dictionary to a Python script. The dictionary is written
+   to the file :file:`{filename}.py`. It is intended to serve as a template for
+   translating the docstrings into different languages. This function has to
+   be called explicitly. It is not used by the turtle graphics classes.
 
 
 .. _turtle-configuration:
@@ -2593,11 +2658,11 @@ The built-in default configuration mimics the appearance and behaviour of the
 old turtle module in order to retain best possible compatibility with it.
 
 If you want to use a different configuration which better reflects the features
-of this module or which better fits to your needs, e.g. for use in a classroom,
-you can prepare a configuration file ``turtle.cfg`` which will be read at import
-time and modify the configuration according to its settings.
+of this module or which better fits to your needs, for example for use in a
+classroom, you can prepare a configuration file ``turtle.cfg`` which will be
+read at import time and modify the configuration according to its settings.
 
-The built in configuration would correspond to the following ``turtle.cfg``:
+The built-in configuration would correspond to the following ``turtle.cfg``:
 
 .. code-block:: ini
 
@@ -2628,13 +2693,13 @@ Short explanation of selected entries:
   method.
 - Line 5 and 6 correspond to the arguments of the method
   :func:`Screen.screensize <screensize>`.
-- *shape* can be any of the built-in shapes, e.g: arrow, turtle, etc.  For more
-  info try ``help(shape)``.
-- If you want to use no fill color (i.e. make the turtle transparent), you have
-  to write ``fillcolor = ""`` (but all nonempty strings must not have quotes in
-  the cfg file).
-- If you want to reflect the turtle its state, you have to use ``resizemode =
-  auto``.
+- *shape* can be any of the built-in shapes, such as arrow or turtle. For more
+  information, see :func:`shape`.
+- If you want to use no fill color (that is, make the turtle transparent), you
+  have to write ``fillcolor = ""`` (but all nonempty strings must not have
+  quotes in the cfg file).
+- If you want the turtle's appearance to reflect its state, you have to set
+  ``resizemode = auto``.
 - The *language* entry selects the language of the docstrings, unless the
   :envvar:`PYTHON_TURTLE_LANG` environment variable is set. See
   :ref:`turtle-docstring-translation` for more information.
@@ -2643,8 +2708,8 @@ Short explanation of selected entries:
   method-docstrings to function-docstrings will delete these names from the
   docstrings.
 - *using_IDLE*: Set this to ``True`` if you regularly work with IDLE and its ``-n``
-  switch ("no subprocess").  This will prevent :func:`exitonclick` to enter the
-  mainloop.
+  switch ("no subprocess").  This will prevent :func:`exitonclick` from
+  entering the mainloop.
 
 There can be a :file:`turtle.cfg` file in the directory where :mod:`!turtle` is
 stored and an additional one in the current working directory.  The latter will
@@ -2660,7 +2725,7 @@ not from within the demo-viewer).
 Explanation
 ===========
 
-A turtle object draws on a screen object, and there a number of key classes in
+A turtle object draws on a screen object, and there are a number of key classes in
 the turtle object-oriented interface that can be used to create them and relate
 them to each other.
 
@@ -2743,7 +2808,7 @@ The demo scripts are:
 | ``fractalcurves``      | Hilbert & Koch curves        | recursion                            |
 +------------------------+------------------------------+--------------------------------------+
 | ``lindenmayer``        | ethnomathematics             | L-System                             |
-|                        | (indian kolams)              |                                      |
+|                        | (Indian kolams)              |                                      |
 +------------------------+------------------------------+--------------------------------------+
 | ``minimal_hanoi``      | Towers of Hanoi              | Rectangular Turtles                  |
 |                        |                              | as Hanoi discs                       |
@@ -2765,10 +2830,10 @@ The demo scripts are:
 | ``planet_and_moon``    | simulation of                | compound shapes,                     |
 |                        | gravitational system         | :class:`Vec2D`                       |
 +------------------------+------------------------------+--------------------------------------+
-| ``rosette``            | a pattern from the wikipedia | :func:`clone`,                       |
+| ``rosette``            | a pattern from the Wikipedia | :func:`clone`,                       |
 |                        | article on turtle graphics   | :func:`undo`                         |
 +------------------------+------------------------------+--------------------------------------+
-| ``round_dance``        | dancing turtles rotating     | compound shapes, :func:`clone`       |
+| ``round_dance``        | dancing turtles rotating     | compound shapes, :func:`clone`,      |
 |                        | pairwise in opposite         | :func:`shapesize`, :func:`tilt`,     |
 |                        | direction                    | :func:`get_shapepoly`, :func:`update`|
 +------------------------+------------------------------+--------------------------------------+

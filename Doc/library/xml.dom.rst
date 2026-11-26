@@ -515,7 +515,7 @@ NodeList Objects
 A :class:`NodeList` represents a sequence of nodes.  These objects are used in
 two ways in the DOM Core recommendation:  an :class:`Element` object provides
 one as its list of child nodes, and the :meth:`~Element.getElementsByTagName`
-and :meth:`~Element.getElementsByTagNameNS` methods of :class:`Node` return
+and :meth:`~Element.getElementsByTagNameNS` methods of :class:`Element` return
 objects with this interface to represent query results.
 
 :class:`NodeList` does *not* inherit from :class:`Node`.
@@ -756,6 +756,12 @@ inherits properties from :class:`Node`.
    Return the element with the given ID, or ``None``.
    Only attributes declared as being of type ID in the DTD
    or by :meth:`Element.setIdAttribute` are searched.
+   If several elements have the same ID, the first one
+   in document order is returned.
+
+   .. versionchanged:: 3.16
+      Previously, which of the elements with the same ID was returned
+      was unspecified and could change between calls.
 
 
 .. method:: Document.getElementsByTagName(tagName)

@@ -50,15 +50,7 @@ _interpreters_new_config(PyObject *module, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional:
-    if (kwargs == NULL) {
-        overrides = PyDict_New();
-        if (overrides == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        overrides = Py_NewRef(kwargs);
-    }
+    overrides = Py_XNewRef(kwargs);
     return_value = _interpreters_new_config_impl(module, name, overrides);
 
 exit:
@@ -1260,4 +1252,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fa37872d6ee729ef input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ad79d44c2b139a83 input=a9049054013a1b77]*/
