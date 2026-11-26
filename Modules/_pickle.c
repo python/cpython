@@ -4671,7 +4671,7 @@ memo_clear_weak_only(PicklerObject *self, Py_ssize_t *value)
 static int
 save_proxy(PickleState *st, PicklerObject *self, PyObject *obj)
 {
-    PyObject *wrapped = PyObject_GetAttrString(obj, "obj");
+    PyObject *wrapped = PyObject_GetAttr(obj, &_Py_ID(obj));
     if (wrapped == NULL)
         return -1;
 
