@@ -1,0 +1,4 @@
+When building with Clang 19, or with Apple clang from Xcode 16.3 to 26.3, force
+tail duplication of the interpreter's computed-goto dispatch jumps. These
+compilers merge most or all of the per-opcode dispatch jumps into one, which
+made the interpreter about 9% slower on pyperformance with Clang 19.
