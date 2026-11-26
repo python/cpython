@@ -3000,6 +3000,9 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
     PyThreadState *tstate = PyThreadState_Get();
 
     CHECK_TCL_APPARTMENT(self);
+    /* mainloop() can be nested, the outer mainloop() still dispatches
+       events after the inner one exits. */
+    int dispatching = self->dispatching;
     self->dispatching = 1;
 
     quitMainLoop = 0;
@@ -3028,13 +3031,13 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
         }
 
         if (PyErr_CheckSignals() != 0) {
-            self->dispatching = 0;
+            self->dispatching = dispatching;
             return NULL;
         }
         if (result < 0)
             break;
     }
-    self->dispatching = 0;
+    self->dispatching = dispatching;
     quitMainLoop = 0;
 
     if (errorInCmd) {
