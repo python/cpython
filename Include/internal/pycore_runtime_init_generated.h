@@ -1602,6 +1602,7 @@ extern "C" {
     INIT_ID(ast), \
     INIT_ID(athrow), \
     INIT_ID(attr), \
+    INIT_ID(attrib), \
     INIT_ID(attribute), \
     INIT_ID(autocommit), \
     INIT_ID(backtick), \

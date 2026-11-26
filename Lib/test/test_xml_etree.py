@@ -3027,6 +3027,10 @@ class BugsTest(unittest.TestCase):
 
 class BasicElementTest(ElementTestCase, unittest.TestCase):
 
+    def test_extra_keys_must_be_strings(self):
+        with self.assertRaisesRegex(TypeError, "keywords must be strings"):
+            ET.Element("tag", **{ET.QName("key"): "value"})
+
     def test___init__(self):
         tag = "foo"
         attrib = { "zix": "wyp" }
