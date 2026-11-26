@@ -1982,6 +1982,76 @@ class TestPasteEvent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, input_code)
 
+    def test_read_bracketed_paste_pushes_back_trailing_input(self):
+        # Bytes that follow the closing marker in the same read must be
+        # returned to the input queue rather than added to the pasted text.
+        from _pyrepl.commands import read_bracketed_paste
+
+        console = Mock(encoding="utf-8")
+        console.getpending.return_value = Event(
+            evt="key",
+            data="hello\x1b[201~\n",
+            raw=bytearray(b"hello\x1b[201~\n"),
+        )
+        reader = Mock(console=console)
+
+        self.assertEqual(read_bracketed_paste(reader), "hello")
+        console.pushback.assert_called_once_with("\n")
+
+    def test_bracketed_paste_with_trailing_input(self):
+        # In regular (non-isearch) mode, the Enter that follows the closing
+        # marker in the same read must still accept the pasted line.
+        paste_start = [Event(evt="key", data="bracketed paste", raw=bytearray(b"\x1b[200~"))]
+        events = itertools.chain(
+            paste_start,
+            [Event(evt="key", data="\n", raw=bytearray(b"\n"))],
+        )
+        reader = self.prepare_reader(events)
+        console = reader.console
+        original_getpending = console.getpending
+        aggregated = [
+            Event("key", "hello\x1b[201~\n", bytearray(b"hello\x1b[201~\n")),
+        ]
+
+        def getpending():
+            if aggregated:
+                return aggregated.pop(0)
+            return original_getpending()
+
+        console.getpending = getpending
+
+        output = multiline_input(reader)
+        self.assertEqual(output, "hello")
+
+    def test_bracketed_paste_in_isearch_with_trailing_input(self):
+        # Simulate the Enter key arriving in the same read as the closing
+        # bracketed-paste marker.  It must end the incremental search instead
+        # of becoming part of the search term.
+        paste_start = [Event(evt="key", data="bracketed paste", raw=bytearray(b"\x1b[200~"))]
+        events = itertools.chain(
+            code_to_events("print('hello')\n"),
+            [Event(evt="key", data="\x12", raw=bytearray(b"\x12"))],
+            paste_start,
+            [Event(evt="key", data="\n", raw=bytearray(b"\n"))],
+        )
+        reader = self.prepare_reader(events)
+        console = reader.console
+        original_getpending = console.getpending
+        aggregated = [
+            Event("key", "hello\x1b[201~\n", bytearray(b"hello\x1b[201~\n")),
+        ]
+
+        def getpending():
+            if aggregated:
+                return aggregated.pop(0)
+            return original_getpending()
+
+        console.getpending = getpending
+
+        multiline_input(reader)
+        output = multiline_input(reader)
+        self.assertEqual(output, "print('hello')")
+
     def test_bracketed_paste_in_isearch(self):
         # The bracketed-paste *start* marker is translated into a synthetic
         # ``bracketed paste`` event by the real event queue; the fake console
