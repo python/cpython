@@ -191,7 +191,8 @@ atexit_register_impl(PyObject *module, PyObject *func, PyObject *args,
                 "the first argument must be callable");
         return NULL;
     }
-    PyObject *callback = PyTuple_Pack(3, func, args, kwargs);
+    PyObject *callback = PyTuple_Pack(3, func, args,
+                                      kwargs ? kwargs : Py_None);
     if (callback == NULL)
     {
         return NULL;

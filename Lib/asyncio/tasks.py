@@ -257,9 +257,12 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         prev_task = _py_swap_current_task(self._loop, self)
         try:
             _py_register_eager_task(self)
+            # gh-157299: the eager step must record the awaited_by edge
+            futures.future_add_to_awaited_by(self, prev_task)
             try:
                 self._context.run(self.__step_run_and_handle_result, None)
             finally:
+                futures.future_discard_from_awaited_by(self, prev_task)
                 _py_unregister_eager_task(self)
         finally:
             try:
@@ -838,17 +841,12 @@ def gather(*coros_or_futures, return_exceptions=False):
         return outer
 
     loop = events._get_running_loop()
-    if loop is not None:
-        cur_task = current_task(loop)
-    else:
-        cur_task = None
 
-    def _done_callback(fut, cur_task=cur_task):
+    def _done_callback(fut):
         nonlocal nfinished
         nfinished += 1
 
-        if cur_task is not None:
-            futures.future_discard_from_awaited_by(fut, cur_task)
+        futures.future_discard_from_awaited_by(fut, outer)
 
         if outer is None or outer.done():
             if not fut.cancelled():
@@ -863,13 +861,13 @@ def gather(*coros_or_futures, return_exceptions=False):
                 # instead of returning it.
                 exc = fut._make_cancelled_error()
                 # gh-157213: children outliving gather() must lose the edge
-                _discard_awaited_by(children, cur_task)
+                _discard_awaited_by(children, outer)
                 outer.set_exception(exc)
                 return
             else:
                 exc = fut.exception()
                 if exc is not None:
-                    _discard_awaited_by(children, cur_task)
+                    _discard_awaited_by(children, outer)
                     outer.set_exception(exc)
                     return
 
@@ -926,8 +924,6 @@ def gather(*coros_or_futures, return_exceptions=False):
             if fut.done():
                 done_futs.append(fut)
             else:
-                if cur_task is not None:
-                    futures.future_add_to_awaited_by(fut, cur_task)
                 fut.add_done_callback(_done_callback)
 
         else:
@@ -937,6 +933,10 @@ def gather(*coros_or_futures, return_exceptions=False):
         children.append(fut)
 
     outer = _GatheringFuture(children, loop=loop)
+    # Add the awaited-by edges only after all arguments are validated
+    for fut in arg_to_fut.values():
+        if not fut.done():
+            futures.future_add_to_awaited_by(fut, outer)
     # Run done callbacks after GatheringFuture created so any post-processing
     # can be performed at this point
     # optimization: in the special case that *all* futures finished eagerly,
@@ -987,15 +987,11 @@ def shield(arg):
     loop = futures._get_loop(inner)
     outer = loop.create_future()
 
-    if loop is not None and (cur_task := current_task(loop)) is not None:
-        futures.future_add_to_awaited_by(inner, cur_task)
-    else:
-        cur_task = None
-
-    def _clear_awaited_by_callback(inner):
-        futures.future_discard_from_awaited_by(inner, cur_task)
+    futures.future_add_to_awaited_by(inner, outer)
 
     def _inner_done_callback(inner):
+        futures.future_discard_from_awaited_by(inner, outer)
+
         if outer.cancelled():
             return
 
@@ -1011,13 +1007,7 @@ def shield(arg):
     def _outer_done_callback(outer):
         if not inner.done():
             inner.remove_done_callback(_inner_done_callback)
-            if cur_task is not None:
-                inner.remove_done_callback(_clear_awaited_by_callback)
-                futures.future_discard_from_awaited_by(inner, cur_task)
-
-    if cur_task is not None:
-        inner.add_done_callback(_clear_awaited_by_callback)
-
+            futures.future_discard_from_awaited_by(inner, outer)
 
     inner.add_done_callback(_inner_done_callback)
     outer.add_done_callback(_outer_done_callback)

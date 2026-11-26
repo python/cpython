@@ -50,9 +50,7 @@ __floordiv__
 __ge__
 __getattr__
 __getattribute__
-__getitem__
 __gt__
-__hash__
 __iand__
 __ifloordiv__
 __ilshift__
@@ -93,7 +91,6 @@ __rsub__
 __rtruediv__
 __rxor__
 __setattr__
-__str__
 __sub__
 __truediv__
 __xor__
@@ -650,11 +647,6 @@ class DSLParser:
             if not self.kind.new_or_init:
                 fail("@vectorcall can only be used with __init__ and __new__ "
                      "methods currently")
-            # Guaranteed by the __new__ / __init__ checks above.
-            assert cls is not None
-            if not cls.type_object:
-                fail(f"@vectorcall requires the type object of {cls.name!r}, "
-                     f"which was declared without one")
 
     def resolve_return_converter(
         self, full_name: str, forced_converter: str
@@ -1004,7 +996,7 @@ class DSLParser:
 
         # handle "as" for  parameters too
         c_name = None
-        m = re.match(r'(?:\* *)?\w+( +as +(\w+))', line)
+        m = re.match(r'(?:\*{1,2} *)?\w+( +as +(\w+))', line)
         if m:
             c_name = m[2]
             line = line[:m.start(1)] + line[m.end(1):]
@@ -1650,6 +1642,9 @@ class DSLParser:
         for i, p in enumerate(self.function.parameters.values()):
             if p.group:
                 fail("@vectorcall does not support optional groups",
+                     line_number=lineno)
+            if p.deprecated_positional or p.deprecated_keyword:
+                fail("@vectorcall does not support deprecated parameters",
                      line_number=lineno)
             if p.is_vararg() or p.is_var_keyword():
                 continue

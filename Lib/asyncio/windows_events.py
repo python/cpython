@@ -55,13 +55,6 @@ class _OverlappedFuture(futures.Future):
             del self._source_traceback[-1]
         self._ov = ov
 
-    def _repr_info(self):
-        info = super()._repr_info()
-        if self._ov is not None:
-            state = 'pending' if self._ov.pending else 'completed'
-            info.insert(1, f'overlapped=<{state}, {self._ov.address:#x}>')
-        return info
-
     def _cancel_overlapped(self):
         if self._ov is None:
             return
@@ -112,16 +105,6 @@ class _BaseWaitHandleFuture(futures.Future):
         # non-blocking wait: use a timeout of 0 millisecond
         return (_winapi.WaitForSingleObject(self._handle, 0) ==
                 _winapi.WAIT_OBJECT_0)
-
-    def _repr_info(self):
-        info = super()._repr_info()
-        info.append(f'handle={self._handle:#x}')
-        if self._handle is not None:
-            state = 'signaled' if self._poll() else 'waiting'
-            info.append(state)
-        if self._wait_handle is not None:
-            info.append(f'wait_handle={self._wait_handle:#x}')
-        return info
 
     def _unregister_wait_cb(self, fut):
         # The wait was unregistered: it's not safe to destroy the Overlapped
@@ -544,7 +527,14 @@ class IocpProactor:
         ov.AcceptEx(listener.fileno(), conn.fileno())
 
         def finish_accept(trans, key, ov):
-            ov.getresult()
+            try:
+                ov.getresult()
+            except OSError as exc:
+                conn.close()
+                # The peer reset the connection before it was accepted.
+                if exc.winerror == _overlapped.ERROR_NETNAME_DELETED:
+                    raise ConnectionResetError(*exc.args)
+                raise
             # Use SO_UPDATE_ACCEPT_CONTEXT so getsockname() etc work.
             buf = struct.pack('@P', listener.fileno())
             conn.setsockopt(socket.SOL_SOCKET,
@@ -559,6 +549,9 @@ class IocpProactor:
             except exceptions.CancelledError:
                 conn.close()
                 raise
+            except ConnectionResetError:
+                # Reported to the caller through the future.
+                pass
 
         future = self._register(ov, listener, finish_accept)
         coro = accept_coro(future, conn)

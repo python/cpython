@@ -470,6 +470,7 @@ gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *stat
                 continue;
             }
 
+            gc_visit_stackref(f->f_funcobj);
             gc_visit_stackref(f->f_executable);
             while (top != f->localsplus) {
                 --top;
@@ -866,6 +867,10 @@ gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, gc_mark_args_t *ar
             }
 
             _PyStackRef *top = f->stackpointer;
+            if (gc_visit_stackref_mark_alive(args, f->f_funcobj) < 0) {
+                err = -1;
+                goto exit;
+            }
             if (gc_visit_stackref_mark_alive(args, f->f_executable) < 0) {
                 err = -1;
                 goto exit;
@@ -2043,7 +2048,7 @@ record_allocation(PyThreadState *tstate)
     if (gc->alloc_count >= LOCAL_ALLOC_COUNT_THRESHOLD) {
         // TODO: Use Py_ssize_t for the generation count.
         GCState *gcstate = &tstate->interp->gc;
-        _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
+        _Py_atomic_add_int_relaxed(&gcstate->young.count, (int)gc->alloc_count);
         gc->alloc_count = 0;
 
         if (gc_should_collect(gcstate) &&
@@ -2072,9 +2077,9 @@ record_deallocation(PyThreadState *tstate)
             if (new_count < 0) {
                 new_count = 0;
             }
-        } while (!_Py_atomic_compare_exchange_int(&gcstate->young.count,
-                                                  &count,
-                                                  new_count));
+        } while (!_Py_atomic_compare_exchange_int_relaxed(&gcstate->young.count,
+                                                          &count,
+                                                          new_count));
         gc->alloc_count = 0;
     }
 }
@@ -2153,19 +2158,23 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     // Deallocations after the refcount merge may run Python code.
     bool needs_resurrection_check = state->objs_to_decref.head != 0;
 
-    // Print debugging information.
-    if (FT_ATOMIC_LOAD_INT_RELAXED(interp->gc.debug) & _PyGC_DEBUG_COLLECTABLE) {
-        needs_resurrection_check = true;
-        PyObject *op;
-        WORKSTACK_FOR_EACH(&state->unreachable, op) {
-            debug_cycle("collectable", op);
-        }
-    }
+    // The debug output is written with sys.stderr.write(), which may run
+    // Python code, so it is printed below after the world is started.
+    bool debug_print = (FT_ATOMIC_LOAD_INT_RELAXED(interp->gc.debug) &
+                        _PyGC_DEBUG_COLLECTABLE) != 0;
 
     // Find weakref callbacks and pending finalizers (but do not call them).
     bool has_finalizers = prepare_finalization(state, &needs_resurrection_check);
-    if (needs_resurrection_check) {
+    if (needs_resurrection_check || debug_print) {
         _PyEval_StartTheWorld(interp);
+
+        // Print debugging information.
+        if (debug_print) {
+            PyObject *op;
+            WORKSTACK_FOR_EACH(&state->unreachable, op) {
+                debug_cycle("collectable", op);
+            }
+        }
 
         // Deallocate any object from the refcount merge step
         cleanup_worklist(&state->objs_to_decref);
@@ -2766,7 +2775,7 @@ static PyObject *
 gc_alloc(PyTypeObject *tp, size_t basicsize, size_t presize)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (basicsize > PY_SSIZE_T_MAX - presize) {
+    if (basicsize > (size_t)PY_SSIZE_T_MAX - presize) {
         return _PyErr_NoMemory(tstate);
     }
     size_t size = presize + basicsize;
@@ -2838,6 +2847,13 @@ PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
 PyVarObject *
 _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
+#ifdef Py_DEBUG
+    if (nitems < 0) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+#endif
+
     const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
     const size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
     _PyObject_ASSERT((PyObject *)op, !_PyObject_GC_IS_TRACKED(op));

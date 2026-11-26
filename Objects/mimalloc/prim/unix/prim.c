@@ -78,10 +78,11 @@ terms of the MIT license. A copy of the license can be found in the file
 // Use syscalls for some primitives to allow for libraries that override open/read/close etc.
 // and do allocation themselves; using syscalls prevents recursion when mimalloc is
 // still initializing (issue #713)
+// Not used on Android, see issue python/cpython/pull/158530
 // Declare inline to avoid unused function warnings.
 //------------------------------------------------------------------------------------
 
-#if defined(MI_HAS_SYSCALL_H) && defined(SYS_open) && defined(SYS_close) && defined(SYS_read) && defined(SYS_access)
+#if defined(MI_HAS_SYSCALL_H) && defined(SYS_open) && defined(SYS_close) && defined(SYS_read) && defined(SYS_access) &&  !defined(__ANDROID__)
 
 static inline int mi_prim_open(const char* fpath, int open_flags) {
   return syscall(SYS_open,fpath,open_flags,0);
@@ -124,7 +125,7 @@ static bool unix_detect_overcommit(void) {
   #if defined(__linux__)
     int fd = mi_prim_open("/proc/sys/vm/overcommit_memory", O_RDONLY);
     if (fd >= 0) {
-      char buf[32] = {0};
+      char buf[32] = {0};  // CPython: zero-initialize to avoid an MSAN report
       ssize_t nread = mi_prim_read(fd, &buf, sizeof(buf));
       mi_prim_close(fd);
       // <https://www.kernel.org/doc/Documentation/vm/overcommit-accounting>
@@ -871,6 +872,7 @@ bool _mi_prim_random_buf(void* buf, size_t buf_len) {
 #elif defined(__ANDROID__) || defined(__DragonFly__) || \
       defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
       defined(__sun) || \
+      defined(__CYGWIN__) /* CPython: gh-148461 */ || \
       (defined(__APPLE__) && (MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7))
 
 bool _mi_prim_random_buf(void* buf, size_t buf_len) {

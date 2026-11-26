@@ -266,13 +266,22 @@ bytearray_resize_storage(PyByteArrayObject *self,
 }
 
 
+/* Resize without the checks of bytearray_resize_lock_held(): the caller must
+   have checked that the bytearray can be resized.
+
+   Unlike bytearray_resize_lock_held(), this does not return early if
+   requested_size is already the size of the bytearray.  A caller which
+   removed bytes by advancing ob_start and reducing the size uses that to
+   release the memory. */
 static int
-bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
+bytearray_resize_unchecked(PyByteArrayObject *obj, Py_ssize_t requested_size)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
-    PyByteArrayObject *obj = ((PyByteArrayObject *)self);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(obj);
+    PyObject *self = (PyObject *)obj;
 
     assert(obj->ob_bytes_object != NULL);
+    assert(requested_size >= 0);
+    assert(obj->ob_exports == 0);
 
     /* All computations are done unsigned to avoid integer overflows
        (see issue #22335). */
@@ -280,22 +289,7 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
     size_t logical_offset = (size_t) (obj->ob_start - obj->ob_bytes);
     size_t size = (size_t) requested_size;
 
-    assert(self != NULL);
-    assert(PyByteArray_Check(self));
     assert(logical_offset <= alloc);
-
-    if (requested_size < 0) {
-        PyErr_Format(PyExc_ValueError,
-            "Can only resize to positive sizes, got %zd", requested_size);
-        return -1;
-    }
-
-    if (requested_size == Py_SIZE(self)) {
-        return 0;
-    }
-    if (!_canresize(obj)) {
-        return -1;
-    }
 
     /* Resize to 0 resets to empty bytes (see issue #153419). */
     if (requested_size == 0) {
@@ -346,6 +340,30 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
         bytearray_write_trailing_null_byte(obj);
     }
     return 0;
+}
+
+static int
+bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    PyByteArrayObject *obj = ((PyByteArrayObject *)self);
+
+    assert(self != NULL);
+    assert(PyByteArray_Check(self));
+
+    if (requested_size < 0) {
+        PyErr_Format(PyExc_ValueError,
+            "Can only resize to positive sizes, got %zd", requested_size);
+        return -1;
+    }
+
+    if (requested_size == Py_SIZE(self)) {
+        return 0;
+    }
+    if (!_canresize(obj)) {
+        return -1;
+    }
+    return bytearray_resize_unchecked(obj, requested_size);
 }
 
 int
@@ -505,26 +523,23 @@ bytearray_irepeat_impl(PyByteArrayObject *self, Py_ssize_t count)
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+@critical_section
+bytearray.__getitem__ as bytearray_getitem
+    i: Py_ssize_t
+    /
+[clinic start generated code]*/
+
 static PyObject *
-bytearray_getitem_lock_held(PyObject *op, Py_ssize_t i)
+bytearray_getitem_impl(PyByteArrayObject *self, Py_ssize_t i)
+/*[clinic end generated code: output=743cb7a5f892f7ed input=f90e2c70f80e2917]*/
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
-    PyByteArrayObject *self = _PyByteArray_CAST(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     if (i < 0 || i >= Py_SIZE(self)) {
         PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
         return NULL;
     }
     return _PyLong_FromUnsignedChar((unsigned char)(self->ob_start[i]));
-}
-
-static PyObject *
-bytearray_getitem(PyObject *op, Py_ssize_t i)
-{
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytearray_getitem_lock_held(op, i);
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 static PyObject *
@@ -615,14 +630,22 @@ bytearray_setslice_linear(PyByteArrayObject *self,
             return -1;
 
         if (lo == 0) {
-            /* Shrink the buffer by advancing its logical start */
+            /* Shrink the buffer by advancing its logical start.  The bytes
+               are removed at this point; the resize below only releases
+               memory. */
             self->ob_start -= growth;
+            Py_SET_SIZE(self, Py_SIZE(self) + growth);
             /*
               0   lo               hi             old_size
               |   |<----avail----->|<-----tail------>|
               |      |<-bytes_len->|<-----tail------>|
               0    new_lo         new_hi          new_size
             */
+            if (bytearray_resize_unchecked(self, Py_SIZE(self)) < 0) {
+                /* The operation is completed, but a MemoryError is still
+                   raised and the memory block is not shrunk. */
+                res = -1;
+            }
         }
         else {
             /*
@@ -633,26 +656,17 @@ bytearray_setslice_linear(PyByteArrayObject *self,
             */
             memmove(buf + lo + bytes_len, buf + hi,
                     Py_SIZE(self) - hi);
-        }
-        if (bytearray_resize_lock_held((PyObject *)self,
-                               Py_SIZE(self) + growth) < 0) {
-            /* Issue #19578: Handling the memory allocation failure here is
-               tricky here because the bytearray object has already been
-               modified. Depending on growth and lo, the behaviour is
-               different.
+            if (bytearray_resize_lock_held((PyObject *)self,
+                                           Py_SIZE(self) + growth) < 0) {
+                /* Issue #19578: memmove() removed bytes, the bytearray
+                   object cannot be restored in its previous state.
 
-               If growth < 0 and lo != 0, the operation is completed, but a
-               MemoryError is still raised and the memory block is not
-               shrunk. Otherwise, the bytearray is restored in its previous
-               state and a MemoryError is raised. */
-            if (lo == 0) {
-                self->ob_start += growth;
-                return -1;
+                   The operation is completed, but a MemoryError is still
+                   raised and the memory block is not shrunk. */
+                Py_SET_SIZE(self, Py_SIZE(self) + growth);
+                bytearray_write_trailing_null_byte(self);
+                res = -1;
             }
-            /* memmove() removed bytes, the bytearray object cannot be
-               restored in its previous state. */
-            Py_SET_SIZE(self, Py_SIZE(self) + growth);
-            res = -1;
         }
         buf = PyByteArray_AS_STRING(self);
     }
@@ -1087,7 +1101,11 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
         if (PyByteArray_Resize((PyObject *)self, size) < 0) goto fail;
         if (PyBuffer_ToContiguous(PyByteArray_AS_STRING(self),
             &view, size, 'C') < 0)
+        {
+            /* Don't expose the uninitialized bytes: reset to empty */
+            (void)PyByteArray_Resize((PyObject *)self, 0);
             goto fail;
+        }
         PyBuffer_Release(&view);
         return 0;
     fail:
@@ -1115,6 +1133,8 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
             }
             int rc = _getbytevalue(items[i], &value);
             if (!rc) {
+                /* Don't expose the uninitialized bytes: reset to empty */
+                (void)PyByteArray_Resize((PyObject *)self, 0);
                 return -1;
             }
             s[i] = value;
@@ -1153,17 +1173,26 @@ slowpath:
         /* Interpret it as an int (__index__) */
         rc = _getbytevalue(item, &value);
         Py_DECREF(item);
-        if (!rc)
+        if (!rc) {
             goto error;
+        }
 
-        /* Append the byte */
-        if (Py_SIZE(self) + 1 < self->ob_alloc) {
+        /* Append the byte.
+
+           gh-158928: Iterators are arbitrary code which could modify the
+           bytearray so this must re-calculate if there is enough space(). */
+        Py_ssize_t needed =
+            self->ob_start - self->ob_bytes + Py_SIZE(self) + 1;
+        if (needed < self->ob_alloc) {
             Py_SET_SIZE(self, Py_SIZE(self) + 1);
             bytearray_write_trailing_null_byte(self);
         }
-        else if (PyByteArray_Resize((PyObject *)self, Py_SIZE(self)+1) < 0)
+        else if (PyByteArray_Resize((PyObject *)self, Py_SIZE(self)+1) < 0) {
             goto error;
+        }
         PyByteArray_AS_STRING(self)[Py_SIZE(self)-1] = value;
+        assert(self->ob_start - self->ob_bytes + Py_SIZE(self) <=
+               self->ob_alloc);
     }
 
     /* Clean up and return success */

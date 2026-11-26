@@ -853,7 +853,6 @@ _PyBuffer_ReleaseInInterpreterAndRawFree(PyInterpreterState *interp,
 PyObject *
 PyObject_Format(PyObject *obj, PyObject *format_spec)
 {
-    PyObject *meth;
     PyObject *empty = NULL;
     PyObject *result = NULL;
 
@@ -880,21 +879,32 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
         format_spec = empty;
     }
 
-    /* Find the (unbound!) __format__ method */
-    meth = _PyObject_LookupSpecial(obj, &_Py_ID(__format__));
-    if (meth == NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (!_PyErr_Occurred(tstate)) {
-            _PyErr_Format(tstate, PyExc_TypeError,
-                          "Type %.100s doesn't define __format__",
-                          Py_TYPE(obj)->tp_name);
+    /* Find the __format__ method and call it, without creating
+       a temporary bound method where possible. */
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    _PyStackRef self = PyStackRef_FromPyObjectBorrow(obj);
+    int found = _PyObject_LookupSpecialMethod(&_Py_ID(__format__),
+                                              &cref.ref, &self);
+    if (found > 0) {
+        PyObject *meth = PyStackRef_AsPyObjectBorrow(cref.ref);
+        PyObject *args[2] = {PyStackRef_AsPyObjectBorrow(self), format_spec};
+        if (args[0] != NULL) {
+            /* Unbound method: prepend self. */
+            result = PyObject_Vectorcall(meth, args, 2, NULL);
         }
-        goto done;
+        else {
+            result = PyObject_Vectorcall(meth, args + 1, 1, NULL);
+        }
     }
-
-    /* And call it. */
-    result = PyObject_CallOneArg(meth, format_spec);
-    Py_DECREF(meth);
+    else if (found == 0) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "Type %.100s doesn't define __format__",
+                      Py_TYPE(obj)->tp_name);
+    }
+    PyStackRef_XCLOSE(self);
+    _PyThreadState_PopCStackRef(tstate, &cref);
 
     if (result && !PyUnicode_Check(result)) {
         PyErr_Format(PyExc_TypeError,
@@ -1344,7 +1354,7 @@ PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
             if (f != NULL)
                 return sequence_repeat(f, v, w);
         }
-        else if (mw != NULL) {
+        if (mw != NULL) {
             /* Note that the right hand operand should not be
              * mutated in this case so sq_inplace_repeat is not
              * used. */
@@ -2600,6 +2610,28 @@ check_class(PyObject *cls, const char *error)
     return -1;
 }
 
+/* Return 1 if inst.__class__ would resolve to object's own getset descriptor,
+   i.e. evaluate to Py_TYPE(inst).  Types with a custom tp_getattro or an
+   overridden __class__ return 0 and take the generic lookup. */
+static inline int
+class_attr_is_type(PyObject *inst)
+{
+    PyTypeObject *tp = Py_TYPE(inst);
+    if (tp->tp_getattro != PyObject_GenericGetAttr) {
+        return 0;
+    }
+    _PyStackRef cref;
+    _PyType_LookupStackRefAndVersion(tp, &_Py_ID(__class__), &cref);
+    if (PyStackRef_IsNull(cref)) {
+        return 0;
+    }
+    PyObject *descr = PyStackRef_AsPyObjectBorrow(cref);
+    int res = (Py_IS_TYPE(descr, &PyGetSetDescr_Type)
+               && PyDescr_TYPE(descr) == &PyBaseObject_Type);
+    PyStackRef_CLOSE(cref);
+    return res;
+}
+
 static int
 object_isinstance(PyObject *inst, PyObject *cls)
 {
@@ -2608,6 +2640,9 @@ object_isinstance(PyObject *inst, PyObject *cls)
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
         if (retval == 0) {
+            if (class_attr_is_type(inst)) {
+                return 0;
+            }
             retval = PyObject_GetOptionalAttr(inst, &_Py_ID(__class__), &icls);
             if (icls != NULL) {
                 if (icls != (PyObject *)(Py_TYPE(inst)) && PyType_Check(icls)) {

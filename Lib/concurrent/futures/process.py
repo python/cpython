@@ -43,7 +43,7 @@ Process #1..n:
   _ResultItems in "Result Q"
 """
 
-__author__ = 'Brian Quinlan (brian@sweetapp.com)'
+# Original author: Brian Quinlan (brian@sweetapp.com)
 
 import os
 from concurrent.futures import _base
@@ -58,6 +58,7 @@ import weakref
 from functools import partial
 import itertools
 import sys
+lazy import warnings
 from traceback import format_exception
 
 
@@ -1065,3 +1066,10 @@ class ProcessPoolExecutor(_base.Executor):
         submitted).
         """
         return self._force_shutdown(operation=_KILL)
+
+
+def __getattr__(name):
+    if name == "__author__":
+        warnings._deprecated("__author__", remove=(3, 20))
+        return 'Brian Quinlan (brian@sweetapp.com)'  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

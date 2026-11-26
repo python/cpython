@@ -305,8 +305,9 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     self->thread_ident = PyThread_get_thread_ident();
     self->statement_cache = statement_cache;
     self->blobs = blobs;
-    self->row_factory = Py_NewRef(Py_None);
-    self->text_factory = Py_NewRef(&PyUnicode_Type);
+    pysqlite_set_ref((PyObject *)self, &self->row_factory, Py_NewRef(Py_None));
+    pysqlite_set_ref((PyObject *)self, &self->text_factory,
+                     Py_NewRef(&PyUnicode_Type));
     self->trace_ctx = NULL;
     self->progress_ctx = NULL;
     self->authorizer_ctx = NULL;
@@ -411,8 +412,8 @@ connection_clear(PyObject *op)
     pysqlite_Connection *self = _pysqlite_Connection_CAST(op);
     Py_CLEAR(self->statement_cache);
     Py_CLEAR(self->blobs);
-    Py_CLEAR(self->row_factory);
-    Py_CLEAR(self->text_factory);
+    pysqlite_set_ref(op, &self->row_factory, NULL);
+    pysqlite_set_ref(op, &self->text_factory, NULL);
     clear_callback_context(self->trace_ctx);
     clear_callback_context(self->progress_ctx);
     clear_callback_context(self->authorizer_ctx);
@@ -554,9 +555,14 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
         return NULL;
     }
 
-    if (cursor && self->row_factory != Py_None) {
-        Py_INCREF(self->row_factory);
-        Py_XSETREF(((pysqlite_Cursor *)cursor)->row_factory, self->row_factory);
+    PyObject *row_factory = pysqlite_get_ref((PyObject *)self,
+                                             &self->row_factory, Py_None);
+    if (row_factory != Py_None) {
+        pysqlite_Cursor *cur = (pysqlite_Cursor *)cursor;
+        pysqlite_set_ref(cursor, &cur->row_factory, row_factory);
+    }
+    else {
+        Py_DECREF(row_factory);
     }
 
     return cursor;
@@ -566,7 +572,7 @@ static PyObject *
 connection_get_row_factory(PyObject *op, void *closure)
 {
     pysqlite_Connection *self = (pysqlite_Connection *)op;
-    return Py_NewRef(self->row_factory);
+    return pysqlite_get_ref(op, &self->row_factory, Py_None);
 }
 
 static int
@@ -578,7 +584,7 @@ connection_set_row_factory(PyObject *op, PyObject *value, void *closure)
                         "cannot delete row_factory attribute");
         return -1;
     }
-    Py_XSETREF(self->row_factory, Py_NewRef(value));
+    pysqlite_set_ref(op, &self->row_factory, Py_NewRef(value));
     return 0;
 }
 
@@ -586,7 +592,8 @@ static PyObject *
 connection_get_text_factory(PyObject *op, void *closure)
 {
     pysqlite_Connection *self = (pysqlite_Connection *)op;
-    return Py_NewRef(self->text_factory);
+    return pysqlite_get_ref(op, &self->text_factory,
+                            (PyObject *)&PyUnicode_Type);
 }
 
 static int
@@ -598,7 +605,7 @@ connection_set_text_factory(PyObject *op, PyObject *value, void *closure)
                         "cannot delete text_factory attribute");
         return -1;
     }
-    Py_XSETREF(self->text_factory, Py_NewRef(value));
+    pysqlite_set_ref(op, &self->text_factory, Py_NewRef(value));
     return 0;
 }
 

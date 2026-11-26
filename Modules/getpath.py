@@ -211,6 +211,28 @@ def search_up(prefix, *landmarks, test=isfile):
         prefix = dirname(prefix)
 
 
+# The traditional Windows path length limit, not counting the terminating NUL.
+MAX_PATH = 260
+
+
+def strip_extended_length_prefix(path):
+    """
+    Remove the leading "\\\\?\\" of a Windows extended-length path, and
+    rewrite the "\\\\?\\UNC\\" form of a UNC path back to a plain "\\\\" one.
+    Windows does not resolve relative components (such as ".." or "/") in an
+    extended-length path, so keeping the prefix in a path that we later join
+    onto is liable to break consumers.  A path that is still too long to be
+    used unprefixed keeps its prefix, as it has no other usable form.
+    """
+    if path.startswith('\\\\?\\UNC\\'):
+        stripped = '\\\\' + path[8:]
+    elif path.startswith('\\\\?\\'):
+        stripped = path[4:]
+    else:
+        return path
+    return stripped if len(stripped) < MAX_PATH else path
+
+
 # ******************************************************************************
 # READ VARIABLES FROM config
 # ******************************************************************************
@@ -232,6 +254,7 @@ stdlib_dir = config.get('stdlib_dir')
 stdlib_dir_was_set_in_config = bool(stdlib_dir)
 
 real_executable_dir = None
+base_executable_dir = None
 platstdlib_dir = None
 stdlib_zip = None
 
@@ -319,6 +342,13 @@ if ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__:
         real_executable = base_executable
         #real_executable_dir = dirname(real_executable)
     executable = ENV_PYTHONEXECUTABLE or ENV___PYVENV_LAUNCHER__
+    if os_name == 'nt':
+        # QUIRK: On Windows the venv launcher reports its own path through
+        # GetModuleFileNameW, which hands back a "\\?\" extended-length path
+        # whenever that is how the interpreter was invoked.  Drop that prefix
+        # again, so the venv prefix and sys.executable stay usable by tools
+        # that join relative components onto them (gh-157917).
+        executable = strip_extended_length_prefix(executable)
     executable_dir = dirname(executable)
 
 
@@ -412,7 +442,17 @@ if not py_setpath:
                 if base_executable and isfile(base_executable):
                     # Search relative to the resolved base executable rather
                     # than the potentially external symlink in pyvenv.cfg.
-                    executable_dir = real_executable_dir = dirname(base_executable)
+                    # If nothing there locates a standard library (e.g. a
+                    # launcher binary stored outside the installation that
+                    # 'home' points into), keep searching from 'home'.
+                    # base_executable_dir is still used to find platform
+                    # dependent libraries (exec_prefix) in that case.
+                    base_executable_dir = dirname(base_executable)
+                    if (
+                        isfile(joinpath(base_executable_dir, BUILDDIR_TXT))
+                        or search_up(base_executable_dir, ZIP_LANDMARK, *STDLIB_LANDMARKS)
+                    ):
+                        executable_dir = real_executable_dir = base_executable_dir
             # home key found; stop iterating over lines
             break
 
@@ -622,6 +662,11 @@ else:
             exec_prefix = prefix
         if not exec_prefix and prefix and isdir(joinpath(prefix, PLATSTDLIB_LANDMARK)):
             exec_prefix = prefix
+        if not exec_prefix and base_executable_dir and base_executable_dir != executable_dir:
+            # The venv's resolved base executable may live under a separate
+            # exec_prefix (e.g. ./configure --exec-prefix) even when the
+            # stdlib was found from 'home'.
+            exec_prefix = search_up(base_executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and executable_dir:
             exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and EXEC_PREFIX:

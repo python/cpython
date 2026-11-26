@@ -4990,7 +4990,7 @@ vc_plain_vectorcall(PyObject *type, PyObject *const *args,
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     PyObject *a = Py_None;
 
-    assert(Py_Is(_PyType_CAST(type), &VcNew_Type));
+    assert(_PyType_CAST(type)->tp_new == vc_plain_new);
     /* Make sure the type object is immutable: the generated
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
@@ -5089,7 +5089,7 @@ vc_posorkw_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *a;
     PyObject *b = Py_None;
 
-    assert(Py_Is(_PyType_CAST(type), &VcInit_Type));
+    assert(_PyType_CAST(type)->tp_init == vc_posorkw_init);
     /* Make sure the type object is immutable: the generated
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
@@ -5208,7 +5208,7 @@ vc_base_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *a;
     PyObject *b = Py_None;
 
-    assert(Py_Is(_PyType_CAST(type), &VcNewBase_Type));
+    assert(_PyType_CAST(type)->tp_new == vc_base_new);
     /* Make sure the type object is immutable: the generated
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
@@ -5301,7 +5301,7 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
 {
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
-    assert(Py_Is(_PyType_CAST(type), &VcKwOnly_Type));
+    assert(_PyType_CAST(type)->tp_new == vc_kwonly_new);
     /* Make sure the type object is immutable: the generated
      * vectorcall doesn't deal e.g. with users reassigning __init__. */
     assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
@@ -5309,4 +5309,73 @@ vc_kwonly_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=17b9ff8218a250fe input=a9049054013a1b77]*/
+
+static PyObject *
+vc_kwds_new_impl(PyTypeObject *type, PyObject *a, PyObject *b,
+                 PyObject *kwds);
+
+static PyObject *
+vc_kwds_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b = Py_None;
+    PyObject *__clinic_kwds = NULL;
+
+    if (!_PyArg_CheckPositional("VcKwds", PyTuple_GET_SIZE(args), 1, 2)) {
+        goto exit;
+    }
+    a = PyTuple_GET_ITEM(args, 0);
+    if (PyTuple_GET_SIZE(args) < 2) {
+        goto skip_optional;
+    }
+    b = PyTuple_GET_ITEM(args, 1);
+skip_optional:
+    __clinic_kwds = Py_XNewRef(kwargs);
+    return_value = vc_kwds_new_impl(type, a, b, __clinic_kwds);
+
+exit:
+    /* Cleanup for kwds */
+    Py_XDECREF(__clinic_kwds);
+
+    return return_value;
+}
+
+static PyObject *
+vc_kwds_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *a;
+    PyObject *b = Py_None;
+    PyObject *__clinic_kwds = NULL;
+
+    assert(_PyType_CAST(type)->tp_new == vc_kwds_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_CheckPositional("VcKwds", nargs, 1, 2)) {
+        goto exit;
+    }
+    a = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    b = args[1];
+skip_optional:
+    if (kwnames != NULL) {
+        __clinic_kwds = _PyStack_AsDict(args + nargs, kwnames);
+        if (__clinic_kwds == NULL) {
+            goto exit;
+        }
+    }
+    return_value = vc_kwds_new_impl(_PyType_CAST(type), a, b, __clinic_kwds);
+
+exit:
+    /* Cleanup for kwds */
+    Py_XDECREF(__clinic_kwds);
+
+    return return_value;
+}
+/*[clinic end generated code: output=2e36c6f796a4ca09 input=a9049054013a1b77]*/

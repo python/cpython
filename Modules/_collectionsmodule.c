@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
+#include "pycore_critical_section.h" // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
+#include "pycore_dict.h"          // _PyDict_GetItemRef_KnownHash_LockHeld()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyatomic_ft_wrappers.h"
@@ -1376,8 +1377,17 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
     return (size_t) i < (size_t) limit;
 }
 
+/*[clinic input]
+@critical_section
+_collections.deque.__getitem__ as deque_item
+    deque: dequeobject
+    i: Py_ssize_t
+    /
+[clinic start generated code]*/
+
 static PyObject *
-deque_item_lock_held(dequeobject *deque, Py_ssize_t i)
+deque_item_impl(dequeobject *deque, Py_ssize_t i)
+/*[clinic end generated code: output=52e62af1427d61ef input=89f14f06b29122a1]*/
 {
     block *b;
     PyObject *item;
@@ -1413,17 +1423,6 @@ deque_item_lock_held(dequeobject *deque, Py_ssize_t i)
     }
     item = b->data[i];
     return Py_NewRef(item);
-}
-
-static PyObject *
-deque_item(PyObject *self, Py_ssize_t i)
-{
-    dequeobject *deque = dequeobject_CAST(self);
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_item_lock_held(deque, i);
-    Py_END_CRITICAL_SECTION();
-    return result;
 }
 
 static int
@@ -2527,6 +2526,66 @@ static PyType_Spec defdict_spec = {
 
 /* helper function for Counter  *********************************************/
 
+/* Fast path advantages:
+       1. Eliminate double hashing
+          (by re-using the same hash for both the get and set)
+       2. Avoid argument overhead of PyObject_CallFunctionObjArgs
+          (argument tuple creation and parsing)
+       3. Avoid indirection through a bound method object
+          (creates another argument tuple)
+       4. Avoid initial increment from zero
+          (reuse an existing one-object instead)
+*/
+static int
+_count_elements_dict_lock_held(PyDictObject *mapping, PyObject *it)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mapping);
+    PyObject *one = _PyLong_GetOne();  // borrowed reference
+
+    while (1) {
+        Py_hash_t hash;
+        PyObject *oldval;
+        int status;
+
+        PyObject *key = PyIter_Next(it);
+        if (key == NULL) {
+            return PyErr_Occurred() ? -1 : 0;
+        }
+
+        hash = _PyObject_HashDictKey(key);
+        if (hash == -1) {
+            Py_DECREF(key);
+            return -1;
+        }
+
+        int found = _PyDict_GetItemRef_KnownHash_LockHeld(mapping, key, hash,
+                                                          &oldval);
+        if (found < 0) {
+            Py_DECREF(key);
+            return -1;
+        }
+        if (found == 0) {
+            status = _PyDict_SetItem_KnownHash_LockHeld(mapping, key, one,
+                                                        hash);
+        }
+        else {
+            PyObject *newval = PyNumber_Add(oldval, one);
+            Py_DECREF(oldval);
+            if (newval == NULL) {
+                Py_DECREF(key);
+                return -1;
+            }
+            status = _PyDict_SetItem_KnownHash_LockHeld(mapping, key, newval,
+                                                        hash);
+            Py_DECREF(newval);
+        }
+        Py_DECREF(key);
+        if (status < 0) {
+            return -1;
+        }
+    }
+}
+
 /*[clinic input]
 _collections._count_elements
 
@@ -2543,7 +2602,6 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
 /*[clinic end generated code: output=7e0c1789636b3d8f input=e79fad04534a0b45]*/
 {
     PyObject *it, *oldval;
-    PyObject *newval = NULL;
     PyObject *key = NULL;
     PyObject *bound_get = NULL;
     PyObject *mapping_get;
@@ -2568,48 +2626,12 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
         mapping_setitem != NULL && mapping_setitem == dict_setitem &&
         PyDict_Check(mapping))
     {
-        while (1) {
-            /* Fast path advantages:
-                   1. Eliminate double hashing
-                      (by re-using the same hash for both the get and set)
-                   2. Avoid argument overhead of PyObject_CallFunctionObjArgs
-                      (argument tuple creation and parsing)
-                   3. Avoid indirection through a bound method object
-                      (creates another argument tuple)
-                   4. Avoid initial increment from zero
-                      (reuse an existing one-object instead)
-            */
-            Py_hash_t hash;
-
-            key = PyIter_Next(it);
-            if (key == NULL)
-                break;
-
-            hash = _PyObject_HashDictKey(key);
-            if (hash == -1) {
-                goto done;
-            }
-
-            oldval = _PyDict_GetItem_KnownHash(mapping, key, hash);
-            if (oldval == NULL) {
-                if (PyErr_Occurred())
-                    goto done;
-                if (_PyDict_SetItem_KnownHash(mapping, key, one, hash) < 0)
-                    goto done;
-            } else {
-                /* oldval is a borrowed reference.  Keep it alive across
-                   PyNumber_Add(), which can execute arbitrary user code and
-                   mutate (or even clear) the underlying dict. */
-                Py_INCREF(oldval);
-                newval = PyNumber_Add(oldval, one);
-                Py_DECREF(oldval);
-                if (newval == NULL)
-                    goto done;
-                if (_PyDict_SetItem_KnownHash(mapping, key, newval, hash) < 0)
-                    goto done;
-                Py_CLEAR(newval);
-            }
-            Py_DECREF(key);
+        int status;
+        Py_BEGIN_CRITICAL_SECTION(mapping);
+        status = _count_elements_dict_lock_held((PyDictObject *)mapping, it);
+        Py_END_CRITICAL_SECTION();
+        if (status < 0) {
+            goto done;
         }
     }
     else {
@@ -2625,6 +2647,7 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             oldval = PyObject_CallFunctionObjArgs(bound_get, key, zero, NULL);
             if (oldval == NULL)
                 break;
+            PyObject *newval;
             if (oldval == zero) {
                 newval = Py_NewRef(one);
             } else {
@@ -2633,9 +2656,10 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             Py_DECREF(oldval);
             if (newval == NULL)
                 break;
-            if (PyObject_SetItem(mapping, key, newval) < 0)
+            int status = PyObject_SetItem(mapping, key, newval);
+            Py_DECREF(newval);
+            if (status < 0)
                 break;
-            Py_CLEAR(newval);
             Py_DECREF(key);
         }
     }
@@ -2645,7 +2669,6 @@ done:
     Py_XDECREF(mapping_setitem);
     Py_DECREF(it);
     Py_XDECREF(key);
-    Py_XDECREF(newval);
     Py_XDECREF(bound_get);
     if (PyErr_Occurred())
         return NULL;

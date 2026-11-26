@@ -126,8 +126,12 @@ void* _mi_os_get_aligned_hint(size_t try_alignment, size_t size)
   if (hint == 0 || hint > MI_HINT_MAX) {   // wrap or initialize
     uintptr_t init = MI_HINT_BASE;
     #if (MI_SECURE>0 || MI_DEBUG==0)       // security: randomize start of aligned allocations unless in debug mode
-    uintptr_t r = _mi_heap_random_next(mi_prim_get_default_heap());
-    init = init + ((MI_SEGMENT_SIZE * ((r>>17) & 0xFFFFF)) % MI_HINT_AREA);  // (randomly 20 bits)*4MiB == 0 to 4TiB
+    mi_heap_t* heap = mi_prim_get_default_heap();
+    // gh-123022: default heap may not be initialized in CPython in background threads
+    if (mi_heap_is_initialized(heap)) {
+      uintptr_t r = _mi_heap_random_next(heap);
+      init = init + ((MI_SEGMENT_SIZE * ((r>>17) & 0xFFFFF)) % MI_HINT_AREA);  // (randomly 20 bits)*4MiB == 0 to 4TiB
+    }
     #endif
     uintptr_t expected = hint + size;
     mi_atomic_cas_strong_acq_rel(&aligned_base, &expected, init);
@@ -276,6 +280,7 @@ static void* mi_os_prim_alloc_aligned(size_t size, size_t alignment, bool commit
   else {
     // if not aligned, free it, overallocate, and unmap around it
     #if !MI_TRACK_ASAN
+    // CPython: downgraded from _mi_warning_message, the warning is noisy in the test suite (gh-112027)
     _mi_verbose_message("unable to allocate aligned OS memory directly, fall back to over-allocation (size: 0x%zx bytes, address: %p, alignment: 0x%zx, commit: %d)\n", size, p, alignment, commit);
     #endif
     if (p != NULL) { mi_os_prim_free(p, size, (commit ? size : 0)); }
@@ -635,8 +640,12 @@ static uint8_t* mi_os_claim_huge_pages(size_t pages, size_t* total_size) {
       // Initialize the start address after the 32TiB area
       start = ((uintptr_t)32 << 40);  // 32TiB virtual start address
       #if (MI_SECURE>0 || MI_DEBUG==0)      // security: randomize start of huge pages unless in debug mode
-      uintptr_t r = _mi_heap_random_next(mi_prim_get_default_heap());
-      start = start + ((uintptr_t)MI_HUGE_OS_PAGE_SIZE * ((r>>17) & 0x0FFF));  // (randomly 12bits)*1GiB == between 0 to 4TiB
+      mi_heap_t* heap = mi_prim_get_default_heap();
+      // gh-123022: default heap may not be initialized in CPython in background threads
+      if (mi_heap_is_initialized(heap)) {
+        uintptr_t r = _mi_heap_random_next(heap);
+        start = start + ((uintptr_t)MI_HUGE_OS_PAGE_SIZE * ((r>>17) & 0x0FFF));  // (randomly 12bits)*1GiB == between 0 to 4TiB
+      }
       #endif
     }
     end = start + size;

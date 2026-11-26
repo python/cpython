@@ -6,6 +6,7 @@ import io
 from test import support
 import unittest
 
+import xml.dom.expatbuilder
 import xml.dom.minidom
 
 from xml.dom.minidom import parse, Attr, Node, Document, Element, parseString
@@ -1274,8 +1275,54 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(len(clone.childNodes), 1)
         self.assertEqual(clone.childNodes.length, 1)
         self.assertIsNone(clone.parentNode)
-        self.assertTrue(clone.toxml(), '<doc attr="value"><foo/></doc>')
+        self.assertEqual(clone.toxml(), '<doc attr="value"><foo/></doc>')
         dom.unlink()
+
+    def create_dom1_element(self):
+        # DOM Level 1 nodes have no namespace, but their names can contain
+        # a colon.
+        doc = Document()
+        root = doc.appendChild(doc.createElement("root"))
+        root.setAttribute("xmlns", "http://xml.python.org/default")
+        root.setAttribute("xmlns:xsi", "http://xml.python.org/xsi")
+        root.setAttribute("xsi:type", "t")
+        root.setAttributeNS("http://xml.python.org/ns", "p:a", "v")
+        root.appendChild(doc.createElement("svg:rect"))
+        root.appendChild(
+            doc.createElementNS("http://xml.python.org/ns", "p:b"))
+        return doc, root
+
+    def check_clone_names(self, clone, node):
+        for name in ("nodeName", "prefix", "localName", "namespaceURI"):
+            self.assertEqual(getattr(clone, name), getattr(node, name), name)
+
+    def check_clone_element(self, clone, elem, doc):
+        self.assertIs(clone.ownerDocument, doc)
+        self.assertIsNone(clone.parentNode)
+        self.check_clone_names(clone, elem)
+        self.assertEqual(len(clone.attributes), len(elem.attributes))
+        for attr in elem.attributes.values():
+            with self.subTest(attr=attr.name):
+                a = clone.getAttributeNode(attr.name)
+                self.check_clone_names(a, attr)
+                self.assertEqual(a.value, attr.value)
+                self.assertIs(a.ownerElement, clone)
+        self.assertEqual(len(clone.childNodes), len(elem.childNodes))
+        for c, child in zip(clone.childNodes, elem.childNodes):
+            self.check_clone_names(c, child)
+
+    def testCloneElementDOM1Names(self):
+        doc, root = self.create_dom1_element()
+        self.check_clone_element(root.cloneNode(True), root, doc)
+        doc.unlink()
+
+    def testCloneElementNoNamespaces(self):
+        doc = xml.dom.expatbuilder.parseString(
+            "<a:b xmlns:a='http://xml.python.org/a' a:x='1'><a:c/></a:b>",
+            namespaces=False)
+        root = doc.documentElement
+        self.check_clone_element(root.cloneNode(True), root, doc)
+        doc.unlink()
 
     def testCloneDocumentShallow(self):
         doc = parseString("<?xml version='1.0'?>\n"
@@ -1395,6 +1442,13 @@ class MinidomTest(unittest.TestCase):
         self.assertRaises(xml.dom.NotSupportedErr, target.importNode,
                           src.doctype, 1)
 
+    def testImportElementDOM1Names(self):
+        doc1, root = self.create_dom1_element()
+        doc2 = Document()
+        self.check_clone_element(doc2.importNode(root, True), root, doc2)
+        doc1.unlink()
+        doc2.unlink()
+
     # Testing attribute clones uses a helper, and should always be deep,
     # even if the argument to cloneNode is false.
     def check_clone_attribute(self, deep, testName):
@@ -1416,6 +1470,24 @@ class MinidomTest(unittest.TestCase):
 
     def testCloneAttributeDeep(self):
         self.check_clone_attribute(1, "testCloneAttributeDeep")
+
+    def testCloneAttributeDOM1Names(self):
+        doc1 = Document()
+        attr = doc1.createAttribute("a:b")
+        attr.value = "v"
+        doc2 = Document()
+        for method, clone, owner in [
+            ("cloneNode", attr.cloneNode(True), doc1),
+            ("importNode", doc2.importNode(attr, True), doc2),
+        ]:
+            with self.subTest(method=method):
+                self.check_clone_names(clone, attr)
+                self.assertEqual(clone.value, "v")
+                self.assertTrue(clone.specified)
+                self.assertIsNone(clone.ownerElement)
+                self.assertIs(clone.ownerDocument, owner)
+        doc1.unlink()
+        doc2.unlink()
 
     def check_clone_pi(self, deep, testName):
         doc = parseString("<?target data?><doc/>")
@@ -1880,6 +1952,28 @@ class MinidomTest(unittest.TestCase):
         self.checkRenameNodeSharedConstraints(doc, attr)
         doc.unlink()
 
+    def testRenameAttributeToPrefixedName(self):
+        doc = parseString("<doc a='v' b='w'/>")
+        elem = doc.documentElement
+        attr = elem.getAttributeNode("a")
+        attr = doc.renameNode(attr, "http://xml.python.org/ns", "p:c")
+        self.assertEqual(attr.name, "p:c")
+        self.assertEqual(attr.prefix, "p")
+        self.assertEqual(attr.localName, "c")
+        self.assertEqual(attr.namespaceURI, "http://xml.python.org/ns")
+        self.assertIsNone(elem.getAttributeNode("a"))
+        self.assertIs(elem.getAttributeNodeNS("http://xml.python.org/ns", "c"),
+                      attr)
+
+        # A rejected rename leaves the attribute on its element.
+        attr = elem.getAttributeNode("b")
+        self.assertRaises(xml.dom.NamespaceErr, doc.renameNode, attr,
+                          "http://xml.python.org/ns", "xml:lang")
+        self.assertEqual(attr.name, "b")
+        self.assertIsNone(attr.namespaceURI)
+        self.assertIs(elem.getAttributeNode("b"), attr)
+        doc.unlink()
+
     def testRenameElement(self):
         doc = parseString("<doc/>")
         elem = doc.documentElement
@@ -1921,6 +2015,18 @@ class MinidomTest(unittest.TestCase):
                 and elem.ownerDocument.isSameNode(doc))
 
         self.checkRenameNodeSharedConstraints(doc, elem)
+        doc.unlink()
+
+    def testRenameElementToPrefixedName(self):
+        doc = parseString("<doc/>")
+        elem = doc.documentElement
+        elem = doc.renameNode(elem, "http://xml.python.org/ns", "p:c")
+        self.assertEqual(elem.tagName, "p:c")
+        self.assertEqual(elem.nodeName, "p:c")
+        self.assertEqual(elem.prefix, "p")
+        self.assertEqual(elem.localName, "c")
+        self.assertEqual(elem.namespaceURI, "http://xml.python.org/ns")
+        self.assertIs(doc.documentElement, elem)
         doc.unlink()
 
     def testRenameOther(self):
@@ -2143,6 +2249,42 @@ class MinidomTest(unittest.TestCase):
         self.confirm(e.isSameNode(doc.getElementById("w"))
                 and a2.isId)
 
+    def check_duplicate_id(self, doc):
+        # The first element in document order is returned, and lookups
+        # of other IDs which continue the search do not change that.
+        for i in range(2):
+            self.assertEqual(doc.getElementById("x").getAttribute("n"), "1")
+            self.assertEqual(doc.getElementById("y").getAttribute("n"), "0")
+            self.assertEqual(doc.getElementById("x").getAttribute("n"), "1")
+            self.assertIsNone(doc.getElementById("missing"))
+            self.assertEqual(doc.getElementById("x").getAttribute("n"), "1")
+            self.assertEqual(doc.getElementById("z").getAttribute("n"), "4")
+            # clear the cache and start the search again
+            doc.documentElement.setAttribute("a", str(i))
+
+    def testGetElementByIdDuplicate(self):
+        body = ("<doc>"
+                "<e id='y' n='0'/>"
+                "<f><e id='x' n='1'/></f>"
+                "<e id='x' n='2'><e id='x' n='3'/></e>"
+                "<e id='z' n='4'/>"
+                "</doc>")
+        with self.subTest("ATTLIST"):
+            doc = parseString("<!DOCTYPE doc [<!ATTLIST e id ID #IMPLIED>]>" +
+                              body)
+            self.check_duplicate_id(doc)
+        with self.subTest("setIdAttribute"):
+            doc = parseString(body)
+            for e in doc.getElementsByTagName("e"):
+                e.setIdAttribute("id")
+            self.check_duplicate_id(doc)
+        with self.subTest("ATTLIST and setIdAttribute"):
+            doc = parseString("<!DOCTYPE doc [<!ATTLIST e n CDATA #IMPLIED>]>" +
+                              body)
+            for e in doc.getElementsByTagName("e"):
+                e.setIdAttribute("id")
+            self.check_duplicate_id(doc)
+
     def assert_recursive_equal(self, doc, doc2):
         stack = [(doc, doc2)]
         while stack:
@@ -2192,10 +2334,71 @@ class MinidomTest(unittest.TestCase):
         doc2 = copy.deepcopy(doc)
         self.assert_recursive_equal(doc, doc2)
 
-    def testSerializeCommentNodeWithDoubleHyphen(self):
-        doc = create_doc_without_doctype()
-        doc.appendChild(doc.createComment("foo--bar"))
-        self.assertRaises(ValueError, doc.toxml)
+    def testWriteXMLDoctypeIdentifiers(self):
+        impl = getDOMImplementation()
+        def serialize(publicId, systemId):
+            doctype = impl.createDocumentType("r", publicId, systemId)
+            return impl.createDocument(None, "r", doctype).toxml()[22:]
+        self.assertEqual(serialize(None, None), '<!DOCTYPE r><r/>')
+        self.assertEqual(serialize(None, "s"), "<!DOCTYPE r  SYSTEM 's'><r/>")
+        self.assertEqual(serialize("p", "s"),
+                         "<!DOCTYPE r  PUBLIC 'p'  's'><r/>")
+        # the quote which is not in the literal is used
+        self.assertEqual(serialize("it's", "sys'tem"),
+                         '<!DOCTYPE r  PUBLIC "it\'s"  "sys\'tem"><r/>')
+        # a system literal cannot contain both quotes
+        with self.assertRaisesRegex(ValueError, "both quotes"):
+            serialize(None, 'a"b\'c')
+        # a public identifier can only contain PubidChars
+        for publicId in ['pub"lic', 'p>', 'p<', 'p&', 'p[', '\xe9']:
+            with self.subTest(publicId=publicId):
+                with self.assertRaisesRegex(ValueError,
+                                            "invalid public identifier"):
+                    serialize(publicId, "s")
+        # a public identifier is meaningless without a system identifier
+        with self.assertRaisesRegex(ValueError, "requires a system"):
+            serialize("p", None)
+
+    def testSerializeComment(self):
+        impl = getDOMImplementation()
+        def serialize(data):
+            doc = impl.createDocument(None, "r", None)
+            doc.documentElement.appendChild(doc.createComment(data))
+            return doc.toxml()[22:]
+        self.assertEqual(serialize("foo"), "<r><!--foo--></r>")
+        self.assertEqual(serialize(""), "<r><!----></r>")
+        self.assertEqual(serialize("-foo"), "<r><!---foo--></r>")
+        with self.assertRaisesRegex(ValueError, "'--' is not allowed"):
+            serialize("foo--bar")
+        # a trailing hyphen would be fused with the closing "-->"
+        with self.assertRaisesRegex(ValueError, "cannot end with"):
+            serialize("foo-")
+
+    def testSerializeProcessingInstruction(self):
+        impl = getDOMImplementation()
+        def serialize(target, data):
+            doc = impl.createDocument(None, "r", None)
+            pi = doc.createProcessingInstruction(target, data)
+            doc.documentElement.appendChild(pi)
+            return doc.toxml()[22:]
+        self.assertEqual(serialize("p", "a"), "<r><?p a?></r>")
+        self.assertEqual(serialize("p", ""), "<r><?p ?></r>")
+        self.assertEqual(serialize("xml-stylesheet", 'href="a"'),
+                         '<r><?xml-stylesheet href="a"?></r>')
+        # "?>" would close the processing instruction
+        with self.assertRaisesRegex(ValueError, "'\\?>' is not allowed"):
+            serialize("p", "a?>b")
+        # the target "xml" is reserved
+        for target in ["xml", "XML", "XmL"]:
+            with self.subTest(target=target):
+                with self.assertRaisesRegex(ValueError, "reserved"):
+                    serialize(target, "a")
+        # the target is a name
+        doc = impl.createDocument(None, "r", None)
+        pi = doc.createProcessingInstruction("p", "a")
+        doc.documentElement.appendChild(pi)
+        pi.target = "a b"
+        self.assertRaises(xml.dom.InvalidCharacterErr, doc.toxml)
 
 
     def testEmptyXMLNSValue(self):

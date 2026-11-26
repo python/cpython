@@ -666,6 +666,10 @@ Eager task factory
         changes to existing applications. For example,
         the application's task execution order is likely to change.
 
+        During the eager step, call graph introspection reports the creating
+        task as an awaiter, even for a plain :func:`create_task` call.
+        This relationship is removed when the eager step finishes.
+
     .. versionadded:: 3.12
 
 .. function:: create_eager_task_factory(custom_task_constructor)

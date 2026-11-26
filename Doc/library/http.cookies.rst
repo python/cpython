@@ -163,7 +163,7 @@ Morsel Objects
    that the cookie was first set in. For this to be accepted by the user agent,
    you **must** also set ``Secure``.
 
-   In addition, it is recommended to use the ``__Host`` prefix when setting
+   In addition, it is recommended to use the ``__Host-`` prefix when setting
    partitioned cookies to make them bound to the hostname and not the
    registrable domain. Read
    `CHIPS (Cookies Having Independent Partitioned State)`_
@@ -188,6 +188,11 @@ Morsel Objects
    .. versionchanged:: 3.14
       Added support for the :attr:`partitioned` attribute.
 
+   .. versionchanged:: next
+      :meth:`!__setitem__` and :meth:`!__ior__` now raise :exc:`CookieError` if
+      a value string for any attribute except :attr:`comment` contains the
+      reserved separator character ``;``. (If :attr:`comment` contains ``;``
+      it will be escaped in the output.)
 
 .. attribute:: Morsel.value
 
@@ -253,6 +258,10 @@ Morsel Objects
    .. versionchanged:: 3.5
       an error is raised for invalid keys.
 
+   .. versionchanged:: next
+      :exc:`CookieError` is now raised if a value string for any attribute
+      except :attr:`comment` contains the reserved separator character ``;``.
+      (If :attr:`comment` contains ``;`` it will be escaped in the output.)
 
 .. method:: Morsel.copy(value)
 
@@ -267,6 +276,10 @@ Morsel Objects
    Raise an error if key is not a valid :rfc:`2109` attribute, otherwise
    behave the same as :meth:`dict.setdefault`.
 
+   .. versionchanged:: next
+      :exc:`CookieError` is now raised if the value string for any attribute
+      except :attr:`comment` contains the reserved separator character ``;``.
+      (If :attr:`comment` contains ``;`` it will be escaped in the output.)
 
 .. _cookie-example:
 

@@ -148,7 +148,7 @@ The module defines three convenience functions and a public class:
       Automatically determine how many times to call :meth:`.timeit`.
 
       This is a convenience function that calls :meth:`.timeit` repeatedly
-      so that the total time >= *Timer.target_time* seconds, returning the eventual
+      so that the total time >= *target_time* seconds, returning the eventual
       (number of loops, time taken for that number of loops). It calls
       :meth:`.timeit` with increasing numbers from the sequence 1, 2, 5,
       10, 20, 50, ... until the time taken is at least *target_time* seconds.

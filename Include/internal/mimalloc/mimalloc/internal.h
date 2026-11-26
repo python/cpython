@@ -102,6 +102,8 @@ terms of the MIT license. A copy of the license can be found in the file
 #define mi_decl_externc
 #endif
 
+// CPython: upstream defines __wasi__ on Emscripten here. It is removed so that
+// CPython code can distinguish the two platforms (gh-158628).
 
 // --------------------------------------------------------------------------
 // Internal functions
