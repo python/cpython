@@ -70,13 +70,10 @@ _csv_Dialect___replace__(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!_PyArg_NoPositional("__replace__", args)) {
         goto exit;
     }
-    changes = Py_XNewRef(kwargs);
+    changes = kwargs;
     return_value = _csv_Dialect___replace___impl((DialectObj *)self, changes);
 
 exit:
-    /* Cleanup for changes */
-    Py_XDECREF(changes);
-
     return return_value;
 }
 
@@ -134,13 +131,10 @@ _csv_reader(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     dialect = PyTuple_GET_ITEM(args, 1);
 skip_optional:
-    fmtparams = Py_XNewRef(kwargs);
+    fmtparams = kwargs;
     return_value = _csv_reader_impl(module, iterable, dialect, fmtparams);
 
 exit:
-    /* Cleanup for fmtparams */
-    Py_XDECREF(fmtparams);
-
     return return_value;
 }
 
@@ -179,13 +173,10 @@ _csv_writer(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     dialect = PyTuple_GET_ITEM(args, 1);
 skip_optional:
-    fmtparams = Py_XNewRef(kwargs);
+    fmtparams = kwargs;
     return_value = _csv_writer_impl(module, output_file, dialect, fmtparams);
 
 exit:
-    /* Cleanup for fmtparams */
-    Py_XDECREF(fmtparams);
-
     return return_value;
 }
 
@@ -242,13 +233,10 @@ _csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     dialect_obj = PyTuple_GET_ITEM(args, 1);
 skip_optional:
-    fmtparams = Py_XNewRef(kwargs);
+    fmtparams = kwargs;
     return_value = _csv_register_dialect_impl(module, name_obj, dialect_obj, fmtparams);
 
 exit:
-    /* Cleanup for fmtparams */
-    Py_XDECREF(fmtparams);
-
     return return_value;
 }
 
@@ -433,4 +421,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=30eac1c04ff9d38a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0e0a56ac4b247b9d input=a9049054013a1b77]*/

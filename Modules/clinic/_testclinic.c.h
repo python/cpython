@@ -4578,11 +4578,8 @@ _testclinic_TestClass_varpos_no_fastcall(PyObject *type, PyObject *args)
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    __clinic_args = Py_NewRef(args);
+    __clinic_args = args;
     return_value = _testclinic_TestClass_varpos_no_fastcall_impl((PyTypeObject *)type, __clinic_args);
-
-    /* Cleanup for args */
-    Py_XDECREF(__clinic_args);
 
     return return_value;
 }
@@ -5378,4 +5375,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=2e36c6f796a4ca09 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=42857d626df6e2ee input=a9049054013a1b77]*/

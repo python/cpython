@@ -356,14 +356,7 @@ class ParseArgsCodeGen:
             self.codegen.add_include('pycore_critical_section.h',
                                      'Py_BEGIN_CRITICAL_SECTION()')
 
-        # Use fastcall if not disabled, except if in a __new__ or
-        # __init__ method, or if there is a **kwargs parameter.
-        if self.func.disable_fastcall:
-            self.fastcall = False
-        elif self.var_keyword is not None:
-            self.fastcall = False
-        else:
-            self.fastcall = not self.is_new_or_init()
+        self.fastcall = self.func.fastcall
 
         self.pos_only = 0
         self.min_pos = 0

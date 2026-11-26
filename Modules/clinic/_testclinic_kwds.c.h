@@ -33,13 +33,10 @@ lone_kwds(PyObject *module, PyObject *args, PyObject *kwargs)
     if (!_PyArg_NoPositional("lone_kwds", args)) {
         goto exit;
     }
-    __clinic_kwds = Py_XNewRef(kwargs);
+    __clinic_kwds = kwargs;
     return_value = lone_kwds_impl(module, __clinic_kwds);
 
 exit:
-    /* Cleanup for kwds */
-    Py_XDECREF(__clinic_kwds);
-
     return return_value;
 }
 
@@ -68,13 +65,10 @@ kwds_with_pos_only(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     a = PyTuple_GET_ITEM(args, 0);
     b = PyTuple_GET_ITEM(args, 1);
-    __clinic_kwds = Py_XNewRef(kwargs);
+    __clinic_kwds = kwargs;
     return_value = kwds_with_pos_only_impl(module, a, b, __clinic_kwds);
 
 exit:
-    /* Cleanup for kwds */
-    Py_XDECREF(__clinic_kwds);
-
     return return_value;
 }
 
@@ -107,13 +101,10 @@ kwds_with_optional_pos_only(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     b = PyTuple_GET_ITEM(args, 1);
 skip_optional:
-    __clinic_kwds = Py_XNewRef(kwargs);
+    __clinic_kwds = kwargs;
     return_value = kwds_with_optional_pos_only_impl(module, a, b, __clinic_kwds);
 
 exit:
-    /* Cleanup for kwds */
-    Py_XDECREF(__clinic_kwds);
-
     return return_value;
 }
 
@@ -135,14 +126,9 @@ kwds_with_stararg(PyObject *module, PyObject *args, PyObject *kwargs)
     PyObject *__clinic_args = NULL;
     PyObject *__clinic_kwds = NULL;
 
-    __clinic_args = Py_NewRef(args);
-    __clinic_kwds = Py_XNewRef(kwargs);
+    __clinic_args = args;
+    __clinic_kwds = kwargs;
     return_value = kwds_with_stararg_impl(module, __clinic_args, __clinic_kwds);
-
-    /* Cleanup for args */
-    Py_XDECREF(__clinic_args);
-    /* Cleanup for kwds */
-    Py_XDECREF(__clinic_kwds);
 
     return return_value;
 }
@@ -178,15 +164,13 @@ kwds_with_pos_only_and_stararg(PyObject *module, PyObject *args, PyObject *kwarg
     if (!__clinic_args) {
         goto exit;
     }
-    __clinic_kwds = Py_XNewRef(kwargs);
+    __clinic_kwds = kwargs;
     return_value = kwds_with_pos_only_and_stararg_impl(module, a, b, __clinic_args, __clinic_kwds);
 
 exit:
     /* Cleanup for args */
     Py_XDECREF(__clinic_args);
-    /* Cleanup for kwds */
-    Py_XDECREF(__clinic_kwds);
 
     return return_value;
 }
-/*[clinic end generated code: output=ad46500147228faf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=43ce1e8574f2a904 input=a9049054013a1b77]*/

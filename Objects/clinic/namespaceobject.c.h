@@ -25,13 +25,10 @@ namespace___replace__(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!_PyArg_NoPositional("__replace__", args)) {
         goto exit;
     }
-    changes = Py_XNewRef(kwargs);
+    changes = kwargs;
     return_value = namespace___replace___impl((_PyNamespaceObject *)self, changes);
 
 exit:
-    /* Cleanup for changes */
-    Py_XDECREF(changes);
-
     return return_value;
 }
-/*[clinic end generated code: output=1b1c015f14360d64 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9153c5071690915b input=a9049054013a1b77]*/

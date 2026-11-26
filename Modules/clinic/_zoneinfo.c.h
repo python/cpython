@@ -459,13 +459,10 @@ zoneinfo_ZoneInfo___init_subclass__(PyObject *type, PyObject *args, PyObject *kw
     if (!_PyArg_NoPositional("__init_subclass__", args)) {
         goto exit;
     }
-    __clinic_kwargs = Py_XNewRef(kwargs);
+    __clinic_kwargs = kwargs;
     return_value = zoneinfo_ZoneInfo___init_subclass___impl((PyTypeObject *)type, __clinic_kwargs);
 
 exit:
-    /* Cleanup for kwargs */
-    Py_XDECREF(__clinic_kwargs);
-
     return return_value;
 }
-/*[clinic end generated code: output=e64d1d5b38e0c6e5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a1907a0dd0f159b input=a9049054013a1b77]*/
