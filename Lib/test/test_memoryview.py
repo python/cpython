@@ -91,6 +91,13 @@ class AbstractMemoryTests:
             m = self._view(b)
             self.assertEqual(list(m), [m[i] for i in range(len(m))])
 
+    def test_released_empty_iterator(self):
+        for tp in self._types:
+            m = self._view(tp(b""))
+            iterator = iter(m)
+            m.release()
+            self.assertRaises(StopIteration, next, iterator)
+
     def test_count(self):
         for tp in self._types:
             b = tp(self._source)
@@ -554,6 +561,61 @@ class BaseMemorySliceSliceTests:
 class BytesMemoryviewTest(unittest.TestCase,
     BaseMemoryviewTests, BaseBytesMemoryTests):
 
+    def test_comparison_release_during_buffer_callback(self):
+        # Releasing the view from inside the other operand's __buffer__
+        # succeeds, but the buffer stays pinned until the comparison ends:
+        # the exporter cannot be resized under the running comparison.
+        data = bytearray(b'abc')
+        view = memoryview(data)
+        assert_raises = self.assertRaises
+
+        class Other:
+            def __buffer__(self, flags):
+                view.release()
+                with assert_raises(BufferError):
+                    data.clear()
+                return memoryview(data)
+
+        view == Other()
+        with self.assertRaisesRegex(ValueError, "released"):
+            view.tobytes()
+        data.clear()
+
+    def test_comparison_releases_buffer_after_access(self):
+        # __release_buffer__ releasing the very view being compared.
+        data = bytearray(b'abc')
+        view = memoryview(data)
+
+        class Other:
+            def __buffer__(self, flags):
+                return view
+
+            def __release_buffer__(self, buffer):
+                buffer.release()
+
+        with support.catch_unraisable_exception() as cm:
+            self.assertTrue(view == Other())
+            self.assertIsNone(cm.unraisable)
+        data.clear()
+
+    def test_assignment_releases_buffer_after_access(self):
+        # __release_buffer__ releasing the very view being assigned to.
+        data = bytearray(b'abc')
+        view = memoryview(data)
+
+        class Other:
+            def __buffer__(self, flags):
+                return view
+
+            def __release_buffer__(self, buffer):
+                buffer.release()
+
+        with support.catch_unraisable_exception() as cm:
+            view[:] = Other()
+            self.assertIsNone(cm.unraisable)
+        self.assertEqual(data, b'abc')
+        data.clear()
+
     def test_constructor(self):
         for tp in self._types:
             ob = tp(self._source)
@@ -689,6 +751,77 @@ class ArrayMemorySliceSliceTest(unittest.TestCase,
 
 
 class OtherTest(unittest.TestCase):
+    def test_gc_cleared_view(self):
+        _testcapi = import_helper.import_module("_testcapi")
+
+        view = memoryview(bytearray(b"abc"))
+        _testcapi.clear_memoryview(view)
+        with self.assertRaisesRegex(ValueError, "released"):
+            view.tobytes()
+
+        # Clearing the view while an operation is in progress must not
+        # free the buffer under that operation, nor crash when it ends.
+        data = bytearray(b"abc")
+        view = memoryview(data)
+
+        class Other:
+            def __buffer__(self, flags):
+                _testcapi.clear_memoryview(view)
+                return memoryview(data)
+
+        self.assertTrue(view == Other())
+        with self.assertRaisesRegex(ValueError, "released"):
+            view.tobytes()
+        data.clear()
+
+    def test_cast_order(self):
+        # gh-78959: cast(order=...) selects the result memory layout.
+        b = bytearray(range(6))
+        mv = memoryview(b)
+
+        c = mv.cast('B', shape=(3, 2))                # default: C-contiguous
+        self.assertTrue(c.c_contiguous)
+        self.assertFalse(c.f_contiguous)
+        self.assertEqual(c.strides, (2, 1))
+        self.assertEqual(c.tolist(), [[0, 1], [2, 3], [4, 5]])
+
+        f = mv.cast('B', shape=(3, 2), order='F')     # Fortran-contiguous
+        self.assertTrue(f.f_contiguous)
+        self.assertFalse(f.c_contiguous)
+        self.assertEqual(f.strides, (1, 3))
+        self.assertEqual(f.tolist(), [[0, 3], [1, 4], [2, 5]])
+        # zero-copy view: the flat physical bytes are unchanged
+        self.assertEqual(f.tobytes('A'), bytes(range(6)))
+
+        # explicit 'C' is the default
+        self.assertTrue(mv.cast('B', shape=(3, 2), order='C').c_contiguous)
+
+        # a wider format works too (strides scale by itemsize)
+        m = memoryview(struct.pack('6i', *range(6))).cast('i', shape=(3, 2),
+                                                          order='F')
+        self.assertTrue(m.f_contiguous)
+        self.assertEqual(m.strides, (4, 12))
+        self.assertEqual(m.tolist(), [[0, 3], [1, 4], [2, 5]])
+
+        # more than two dimensions
+        m3 = memoryview(bytearray(range(24))).cast('B', shape=(2, 3, 4),
+                                                   order='F')
+        self.assertTrue(m3.f_contiguous)
+        self.assertEqual(m3.strides, (1, 2, 6))
+
+        # order is keyword-only and only the strings 'C'/'F' are accepted
+        self.assertRaises(TypeError, mv.cast, 'B', (3, 2), 'F')
+        self.assertRaises(TypeError, mv.cast, 'B', shape=(3, 2), order=None)
+        self.assertRaises(ValueError, mv.cast, 'B', shape=(3, 2), order='X')
+        self.assertRaises(ValueError, mv.cast, 'B', shape=(3, 2), order='A')
+
+    def test_cast_order_writable(self):
+        # An F-contiguous cast shares memory with the original buffer.
+        b = bytearray(6)
+        f = memoryview(b).cast('B', shape=(3, 2), order='F')
+        f[0, 1] = 9                    # column-major: physical offset 3
+        self.assertEqual(b[3], 9)
+
     def test_ctypes_cast(self):
         # Issue 15944: Allow all source formats when casting to bytes.
         ctypes = import_helper.import_module("ctypes")
@@ -717,8 +850,8 @@ class OtherTest(unittest.TestCase):
         self.assertListEqual(half_view.tolist(), float_view.tolist())
 
     def test_complex_types(self):
-        float_complex_data = struct.pack('FFF', 0.0, -1.5j, 1+2j)
-        double_complex_data = struct.pack('DDD', 0.0, -1.5j, 1+2j)
+        float_complex_data = struct.pack('ZfZfZf', 0.0, -1.5j, 1+2j)
+        double_complex_data = struct.pack('ZdZdZd', 0.0, -1.5j, 1+2j)
         float_complex_view = memoryview(float_complex_data).cast('Zf')
         double_complex_view = memoryview(double_complex_data).cast('Zd')
         self.assertEqual(float_complex_view.nbytes * 2, double_complex_view.nbytes)
@@ -882,6 +1015,24 @@ class OtherTest(unittest.TestCase):
         del pb, o
         gc.collect()
         self.assertIsNone(wr())
+
+    def test_overflows_in_floats(self):
+        half_data = array.array('e', [0.0])
+        float_data = array.array('f', [0.0])
+        complex_data = array.array('Zf', [123+321j])
+        half_view = memoryview(half_data)
+        float_view = memoryview(float_data)
+        complex_view = memoryview(complex_data)
+        with self.assertRaises(ValueError):
+            half_view[0] = 123456.0
+        with self.assertRaises(ValueError):
+            float_view[0] = 1e300
+        with self.assertRaises(ValueError):
+            complex_view[0] = 1e300
+        self.assertEqual(complex_view[0], 123+321j)
+        with self.assertRaises(ValueError):
+            complex_view[0] = 1e300j
+        self.assertEqual(complex_view[0], 123+321j)
 
 
 @threading_helper.requires_working_threading()

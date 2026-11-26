@@ -404,6 +404,119 @@ class CAPITest(unittest.TestCase):
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
 
+    def test_sequence_repeat_subtypes(self):
+        # List subtype:
+        class CustomList(list): ...
+
+        sequence = CustomList(['a', 'b'])
+        repeated_sequence = _testcapi.sequence_repeat(sequence, 3)
+        self.assertIs(type(repeated_sequence), list)
+        self.assertEqual(repeated_sequence, sequence * 3)
+        self.assertEqual(sequence, CustomList(['a', 'b']))
+
+        # Tuple subtype:
+        class CustomTuple(tuple): ...
+
+        sequence = CustomTuple(('a', 'b'))
+        repeated_sequence = _testcapi.sequence_repeat(sequence, 3)
+        self.assertIs(type(repeated_sequence), tuple)
+        self.assertEqual(repeated_sequence, sequence * 3)
+        self.assertEqual(sequence, CustomTuple(('a', 'b')))
+
+        # String subtype:
+        class CustomStr(str): ...
+
+        sequence = CustomStr('abc')
+        repeated_sequence = _testcapi.sequence_repeat(sequence, 2)
+        self.assertIs(type(repeated_sequence), str)
+        self.assertEqual(repeated_sequence, sequence * 2)
+        self.assertEqual(sequence, CustomStr('abc'))
+
+    def test_sequence_repeat_numeric_fallback(self):
+        # PySequence_Repeat falls back to nb_multiply (__mul__) when the
+        # object looks like a sequence but has no sq_repeat slot.
+        class CustomSequenceWithMul:
+            def __getitem__(self, index):
+                return index  # so that it looks like a sequence
+
+            def __mul__(self, count):
+                return f'repeated {count} times'
+
+        sequence = CustomSequenceWithMul()
+        self.assertEqual(_testcapi.sequence_repeat(sequence, 3),
+                         'repeated 3 times')
+
+    def test_sequence_repeat_errors(self):
+        # Corner case, custom subtype returns `NotImplemented`:
+        class CustomListWithNI(list):
+            def __mul__(self, other):
+                return NotImplemented
+
+        sequence = CustomListWithNI(['a', 'b'])
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_repeat(sequence, 3)
+        self.assertEqual(sequence, CustomListWithNI(['a', 'b']))  # not changed
+
+        # Non-sequences do not work (even with `__mul__`):
+        class CustomTypeWithMul:
+            def __mul__(self, other):
+                return 5  # won't be called
+
+        not_sequence = CustomTypeWithMul()
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_repeat(not_sequence, 1)
+
+    def test_sequence_inplace_repeat_subtypes(self):
+        # List subtype:
+        class CustomList(list): ...
+
+        sequence = CustomList(['a', 'b'])
+        repeated_sequence = _testcapi.sequence_inplace_repeat(sequence, 3)
+        self.assertIs(repeated_sequence, sequence)
+        self.assertEqual(repeated_sequence, ['a', 'b', 'a', 'b', 'a', 'b'])
+
+        # Tuple subtype:
+        class CustomTuple(tuple): ...
+
+        sequence = CustomTuple(('a', 'b'))
+        repeated_sequence = _testcapi.sequence_inplace_repeat(sequence, 3)
+        self.assertIs(type(repeated_sequence), tuple)
+        self.assertEqual(repeated_sequence, sequence * 3)
+        self.assertEqual(sequence, CustomTuple(('a', 'b')))
+
+        # String subtype:
+        class CustomStr(str): ...
+
+        sequence = CustomStr('abc')
+        repeated_sequence = _testcapi.sequence_inplace_repeat(sequence, 2)
+        self.assertIs(type(repeated_sequence), str)
+        self.assertEqual(repeated_sequence, sequence * 2)
+        self.assertEqual(sequence, CustomStr('abc'))
+
+    def test_sequence_inplace_repeat_errors(self):
+        # Corner case, custom subtype returns `NotImplemented`:
+        class CustomListWithNI(list):
+            def __mul__(self, other):
+                return NotImplemented
+            def __imul__(self, other):
+                return NotImplemented
+
+        sequence = CustomListWithNI(['a', 'b'])
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_inplace_repeat(sequence, 3)
+        self.assertEqual(sequence, CustomListWithNI(['a', 'b']))  # not changed
+
+        # Non-sequences do not work (even with `__mul__` and `__imul__`):
+        class CustomTypeWithMul:
+            def __mul__(self, other):
+                return 0
+            def __imul__(self, other):
+                return 1  # won't be called
+
+        not_sequence = CustomTypeWithMul()
+        with self.assertRaises(TypeError):
+            _testcapi.sequence_inplace_repeat(not_sequence, 1)
+
     def test_trashcan_subclass(self):
         # bpo-35983: Check that the trashcan mechanism for "list" is NOT
         # activated when its tp_dealloc is being called by a subclass
@@ -2800,6 +2913,80 @@ class TestInternalFrameApi(unittest.TestCase):
         firstline = self.func.__code__.co_firstlineno
         self.assertEqual(line, firstline + 2)
 
+    # get_frame_locals() returns the caller frame's locals as a name -> value
+    # dict via PyUnstable_InterpreterFrame_GetLocal (one strong reference per
+    # localsplus index).
+    def helper_plain(self, a, b):
+        c = a + b
+        return _testinternalcapi.get_frame_locals()
+
+    def test_get_local_plain(self):
+        d = self.helper_plain(3, 4)
+        self.assertEqual(d, {'a': 3, 'b': 4, 'c': 7, 'self': self})
+
+    def test_get_local_cell(self):
+        # y is a cell variable of this frame because inner closes over it.
+        y = 100
+
+        def inner():
+            return y
+
+        d = _testinternalcapi.get_frame_locals()
+        self.assertEqual(d['y'], 100)
+        self.assertIs(d['inner'], inner)
+
+    def test_get_local_free(self):
+        # z is a free variable of inner, read from the closure.
+        z = 7
+
+        def inner():
+            _ = z
+            return _testinternalcapi.get_frame_locals()
+
+        d = inner()
+        self.assertEqual(d['z'], 7)
+
+    def test_get_local_index_out_of_range(self):
+        def f(index):
+            return _testinternalcapi.get_frame_local(index)
+
+        n = len(_testinternalcapi.code_get_localsplus_names(f.__code__))
+        for index in (-1, n, n + 1):
+            with self.subTest(index=index):
+                with self.assertRaises(IndexError):
+                    f(index)
+
+    def test_get_local_unset(self):
+        def f():
+            if False:
+                unset = 1
+            names = _testinternalcapi.code_get_localsplus_names(f.__code__)
+            return _testinternalcapi.get_frame_local(names.index('unset'))
+
+        self.assertEqual(f(), (0, None))
+
+    def test_get_local_set(self):
+        x = 5
+        code = self.test_get_local_set.__code__
+        names = _testinternalcapi.code_get_localsplus_names(code)
+        index = names.index('x')
+        self.assertEqual(_testinternalcapi.get_frame_local(index), (1, 5))
+
+    def test_code_get_localsplus_names(self):
+        def outer(a, b):
+            c = a
+            def inner():
+                return a, d
+            d = b
+            return inner
+
+        names = _testinternalcapi.code_get_localsplus_names(outer.__code__)
+        self.assertIsInstance(names, tuple)
+        self.assertCountEqual(names, ('a', 'b', 'c', 'd', 'inner'))
+        inner = outer(1, 2)
+        names = _testinternalcapi.code_get_localsplus_names(inner.__code__)
+        self.assertCountEqual(names, ('a', 'd'))
+
 
 SUFFICIENT_TO_DEOPT_AND_SPECIALIZE = 100
 
@@ -3043,22 +3230,37 @@ class TestVersions(unittest.TestCase):
 
     def test_pack_full_version_ctypes(self):
         ctypes = import_helper.import_module('ctypes')
-        ctypes_func = ctypes.pythonapi.Py_PACK_FULL_VERSION
-        ctypes_func.restype = ctypes.c_uint32
-        ctypes_func.argtypes = [ctypes.c_int] * 5
+        import ctypes.util  # noqa: F811
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_PACK_FULL_VERSION(
+            x: ctypes.c_int,
+            y: ctypes.c_int,
+            z: ctypes.c_int,
+            level: ctypes.c_int,
+            serial: ctypes.c_int,
+        ) -> ctypes.c_uint32:
+            pass
+
         for *args, expected in self.full_cases:
             with self.subTest(hexversion=hex(expected)):
-                result = ctypes_func(*args)
+                result = Py_PACK_FULL_VERSION(*args)
                 self.assertEqual(result, expected)
 
     def test_pack_version_ctypes(self):
         ctypes = import_helper.import_module('ctypes')
-        ctypes_func = ctypes.pythonapi.Py_PACK_VERSION
-        ctypes_func.restype = ctypes.c_uint32
-        ctypes_func.argtypes = [ctypes.c_int] * 2
+        import ctypes.util  # noqa: F811
+
+        @ctypes.util.wrap_dll_function(ctypes.pythonapi)
+        def Py_PACK_VERSION(
+            x: ctypes.c_int,
+            y: ctypes.c_int,
+        ) -> ctypes.c_uint32:
+            pass
+
         for *args, expected in self.xy_cases:
             with self.subTest(hexversion=hex(expected)):
-                result = ctypes_func(*args)
+                result = Py_PACK_VERSION(*args)
                 self.assertEqual(result, expected)
 
 
@@ -3077,6 +3279,52 @@ class TestCEval(unittest.TestCase):
         lines = out.decode("utf-8").splitlines()
         self.assertEqual(lines.count("CREATE list"), 2)
         self.assertEqual(lines.count("DESTROY list"), 2)
+
+
+@unittest.skipUnless(support.Py_DEBUG, 'need Py_DEBUG')
+class TestCheckSingleton(unittest.TestCase):
+    # Test that _PyStaticObjects_CheckAll() detects memory corruptions in
+    # singleton objects at Python exit.
+
+    def check(self, code):
+        code = f"""if 1:
+            import _testcapi
+            from test import support
+            support.SuppressCrashReport().__enter__()
+            {code}
+        """
+        proc = assert_python_failure("-c", code)
+        return proc.err
+
+    def test_corrupt_bytes(self):
+        stderr = self.check("_testcapi.corrupt_bytes(b'a', b'#')")
+
+        self.assertIn((b'_PyStaticObject_CheckBytesSingleton: '
+                       b'Assertion "str[0] == ch" failed'), stderr)
+        self.assertIn(b"object repr     : b'#'", stderr)
+
+    def test_corrupt_unicode(self):
+        stderr = self.check("_testcapi.corrupt_unicode('a', '#')")
+
+        self.assertIn((b'_PyStaticObject_CheckUnicode: '
+                       b'Assertion "memcmp(data, str, length) == 0" failed'), stderr)
+        self.assertIn(b"object repr     : '#'", stderr)
+
+    def test_corrupt_bool(self):
+        stderr = self.check("_testcapi.corrupt_long(True, 0)")
+
+        self.assertIn((b'_PyStaticObject_CheckLongSingleton: '
+                       b'Assertion "compact == value" failed'),
+                      stderr)
+        self.assertIn(b"object repr     : True", stderr)
+
+    def test_corrupt_long(self):
+        stderr = self.check("_testcapi.corrupt_long(5, 42)")
+
+        self.assertIn((b'_PyStaticObject_CheckLongSingleton: '
+                       b'Assertion "compact == value" failed'),
+                      stderr)
+        self.assertIn(b"object repr     : 42", stderr)
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ import array
 import re
 import sys
 from test.support import bigmemtest, _1G, _4G, check_impl_detail
-from test.support.hypothesis_helper import hypothesis
+from test.support.hypothesis_helper import hypothesis, mark_hypothesis
 
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"
@@ -420,6 +420,7 @@ class BinASCIITest(unittest.TestCase):
     @hypothesis.example(b'\x00')
     @hypothesis.example(b'\xff\xff')
     @hypothesis.example(b'abc')
+    @mark_hypothesis
     def test_base64_canonical_roundtrip(self, payload):
         # The encoder must always produce canonical output.
         encoded = binascii.b2a_base64(payload, newline=False)
@@ -866,6 +867,7 @@ class BinASCIITest(unittest.TestCase):
     @hypothesis.example(b'\x00')
     @hypothesis.example(b'\xff\xff')
     @hypothesis.example(b'abc')
+    @mark_hypothesis
     def test_base85_canonical_roundtrip(self, payload):
         encoded = binascii.b2a_base85(payload)
         decoded = binascii.a2b_base85(encoded, canonical=True)
@@ -875,6 +877,7 @@ class BinASCIITest(unittest.TestCase):
     @hypothesis.example(b'\x00')
     @hypothesis.example(b'\xff')
     @hypothesis.example(b'ab\x00')
+    @mark_hypothesis
     def test_base85_canonical_unique(self, payload):
         # For a partial group, sweeping all 85 last-digit values should
         # yield exactly one encoding that both decodes to the original
@@ -953,6 +956,7 @@ class BinASCIITest(unittest.TestCase):
     @hypothesis.example(b'\x00\x00\x00\x00')  # triggers z abbreviation
     @hypothesis.example(b'\xff\xff')
     @hypothesis.example(b'abc')
+    @mark_hypothesis
     def test_ascii85_canonical_roundtrip(self, payload):
         encoded = binascii.b2a_ascii85(payload)
         decoded = binascii.a2b_ascii85(encoded, canonical=True)
@@ -962,6 +966,7 @@ class BinASCIITest(unittest.TestCase):
     @hypothesis.example(b'\x00')
     @hypothesis.example(b'\xff')
     @hypothesis.example(b'ab\x00')
+    @mark_hypothesis
     def test_ascii85_canonical_unique(self, payload):
         hypothesis.assume(len(payload) % 4 != 0)
         canonical_enc = binascii.b2a_ascii85(payload)
@@ -1189,6 +1194,7 @@ class BinASCIITest(unittest.TestCase):
     @hypothesis.example(b'\x00')
     @hypothesis.example(b'\xff\xff')
     @hypothesis.example(b'abc')
+    @mark_hypothesis
     def test_base32_canonical_roundtrip(self, payload):
         encoded = binascii.b2a_base32(payload)
         decoded = binascii.a2b_base32(encoded, canonical=True)
@@ -1331,6 +1337,7 @@ class BinASCIITest(unittest.TestCase):
         binary=hypothesis.strategies.binary(max_size=45),
         backtick=hypothesis.strategies.booleans(),
     )
+    @mark_hypothesis
     def test_b2a_roundtrip(self, binary, backtick):
         converted = binascii.b2a_uu(self.type2test(binary), backtick=backtick)
         restored = binascii.a2b_uu(self.type2test(converted))
@@ -1374,6 +1381,7 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(binascii.unhexlify(self.type2test(t)), u)
 
     @hypothesis.given(binary=hypothesis.strategies.binary())
+    @mark_hypothesis
     def test_hex_roundtrip(self, binary):
         converted = binascii.hexlify(self.type2test(binary))
         restored = binascii.unhexlify(self.type2test(converted))
@@ -1418,6 +1426,10 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(a2b_qp(type2test(b"=")), b"")
         self.assertEqual(a2b_qp(type2test(b"= ")), b"= ")
         self.assertEqual(a2b_qp(type2test(b"==")), b"=")
+        # A stray "=" is left in place and the next character is rescanned,
+        # so "=41" after it is decoded as a fresh escape (gh-62222).
+        self.assertEqual(a2b_qp(type2test(b"==41")), b"=A")
+        self.assertEqual(a2b_qp(type2test(b"==g")), b"==g")
         self.assertEqual(a2b_qp(type2test(b"=\nAB")), b"AB")
         self.assertEqual(a2b_qp(type2test(b"=\r\nAB")), b"AB")
         self.assertEqual(a2b_qp(type2test(b"=\rAB")), b"")  # ?
@@ -1430,6 +1442,21 @@ class BinASCIITest(unittest.TestCase):
 
         self.assertEqual(a2b_qp(type2test(b'_')), b'_')
         self.assertEqual(a2b_qp(type2test(b'_'), header=True), b' ')
+
+        # strip_ws strips whitespace at the end of a line (RFC 2045), but
+        # leaves whitespace that was encoded (=20/=09) untouched. By default
+        # trailing whitespace is kept.
+        self.assertEqual(a2b_qp(type2test(b"foo   \n")), b"foo   \n")
+        self.assertEqual(a2b_qp(type2test(b"foo   \n"), strip_ws=True), b"foo\n")
+        self.assertEqual(a2b_qp(type2test(b"foo   "), strip_ws=True), b"foo")
+        self.assertEqual(a2b_qp(type2test(b"a b \nc\n"), strip_ws=True), b"a b\nc\n")
+        self.assertEqual(a2b_qp(type2test(b"a=20  \n"), strip_ws=True), b"a \n")
+        self.assertEqual(a2b_qp(type2test(b"= \n"), strip_ws=True), b"")
+        self.assertEqual(a2b_qp(type2test(b"foo =\n"), strip_ws=True), b"foo ")
+        self.assertEqual(a2b_qp(type2test(b"foo  \r\n"), strip_ws=True), b"foo\r\n")
+        # A bare CR is not a line separator (RFC 2045: CR occurs only in CRLF),
+        # so whitespace before it is kept.
+        self.assertEqual(a2b_qp(type2test(b"foo \rbar"), strip_ws=True), b"foo \rbar")
 
         self.assertRaises(TypeError, b2a_qp, foo="bar")
         self.assertEqual(a2b_qp(type2test(b"=00\r\n=00")), b"\x00\r\n\x00")
@@ -1508,6 +1535,7 @@ class BinASCIITest(unittest.TestCase):
         istext=hypothesis.strategies.booleans(),
         header=hypothesis.strategies.booleans(),
     )
+    @mark_hypothesis
     def test_b2a_qp_a2b_qp_round_trip(self, binary, quotetabs, istext, header):
         converted = binascii.b2a_qp(
             self.type2test(binary),
@@ -1605,6 +1633,7 @@ class BinASCIITest(unittest.TestCase):
         binary=hypothesis.strategies.binary(),
         newline=hypothesis.strategies.booleans(),
     )
+    @mark_hypothesis
     def test_base64_roundtrip(self, binary, newline):
         converted = binascii.b2a_base64(self.type2test(binary), newline=newline)
         restored = binascii.a2b_base64(self.type2test(converted))

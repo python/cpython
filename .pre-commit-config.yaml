@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 3b3f7c3f57fe9925356faf5fe6230835138be230  # frozen: v0.15.17
+    rev: c0f278f1254ccc8fb09676bcdb8d847e7db493e5  # frozen: v0.17.4
     hooks:
       - id: ruff-check
         name: Run Ruff (lint) on Platforms/Apple/
@@ -70,7 +70,7 @@ repos:
         files: ^Tools/wasm/
 
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: ea488cebbfd88a5f50b8bd95d5c829d0bb76feb8  # frozen: 26.1.0
+    rev: a5439e9af2ff9371297bb1a76a01b8ad17989b88  # frozen: 26.10.1
     hooks:
       - id: black
         name: Run Black on Tools/jit/
@@ -104,19 +104,19 @@ repos:
         files: '^\.github/CODEOWNERS|\.(gram)$'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 9f48a48aa91a6040d749ad68ec70907d907a5a7f  # frozen: 0.37.0
+    rev: a76b92851fc9eede9f9bc4073eb55202f34eb0df  # frozen: 0.39.0
     hooks:
       - id: check-dependabot
       - id: check-github-workflows
       - id: check-readthedocs
 
   - repo: https://github.com/rhysd/actionlint
-    rev: 393031adb9afb225ee52ae2ccd7a5af5525e03e8  # frozen: v1.7.11
+    rev: 914e7df21a07ef503a81201c76d2b11c789d3fca  # frozen: v1.7.12
     hooks:
       - id: actionlint
 
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: b546b77c44c466a54a42af5499dcc0dcc1a3193f  # frozen: v1.22.0
+    rev: 06a39750ec31860bb44f2acf67182c40016cd1e7  # frozen: v1.32.0
     hooks:
       - id: zizmor
 
@@ -142,6 +142,15 @@ repos:
         language: fail
         entry: Space found in path, move to Misc/NEWS.d/next/Core_and_Builtins/
         files: Misc/NEWS.d/next/Core and Builtins/20.*.rst
+
+  - repo: local
+    hooks:
+      - id: check-capi-macros
+        name: Check C API macros start with Py
+        language: python
+        entry: python Tools/build/check_capi_macros.py
+        pass_filenames: false
+        files: ^(Include/(cpython/)?[^/]+\.h|pyconfig\.h\.in|Tools/build/check_capi_macros)
 
   - repo: meta
     hooks:

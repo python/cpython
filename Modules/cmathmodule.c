@@ -1004,12 +1004,11 @@ cmath_phase_impl(PyObject *module, Py_complex z)
 {
     double phi;
 
-    errno = 0;
-    phi = atan2(z.imag, z.real); /* should not cause any exception */
-    if (errno != 0)
-        return math_error();
-    else
-        return PyFloat_FromDouble(phi);
+    phi = atan2(z.imag, z.real);
+    /* gh-153144: Ignore atan2() errno on purpose since it can optionally be
+                  EDOM, which we should ignore, or ERANGE if phi underflows,
+                  which is silent on Python.  Overflow is not possible. */
+    return PyFloat_FromDouble(phi);
 }
 
 /*[clinic input]
@@ -1029,8 +1028,8 @@ cmath_polar_impl(PyObject *module, Py_complex z)
 {
     double r, phi;
 
-    errno = 0;
     phi = atan2(z.imag, z.real); /* should not cause any exception */
+    errno = 0;
     r = _Py_c_abs(z); /* sets errno to ERANGE on overflow */
     if (errno != 0)
         return math_error();
@@ -1060,7 +1059,7 @@ static Py_complex rect_special_values[7][7] = {
 };
 
 /*[clinic input]
-cmath.rect
+cmath.rect -> Py_complex_protected
 
     r: double
     phi: double
@@ -1069,9 +1068,9 @@ cmath.rect
 Convert from polar coordinates to rectangular coordinates.
 [clinic start generated code]*/
 
-static PyObject *
+static Py_complex
 cmath_rect_impl(PyObject *module, double r, double phi)
-/*[clinic end generated code: output=385a0690925df2d5 input=24c5646d147efd69]*/
+/*[clinic end generated code: output=74ff3d17585f3388 input=50e60c5d28c834e6]*/
 {
     Py_complex z;
     errno = 0;
@@ -1115,11 +1114,7 @@ cmath_rect_impl(PyObject *module, double r, double phi)
         z.imag = r * sin(phi);
         errno = 0;
     }
-
-    if (errno != 0)
-        return math_error();
-    else
-        return PyComplex_FromCComplex(z);
+    return z;
 }
 
 /*[clinic input]

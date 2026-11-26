@@ -33,12 +33,12 @@ Pending removal in Python 3.16
   * :mod:`asyncio` policy system is deprecated and will be removed in Python 3.16.
     In particular, the following classes and functions are deprecated:
 
-    * :class:`asyncio.AbstractEventLoopPolicy`
-    * :class:`asyncio.DefaultEventLoopPolicy`
-    * :class:`asyncio.WindowsSelectorEventLoopPolicy`
-    * :class:`asyncio.WindowsProactorEventLoopPolicy`
-    * :func:`asyncio.get_event_loop_policy`
-    * :func:`asyncio.set_event_loop_policy`
+    * :class:`!asyncio.AbstractEventLoopPolicy`
+    * :class:`!asyncio.DefaultEventLoopPolicy`
+    * :class:`!asyncio.WindowsSelectorEventLoopPolicy`
+    * :class:`!asyncio.WindowsProactorEventLoopPolicy`
+    * :func:`!asyncio.get_event_loop_policy`
+    * :func:`!asyncio.set_event_loop_policy`
 
     Users should use :func:`asyncio.run` or :class:`asyncio.Runner` with
     *loop_factory* to use the desired event loop implementation.

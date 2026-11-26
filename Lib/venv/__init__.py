@@ -27,16 +27,15 @@ class EnvBuilder:
     By default, the builder makes the system (global) site-packages dir
     *un*available to the created environment.
 
-    If invoked using the Python -m option, the default is to use copying
-    on Windows platforms but symlinks elsewhere. If instantiated some
-    other way, the default is to *not* use symlinks.
+    By default, the builder uses copying on Windows platforms but symlinks
+    elsewhere, matching the behaviour when invoked using the Python -m option.
 
     :param system_site_packages: If True, the system (global) site-packages
                                  dir is available to created environments.
     :param clear: If True, delete the contents of the environment directory if
                   it already exists, before environment creation.
     :param symlinks: If True, attempt to symlink rather than copy files into
-                     virtual environment.
+                     virtual environment. If None, use the platform default.
     :param upgrade: If True, upgrade an existing virtual environment.
     :param with_pip: If True, ensure pip is installed in the virtual
                      environment
@@ -47,11 +46,11 @@ class EnvBuilder:
     """
 
     def __init__(self, system_site_packages=False, clear=False,
-                 symlinks=False, upgrade=False, with_pip=False, prompt=None,
+                 symlinks=None, upgrade=False, with_pip=False, prompt=None,
                  upgrade_deps=False, *, scm_ignore_files=frozenset()):
         self.system_site_packages = system_site_packages
         self.clear = clear
-        self.symlinks = symlinks
+        self.symlinks = os.name != 'nt' if symlinks is None else symlinks
         self.upgrade = upgrade
         self.with_pip = with_pip
         self.orig_prompt = prompt
@@ -142,6 +141,12 @@ class EnvBuilder:
         """
 
         def create_if_needed(d):
+            path = env_dir
+            for part in os.path.relpath(d, env_dir).split(os.sep)[:-1]:
+                path = os.path.join(path, part)
+                if os.path.islink(path) or os.path.isjunction(path):
+                    raise ValueError(f'Refusing to create a venv in {env_dir} '
+                                     f'because {path} is a link.')
             if not os.path.exists(d):
                 os.makedirs(d)
             elif os.path.islink(d) or os.path.isfile(d):
@@ -267,6 +272,8 @@ class EnvBuilder:
         switch to a different set of files instead.)
         """
         assert os.name != 'nt'
+        if os.path.islink(dst) and not os.path.exists(dst):
+            os.unlink(dst)
         force_copy = not self.symlinks
         if not force_copy:
             try:
@@ -445,14 +452,15 @@ class EnvBuilder:
     def _call_new_python(self, context, *py_args, **kwargs):
         """Executes the newly created Python using safe-ish options"""
         # gh-98251: We do not want to just use '-I' because that masks
-        # legitimate user preferences (such as not writing bytecode). All we
-        # really need is to ensure that the path variables do not overrule
-        # normal venv handling.
+        # legitimate user preferences (such as not writing bytecode).
         args = [context.env_exec_cmd, *py_args]
         kwargs['env'] = env = os.environ.copy()
         env['VIRTUAL_ENV'] = context.env_dir
         env.pop('PYTHONHOME', None)
         env.pop('PYTHONPATH', None)
+        # Keep the working directory off sys.path, including in the
+        # subprocess that ensurepip starts to run pip.
+        env['PYTHONSAFEPATH'] = '1'
         kwargs['cwd'] = context.env_dir
         kwargs['executable'] = context.env_exec_cmd
         subprocess.check_output(args, **kwargs)
@@ -519,6 +527,11 @@ class EnvBuilder:
         def quote_bat(s):
             return s
 
+        def quote_fish(s):
+            # gh-160782: fish reads \\ and \' as escapes inside single quotes
+            s = s.replace('\\', '\\\\').replace("'", "\\'")
+            return f"'{s}'"
+
         # gh-124651: need to quote the template strings properly
         quote = shlex.quote
         script_path = context.script_path
@@ -526,6 +539,8 @@ class EnvBuilder:
             quote = quote_ps1
         elif script_path.endswith('.bat'):
             quote = quote_bat
+        elif script_path.endswith('.fish'):
+            quote = quote_fish
         else:
             # fallbacks to POSIX shell compliant quote
             quote = shlex.quote
@@ -592,11 +607,10 @@ class EnvBuilder:
                                    'may be binary: %s', srcfile, e)
                     continue
                 if new_data == data:
-                    shutil.copy(srcfile, dstfile)
+                    shutil.copyfile(srcfile, dstfile)
                 else:
                     with open(dstfile, 'wb') as f:
                         f.write(new_data)
-                    shutil.copymode(srcfile, dstfile)
 
     def upgrade_dependencies(self, context):
         logger.debug(
@@ -607,7 +621,7 @@ class EnvBuilder:
 
 
 def create(env_dir, system_site_packages=False, clear=False,
-           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False,
+           symlinks=None, with_pip=False, prompt=None, upgrade_deps=False,
            *, scm_ignore_files=frozenset()):
     """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,

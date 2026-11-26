@@ -190,7 +190,10 @@ def punycode_decode(text, errors):
         text = text.encode("ascii")
     if isinstance(text, memoryview):
         text = bytes(text)
-    pos = text.rfind(b"-")
+    # RFC 3492, section 6.2: the delimiter is only consumed if at least one
+    # basic code point precedes it.  A leading "-" is left in the extended
+    # part, where it is an invalid digit.
+    pos = text.rfind(b"-", 1)
     if pos == -1:
         base = ""
         extended = text.upper()

@@ -5,7 +5,7 @@ from tkinter import TclError
 from test.support import requires
 
 from test.test_tkinter.support import setUpModule  # noqa: F401
-from test.test_tkinter.support import pixels_conv
+from test.test_tkinter.support import pixels_conv, get_tk_patchlevel
 from test.test_tkinter.widget_tests import AbstractWidgetTest
 
 requires('gui')
@@ -19,6 +19,7 @@ EXPECTED_SCREEN_DISTANCE_OR_EMPTY_ERRMSG = '(bad|expected) screen distance (or "
 class PackTest(AbstractWidgetTest, unittest.TestCase):
 
     test_keys = None
+    test_options_in_docstring = None
 
     def create2(self):
         pack = tkinter.Toplevel(self.root, name='pack')
@@ -232,8 +233,8 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_pack_info(self):
         pack, a, b, c, d = self.create2()
-        with self.assertRaisesRegex(TclError, 'window "%s" isn\'t packed' % a):
-            a.pack_info()
+        if get_tk_patchlevel(self.root) >= (9, 1, 1):
+            self.assertEqual(a.pack_info(), {})
         a.pack_configure()
         b.pack_configure(side='right', in_=a, anchor='s', expand=True, fill='x',
                          ipadx=5, padx=10, ipady=2, pady=(5, 15))
@@ -312,6 +313,7 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
 class PlaceTest(AbstractWidgetTest, unittest.TestCase):
 
     test_keys = None
+    test_options_in_docstring = None
 
     def create2(self):
         t = tkinter.Toplevel(self.root, width=300, height=200, bd=0)
@@ -538,6 +540,7 @@ class PlaceTest(AbstractWidgetTest, unittest.TestCase):
 class GridTest(AbstractWidgetTest, unittest.TestCase):
 
     test_keys = None
+    test_options_in_docstring = None
 
     def tearDown(self):
         cols, rows = self.root.grid_size()

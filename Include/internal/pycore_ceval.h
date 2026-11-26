@@ -131,7 +131,7 @@ _Py_CODEUNIT *_PyTier2Interpreter(
 );
 #endif
 
-extern _PyJitEntryFuncPtr _Py_jit_entry;
+PyAPI_DATA(_PyJitEntryFuncPtr) _Py_jit_entry;
 
 extern PyObject*
 _PyEval_Vector(PyThreadState *tstate,
@@ -329,6 +329,7 @@ PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFra
 PyAPI_FUNC(int)
 _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args);
 PyAPI_FUNC(_PyStackRef) _PyEval_GetIter(_PyStackRef iterable, _PyStackRef *null_or_index, int yield_from);
+PyAPI_FUNC(int) _PyEval_StoreName(PyThreadState *tstate, _PyStackRef v, PyObject *name, PyObject* ns);
 
 /*
  * Indicate whether a special method of given 'oparg' can use the (improved)
@@ -349,9 +350,10 @@ _PyEval_SpecialMethodCanSuggest(PyObject *self, int oparg);
 #define _PY_EVAL_PLEASE_STOP_BIT (1U << 5)
 #define _PY_EVAL_EXPLICIT_MERGE_BIT (1U << 6)
 #define _PY_EVAL_JIT_INVALIDATE_COLD_BIT (1U << 7)
+#define _PY_EVAL_PROCESS_DELAYED_BIT (1U << 8)
 
 /* Reserve a few bits for future use */
-#define _PY_EVAL_EVENTS_BITS 8
+#define _PY_EVAL_EVENTS_BITS 9
 #define _PY_EVAL_EVENTS_MASK ((1 << _PY_EVAL_EVENTS_BITS)-1)
 
 static inline void

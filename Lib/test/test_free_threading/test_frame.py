@@ -1,9 +1,10 @@
 import functools
+import gc
 import sys
 import threading
 import unittest
 
-from test.support import threading_helper
+from test.support import import_helper, threading_helper
 
 threading_helper.requires_working_threading(module=True)
 
@@ -121,6 +122,267 @@ class TestFrameRaces(unittest.TestCase):
             frame.f_trace_opcodes = False
 
         run_with_frame([reader, writer, reader, writer])
+
+    def test_concurrent_f_locals_read_values(self):
+        def runner():
+            a = 1
+            b = "hello"
+            c = [1, 2, 3]
+            for i in range(100):
+                a += i
+
+        def reader(frame):
+            locals_dict = frame.f_locals
+            list(locals_dict.keys())
+            list(locals_dict.values())
+
+        run_with_frame(reader, runner=runner)
+
+    def test_concurrent_f_locals_write(self):
+        def runner():
+            x = 0
+            for i in range(100):
+                x += i
+
+        def writer(frame):
+            frame.f_locals["new_var"] = 42
+
+        run_with_frame(writer, runner=runner)
+
+    def test_concurrent_f_locals_read_write(self):
+        def runner():
+            a = 1
+            b = 2
+            for i in range(100):
+                a += i
+
+        def reader(frame):
+            _ = frame.f_locals.get("a")
+            _ = frame.f_locals.get("b")
+
+        def writer(frame):
+            frame.f_locals["a"] = 42
+
+        run_with_frame([reader, writer, reader, writer], runner=runner)
+
+    def test_concurrent_f_locals_iteration(self):
+        def runner():
+            a = 1
+            b = "hello"
+            c = [1, 2, 3]
+            for i in range(100):
+                a += i
+
+        def iterator(frame):
+            for key, value in frame.f_locals.items():
+                pass
+
+        run_with_frame(iterator, runner=runner)
+
+    def test_gen_f_locals_read_while_running(self):
+        # gh-144446: reading f_locals of a generator frame while the
+        # generator is executing on another thread.
+        for _ in range(5):
+            def gen_fn():
+                x = 0
+                obj = None
+                s = None
+                yield
+                for i in range(2000):
+                    obj = [i] * 4
+                    s = str(i) * 8
+                    x += i
+                yield x
+
+            g = gen_fn()
+            next(g)
+            frame = g.gi_frame
+            barrier = threading.Barrier(3)
+
+            def runner():
+                barrier.wait()
+                next(g)
+
+            def reader():
+                barrier.wait()
+                for _ in range(100):
+                    fl = frame.f_locals
+                    list(fl.values())
+                    fl.get("obj")
+                    fl.get("s")
+                    len(fl)
+
+            threading_helper.run_concurrently([runner, reader, reader])
+            g.close()
+
+    def test_gen_f_locals_write_suspended(self):
+        # Writes through f_locals must be synchronized with resuming.
+        for _ in range(5):
+            def gen_fn():
+                x = 0
+                extra = None
+                while True:
+                    x += 1
+                    yield x
+
+            g = gen_fn()
+            next(g)
+            frame = g.gi_frame
+            barrier = threading.Barrier(3)
+
+            def runner():
+                barrier.wait()
+                for _ in range(500):
+                    next(g)
+
+            def writer():
+                barrier.wait()
+                for i in range(200):
+                    frame.f_locals["extra"] = [i]
+                    frame.f_locals["new_var"] = i
+
+            threading_helper.run_concurrently([runner, writer, writer])
+            g.close()
+
+    def test_gen_f_locals_dying_generator(self):
+        # Access f_locals while the last reference to the generator is
+        # dropped and the frame ownership moves to the frame object.
+        for _ in range(20):
+            def gen_fn():
+                x = 42
+                yield x
+
+            g = gen_fn()
+            next(g)
+            frame = g.gi_frame
+            barrier = threading.Barrier(3)
+            ref = [g]
+            del g
+
+            def dropper():
+                barrier.wait()
+                ref.clear()
+
+            def reader():
+                barrier.wait()
+                for _ in range(100):
+                    frame.f_locals.get("x")
+                    list(frame.f_locals.values())
+
+            threading_helper.run_concurrently([dropper, reader, reader])
+
+    def test_gen_setitem_cell_old_value_destructor_stw(self):
+        # the old cell value must be released after the world restarts
+        deleted = []
+
+        def make_gen():
+            x = None
+            def gen_fn():
+                nonlocal x
+                yield x
+            return gen_fn()
+
+        g = make_gen()
+        next(g)
+        frame = g.gi_frame
+
+        class Old:
+            def __del__(self):
+                deleted.append(frame.f_locals.get("x"))
+
+        frame.f_locals["x"] = Old()
+        frame.f_locals["x"] = "new"    # replace cell value: destructor runs
+        self.assertEqual(deleted, ["new"])
+        g.close()
+
+    def test_gen_f_locals_key_runs_python_code(self):
+        # key's __hash__ and __eq__ must not run with the world stopped
+        class Key:
+            def __init__(self, value):
+                self.value = value
+
+            def __hash__(self):
+                gc.collect()
+                return hash(self.value)
+
+            def __eq__(self, other):
+                gc.collect()
+                if isinstance(other, Key):
+                    other = other.value
+                return self.value == other
+
+        def gen_fn():
+            x = 1
+            yield
+
+        g = gen_fn()
+        next(g)
+        f_locals = g.gi_frame.f_locals
+        self.assertEqual(f_locals[Key("x")], 1)
+        self.assertIn(Key("x"), f_locals)
+        f_locals[Key("x")] = 2
+        self.assertEqual(f_locals["x"], 2)
+        with self.assertRaises(ValueError):
+            f_locals.pop(Key("x"))
+
+        self.assertNotIn(Key("extra"), f_locals)
+        f_locals[Key("extra")] = 3
+        self.assertEqual(f_locals[Key("extra")], 3)
+        self.assertIn(Key("extra"), f_locals)
+        self.assertEqual(f_locals.pop(Key("extra")), 3)
+        with self.assertRaises(KeyError):
+            f_locals[Key("extra")]
+        g.close()
+
+    def test_concurrent_f_locals_extra_iteration(self):
+        # iterate the extra locals while they are modified
+        frame = (lambda: sys._getframe())()
+
+        def writer():
+            for i in range(5000):
+                frame.f_locals[f"k{i % 32}"] = [i]
+                frame.f_locals.pop(f"k{i * 7 % 32}", None)
+
+        def reader():
+            for _ in range(2000):
+                f_locals = frame.f_locals
+                list(f_locals.keys())
+                list(f_locals.values())
+                list(f_locals.items())
+
+        threading_helper.run_concurrently([writer, writer, reader, reader])
+
+    def test_gen_getvar_while_running(self):
+        # PyFrame_GetVar() reads fast locals and must synchronize with
+        # the frame's owner as well.
+        _testcapi = import_helper.import_module("_testcapi")
+        for _ in range(5):
+            def gen_fn():
+                obj = None
+                yield
+                for i in range(2000):
+                    obj = [i] * 4
+                yield obj
+
+            g = gen_fn()
+            next(g)
+            frame = g.gi_frame
+            barrier = threading.Barrier(3)
+
+            def runner():
+                barrier.wait()
+                next(g)
+
+            def reader():
+                barrier.wait()
+                for _ in range(100):
+                    try:
+                        _testcapi.frame_getvar(frame, "obj")
+                    except NameError:
+                        pass
+
+            threading_helper.run_concurrently([runner, reader, reader])
+            g.close()
 
     def test_concurrent_frame_clear(self):
         # Test race between frame.clear() and attribute reads.

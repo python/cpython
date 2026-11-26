@@ -212,7 +212,7 @@ static const double logpi = 1.144729885849400174143427351353058711647;
         }                                                  \
     }
 
-#ifndef HAVE_ACOSPI
+#ifndef _Py_HAVE_ACOSPI
 /*
    acos(x)/pi.  It conforms to C23 Annex 'F'.
 */
@@ -220,6 +220,12 @@ static const double logpi = 1.144729885849400174143427351353058711647;
 static double
 m_acospi(double x)
 {
+    if (x >= 0.5) {
+        /* acos(x) = 2*asin(sqrt((1 - x)/2)).  1 - x is exact here.
+           Some libms (old fdlibm derivatives) lose precision in acos(x)
+           near x = 1, while asin() is accurate for small arguments. */
+        return 2.0*asin(sqrt((1.0 - x)/2.0))/pi;
+    }
     double r = acos(x)/pi;
     if (isgreater(r, 1.0)) {
         return 1.0;
@@ -230,7 +236,7 @@ m_acospi(double x)
 #define m_acospi acospi
 #endif
 
-#ifndef HAVE_ASINPI
+#ifndef _Py_HAVE_ASINPI
 /*
    asin(x)/pi.  It conforms to C23 Annex 'F'.
 */
@@ -248,9 +254,9 @@ m_asinpi(double x)
 #define m_asinpi asinpi
 #endif
 
-#ifndef HAVE_ATANPI
+#ifndef _Py_HAVE_ATANPI
 /*
-   asin(x)/pi.  It conforms to C23 Annex 'F'.
+   atan(x)/pi.  It conforms to C23 Annex 'F'.
 */
 
 static double
@@ -266,9 +272,9 @@ m_atanpi(double x)
 #define m_atanpi atanpi
 #endif
 
-#ifndef HAVE_ATAN2PI
+#ifndef _Py_HAVE_ATAN2PI
 /*
-   asin(x)/pi.  It conforms to C23 Annex 'F'.
+   atan2(y, x)/pi.  It conforms to C23 Annex 'F'.
 */
 
 static double
@@ -284,7 +290,7 @@ m_atan2pi(double y, double x)
 #define m_atan2pi atan2pi
 #endif
 
-#ifndef HAVE_COSPI
+#ifndef _Py_HAVE_COSPI
 /*
    cos(pi*x), giving accurate results for all finite x (especially x
    integral or close to an integer).  It conforms to C23 Annex 'F'.
@@ -312,7 +318,7 @@ m_cospi(double x)
 #define m_cospi cospi
 #endif
 
-#ifndef HAVE_SINPI
+#ifndef _Py_HAVE_SINPI
 /*
    sin(pi*x), giving accurate results for all finite x (especially x
    integral or close to an integer).  It conforms to C23 Annex 'F'.
@@ -356,7 +362,7 @@ m_sinpi(double x)
 #define m_sinpi sinpi
 #endif
 
-#ifndef HAVE_TANPI
+#ifndef _Py_HAVE_TANPI
 /*
    tan(pi*x), giving accurate results for all finite x (especially x
    integral or close to an integer).  It conforms to C23 Annex 'F'.
@@ -1011,7 +1017,7 @@ math_1a(PyObject *arg, double (*func) (double), const char *err_msg)
    The last rule is used to catch overflow on platforms which follow
    C89 but for which HUGE_VAL is not an infinity.
 
-   For most two-argument functions (copysign, fmod, hypot, atan2)
+   For most two-argument functions (fmod, hypot)
    these rules are enough to ensure that Python's functions behave as
    specified in 'Annex F' of the C99 standard, with the 'invalid' and
    'divide-by-zero' floating-point exceptions mapping to Python's
@@ -1024,8 +1030,9 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
        double (*func) (double, double), const char *funcname)
 {
     double x, y, r;
-    if (!_PyArg_CheckPositional(funcname, nargs, 2, 2))
+    if (!_PyArg_CheckPositional(funcname, nargs, 2, 2)) {
         return NULL;
+    }
     x = PyFloat_AsDouble(args[0]);
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
@@ -1052,6 +1059,29 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
         return NULL;
     else
         return PyFloat_FromDouble(r);
+}
+
+/* variant of math_2, to be used when the function being wrapped is known NOT
+   to need error checking (i.e., no overflow, invalid, or divide-by-zero).  */
+
+static PyObject *
+math_2ne(PyObject *const *args, Py_ssize_t nargs,
+         double (*func) (double, double), const char *funcname)
+{
+    double x, y, r;
+    if (!_PyArg_CheckPositional(funcname, nargs, 2, 2)) {
+        return NULL;
+    }
+    x = PyFloat_AsDouble(args[0]);
+    if (x == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    y = PyFloat_AsDouble(args[1]);
+    if (y == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    r = (*func)(x, y);  // Ignore errno on purpose.
+    return PyFloat_FromDouble(r);
 }
 
 #define FUNC1(funcname, func, can_overflow, docstring)                  \
@@ -1081,6 +1111,12 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
 #define FUNC2(funcname, func, docstring) \
     static PyObject * math_##funcname(PyObject *self, PyObject *const *args, Py_ssize_t nargs) { \
         return math_2(args, nargs, func, #funcname); \
+    }\
+    PyDoc_STRVAR(math_##funcname##_doc, docstring);
+
+#define FUNC2NE(funcname, func, docstring) \
+    static PyObject * math_##funcname(PyObject *self, PyObject *const *args, Py_ssize_t nargs) { \
+        return math_2ne(args, nargs, func, #funcname); \
     }\
     PyDoc_STRVAR(math_##funcname##_doc, docstring);
 
@@ -1115,11 +1151,14 @@ FUNC1(atan, atan, 0,
       "atan($module, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of x.\n\n"
       "The result is between -pi/2 and pi/2.")
-FUNC2(atan2, atan2,
+/* gh-153144: Ignore atan2 and atan2pi errno on purpose since it can optionally
+ *            be EDOM, which we should ignore, or ERANGE on underflow, which is
+ *            silent on Python.  Overflow is not possible. */
+FUNC2NE(atan2, atan2,
       "atan2($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of y/x.\n\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
-FUNC2(atan2pi, m_atan2pi,
+FUNC2NE(atan2pi, m_atan2pi,
       "atan2pi($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in half-turns) of y/x.\n\n"
       "Unlike atanpi(y/x), the signs of both x and y are considered.")
@@ -1130,7 +1169,7 @@ FUNC1D(atanh, atanh, 0,
 FUNC1D(atanpi, m_atanpi, 0,
       "atanpi($module, x, /)\n--\n\n"
       "Return the arc tangent (measured in half-turns) of x.\n\n"
-      "The result is between 0 and 1.",
+      "The result is between -1/2 and 1/2.",
       "expected a number in range from -1 up to 1, got %s")
 FUNC1(cbrt, cbrt, 0,
       "cbrt($module, x, /)\n--\n\n"
@@ -1172,7 +1211,9 @@ math_ceil(PyObject *module, PyObject *number)
     return PyLong_FromDouble(ceil(x));
 }
 
-FUNC2(copysign, copysign,
+/* gh-153144: Ignore copysign errno on purpose since IEEE Std 754-2019 requires
+ *            it to operate on bit strings and to signal no exception. */
+FUNC2NE(copysign, copysign,
       "copysign($module, x, y, /)\n--\n\n"
        "Return a float with the magnitude (absolute value) of x but the sign of y.\n\n"
       "On platforms that support signed zeros, copysign(1.0, -0.0)\n"
@@ -1337,10 +1378,10 @@ FUNC1D(tan, tan, 0,
 FUNC1(tanh, tanh, 0,
       "tanh($module, x, /)\n--\n\n"
       "Return the hyperbolic tangent of x.")
-FUNC1D(tanpi, m_tanpi, 1,
+FUNC1D(tanpi, m_tanpi, 0,
       "tanpi($module, x, /)\n--\n\n"
       "Return the tangent of x (measured in half-turns).",
-      "expected a finite input, got %s")
+      "expected a finite input not equal to a half-integer, got %s")
 
 /* Precision summation function as msum() by Raymond Hettinger in
    <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>,
@@ -2688,7 +2729,7 @@ static PyObject *
 math_issubnormal_impl(PyObject *module, double x)
 /*[clinic end generated code: output=4e76ac98ddcae761 input=9a20aba7107d0d95]*/
 {
-#if !defined(_MSC_VER) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#if !defined(_MSC_VER) && defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 202311L
     return PyBool_FromLong(issubnormal(x));
 #else
     return PyBool_FromLong(isfinite(x) && x && !isnormal(x));

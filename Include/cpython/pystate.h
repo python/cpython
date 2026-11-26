@@ -118,8 +118,7 @@ struct _ts {
 
     int _whence;
 
-    /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_SUSPENDED).
-       See Include/internal/pycore_pystate.h for more details. */
+    /* Thread state. See Include/internal/pycore_pystate.h for details. */
     int state;
 
     int py_recursion_remaining;
@@ -143,6 +142,7 @@ struct _ts {
     struct _PyInterpreterFrame *base_frame;
 
     struct _PyInterpreterFrame *last_profiled_frame;
+    uintptr_t last_profiled_frame_seq;
 
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;

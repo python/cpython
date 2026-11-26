@@ -188,6 +188,8 @@ class BaseRequestRateTest(BaseRobotTest):
                         parsed_request_rate.seconds,
                         self.request_rate.seconds
                     )
+                else:
+                    self.assertIsNone(parsed_request_rate)
 
 
 class EmptyFileTest(BaseRequestRateTest, unittest.TestCase):
@@ -244,6 +246,32 @@ Crawl-delay: pears
     good = ['/foo.html']
     # bug report says "/" should be denied, but that is not in the RFC
     bad = []
+
+
+class NonDecimalDigitsTest(BaseRequestRateTest, unittest.TestCase):
+    # Non-decimal Unicode digits pass str.isdigit() but int() rejects
+    # them, so the directive must be silently ignored, not raise.
+    robots_txt = """\
+User-Agent: *
+Disallow: /tmp/
+Crawl-delay: ²
+Request-rate: ²/5
+    """
+    good = ['/foo.html']
+    bad = ['/tmp/']
+    crawl_delay = None
+    request_rate = None
+
+
+class NonDecimalDenominatorTest(BaseRequestRateTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Disallow: /tmp/
+Request-rate: 5/²
+    """
+    good = ['/foo.html']
+    request_rate = None
+    bad = ['/tmp/']
 
 
 class AnotherInvalidRequestRateTest(BaseRobotTest, unittest.TestCase):
@@ -773,6 +801,37 @@ class HttpErrorsTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
         self.assertFalse(parser.can_fetch("*", url + '/path/file.html'))
 
 
+class UserAgentSiteTestCase(BaseLocalNetworkTestCase, unittest.TestCase):
+
+    class RobotHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.headers.get('User-Agent').startswith('Python-urllib'):
+                self.send_error(403, "Forbidden access")
+            else:
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b"User-agent: *\nDisallow:")
+
+        def log_message(self, format, *args):
+            pass
+
+    def testUserAgentFilteringSite(self):
+        addr = self.server.server_address
+        url = f'http://{socket_helper.HOST}:{addr[1]}'
+        robots_url = url + "/robots.txt"
+        file_url = url + "/document"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(robots_url)
+        parser.read()
+        self.assertTrue(parser.disallow_all)
+        self.assertFalse(parser.can_fetch("*", file_url))
+        parser = urllib.robotparser.RobotFileParser()
+        parser.set_url(urllib.request.Request(robots_url, headers={'User-Agent': 'cybermapper'}))
+        parser.read()
+        self.assertFalse(parser.disallow_all)
+        self.assertTrue(parser.can_fetch("*", file_url))
+
+
 @support.requires_working_socket()
 class NetworkTestCase(unittest.TestCase):
 
@@ -815,6 +874,81 @@ class NetworkTestCase(unittest.TestCase):
         self.assertEqual(parser.mtime(), 0)
         self.assertIsNone(parser.crawl_delay('*'))
         self.assertIsNone(parser.request_rate('*'))
+
+
+class RepeatedUserAgentTest(unittest.TestCase):
+
+    def test_many_duplicate_user_agents(self):
+        # gh-162282: a User-agent repeated within one group must not be
+        # merged into that group once per repetition (quadratic time).
+        body = "User-agent: evil\n" * 1000 + "Disallow: /\n"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.parse(body.splitlines())
+        entry = parser.groups["evil"]
+        self.assertIs(entry, parser.entries[0])
+        self.assertEqual(len(entry.rulelines), 1)
+        self.assertFalse(parser.can_fetch("evil", "/"))
+
+    def test_many_groups_for_same_user_agent(self):
+        body = "User-agent: evil\nDisallow: /x\n\n" * 999
+        parser = urllib.robotparser.RobotFileParser()
+        parser.parse(body.splitlines())
+        entry = parser.groups["evil"]
+        self.assertEqual(len(entry.rulelines), 999)
+        # The merged entry is extended in place rather than copied.
+        parser.parse("User-agent: evil\nDisallow: /x\nCrawl-delay: 5".splitlines())
+        self.assertIs(parser.groups["evil"], entry)
+        self.assertEqual(len(entry.rulelines), 1000)
+        self.assertEqual(entry.delay, 5)
+        # The original entries are left intact.
+        self.assertEqual([len(e.rulelines) for e in parser.entries], [1] * 1000)
+        self.assertIsNone(parser.entries[-2].delay)
+
+    def test_merged_group_shared_by_user_agents(self):
+        parser = urllib.robotparser.RobotFileParser()
+        parser.parse("""\
+User-agent: a
+User-agent: b
+User-agent: c
+Disallow: /x
+
+User-agent: a
+User-agent: b
+Disallow: /y
+
+User-agent: a
+Disallow: /z
+""".splitlines())
+        groups = parser.groups
+        self.assertIs(groups["c"], parser.entries[0])
+        self.assertEqual(list(map(str, groups["a"].rulelines)),
+                         ["Disallow: /x", "Disallow: /y", "Disallow: /z"])
+        self.assertEqual(list(map(str, groups["b"].rulelines)),
+                         ["Disallow: /x", "Disallow: /y"])
+        self.assertEqual(list(map(str, groups["c"].rulelines)),
+                         ["Disallow: /x"])
+        self.assertFalse(parser.can_fetch("a", "/z"))
+        self.assertTrue(parser.can_fetch("b", "/z"))
+        self.assertTrue(parser.can_fetch("c", "/y"))
+
+    def test_many_user_agents_in_one_group(self):
+        body = "".join(f"User-agent: bot{i}\n" for i in range(1000))
+        body += "Disallow: /\n\nUser-agent: other\nDisallow: /x\n"
+        parser = urllib.robotparser.RobotFileParser()
+        parser.parse(body.splitlines())
+        self.assertIs(parser.groups["bot0"], parser.groups["bot999"])
+        calls = []
+        orig = urllib.robotparser.Entry.applies_to
+        def applies_to(entry, useragent):
+            calls.append(entry)
+            return orig(entry, useragent)
+        with support.swap_attr(urllib.robotparser.Entry, "applies_to",
+                               applies_to):
+            self.assertTrue(parser.can_fetch("unknown", "/"))
+            self.assertFalse(parser.can_fetch("xbot5x", "/"))
+        # Each distinct entry is checked at most once per lookup.
+        self.assertEqual(len(calls), 2 + 1)
+
 
 if __name__=='__main__':
     unittest.main()

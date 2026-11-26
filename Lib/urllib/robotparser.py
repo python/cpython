@@ -30,6 +30,8 @@ class RobotFileParser:
     def __init__(self, url=''):
         self.entries = []
         self.groups = {}
+        # Merged entries in self.groups -> number of agents sharing them.
+        self._merged_refs = {}
         self.sitemaps = []
         self.default_entry = None
         self.disallow_all = False
@@ -55,9 +57,16 @@ class RobotFileParser:
         self.last_checked = time.time()
 
     def set_url(self, url):
-        """Sets the URL referring to a robots.txt file."""
+        """Sets the URL referring to a robots.txt file.
+        can be a string or a Request object.
+        """
         self.url = url
-        self.host, self.path = urllib.parse.urlsplit(url)[1:3]
+
+        if isinstance(url, urllib.request.Request):
+            url = url.full_url
+        parts = urllib.parse.urlsplit(url)
+        self.host = parts.netloc
+        self.path = parts.path
 
     def read(self):
         """Reads the robots.txt URL and feeds it to the parser."""
@@ -65,9 +74,17 @@ class RobotFileParser:
             f = urllib.request.urlopen(self.url)
         except urllib.error.HTTPError as err:
             if err.code in (401, 403):
+                # If access to robot.txt has the status Unauthorized/Forbidden,
+                # then most likely this applies to the entire site.
                 self.disallow_all = True
-            elif err.code >= 400 and err.code < 500:
+            elif 400 <= err.code < 500:
+                # RFC 9309, Section 2.3.1.3: the crawler MAY access any
+                # resources on the server.
                 self.allow_all = True
+            elif 500 <= err.code < 600:
+                # RFC 9309, Section 2.3.1.4: the crawler MUST assume
+                # complete disallow.
+                self.disallow_all = True
             err.close()
         else:
             raw = f.read()
@@ -75,12 +92,32 @@ class RobotFileParser:
 
     def _add_entry(self, entry):
         self.entries.append(entry)
+        to_merge = {}
         for agent in entry.useragents:
             agent = agent.lower()
-            if agent not in self.groups:
+            old = self.groups.get(agent)
+            if old is None:
                 self.groups[agent] = entry
-            else:
-                self.groups[agent] = merge_entries(self.groups[agent], entry)
+            elif old is not entry:
+                to_merge.setdefault(old, set()).add(agent)
+        if not to_merge:
+            return
+        refs = self._merged_refs
+        entry_agents = set(entry.useragents)
+        for old, agents in to_merge.items():
+            if refs.get(old) == len(agents):
+                # No other agent shares this merged entry, so it can be
+                # extended in place instead of being copied again.
+                _merge_into(old, entry, entry_agents)
+                continue
+            new = merge_entries(old, entry, entry_agents)
+            for agent in agents:
+                self.groups[agent] = new
+            refs[new] = len(agents)
+            if old in refs:
+                refs[old] -= len(agents)
+                if not refs[old]:
+                    del refs[old]
 
     def parse(self, lines):
         """Parse the input lines from a robots.txt file.
@@ -135,15 +172,15 @@ class RobotFileParser:
                         # before trying to convert to int we need to make
                         # sure that robots.txt has valid syntax otherwise
                         # it will crash
-                        if line[1].strip().isdigit():
+                        if line[1].strip().isdecimal():
                             entry.delay = int(line[1])
                         state = 2
                 elif line[0] == "request-rate":
                     if state != 0:
                         numbers = line[1].split('/')
                         # check if all values are sane
-                        if (len(numbers) == 2 and numbers[0].strip().isdigit()
-                            and numbers[1].strip().isdigit()):
+                        if (len(numbers) == 2 and numbers[0].strip().isdecimal()
+                            and numbers[1].strip().isdecimal()):
                             entry.req_rate = RequestRate(int(numbers[0]), int(numbers[1]))
                         state = 2
                 elif line[0] == "sitemap":
@@ -159,7 +196,8 @@ class RobotFileParser:
         entry = self.groups.get(useragent.lower())
         if entry is not None:
             return entry
-        for entry in self.groups.values():
+        # Many agents can share the same entry; check each entry only once.
+        for entry in dict.fromkeys(self.groups.values()):
             if entry.applies_to(useragent):
                 return entry
         return self.groups.get('*')
@@ -346,10 +384,21 @@ def translate_pattern(path):
     parts[-1] = f'.*{parts[-1]}'
     return ''.join(parts)
 
-def merge_entries(e1, e2):
+def merge_entries(e1, e2, e2_agents=None):
     entry = Entry()
-    entry.useragents = list(filter(set(e2.useragents).__contains__, e1.useragents))
-    entry.rulelines = e1.rulelines + e2.rulelines
-    entry.delay = e1.delay if e2.delay is None else e2.delay
-    entry.req_rate = e1.req_rate if e2.req_rate is None else e2.req_rate
+    entry.useragents = e1.useragents
+    entry.rulelines = e1.rulelines.copy()
+    entry.delay = e1.delay
+    entry.req_rate = e1.req_rate
+    _merge_into(entry, e2, e2_agents)
     return entry
+
+def _merge_into(e1, e2, e2_agents=None):
+    if e2_agents is None:
+        e2_agents = set(e2.useragents)
+    e1.useragents = list(filter(e2_agents.__contains__, e1.useragents))
+    e1.rulelines.extend(e2.rulelines)
+    if e2.delay is not None:
+        e1.delay = e2.delay
+    if e2.req_rate is not None:
+        e1.req_rate = e2.req_rate

@@ -125,6 +125,13 @@ def _coerce_args(*args):
     #   - encoding function otherwise
     str_input = None
     for arg in args:
+        if not (arg is None or isinstance(arg, str) or hasattr(arg, 'decode')):
+            if arg:
+                raise TypeError("Expected str, bytes or None, "
+                                f"not {type(arg).__name__}")
+            warnings.warn(f"Accepting {type(arg).__name__} objects with false "
+                          f"value in urllib.parse is deprecated as of 3.16",
+                          DeprecationWarning, stacklevel=3)
         if arg:
             if str_input is None:
                 str_input = isinstance(arg, str)
@@ -139,6 +146,27 @@ def _coerce_args(*args):
     if str_input is not False:
         return args + (_noop,)
     return _decode_args(args) + (_encode_result,)
+
+def _parse_hostinfo(netloc):
+    _, _, hostinfo = netloc.rpartition('@')
+    _, have_open_br, bracketed = hostinfo.partition('[')
+    if have_open_br:
+        hostname, _, port = bracketed.partition(']')
+        _, _, port = port.partition(':')
+    else:
+        hostname, _, port = hostinfo.partition(':')
+    if not port:
+        port = None
+    return hostname, port
+
+def _validate_port(port):
+    if port.isdigit() and port.isascii():
+        port = int(port)
+    else:
+        raise ValueError(f"Port could not be cast to integer value as {port!r}")
+    if not (0 <= port <= 65535):
+        raise ValueError("Port out of range 0-65535")
+    return port
 
 # Result objects are more helpful than simple tuples
 class _ResultMixinStr(object):
@@ -198,12 +226,7 @@ class _NetlocResultMixinBase(object):
     def port(self):
         port = self._hostinfo[1]
         if port is not None:
-            if port.isdigit() and port.isascii():
-                port = int(port)
-            else:
-                raise ValueError(f"Port could not be cast to integer value as {port!r}")
-            if not (0 <= port <= 65535):
-                raise ValueError("Port out of range 0-65535")
+            port = _validate_port(port)
         return port
 
     __class_getitem__ = classmethod(types.GenericAlias)
@@ -231,16 +254,7 @@ class _NetlocResultMixinStr(_NetlocResultMixinBase, _ResultMixinStr):
         netloc = self.netloc
         if netloc is None:
             return None, None
-        _, _, hostinfo = netloc.rpartition('@')
-        _, have_open_br, bracketed = hostinfo.partition('[')
-        if have_open_br:
-            hostname, _, port = bracketed.partition(']')
-            _, _, port = port.partition(':')
-        else:
-            hostname, _, port = hostinfo.partition(':')
-        if not port:
-            port = None
-        return hostname, port
+        return _parse_hostinfo(netloc)
 
 
 class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
@@ -506,9 +520,7 @@ def _splitnetloc(url, start=0):
             delim = min(delim, wdelim)     # use earliest delim position
     return url[start:delim], url[delim:]   # return (domain, rest)
 
-def _checknetloc(netloc):
-    if not netloc or netloc.isascii():
-        return
+def _checknetloc_nfkc(netloc):
     # looking for characters like \u2100 that expand to 'a/c'
     # IDNA uses NFKC equivalence, so normalize for this check
     import unicodedata
@@ -523,6 +535,16 @@ def _checknetloc(netloc):
         if c in netloc2:
             raise ValueError("netloc '" + netloc + "' contains invalid " +
                              "characters under NFKC normalization")
+
+def _checknetloc(netloc):
+    if not netloc:
+        return
+    if not netloc.isascii():
+        _checknetloc_nfkc(netloc)
+
+    _, port = _parse_hostinfo(netloc)
+    if port is not None:
+        _validate_port(port)
 
 def _check_bracketed_netloc(netloc):
     # Note that this function must mirror the splitting
@@ -544,8 +566,8 @@ def _check_bracketed_netloc(netloc):
 # Valid bracketed hosts are defined in
 # https://www.rfc-editor.org/rfc/rfc3986#page-49 and https://url.spec.whatwg.org/
 def _check_bracketed_host(hostname):
-    if hostname.startswith('v'):
-        if not re.match(r"\Av[a-fA-F0-9]+\..+\z", hostname):
+    if hostname.startswith(('v', 'V')):
+        if not re.match(r"\A[vV][a-fA-F0-9]+\..+\z", hostname):
             raise ValueError(f"IPvFuture address is invalid")
     else:
         ip = ipaddress.ip_address(hostname) # Throws Value Error if not IPv6 or IPv4
@@ -697,12 +719,12 @@ def _urlunsplit(scheme, netloc, url, query, fragment):
 def urljoin(base, url, allow_fragments=True):
     """Join a base URL and a possibly relative URL to form an absolute
     interpretation of the latter."""
-    if not base:
-        return url
-    if not url:
-        return base
-
     base, url, _coerce_result = _coerce_args(base, url)
+    if not base:
+        return _coerce_result(url)
+    if not url:
+        return _coerce_result(base)
+
     bscheme, bnetloc, bpath, bquery, bfragment = \
             _urlsplit(base, None, allow_fragments)
     scheme, netloc, path, query, fragment = \
