@@ -1913,28 +1913,22 @@ chain_new_internal(PyTypeObject *type, PyObject *source)
     return (PyObject *)lz;
 }
 
-/*[clinic input]
-@vectorcall
-@classmethod
-itertools.chain.__new__ as chain_new
-    *iterables: array
-[clinic start generated code]*/
-
 static PyObject *
-chain_new_impl(PyTypeObject *type, PyObject * const *iterables,
-               Py_ssize_t iterables_length)
-/*[clinic end generated code: output=ca3d5f6d6ddedec4 input=0346ceca117a3021]*/
+chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *source = PyTuple_FromArray(iterables, iterables_length);
-    if (source == NULL) {
+    PyObject *source;
+
+    itertools_state *state = find_state_by_type(type);
+    PyTypeObject *chain_type = state->chain_type;
+    if ((type == chain_type || type->tp_init == chain_type->tp_init) &&
+        !_PyArg_NoKeywords("chain", kwds))
         return NULL;
-    }
-    PyObject *it = PyObject_GetIter(source);
-    Py_DECREF(source);
-    if (it == NULL) {
+
+    source = PyObject_GetIter(args);
+    if (source == NULL)
         return NULL;
-    }
-    return chain_new_internal(type, it);
+
+    return chain_new_internal(type, source);
 }
 
 /*[clinic input]
@@ -2054,7 +2048,6 @@ static PyType_Slot chain_slots[] = {
     {Py_tp_iternext, chain_next},
     {Py_tp_methods, chain_methods},
     {Py_tp_new, chain_new},
-    {Py_tp_vectorcall, chain_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
