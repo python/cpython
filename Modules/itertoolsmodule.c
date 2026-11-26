@@ -1104,7 +1104,6 @@ done:
 }
 
 /*[clinic input]
-@vectorcall
 @classmethod
 itertools._tee.__new__
     iterable: object
@@ -1114,7 +1113,7 @@ Iterator wrapped to make it copyable.
 
 static PyObject *
 itertools__tee_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=b02d3fd26c810c3f input=3aa5305c0301ddda]*/
+/*[clinic end generated code: output=b02d3fd26c810c3f input=adc0779d2afe37a2]*/
 {
     itertools_state *state = get_module_state_by_cls(type);
     return tee_fromiterable(state, iterable);
@@ -1160,7 +1159,6 @@ static PyType_Slot tee_slots[] = {
     {Py_tp_methods, tee_methods},
     {Py_tp_members, tee_members},
     {Py_tp_new, itertools__tee},
-    {Py_tp_vectorcall, itertools__tee_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };

@@ -430,31 +430,6 @@ exit:
     return return_value;
 }
 
-static PyObject *
-itertools__tee_vectorcall(PyObject *type, PyObject *const *args,
-    size_t nargsf, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    PyObject *iterable;
-
-    assert(_PyType_CAST(type)->tp_new == itertools__tee);
-    /* Make sure the type object is immutable: the generated
-     * vectorcall doesn't deal e.g. with users reassigning __init__. */
-    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
-    if (!_PyArg_NoKwnames("_tee", kwnames)) {
-        goto exit;
-    }
-    if (!_PyArg_CheckPositional("_tee", nargs, 1, 1)) {
-        goto exit;
-    }
-    iterable = args[0];
-    return_value = itertools__tee_impl(_PyType_CAST(type), iterable);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(itertools_tee__doc__,
 "tee($module, iterable, n=2, /)\n"
 "--\n"
@@ -2005,4 +1980,4 @@ zip_longest_next(PyObject *self)
 
     return return_value;
 }
-/*[clinic end generated code: output=f1ee11f3d6be1e3d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb82d159d4b90045 input=a9049054013a1b77]*/
