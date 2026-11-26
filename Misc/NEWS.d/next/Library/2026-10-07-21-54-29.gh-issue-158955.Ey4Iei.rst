@@ -1,0 +1,1 @@
+Fixed PyREPL rendering on WSL by avoiding the unnecessary INS terminal sequence when appending a character at the end of a line. INS remains used for true mid-line insertions, with regression coverage added.

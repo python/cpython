@@ -919,7 +919,7 @@ wire).
    :param exc_info: An exception tuple with the current exception information,
       as returned by :func:`sys.exc_info`,
       or ``None`` if no exception information is available.
-   :type exc_info: tuple[type[BaseException], BaseException, types.TracebackType] | None
+   :type exc_info: tuple[type[BaseException], BaseException, types.TracebackType | None] | tuple[None, None, None] | None
 
    :param func: The name of the function or method
       from which the logging call was invoked.
