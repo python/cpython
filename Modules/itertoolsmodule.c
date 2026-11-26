@@ -3723,23 +3723,31 @@ typedef struct {
 
 #define repeatobject_CAST(op)   ((repeatobject *)(op))
 
+/*[clinic input]
+@vectorcall
+@classmethod
+itertools.repeat.__new__ as repeat_new
+    object as element: object
+    times: object(c_default="NULL") = None
+[clinic start generated code]*/
+
 static PyObject *
-repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+repeat_new_impl(PyTypeObject *type, PyObject *element, PyObject *times)
+/*[clinic end generated code: output=4ef9bd3593335622 input=c0eafe81f60ae9e6]*/
 {
     repeatobject *ro;
-    PyObject *element;
-    Py_ssize_t cnt = -1, n_args;
-    static char *kwargs[] = {"object", "times", NULL};
+    Py_ssize_t cnt = -1;
 
-    n_args = PyTuple_GET_SIZE(args);
-    if (kwds != NULL)
-        n_args += PyDict_GET_SIZE(kwds);
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|n:repeat", kwargs,
-                                     &element, &cnt))
-        return NULL;
-    /* Does user supply times argument? */
-    if (n_args == 2 && cnt < 0)
-        cnt = 0;
+    if (times != NULL) {
+        /* Does user supply times argument? */
+        cnt = PyNumber_AsSsize_t(times, PyExc_OverflowError);
+        if (cnt == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+        if (cnt < 0) {
+            cnt = 0;
+        }
+    }
 
     ro = (repeatobject *)type->tp_alloc(type, 0);
     if (ro == NULL)
@@ -3830,6 +3838,7 @@ static PyType_Slot repeat_slots[] = {
     {Py_tp_iternext, repeat_next},
     {Py_tp_methods, repeat_methods},
     {Py_tp_new, repeat_new},
+    {Py_tp_vectorcall, repeat_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
