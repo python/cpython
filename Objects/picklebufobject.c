@@ -83,13 +83,15 @@ PyPickleBuffer_Release(PyObject *obj)
 @classmethod
 pickle.PickleBuffer.__new__ as picklebuf_new
 
-    base: object
+    buffer as base: object
     /
+
+Wrapper for potentially out-of-band buffers.
 [clinic start generated code]*/
 
 static PyObject *
 picklebuf_new_impl(PyTypeObject *type, PyObject *base)
-/*[clinic end generated code: output=b8269110aace6998 input=0f1cdf375a70e71d]*/
+/*[clinic end generated code: output=b8269110aace6998 input=616fff5fc36c22d4]*/
 {
     PyPickleBufferObject *self = (PyPickleBufferObject *) type->tp_alloc(type, 0);
     if (self == NULL) {
@@ -224,7 +226,7 @@ static PyMethodDef picklebuf_methods[] = {
 PyTypeObject PyPickleBuffer_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "pickle.PickleBuffer",
-    .tp_doc = PyDoc_STR("Wrapper for potentially out-of-band buffers"),
+    .tp_doc = picklebuf_new__doc__,
     .tp_basicsize = sizeof(PyPickleBufferObject),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_new = picklebuf_new,

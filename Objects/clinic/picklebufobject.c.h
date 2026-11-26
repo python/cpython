@@ -4,6 +4,12 @@ preserve
 
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
+PyDoc_STRVAR(picklebuf_new__doc__,
+"PickleBuffer(buffer, /)\n"
+"--\n"
+"\n"
+"Wrapper for potentially out-of-band buffers.");
+
 static PyObject *
 picklebuf_new_impl(PyTypeObject *type, PyObject *base);
 
@@ -52,4 +58,4 @@ picklebuf_vectorcall(PyObject *type, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dcacd3b2ee177774 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4c32a9c4ea5b9bfe input=a9049054013a1b77]*/
