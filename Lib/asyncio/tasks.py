@@ -581,17 +581,11 @@ class _AsCompletedIterator:
         self._timeout_handle = None
 
         loop = events.get_event_loop()
-        # The iterator may be created outside of a running event loop and
-        # then driven with loop.run_until_complete(), in which case there
-        # is no current task to record as the waiter.
-        if events._get_running_loop() is loop:
-            self._cur_task = current_task(loop)
-        else:
-            self._cur_task = None
         todo = {ensure_future(aw, loop=loop) for aw in set(aws)}
+        self._waiter = loop.create_future()
         for f in todo:
             f.add_done_callback(self._handle_completion)
-            futures.future_add_to_awaited_by(f, self._cur_task)
+            futures.future_add_to_awaited_by(f, self._waiter)
         if todo and timeout is not None:
             self._timeout_handle = (
                 loop.call_later(timeout, self._handle_timeout)
@@ -622,7 +616,7 @@ class _AsCompletedIterator:
     def _handle_timeout(self):
         for f in self._todo:
             f.remove_done_callback(self._handle_completion)
-            futures.future_discard_from_awaited_by(f, self._cur_task)
+            futures.future_discard_from_awaited_by(f, self._waiter)
             self._done.put_nowait(None)  # Sentinel for _wait_for_one().
         self._todo.clear()  # Can't do todo.remove(f) in the loop.
 
@@ -630,7 +624,7 @@ class _AsCompletedIterator:
         if not self._todo:
             return  # _handle_timeout() was here first.
         self._todo.remove(f)
-        futures.future_discard_from_awaited_by(f, self._cur_task)
+        futures.future_discard_from_awaited_by(f, self._waiter)
         self._done.put_nowait(f)
         if not self._todo and self._timeout_handle is not None:
             self._timeout_handle.cancel()
@@ -639,11 +633,18 @@ class _AsCompletedIterator:
         # Wait for the next future to be done and return it unless resolve is
         # set, in which case return either the result of the future or raise
         # an exception.
+        edge_added = False
         try:
+            cur_task = current_task() if self._done.empty() else None
+            futures.future_add_to_awaited_by(self._waiter, cur_task)
+            edge_added = True
             f = await self._done.get()
         except:
             self._todo_left += 1
             raise
+        finally:
+            if edge_added:
+                futures.future_discard_from_awaited_by(self._waiter, cur_task)
         if f is None:
             # Dummy value from _handle_timeout().
             raise exceptions.TimeoutError

@@ -1,0 +1,2 @@
+Fix the asyncio call graph to show the task waiting for the next result from
+asyncio.as_completed(). Patch by Timofei Ivankov.
