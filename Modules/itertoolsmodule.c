@@ -2078,35 +2078,38 @@ struct productobject {
 
 #define productobject_CAST(op)  ((productobject *)(op))
 
-/*[clinic input]
-@vectorcall
-@classmethod
-itertools.product.__new__ as product_new
-    *iterables: array
-    repeat: Py_ssize_t = 1
-[clinic start generated code]*/
-
 static PyObject *
-product_new_impl(PyTypeObject *type, PyObject * const *iterables,
-                 Py_ssize_t iterables_length, Py_ssize_t repeat)
-/*[clinic end generated code: output=b0881d40e6be4c00 input=2d0325c612c678a1]*/
+product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     productobject *lz;
-    Py_ssize_t nargs, npools;
+    Py_ssize_t nargs, npools, repeat=1;
     PyObject *pools = NULL;
     Py_ssize_t *indices = NULL;
     Py_ssize_t i;
 
-    if (repeat < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "repeat argument cannot be negative");
-        return NULL;
+    if (kwds != NULL) {
+        char *kwlist[] = {"repeat", 0};
+        PyObject *tmpargs = PyTuple_New(0);
+        if (tmpargs == NULL)
+            return NULL;
+        if (!PyArg_ParseTupleAndKeywords(tmpargs, kwds, "|n:product",
+                                         kwlist, &repeat)) {
+            Py_DECREF(tmpargs);
+            return NULL;
+        }
+        Py_DECREF(tmpargs);
+        if (repeat < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "repeat argument cannot be negative");
+            return NULL;
+        }
     }
 
+    assert(PyTuple_CheckExact(args));
     if (repeat == 0) {
         nargs = 0;
     } else {
-        nargs = iterables_length;
+        nargs = PyTuple_GET_SIZE(args);
         if ((size_t)nargs > PY_SSIZE_T_MAX/sizeof(Py_ssize_t)/repeat) {
             PyErr_SetString(PyExc_OverflowError, "repeat argument too large");
             return NULL;
@@ -2125,7 +2128,7 @@ product_new_impl(PyTypeObject *type, PyObject * const *iterables,
         goto error;
 
     for (i=0; i < nargs ; ++i) {
-        PyObject *item = iterables[i];
+        PyObject *item = PyTuple_GET_ITEM(args, i);
         PyObject *pool = PySequence_Tuple(item);
         if (pool == NULL)
             goto error;
@@ -2314,7 +2317,6 @@ static PyType_Slot product_slots[] = {
     {Py_tp_iternext, product_next},
     {Py_tp_methods, product_methods},
     {Py_tp_new, product_new},
-    {Py_tp_vectorcall, product_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
