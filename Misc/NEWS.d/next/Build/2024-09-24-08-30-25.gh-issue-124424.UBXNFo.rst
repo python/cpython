@@ -1,0 +1,1 @@
+Enable cross-compiling for x86_64-freebsd
