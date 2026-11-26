@@ -241,6 +241,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__str__)
         STRUCT_FOR_ID(__sub__)
         STRUCT_FOR_ID(__subclasscheck__)
+        STRUCT_FOR_ID(__subclasses__)
         STRUCT_FOR_ID(__subclasshook__)
         STRUCT_FOR_ID(__truediv__)
         STRUCT_FOR_ID(__trunc__)
