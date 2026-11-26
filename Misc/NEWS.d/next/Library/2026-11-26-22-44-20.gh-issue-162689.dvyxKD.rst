@@ -1,0 +1,4 @@
+Fix :meth:`pathlib.Path.copy` to correctly detect when the source and target
+refer to the same file, even when cached path information is stale.
+Previously, copying between hard links to the same file could empty the
+source file and lose its data without raising an error.
