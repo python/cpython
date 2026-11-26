@@ -8,6 +8,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 
 /* ./configure sets HAVE_DYNAMIC_LOADING if dynamic loading of modules is
@@ -136,7 +137,7 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
         return -1;
     }
 
-    info.newcontext = PyUnicode_AsUTF8(info.name);
+    info.newcontext = _PyUnicode_AsUTF8NoNUL(info.name);
     if (info.newcontext == NULL) {
         _Py_ext_module_loader_info_clear(&info);
         return -1;
@@ -146,6 +147,12 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
         if (!PyUnicode_Check(filename)) {
             PyErr_SetString(PyExc_TypeError,
                             "module filename must be a string");
+            _Py_ext_module_loader_info_clear(&info);
+            return -1;
+        }
+        if (PyUnicode_FindChar(filename, 0, 0,
+                               PyUnicode_GET_LENGTH(filename), 1) != -1) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             _Py_ext_module_loader_info_clear(&info);
             return -1;
         }
