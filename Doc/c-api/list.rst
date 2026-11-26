@@ -320,14 +320,3 @@ On Free Threading, it's more efficient than the ``PyList`` C API to create a
    instead of copying references.
 
    On error, all *items* references are also cleared.
-
-.. c:function:: int PyListBuilder_FromBuffer(PyListBuilder *builder, Py_buffer *view)
-
-   Add values from a buffer.
-
-   *view* must have 1 dimension.
-
-   On success, return ``0``.
-   On error, set an exception, leave the builder unchanged, and return ``-1``.
-
-   On error, the builder is restored to its previous state: discard added items.

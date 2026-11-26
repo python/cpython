@@ -2531,69 +2531,6 @@ memoryview_tolist_pinned(PyMemoryViewObject *self)
 }
 
 
-int
-PyListBuilder_FromBuffer(PyListBuilder *builder, const Py_buffer *view)
-{
-    if (view->ndim != 1) {
-        PyErr_Format(PyExc_ValueError,
-                     "require a buffer of 1 dimension, got %i dimentions",
-                     view->ndim);
-        return -1;
-    }
-
-    const char *fmt;
-    if (view->format != NULL) {
-        fmt = adjust_fmt(view);
-        if (fmt == NULL) {
-            return -1;
-        }
-    }
-    else {
-        // Same default value than init_shared_values()
-        fmt = "B";
-    }
-
-    PyListObject *list = _PyList_CAST(builder);
-    Py_ssize_t old_size = Py_SIZE(list);
-
-    const char *ptr = view->buf;
-    const Py_ssize_t shape = view->shape ? view->shape[0] : view->len;
-    const Py_ssize_t strides = view->strides ? view->strides[0] : view->itemsize;
-    const Py_ssize_t *suboffsets = view->suboffsets;
-
-    Py_ssize_t new_size = old_size + shape;
-    if (new_size > list->allocated) {
-        if (_PyListBuilder_Resize(builder, new_size) < 0) {
-            return -1;
-        }
-    }
-    else {
-        Py_SET_SIZE(list, new_size);
-    }
-
-    for (Py_ssize_t i = 0; i < shape; ptr += strides, i++) {
-        const char *xptr = ADJUST_PTR(ptr, suboffsets, 0);
-
-        PyObject *item = unpack_single(NULL, xptr, fmt);
-        if (item == NULL) {
-            Py_SET_SIZE(list, old_size + i);
-            goto error;
-        }
-
-        _PyListBuilder_SET_ITEM_STEAL(builder, old_size + i, item);
-    }
-    return 0;
-
-error:
-    if (Py_SIZE(list) != old_size) {
-        // On error, reset the builder to its previous state:
-        // discard added items
-        _PyListBuilder_ResetSize(builder, old_size);
-    }
-    return -1;
-}
-
-
 /*[clinic input]
 memoryview.tolist
 

@@ -77,6 +77,3 @@ PyAPI_FUNC(int) PyListBuilder_ExtendArraySteal(
     PyListBuilder *builder,
     PyObject *const *items,
     Py_ssize_t nitem);
-PyAPI_FUNC(int) PyListBuilder_FromBuffer(
-    PyListBuilder *builder,
-    const Py_buffer *buf);

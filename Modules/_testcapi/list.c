@@ -288,30 +288,6 @@ builder_extend_array_steal(PyObject *self_raw, PyObject *tuple)
 }
 
 
-// Test PyListBuilder_FromBuffer() error
-static PyObject*
-builder_from_buffer(PyObject *self_raw, PyObject *obj)
-{
-    BuilderObject *self = (BuilderObject *)self_raw;
-    if (builder_check(self) < 0) {
-        return NULL;
-    }
-
-    Py_buffer view;
-    int flags = PyBUF_FORMAT | PyBUF_ND | PyBUF_STRIDES;
-    if (PyObject_GetBuffer(obj, &view, flags) < 0) {
-        return NULL;
-    }
-
-    int res = PyListBuilder_FromBuffer(self->builder, &view);
-    PyBuffer_Release(&view);
-    if (res < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-
 // Test PyListBuilder_Finish()
 static PyObject*
 builder_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
@@ -348,7 +324,6 @@ static PyMethodDef builder_methods[] = {
     {"extend", _PyCFunction_CAST(builder_extend), METH_O},
     {"extend_array", _PyCFunction_CAST(builder_extend_array), METH_O},
     {"extend_array_steal", _PyCFunction_CAST(builder_extend_array_steal), METH_O},
-    {"from_buffer", _PyCFunction_CAST(builder_from_buffer), METH_O},
     {"finish", _PyCFunction_CAST(builder_finish), METH_NOARGS},
     {"discard", _PyCFunction_CAST(builder_discard), METH_NOARGS},
     {NULL,              NULL}           /* sentinel */

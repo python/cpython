@@ -11,6 +11,5 @@ created list. Add functions:
 * :c:func:`PyListBuilder_Extend`
 * :c:func:`PyListBuilder_ExtendArray`
 * :c:func:`PyListBuilder_ExtendArraySteal`
-* :c:func:`PyListBuilder_FromBuffer`
 
 Patch by Victor Stinner.
