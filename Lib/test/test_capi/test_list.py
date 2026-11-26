@@ -366,10 +366,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(repr(lst), '[<NULL>, <NULL>, <NULL>]')
 
 
-class ListWriterTests(unittest.TestCase):
-    def create_writer(self, size):
-        # Test PyListWriter_Create()
-        return _testcapi.PyListWriter(size)
+class ListBuilderTests(unittest.TestCase):
+    def create_builder(self, size):
+        # Test PyListBuilder_Create()
+        return _testcapi.PyListBuilder(size)
 
     def list_equal(self, result, expected):
         if not isinstance(expected, list):
@@ -386,51 +386,51 @@ class ListWriterTests(unittest.TestCase):
         items = self.create_items(3)
         for size in (0, len(items), len(items) * 10):
             with self.subTest(size=size):
-                writer = self.create_writer(size)
-                append = getattr(writer, method)
+                builder = self.create_builder(size)
+                append = getattr(builder, method)
                 for item in items:
                     append(item)
-                self.list_equal(writer.finish(), items)
+                self.list_equal(builder.finish(), items)
 
         # test MemoryError
-        writer = self.create_writer(0)
-        append = getattr(writer, method)
+        builder = self.create_builder(0)
+        append = getattr(builder, method)
         with self.assertRaises(MemoryError):
             with support.inject_memory_error_cm():
                 append("alloc failed")
         for item in items:
             append(item)
-        self.list_equal(writer.finish(), items)
+        self.list_equal(builder.finish(), items)
 
     def test_append(self):
-        # Test PyListWriter_Append()
+        # Test PyListBuilder_Append()
         self.check_append('append')
 
     def test_append_steal(self):
-        # Test PyListWriter_AppendSteal()
+        # Test PyListBuilder_AppendSteal()
         self.check_append('append_steal')
 
     def check_extend(self, method):
         items = self.create_items(5)
         for size in (0, len(items), len(items) * 10):
             with self.subTest(size=size):
-                writer = self.create_writer(size)
-                extend = getattr(writer, method)
+                builder = self.create_builder(size)
+                extend = getattr(builder, method)
                 extend(items)
-                self.list_equal(writer.finish(), items)
+                self.list_equal(builder.finish(), items)
 
         # test MemoryError
-        writer = self.create_writer(0)
-        extend = getattr(writer, method)
+        builder = self.create_builder(0)
+        extend = getattr(builder, method)
         items_error = ("alloc failed",)
         with self.assertRaises(MemoryError):
             with support.inject_memory_error_cm():
                 extend(items_error)
         extend(items)
-        self.list_equal(writer.finish(), items)
+        self.list_equal(builder.finish(), items)
 
     def test_extend(self):
-        # Test PyListWriter_Extend()
+        # Test PyListBuilder_Extend()
         self.check_extend('extend')
 
     def test_extend_iter_error(self):
@@ -448,74 +448,74 @@ class ListWriterTests(unittest.TestCase):
                     raise ValueError("iter error")
                 return value
 
-        # On error, restore the writer to its previous state:
+        # On error, restore the builder to its previous state:
         # discard added items
         iterable = IterError()
-        writer = self.create_writer(0)
-        writer.append("before")
+        builder = self.create_builder(0)
+        builder.append("before")
         with self.assertRaisesRegex(ValueError, "iter error"):
-            writer.extend(iterable)
+            builder.extend(iterable)
         self.assertEqual(iterable.index, 4)
-        writer.append("after")
-        self.list_equal(writer.finish(), ["before", "after"])
+        builder.append("after")
+        self.list_equal(builder.finish(), ["before", "after"])
 
     def test_extend_array(self):
-        # Test PyListWriter_ExtendArray()
+        # Test PyListBuilder_ExtendArray()
         self.check_extend('extend_array')
 
     def test_extend_array_steal(self):
-        # Test PyListWriter_ExtendArraySteal()
+        # Test PyListBuilder_ExtendArraySteal()
         self.check_extend('extend_array_steal')
 
     def test_from_format(self):
-        # Test PyListWriter_FromFormat()
+        # Test PyListBuilder_FromFormat()
 
         # Allocate a small array on the stack (1 item)
-        writer = self.create_writer(0)
-        writer.from_format_i(123)
-        self.list_equal(writer.finish(), [123])
+        builder = self.create_builder(0)
+        builder.from_format_i(123)
+        self.list_equal(builder.finish(), [123])
 
         # Allocate an array on the heap (16 items)
         items = tuple(range(100, 100+16))
-        writer = self.create_writer(0)
-        writer.from_format_i16(items)
-        self.list_equal(writer.finish(), items)
+        builder = self.create_builder(0)
+        builder.from_format_i16(items)
+        self.list_equal(builder.finish(), items)
 
-        # Test error: call PyListWriter_FromFormat(writer, "iiO", 1, 2, NULL).
+        # Test error: call PyListBuilder_FromFormat(builder, "iiO", 1, 2, NULL).
         # First items before the error must not be added.
-        writer = self.create_writer(0)
-        writer.append("before")
+        builder = self.create_builder(0)
+        builder.append("before")
         with self.assertRaises(SystemError):
-            writer.from_format_error()
-        writer.append("after")
-        self.list_equal(writer.finish(), ["before", "after"])
+            builder.from_format_error()
+        builder.append("after")
+        self.list_equal(builder.finish(), ["before", "after"])
 
     def test_from_buffer(self):
-        # Test PyListWriter_FromBuffer()
-        writer = self.create_writer(0)
+        # Test PyListBuilder_FromBuffer()
+        builder = self.create_builder(0)
         mview = memoryview(b'abc')
-        writer.from_buffer(mview)
-        self.list_equal(writer.finish(), mview.tolist())
+        builder.from_buffer(mview)
+        self.list_equal(builder.finish(), mview.tolist())
 
         numbers = array.array('d', [1.5, 3.0, 5.0])
-        writer = self.create_writer(0)
-        writer.from_buffer(memoryview(numbers))
-        self.list_equal(writer.finish(), numbers.tolist())
+        builder = self.create_builder(0)
+        builder.from_buffer(memoryview(numbers))
+        self.list_equal(builder.finish(), numbers.tolist())
 
     def test_from_buffer_memoryerror(self):
-        # Inject MemoryError in the middle of the array: reset the writer
+        # Inject MemoryError in the middle of the array: reset the builder
         # to its previous state, discard added float objects
         numbers = array.array('d', [2.0] * 128)
         mview = memoryview(numbers)
-        writer = self.create_writer(0)
+        builder = self.create_builder(0)
         with self.assertRaises(MemoryError):
             with support.inject_memory_error_cm(start=len(numbers) // 2):
-                writer.from_buffer(mview)
-        self.list_equal(writer.finish(), [])
+                builder.from_buffer(mview)
+        self.list_equal(builder.finish(), [])
 
     @unittest.skipIf(_testbuffer is None, 'need _testbuffer')
     def test_from_buffer_ndarray(self):
-        # PyListWriter_FromBuffer() requires 1 dimension
+        # PyListBuilder_FromBuffer() requires 1 dimension
         array_0d = _testbuffer.ndarray(ord(b"a"), format='B',
                                        shape=(), strides=())
         array_2d = _testbuffer.ndarray(list(b"abcdefgh"), format='B',
@@ -523,11 +523,11 @@ class ListWriterTests(unittest.TestCase):
 
         for array in (array_0d, array_2d):
             with self.subTest(array=array):
-                writer = self.create_writer(0)
+                builder = self.create_builder(0)
                 errmsg = 'require a buffer of 1 dimension, got 2 dimentions'
                 with self.assertRaisesRegex(ValueError, errmsg):
-                    writer.from_buffer(array_2d)
-                self.list_equal(writer.finish(), [])
+                    builder.from_buffer(array_2d)
+                self.list_equal(builder.finish(), [])
 
     def test_empty(self):
         list_get_allocated = _testcapi._list_get_allocated
@@ -535,11 +535,11 @@ class ListWriterTests(unittest.TestCase):
 
         for size in (0, LIST_SMALL_ALLOCATED, 1024):
             with self.subTest(size=size):
-                writer = self.create_writer(size)
-                writer.extend(empty_tuple)
-                writer.extend_array(empty_tuple)
-                writer.extend_array_steal(empty_tuple)
-                result = writer.finish()
+                builder = self.create_builder(size)
+                builder.extend(empty_tuple)
+                builder.extend_array(empty_tuple)
+                builder.extend_array_steal(empty_tuple)
+                result = builder.finish()
                 self.list_equal(result, [])
 
                 if size == 0 or size > LIST_SMALL_ALLOCATED:
@@ -549,7 +549,7 @@ class ListWriterTests(unittest.TestCase):
                 self.assertEqual(list_get_allocated(result), expected)
 
     def test_finish_shrink(self):
-        # PyListWriter_Finish() shrinks the list if its allocated size
+        # PyListBuilder_Finish() shrinks the list if its allocated size
         # is way too big
         list_get_allocated = _testcapi._list_get_allocated
 
@@ -557,11 +557,11 @@ class ListWriterTests(unittest.TestCase):
             return (size + (size >> 3) + 6) & ~3
 
         def check_allocated(items, alloc, expected):
-            writer = self.create_writer(alloc)
-            # Don't use PyListWriter_Extend() since it can shrink the list
+            builder = self.create_builder(alloc)
+            # Don't use PyListBuilder_Extend() since it can shrink the list
             for item in items:
-                writer.append(item)
-            result = writer.finish()
+                builder.append(item)
+            result = builder.finish()
             self.list_equal(result, list(items))
             self.assertEqual(list_get_allocated(result), expected)
 
@@ -585,38 +585,38 @@ class ListWriterTests(unittest.TestCase):
 
         # do not shrink on MemoryError
         alloc = 1024
-        writer = self.create_writer(alloc)
-        writer.append(1)
+        builder = self.create_builder(alloc)
+        builder.append(1)
         with support.inject_memory_error_cm():
             # list_resize() never fails when shrinking
-            result = writer.finish()
+            result = builder.finish()
         self.list_equal(result, [1])
         self.assertEqual(list_get_allocated(result), alloc)
 
     def test_discard(self):
-        # Test PyListWriter_Discard(): must not leak memory
-        writer = self.create_writer(0)
-        writer.extend([2, 5, 7])
-        writer.discard()
+        # Test PyListBuilder_Discard(): must not leak memory
+        builder = self.create_builder(0)
+        builder.extend([2, 5, 7])
+        builder.discard()
 
     @threading_helper.requires_working_threading()
     def test_thread(self):
-        # PyListWriter can be used by multiple threads: it's up to the caller
+        # PyListBuilder can be used by multiple threads: it's up to the caller
         # to implement a lock to prevent concurrent accesses.
-        writer = self.create_writer(0)
+        builder = self.create_builder(0)
 
-        def thread_func(writer):
-            writer.append('a')
-            writer.append_steal('b')
-            writer.extend(('c',))
-            writer.extend_array(('d',))
-            writer.extend_array_steal(('e',))
+        def thread_func(builder):
+            builder.append('a')
+            builder.append_steal('b')
+            builder.extend(('c',))
+            builder.extend_array(('d',))
+            builder.extend_array_steal(('e',))
 
-        thread = threading.Thread(target=thread_func, args=(writer,))
+        thread = threading.Thread(target=thread_func, args=(builder,))
         thread.start()
         threading_helper.join_thread(thread)
 
-        self.list_equal(writer.finish(), list('abcde'))
+        self.list_equal(builder.finish(), list('abcde'))
 
 
 if __name__ == "__main__":

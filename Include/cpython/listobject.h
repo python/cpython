@@ -53,34 +53,34 @@ PyAPI_FUNC(int) PyList_Extend(PyObject *self, PyObject *iterable);
 PyAPI_FUNC(int) PyList_Clear(PyObject *self);
 
 
-/* --- PyListWriter API --------------------------------------------------- */
+/* --- PyListBuilder API -------------------------------------------------- */
 
-typedef struct PyListWriter PyListWriter;
+typedef struct PyListBuilder PyListBuilder;
 
-PyAPI_FUNC(PyListWriter*) PyListWriter_Create(Py_ssize_t size);
-PyAPI_FUNC(PyObject*) PyListWriter_Finish(PyListWriter *writer);
-PyAPI_FUNC(void) PyListWriter_Discard(PyListWriter *writer);
-PyAPI_FUNC(int) PyListWriter_Append(
-    PyListWriter *writer,
+PyAPI_FUNC(PyListBuilder*) PyListBuilder_Create(Py_ssize_t size);
+PyAPI_FUNC(PyObject*) PyListBuilder_Finish(PyListBuilder *builder);
+PyAPI_FUNC(void) PyListBuilder_Discard(PyListBuilder *builder);
+PyAPI_FUNC(int) PyListBuilder_Append(
+    PyListBuilder *builder,
     PyObject *item);
-PyAPI_FUNC(int) PyListWriter_AppendSteal(
-    PyListWriter *writer,
+PyAPI_FUNC(int) PyListBuilder_AppendSteal(
+    PyListBuilder *builder,
     PyObject *item);
-PyAPI_FUNC(int) PyListWriter_Extend(
-    PyListWriter *writer,
+PyAPI_FUNC(int) PyListBuilder_Extend(
+    PyListBuilder *builder,
     PyObject *iterable);
-PyAPI_FUNC(int) PyListWriter_ExtendArray(
-    PyListWriter *writer,
+PyAPI_FUNC(int) PyListBuilder_ExtendArray(
+    PyListBuilder *builder,
     PyObject *const *items,
     Py_ssize_t nitem);
-PyAPI_FUNC(int) PyListWriter_ExtendArraySteal(
-    PyListWriter *writer,
+PyAPI_FUNC(int) PyListBuilder_ExtendArraySteal(
+    PyListBuilder *builder,
     PyObject *const *items,
     Py_ssize_t nitem);
-PyAPI_FUNC(int) PyListWriter_FromFormat(
-    PyListWriter *writer,
+PyAPI_FUNC(int) PyListBuilder_FromFormat(
+    PyListBuilder *builder,
     const char *format,
     ...);
-PyAPI_FUNC(int) PyListWriter_FromBuffer(
-    PyListWriter *writer,
+PyAPI_FUNC(int) PyListBuilder_FromBuffer(
+    PyListBuilder *builder,
     const Py_buffer *buf);

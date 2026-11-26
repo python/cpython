@@ -119,16 +119,16 @@ _list_get_allocated(PyObject *Py_UNUSED(module), PyObject *obj)
 
 typedef struct {
     PyObject_HEAD
-    PyListWriter *writer;
-} WriterObject;
+    PyListBuilder *builder;
+} BuilderObject;
 
 
 static inline int
-writer_check(WriterObject *self)
+builder_check(BuilderObject *self)
 {
-    if (self->writer == NULL) {
+    if (self->builder == NULL) {
         PyErr_SetString(PyExc_ValueError,
-                        "operation on finished/discarded writer");
+                        "operation on finished/discarded builder");
         return -1;
     }
     return 0;
@@ -136,24 +136,24 @@ writer_check(WriterObject *self)
 
 
 static PyObject *
-writer_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+builder_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    WriterObject *self = (WriterObject *)type->tp_alloc(type, 0);
+    BuilderObject *self = (BuilderObject *)type->tp_alloc(type, 0);
     if (!self) {
         return NULL;
     }
-    self->writer = NULL;
+    self->builder = NULL;
     return (PyObject*)self;
 }
 
 
-// Test PyListWriter_Create()
+// Test PyListBuilder_Create()
 static int
-writer_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
+builder_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
 {
     if (kwargs && PyDict_GET_SIZE(kwargs)) {
         PyErr_Format(PyExc_TypeError,
-                     "PyListWriter() takes no keyword arguments");
+                     "PyListBuilder() takes no keyword arguments");
         return -1;
     }
 
@@ -162,11 +162,11 @@ writer_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
         return -1;
     }
 
-    WriterObject *self = (WriterObject *)self_raw;
-    PyListWriter_Discard(self->writer);
+    BuilderObject *self = (BuilderObject *)self_raw;
+    PyListBuilder_Discard(self->builder);
 
-    self->writer = PyListWriter_Create(size);
-    if (self->writer == NULL) {
+    self->builder = PyListBuilder_Create(size);
+    if (self->builder == NULL) {
         return -1;
     }
 
@@ -174,74 +174,74 @@ writer_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
 }
 
 
-// Test PyListWriter_Discard()
+// Test PyListBuilder_Discard()
 static void
-writer_dealloc(PyObject *self_raw)
+builder_dealloc(PyObject *self_raw)
 {
-    WriterObject *self = (WriterObject *)self_raw;
+    BuilderObject *self = (BuilderObject *)self_raw;
     PyTypeObject *tp = Py_TYPE(self);
-    if (self->writer) {
-        PyListWriter_Discard(self->writer);
+    if (self->builder) {
+        PyListBuilder_Discard(self->builder);
     }
     tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 
-// Test PyListWriter_Append()
+// Test PyListBuilder_Append()
 static PyObject*
-writer_append(PyObject *self_raw, PyObject *item)
+builder_append(PyObject *self_raw, PyObject *item)
 {
-    WriterObject *self = (WriterObject *)self_raw;
-    if (writer_check(self) < 0) {
+    BuilderObject *self = (BuilderObject *)self_raw;
+    if (builder_check(self) < 0) {
         return NULL;
     }
 
-    if (PyListWriter_Append(self->writer, item) < 0) {
+    if (PyListBuilder_Append(self->builder, item) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
 
-// Test PyListWriter_AppendSteal()
+// Test PyListBuilder_AppendSteal()
 static PyObject*
-writer_append_steal(PyObject *self_raw, PyObject *item)
+builder_append_steal(PyObject *self_raw, PyObject *item)
 {
-    WriterObject *self = (WriterObject *)self_raw;
-    if (writer_check(self) < 0) {
+    BuilderObject *self = (BuilderObject *)self_raw;
+    if (builder_check(self) < 0) {
         return NULL;
     }
 
-    if (PyListWriter_AppendSteal(self->writer, Py_NewRef(item)) < 0) {
+    if (PyListBuilder_AppendSteal(self->builder, Py_NewRef(item)) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
 
-// Test PyListWriter_Extend()
+// Test PyListBuilder_Extend()
 static PyObject*
-writer_extend(PyObject *self_raw, PyObject *iterable)
+builder_extend(PyObject *self_raw, PyObject *iterable)
 {
-    WriterObject *self = (WriterObject *)self_raw;
-    if (writer_check(self) < 0) {
+    BuilderObject *self = (BuilderObject *)self_raw;
+    if (builder_check(self) < 0) {
         return NULL;
     }
 
-    if (PyListWriter_Extend(self->writer, iterable) < 0) {
+    if (PyListBuilder_Extend(self->builder, iterable) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
 
-// Test PyListWriter_ExtendArray()
+// Test PyListBuilder_ExtendArray()
 static PyObject*
-writer_extend_array(PyObject *self_raw, PyObject *tuple)
+builder_extend_array(PyObject *self_raw, PyObject *tuple)
 {
-    WriterObject *self = (WriterObject *)self_raw;
-    if (writer_check(self) < 0) {
+    BuilderObject *self = (BuilderObject *)self_raw;
+    if (builder_check(self) < 0) {
         return NULL;
     }
 
@@ -253,19 +253,19 @@ writer_extend_array(PyObject *self_raw, PyObject *tuple)
     PyObject **items = &PyTuple_GET_ITEM(tuple, 0);
     Py_ssize_t len = PyTuple_GET_SIZE(tuple);
 
-    if (PyListWriter_ExtendArray(self->writer, items, len) < 0) {
+    if (PyListBuilder_ExtendArray(self->builder, items, len) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
 
-// Test PyListWriter_ExtendArraySteal()
+// Test PyListBuilder_ExtendArraySteal()
 static PyObject*
-writer_extend_array_steal(PyObject *self_raw, PyObject *tuple)
+builder_extend_array_steal(PyObject *self_raw, PyObject *tuple)
 {
-    WriterObject *self = (WriterObject *)self_raw;
-    if (writer_check(self) < 0) {
+    BuilderObject *self = (BuilderObject *)self_raw;
+    if (builder_check(self) < 0) {
         return NULL;
     }
 
@@ -281,19 +281,19 @@ writer_extend_array_steal(PyObject *self_raw, PyObject *tuple)
         Py_INCREF(items[i]);
     }
 
-    if (PyListWriter_ExtendArraySteal(self->writer, items, len) < 0) {
+    if (PyListBuilder_ExtendArraySteal(self->builder, items, len) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
 
-// Test PyListWriter_FromFormat("i")
+// Test PyListBuilder_FromFormat("i")
 static PyObject*
-writer_from_format_i(PyObject *self_raw, PyObject *arg)
+builder_from_format_i(PyObject *self_raw, PyObject *arg)
 {
-    WriterObject *self = (WriterObject *)self_raw;
-    if (writer_check(self) < 0) {
+    BuilderObject *self = (BuilderObject *)self_raw;
+    if (builder_check(self) < 0) {
         return NULL;
     }
 
@@ -302,23 +302,23 @@ writer_from_format_i(PyObject *self_raw, PyObject *arg)
         return NULL;
     }
 
-    if (PyListWriter_FromFormat(self->writer, "i", value) < 0) {
+    if (PyListBuilder_FromFormat(self->builder, "i", value) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
 
-// Test PyListWriter_FromFormat("i")
+// Test PyListBuilder_FromFormat("i")
 static PyObject*
-writer_from_format_i16(PyObject *self_raw, PyObject *tuple)
+builder_from_format_i16(PyObject *self_raw, PyObject *tuple)
 {
-    WriterObject *self = (WriterObject *)self_raw;
-    if (writer_check(self) < 0) {
+    BuilderObject *self = (BuilderObject *)self_raw;
+    if (builder_check(self) < 0) {
         return NULL;
     }
 
-    // Test size larger than small_array size in PyListWriter_FromFormat()
+    // Test size larger than small_array size in PyListBuilder_FromFormat()
     int values[16];
     Py_ssize_t len = Py_ARRAY_LENGTH(values);
     if (!PyTuple_Check(tuple) || PyTuple_GET_SIZE(tuple) != len) {
@@ -334,7 +334,7 @@ writer_from_format_i16(PyObject *self_raw, PyObject *tuple)
         values[i] = value;
     }
 
-    int res = PyListWriter_FromFormat(self->writer,
+    int res = PyListBuilder_FromFormat(self->builder,
         "iiiiiiiiiiiiiiii",
         values[0], values[1], values[2], values[3],
         values[4], values[5], values[6], values[7],
@@ -348,16 +348,16 @@ writer_from_format_i16(PyObject *self_raw, PyObject *tuple)
 }
 
 
-// Test PyListWriter_FromFormat() error
+// Test PyListBuilder_FromFormat() error
 static PyObject*
-writer_from_format_error(PyObject *self_raw, PyObject *Py_UNUSED(args))
+builder_from_format_error(PyObject *self_raw, PyObject *Py_UNUSED(args))
 {
-    WriterObject *self = (WriterObject *)self_raw;
-    if (writer_check(self) < 0) {
+    BuilderObject *self = (BuilderObject *)self_raw;
+    if (builder_check(self) < 0) {
         return NULL;
     }
 
-    int res = PyListWriter_FromFormat(self->writer, "iiO", 1, 2, NULL);
+    int res = PyListBuilder_FromFormat(self->builder, "iiO", 1, 2, NULL);
     if (res < 0) {
         return NULL;
     }
@@ -365,12 +365,12 @@ writer_from_format_error(PyObject *self_raw, PyObject *Py_UNUSED(args))
 }
 
 
-// Test PyListWriter_FromBuffer() error
+// Test PyListBuilder_FromBuffer() error
 static PyObject*
-writer_from_buffer(PyObject *self_raw, PyObject *obj)
+builder_from_buffer(PyObject *self_raw, PyObject *obj)
 {
-    WriterObject *self = (WriterObject *)self_raw;
-    if (writer_check(self) < 0) {
+    BuilderObject *self = (BuilderObject *)self_raw;
+    if (builder_check(self) < 0) {
         return NULL;
     }
 
@@ -380,7 +380,7 @@ writer_from_buffer(PyObject *self_raw, PyObject *obj)
         return NULL;
     }
 
-    int res = PyListWriter_FromBuffer(self->writer, &view);
+    int res = PyListBuilder_FromBuffer(self->builder, &view);
     PyBuffer_Release(&view);
     if (res < 0) {
         return NULL;
@@ -389,64 +389,64 @@ writer_from_buffer(PyObject *self_raw, PyObject *obj)
 }
 
 
-// Test PyListWriter_Finish()
+// Test PyListBuilder_Finish()
 static PyObject*
-writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
+builder_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
 {
-    WriterObject *self = (WriterObject *)self_raw;
-    if (writer_check(self) < 0) {
+    BuilderObject *self = (BuilderObject *)self_raw;
+    if (builder_check(self) < 0) {
         return NULL;
     }
 
-    PyObject *list = PyListWriter_Finish(self->writer);
-    self->writer = NULL;
+    PyObject *list = PyListBuilder_Finish(self->builder);
+    self->builder = NULL;
     return list;
 }
 
 
-// Test PyListWriter_Discard()
+// Test PyListBuilder_Discard()
 static PyObject*
-writer_discard(PyObject *self_raw, PyObject *Py_UNUSED(args))
+builder_discard(PyObject *self_raw, PyObject *Py_UNUSED(args))
 {
-    WriterObject *self = (WriterObject *)self_raw;
-    if (writer_check(self) < 0) {
+    BuilderObject *self = (BuilderObject *)self_raw;
+    if (builder_check(self) < 0) {
         return NULL;
     }
 
-    PyListWriter_Discard(self->writer);
-    self->writer = NULL;
+    PyListBuilder_Discard(self->builder);
+    self->builder = NULL;
     Py_RETURN_NONE;
 }
 
 
-static PyMethodDef writer_methods[] = {
-    {"append", _PyCFunction_CAST(writer_append), METH_O},
-    {"append_steal", _PyCFunction_CAST(writer_append_steal), METH_O},
-    {"extend", _PyCFunction_CAST(writer_extend), METH_O},
-    {"extend_array", _PyCFunction_CAST(writer_extend_array), METH_O},
-    {"extend_array_steal", _PyCFunction_CAST(writer_extend_array_steal), METH_O},
-    {"from_format_i", _PyCFunction_CAST(writer_from_format_i), METH_O},
-    {"from_format_i16", _PyCFunction_CAST(writer_from_format_i16), METH_O},
-    {"from_format_error", _PyCFunction_CAST(writer_from_format_error), METH_NOARGS},
-    {"from_buffer", _PyCFunction_CAST(writer_from_buffer), METH_O},
-    {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
-    {"discard", _PyCFunction_CAST(writer_discard), METH_NOARGS},
+static PyMethodDef builder_methods[] = {
+    {"append", _PyCFunction_CAST(builder_append), METH_O},
+    {"append_steal", _PyCFunction_CAST(builder_append_steal), METH_O},
+    {"extend", _PyCFunction_CAST(builder_extend), METH_O},
+    {"extend_array", _PyCFunction_CAST(builder_extend_array), METH_O},
+    {"extend_array_steal", _PyCFunction_CAST(builder_extend_array_steal), METH_O},
+    {"from_format_i", _PyCFunction_CAST(builder_from_format_i), METH_O},
+    {"from_format_i16", _PyCFunction_CAST(builder_from_format_i16), METH_O},
+    {"from_format_error", _PyCFunction_CAST(builder_from_format_error), METH_NOARGS},
+    {"from_buffer", _PyCFunction_CAST(builder_from_buffer), METH_O},
+    {"finish", _PyCFunction_CAST(builder_finish), METH_NOARGS},
+    {"discard", _PyCFunction_CAST(builder_discard), METH_NOARGS},
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyType_Slot Writer_Type_slots[] = {
-    {Py_tp_new, writer_new},
-    {Py_tp_init, writer_init},
-    {Py_tp_dealloc, writer_dealloc},
-    {Py_tp_methods, writer_methods},
+static PyType_Slot Builder_Type_slots[] = {
+    {Py_tp_new, builder_new},
+    {Py_tp_init, builder_init},
+    {Py_tp_dealloc, builder_dealloc},
+    {Py_tp_methods, builder_methods},
     {0, 0},  /* sentinel */
 };
 
-static PyType_Spec Writer_spec = {
-    .name = "_testcapi.PyListWriter",
-    .basicsize = sizeof(WriterObject),
+static PyType_Spec Builder_spec = {
+    .name = "_testcapi.PyListBuilder",
+    .basicsize = sizeof(BuilderObject),
     .flags = Py_TPFLAGS_DEFAULT,
-    .slots = Writer_Type_slots,
+    .slots = Builder_Type_slots,
 };
 
 
@@ -468,15 +468,15 @@ _PyTestCapi_Init_List(PyObject *m)
         return -1;
     }
 
-    PyTypeObject *writer_type = (PyTypeObject *)PyType_FromSpec(&Writer_spec);
-    if (writer_type == NULL) {
+    PyTypeObject *builder_type = (PyTypeObject *)PyType_FromSpec(&Builder_spec);
+    if (builder_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(m, writer_type) < 0) {
-        Py_DECREF(writer_type);
+    if (PyModule_AddType(m, builder_type) < 0) {
+        Py_DECREF(builder_type);
         return -1;
     }
-    Py_DECREF(writer_type);
+    Py_DECREF(builder_type);
 
     if (PyModule_AddIntConstant(m, "LIST_SMALL_ALLOCATED", _Py_LIST_SMALL_ALLOCATED) < 0) {
         return -1;

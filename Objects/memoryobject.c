@@ -12,7 +12,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_list.h"          // _PyListWriter_ResetSize()
+#include "pycore_list.h"          // _PyListBuilder_ResetSize()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
@@ -2379,7 +2379,7 @@ memoryview_tolist_impl(PyMemoryViewObject *self)
 
 
 int
-PyListWriter_FromBuffer(PyListWriter *writer, const Py_buffer *view)
+PyListBuilder_FromBuffer(PyListBuilder *builder, const Py_buffer *view)
 {
     if (view->ndim != 1) {
         PyErr_Format(PyExc_ValueError,
@@ -2400,7 +2400,7 @@ PyListWriter_FromBuffer(PyListWriter *writer, const Py_buffer *view)
         fmt = "B";
     }
 
-    PyListObject *list = _PyList_CAST(writer);
+    PyListObject *list = _PyList_CAST(builder);
     Py_ssize_t old_size = Py_SIZE(list);
 
     const char *ptr = view->buf;
@@ -2410,7 +2410,7 @@ PyListWriter_FromBuffer(PyListWriter *writer, const Py_buffer *view)
 
     Py_ssize_t new_size = old_size + shape;
     if (new_size > list->allocated) {
-        if (_PyListWriter_Resize(writer, new_size) < 0) {
+        if (_PyListBuilder_Resize(builder, new_size) < 0) {
             return -1;
         }
     }
@@ -2427,15 +2427,15 @@ PyListWriter_FromBuffer(PyListWriter *writer, const Py_buffer *view)
             goto error;
         }
 
-        _PyListWriter_SET_ITEM_STEAL(writer, old_size + i, item);
+        _PyListBuilder_SET_ITEM_STEAL(builder, old_size + i, item);
     }
     return 0;
 
 error:
     if (Py_SIZE(list) != old_size) {
-        // On error, reset the writer to its previous state:
+        // On error, reset the builder to its previous state:
         // discard added items
-        _PyListWriter_ResetSize(writer, old_size);
+        _PyListBuilder_ResetSize(builder, old_size);
     }
     return -1;
 }

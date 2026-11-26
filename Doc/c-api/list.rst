@@ -229,12 +229,12 @@ List Objects
    ``tuple(list)``.
 
 
-.. _pylistwriter:
+.. _pylistbuilder:
 
-PyListWriter
-------------
+PyListBuilder
+-------------
 
-The :c:type:`PyListWriter` API can be used to create a Python :class:`list`
+The :c:type:`PyListBuilder` API can be used to create a Python :class:`list`
 object.
 
 On Free Threading, it's more efficient than the ``PyList`` C API to create a
@@ -243,102 +243,102 @@ On Free Threading, it's more efficient than the ``PyList`` C API to create a
 .. versionadded:: next
 
 
-.. c:type:: PyListWriter
+.. c:type:: PyListBuilder
 
-   A list writer object.
+   A list builder object.
 
-   The API is **not thread safe**. To share a writer with multiple threads, a
+   The API is **not thread safe**. To share a builder with multiple threads, a
    critical section or a lock is needed.
 
-   The instance must be destroyed by :c:func:`PyListWriter_Finish` on
-   success, or :c:func:`PyListWriter_Discard` on error.
+   The instance must be destroyed by :c:func:`PyListBuilder_Finish` on
+   success, or :c:func:`PyListBuilder_Discard` on error.
 
 
-.. c:function:: PyListWriter* PyListWriter_Create(Py_ssize_t size)
+.. c:function:: PyListBuilder* PyListBuilder_Create(Py_ssize_t size)
 
-   Create a :c:type:`PyListWriter` and preallocate *size* items.
+   Create a :c:type:`PyListBuilder` and preallocate *size* items.
 
    On error, set an exception and return ``NULL``.
 
    *size* must be positive or zero.
 
-.. c:function:: PyObject* PyListWriter_Finish(PyListWriter *writer)
+.. c:function:: PyObject* PyListBuilder_Finish(PyListBuilder *builder)
 
-   Finish a :c:type:`PyListWriter` created by
-   :c:func:`PyListWriter_Create`.
+   Finish a :c:type:`PyListBuilder` created by
+   :c:func:`PyListBuilder_Create`.
 
    On success, return a Python :class:`list` object.
    On error, set an exception and return ``NULL``.
 
-   The writer instance is invalid after the call in any case.
-   No API can be called on the writer after :c:func:`PyListWriter_Finish`.
+   The builder instance is invalid after the call in any case.
+   No API can be called on the builder after :c:func:`PyListBuilder_Finish`.
 
-.. c:function:: void PyListWriter_Discard(PyListWriter *writer)
+.. c:function:: void PyListBuilder_Discard(PyListBuilder *builder)
 
-   Discard a :c:type:`PyListWriter` created by :c:func:`PyListWriter_Create`.
+   Discard a :c:type:`PyListBuilder` created by :c:func:`PyListBuilder_Create`.
 
-   Do nothing if *writer* is ``NULL``.
+   Do nothing if *builder* is ``NULL``.
 
-   The writer instance is invalid after the call.
-   No API can be called on the writer after :c:func:`PyListWriter_Discard`.
+   The builder instance is invalid after the call.
+   No API can be called on the builder after :c:func:`PyListBuilder_Discard`.
 
-.. c:function:: int PyListWriter_Append(PyListWriter *writer, PyObject *item)
+.. c:function:: int PyListBuilder_Append(PyListBuilder *builder, PyObject *item)
 
-   Append an item to the list writer.
+   Append an item to the list builder.
    Similar to :c:func:`PyList_Append`.
 
    On success, return ``0``.
-   On error, set an exception, leave the writer unchanged, and return ``-1``.
+   On error, set an exception, leave the builder unchanged, and return ``-1``.
 
-.. c:function:: int PyListWriter_AppendSteal(PyListWriter *writer, PyObject *item)
+.. c:function:: int PyListBuilder_AppendSteal(PyListBuilder *builder, PyObject *item)
 
-   Similar to :c:func:`PyListWriter_Append`, but :term:`steals <steal>` the
+   Similar to :c:func:`PyListBuilder_Append`, but :term:`steals <steal>` the
    reference to *item*, instead of creating a new :term:`strong reference`.
 
-.. c:function:: int PyListWriter_Extend(PyListWriter *writer, PyObject *iterable)
+.. c:function:: int PyListBuilder_Extend(PyListBuilder *builder, PyObject *iterable)
 
-   Extend the list writer with the contents of *iterable*.
+   Extend the list builder with the contents of *iterable*.
    Similar to :c:func:`PyList_Extend`.
 
    On success, return ``0``.
-   On error, set an exception, leave the writer unchanged, and return ``-1``.
+   On error, set an exception, leave the builder unchanged, and return ``-1``.
 
-   If consuming *iterable* raises an exception, the writer is restored to its
+   If consuming *iterable* raises an exception, the builder is restored to its
    previous state: discard added items.
 
-.. c:function:: int PyListWriter_ExtendArray(PyListWriter *writer, PyObject *const *items, Py_ssize_t nitem)
+.. c:function:: int PyListBuilder_ExtendArray(PyListBuilder *builder, PyObject *const *items, Py_ssize_t nitem)
 
-   Extend the list writer with the contents of *items*: copy references from
-   *items* to the list writer.
+   Extend the list builder with the contents of *items*: copy references from
+   *items* to the list builder.
 
    On success, return ``0``.
-   On error, set an exception, leave the writer unchanged, and return ``-1``.
+   On error, set an exception, leave the builder unchanged, and return ``-1``.
 
-.. c:function:: int PyListWriter_ExtendArraySteal(PyListWriter *writer, PyObject *const *items, Py_ssize_t nitem)
+.. c:function:: int PyListBuilder_ExtendArraySteal(PyListBuilder *builder, PyObject *const *items, Py_ssize_t nitem)
 
-   Similar to :c:func:`PyListWriter_ExtendArray`, but :term:`steal` references
+   Similar to :c:func:`PyListBuilder_ExtendArray`, but :term:`steal` references
    instead of copying references.
 
    On error, all *items* references are also cleared.
 
-.. c:function:: int PyListWriter_FromFormat(PyListWriter *writer, const char *format, ...)
+.. c:function:: int PyListBuilder_FromFormat(PyListBuilder *builder, const char *format, ...)
 
    Add values using :ref:`building values format <arg-parsing>`.
 
-   Example adding 3 integers: ``PyListWriter_FromFormat(writer, "iii", 1, 2, 3)``.
+   Example adding 3 integers: ``PyListBuilder_FromFormat(builder, "iii", 1, 2, 3)``.
 
    On success, return ``0``.
-   On error, set an exception, leave the writer unchanged, and return ``-1``.
+   On error, set an exception, leave the builder unchanged, and return ``-1``.
 
-   On error, the writer is restored to its previous state: discard added items.
+   On error, the builder is restored to its previous state: discard added items.
 
-.. c:function:: int PyListWriter_FromBuffer(PyListWriter *writer, Py_buffer *view)
+.. c:function:: int PyListBuilder_FromBuffer(PyListBuilder *builder, Py_buffer *view)
 
    Add values from a buffer.
 
    *view* must have 1 dimension.
 
    On success, return ``0``.
-   On error, set an exception, leave the writer unchanged, and return ``-1``.
+   On error, set an exception, leave the builder unchanged, and return ``-1``.
 
-   On error, the writer is restored to its previous state: discard added items.
+   On error, the builder is restored to its previous state: discard added items.

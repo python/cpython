@@ -80,30 +80,30 @@ PyAPI_FUNC(PyObject *)_PyList_FromStackRefStealOnSuccess(const union _PyStackRef
 PyAPI_FUNC(PyObject *)_PyList_AsTupleAndClear(PyListObject *v);
 
 #ifdef Py_DEBUG
-#  define _PyListWriter_INIT_ITEMS 1
+#  define _PyListBuilder_INIT_ITEMS 1
 #else
-#  define _PyListWriter_INIT_ITEMS 0
+#  define _PyListBuilder_INIT_ITEMS 0
 #endif
 
-extern int _PyListWriter_Resize(
-    PyListWriter *writer,
+extern int _PyListBuilder_Resize(
+    PyListBuilder *writer,
     Py_ssize_t new_size);
-extern void _PyListWriter_ResetSize(
-    PyListWriter *writer,
+extern void _PyListBuilder_ResetSize(
+    PyListBuilder *writer,
     Py_ssize_t size);
 
 
 // The caller must resize the list so it's big enough to set this item.
 // A writer list item must be set exactly once.
 static inline void
-_PyListWriter_SET_ITEM_STEAL(PyListWriter *writer, Py_ssize_t index,
-                             PyObject *item)
+_PyListBuilder_SET_ITEM_STEAL(PyListBuilder *writer, Py_ssize_t index,
+                              PyObject *item)
 {
     assert(item != NULL);
 
     PyListObject *list = (PyListObject*)writer;
     assert(0 <= index && index < Py_SIZE(list));
-#if _PyListWriter_INIT_ITEMS
+#if _PyListBuilder_INIT_ITEMS
     assert(list->ob_item[index] == NULL);
 #endif
 

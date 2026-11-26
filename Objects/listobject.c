@@ -1528,7 +1528,7 @@ list_extend_dictitems(PyListObject *self, PyDictObject *dict)
     return 0;
 }
 
-// If you update this function, update also PyListWriter_Extend().
+// If you update this function, update also PyListBuilder_Extend().
 static int
 _list_extend(PyListObject *self, PyObject *iterable)
 {
@@ -4412,18 +4412,18 @@ listiter_reduce_general(void *_it, int forward)
 }
 
 
-/* --- PyListWriter API --------------------------------------------------- */
+/* --- PyListBuilder API -------------------------------------------------- */
 
 #ifndef NDEBUG
 static int
-listwriter_check_consistency(PyListWriter *writer)
+listbuilder_check_consistency(PyListBuilder *builder)
 {
-    assert(writer != NULL);
-    assert(PyList_CheckExact(_PyObject_CAST(writer)));
-    PyListObject *list = (PyListObject*)writer;
+    assert(builder != NULL);
+    assert(PyList_CheckExact(_PyObject_CAST(builder)));
+    PyListObject *list = (PyListObject*)builder;
     assert(Py_SIZE(list) >= 0);
     assert(Py_SIZE(list) <= list->allocated);
-    // Don't test _PyObject_IsUniquelyReferenced() since a list writer can
+    // Don't test _PyObject_IsUniquelyReferenced() since a list builder can
     // be shared between multiple threads with external locking.
     assert(Py_REFCNT(list) == 1);
     assert(!_PyObject_GC_IS_TRACKED(list));
@@ -4432,8 +4432,8 @@ listwriter_check_consistency(PyListWriter *writer)
 #endif
 
 
-PyListWriter*
-PyListWriter_Create(Py_ssize_t size)
+PyListBuilder*
+PyListBuilder_Create(Py_ssize_t size)
 {
     if (size < 0) {
         PyErr_SetString(PyExc_ValueError, "size must not be negative");
@@ -4446,44 +4446,44 @@ PyListWriter_Create(Py_ssize_t size)
     }
     assert(Py_SIZE(list) == 0);
     // In release mode, list items are uninitialized pointers which is safe,
-    // since the list object is not tracked by the GC, and the writer caller
+    // since the list object is not tracked by the GC, and the builder caller
     // must initialize all items.
 
-#if _PyListWriter_INIT_ITEMS
+#if _PyListBuilder_INIT_ITEMS
     // In debug mode, set all items to NULL to be able to check that they are
-    // non-NULL in PyListWriter_Finish().
+    // non-NULL in PyListBuilder_Finish().
     if (1 <= size) {
         memset(_PyList_CAST(list)->ob_item, 0, size * sizeof(PyObject*));
     }
 #endif
 
-    PyListWriter *writer = (PyListWriter*)list;
-    assert(listwriter_check_consistency(writer));
-    return writer;
+    PyListBuilder *builder = (PyListBuilder*)list;
+    assert(listbuilder_check_consistency(builder));
+    return builder;
 }
 
 
 void
-PyListWriter_Discard(PyListWriter *writer)
+PyListBuilder_Discard(PyListBuilder *builder)
 {
-    if (writer == NULL) {
+    if (builder == NULL) {
         return;
     }
 
-    assert(listwriter_check_consistency(writer));
-    PyObject *list = _PyObject_CAST(writer);
+    assert(listbuilder_check_consistency(builder));
+    PyObject *list = _PyObject_CAST(builder);
     Py_DECREF(list);
 }
 
 
 PyObject*
-PyListWriter_Finish(PyListWriter *writer)
+PyListBuilder_Finish(PyListBuilder *builder)
 {
-    assert(listwriter_check_consistency(writer));
-    PyListObject *list = _PyList_CAST(writer);
+    assert(listbuilder_check_consistency(builder));
+    PyListObject *list = _PyList_CAST(builder);
 
     // Shrink the list if the allocated size is greater than the double size.
-    // For example, if PyListWriter_Create() argument overestimated the final
+    // For example, if PyListBuilder_Create() argument overestimated the final
     // size.
     if (Py_SIZE(list) < (list->allocated >> 1)
         && list->allocated > LIST_SMALL_ALLOCATED)
@@ -4491,14 +4491,14 @@ PyListWriter_Finish(PyListWriter *writer)
         if (list_resize(list, Py_SIZE(list)) < 0) {
             // This case cannot happen: list_resize() never fails when
             // shrinking
-            PyListWriter_Discard(writer);
+            PyListBuilder_Discard(builder);
             return NULL;
         }
         // Note: cannot test that list->allocated changed in debug mode, since
         // it's left unchanged on memory allocation failure.
     }
 
-#if _PyListWriter_INIT_ITEMS
+#if _PyListBuilder_INIT_ITEMS
     // Make sure that all items have been initialized
     Py_ssize_t size = Py_SIZE(list);
     PyObject **list_items = list->ob_item;
@@ -4514,14 +4514,14 @@ PyListWriter_Finish(PyListWriter *writer)
 
 
 int
-_PyListWriter_Resize(PyListWriter *writer, Py_ssize_t new_size)
+_PyListBuilder_Resize(PyListBuilder *builder, Py_ssize_t new_size)
 {
-    PyListObject *list = _PyList_CAST(writer);
+    PyListObject *list = _PyList_CAST(builder);
     Py_ssize_t old_size = Py_SIZE(list);
 
     // On Free Threading, it can call _PyObject_GC_SET_SHARED() on the list
     int res = list_resize(list, new_size);
-#if _PyListWriter_INIT_ITEMS
+#if _PyListBuilder_INIT_ITEMS
     if (res == 0 && new_size > old_size) {
         memset(&list->ob_item[old_size], 0,
                (new_size - old_size) * sizeof(PyObject*));
@@ -4532,10 +4532,10 @@ _PyListWriter_Resize(PyListWriter *writer, Py_ssize_t new_size)
 
 
 int
-PyListWriter_AppendSteal(PyListWriter *writer, PyObject *item)
+PyListBuilder_AppendSteal(PyListBuilder *builder, PyObject *item)
 {
-    assert(listwriter_check_consistency(writer));
-    PyListObject *list = _PyList_CAST(writer);
+    assert(listbuilder_check_consistency(builder));
+    PyListObject *list = _PyList_CAST(builder);
 
     Py_ssize_t index = Py_SIZE(list);
     Py_ssize_t allocated = list->allocated;
@@ -4545,27 +4545,27 @@ PyListWriter_AppendSteal(PyListWriter *writer, PyObject *item)
         return 0;
     }
 
-    if (_PyListWriter_Resize(writer, index + 1) < 0) {
+    if (_PyListBuilder_Resize(builder, index + 1) < 0) {
         Py_DECREF(item);
         return -1;
     }
-    _PyListWriter_SET_ITEM_STEAL(writer, index, item);
+    _PyListBuilder_SET_ITEM_STEAL(builder, index, item);
     return 0;
 }
 
 
 int
-PyListWriter_Append(PyListWriter *writer, PyObject *item)
+PyListBuilder_Append(PyListBuilder *builder, PyObject *item)
 {
-    return PyListWriter_AppendSteal(writer, Py_NewRef(item));
+    return PyListBuilder_AppendSteal(builder, Py_NewRef(item));
 }
 
 
 void
-_PyListWriter_ResetSize(PyListWriter *writer, Py_ssize_t size)
+_PyListBuilder_ResetSize(PyListBuilder *builder, Py_ssize_t size)
 {
-    assert(listwriter_check_consistency(writer));
-    PyListObject *list = _PyList_CAST(writer);
+    assert(listbuilder_check_consistency(builder));
+    PyListObject *list = _PyList_CAST(builder);
 
     Py_ssize_t new_size = Py_SIZE(list);
     assert(0 <= size && size <= new_size);
@@ -4576,20 +4576,20 @@ _PyListWriter_ResetSize(PyListWriter *writer, Py_ssize_t size)
     PyObject **items = list->ob_item;
     for (Py_ssize_t i = size; i < new_size; i++) {
         Py_DECREF(items[i]);
-#if _PyListWriter_INIT_ITEMS
+#if _PyListBuilder_INIT_ITEMS
         items[i] = NULL;
 #endif
     }
 }
 
 
-// Similar to _list_extend() but don't lock the writer list.
+// Similar to _list_extend() but don't lock the builder list.
 // If you update this function, update also _list_extend().
 int
-PyListWriter_Extend(PyListWriter *writer, PyObject *iterable)
+PyListBuilder_Extend(PyListBuilder *builder, PyObject *iterable)
 {
-    assert(listwriter_check_consistency(writer));
-    PyListObject *self = _PyList_CAST(writer);
+    assert(listbuilder_check_consistency(builder));
+    PyListObject *self = _PyList_CAST(builder);
     assert(_PyObject_CAST(self) != iterable);
 
     Py_ssize_t old_size = Py_SIZE(self);
@@ -4635,9 +4635,9 @@ PyListWriter_Extend(PyListWriter *writer, PyObject *iterable)
     }
 
     if (res < 0 && Py_SIZE(self) != old_size) {
-        // On error, reset the writer to its previous state:
+        // On error, reset the builder to its previous state:
         // discard added items
-        _PyListWriter_ResetSize(writer, old_size);
+        _PyListBuilder_ResetSize(builder, old_size);
     }
 
     return res;
@@ -4646,11 +4646,11 @@ PyListWriter_Extend(PyListWriter *writer, PyObject *iterable)
 
 // Force inlining to optimize "if (steal)" at build time
 static inline Py_ALWAYS_INLINE int
-listwriter_extend_array(PyListWriter *writer,
+listbuilder_extend_array(PyListBuilder *builder,
                         PyObject *const *items, Py_ssize_t nitem,
                         int steal)
 {
-    assert(listwriter_check_consistency(writer));
+    assert(listbuilder_check_consistency(builder));
     assert(nitem >= 0);
 
     if (nitem == 0) {
@@ -4658,11 +4658,11 @@ listwriter_extend_array(PyListWriter *writer,
         return 0;
     }
 
-    PyListObject *list = _PyList_CAST(writer);
+    PyListObject *list = _PyList_CAST(builder);
     Py_ssize_t size = Py_SIZE(list);
     Py_ssize_t new_size = size + nitem;
     if (new_size > list->allocated) {
-        if (_PyListWriter_Resize(writer, new_size) < 0) {
+        if (_PyListBuilder_Resize(builder, new_size) < 0) {
             if (steal) {
                 for (Py_ssize_t i = 0; i < nitem; i++) {
                     Py_DECREF(items[i]);
@@ -4689,23 +4689,23 @@ listwriter_extend_array(PyListWriter *writer,
 
 
 int
-PyListWriter_ExtendArray(PyListWriter *writer,
+PyListBuilder_ExtendArray(PyListBuilder *builder,
                          PyObject *const *items, Py_ssize_t nitem)
 {
-    return listwriter_extend_array(writer, items, nitem, 0);
+    return listbuilder_extend_array(builder, items, nitem, 0);
 }
 
 
 int
-PyListWriter_ExtendArraySteal(PyListWriter *writer,
+PyListBuilder_ExtendArraySteal(PyListBuilder *builder,
                               PyObject *const *items, Py_ssize_t nitem)
 {
-    return listwriter_extend_array(writer, items, nitem, 1);
+    return listbuilder_extend_array(builder, items, nitem, 1);
 }
 
 
 int
-PyListWriter_FromFormat(PyListWriter *writer, const char *format, ...)
+PyListBuilder_FromFormat(PyListBuilder *builder, const char *format, ...)
 {
     PyObject* small_array[8];
     Py_ssize_t size;
@@ -4722,7 +4722,7 @@ PyListWriter_FromFormat(PyListWriter *writer, const char *format, ...)
         return -1;
     }
 
-    res = PyListWriter_ExtendArraySteal(writer, array, size);
+    res = PyListBuilder_ExtendArraySteal(builder, array, size);
     if (array != small_array) {
         PyMem_Free(array);
     }
