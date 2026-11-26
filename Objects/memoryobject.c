@@ -12,7 +12,6 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_list.h"          // _PyListBuilder_ResetSize()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
@@ -2003,9 +2002,7 @@ unpack_single(PyMemoryViewObject *self, const char *ptr, const char *fmt)
     unsigned char uc;
     void *p;
 
-    if (self != NULL) {
-        CHECK_RELEASED_AGAIN(self);
-    }
+    CHECK_RELEASED_AGAIN(self);
 
 #if PY_LITTLE_ENDIAN
     int endian = 1;
@@ -2529,7 +2526,6 @@ memoryview_tolist_pinned(PyMemoryViewObject *self)
                           fmt);
     }
 }
-
 
 /*[clinic input]
 memoryview.tolist
