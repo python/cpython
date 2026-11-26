@@ -1,1 +1,0 @@
-Improve detection of ``skipinitialspace`` in :meth:`csv.Sniffer.sniff`.

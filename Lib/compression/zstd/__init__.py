@@ -20,6 +20,8 @@ __all__ = (
     'get_frame_size',
     'zstd_version',
     'zstd_version_info',
+    'ZSTD_VERSION',
+    'ZSTD_VERSION_INFO',
     'ZstdCompressor',
     'ZstdDecompressor',
     'ZstdDict',
@@ -29,13 +31,11 @@ __all__ = (
 import _zstd
 import enum
 from _zstd import (ZstdCompressor, ZstdDecompressor, ZstdDict, ZstdError,
-                   get_frame_size, zstd_version)
+                   get_frame_size, zstd_version, ZSTD_VERSION,
+                   zstd_version_info, ZSTD_VERSION_INFO)
+from compression._common import _streams
 from compression.zstd._zstdfile import ZstdFile, open, _nbytes
 
-# zstd_version_number is (MAJOR * 100 * 100 + MINOR * 100 + RELEASE)
-zstd_version_info = (*divmod(_zstd.zstd_version_number // 100, 100),
-                     _zstd.zstd_version_number % 100)
-"""Version number of the runtime zstd library as a tuple of integers."""
 
 COMPRESSION_LEVEL_DEFAULT = _zstd.ZSTD_CLEVEL_DEFAULT
 """The default compression level for Zstandard, currently '3'."""
@@ -161,17 +161,9 @@ def decompress(data, zstd_dict=None, options=None):
 
     For incremental decompression, use a ZstdDecompressor instead.
     """
-    results = []
-    while True:
-        decomp = ZstdDecompressor(options=options, zstd_dict=zstd_dict)
-        results.append(decomp.decompress(data))
-        if not decomp.eof:
-            raise ZstdError('Compressed data ended before the '
-                            'end-of-stream marker was reached')
-        data = decomp.unused_data
-        if not data:
-            break
-    return b''.join(results)
+    return _streams._decompress_all(data, ZstdDecompressor,
+                                    truncated_error=ZstdError,
+                                    options=options, zstd_dict=zstd_dict)
 
 
 class CompressionParameter(enum.IntEnum):

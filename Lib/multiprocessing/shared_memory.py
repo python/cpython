@@ -186,7 +186,7 @@ class SharedMemory:
 
     def __del__(self):
         try:
-            self.close()
+            self._closefd()
         except OSError:
             pass
 
@@ -222,6 +222,11 @@ class SharedMemory:
         "Size in bytes."
         return self._size
 
+    def _closefd(self):
+        if _USE_POSIX and self._fd >= 0:
+            os.close(self._fd)
+            self._fd = -1
+
     def close(self):
         """Closes access to the shared memory from this instance but does
         not destroy the shared memory block."""
@@ -231,9 +236,7 @@ class SharedMemory:
         if self._mmap is not None:
             self._mmap.close()
             self._mmap = None
-        if _USE_POSIX and self._fd >= 0:
-            os.close(self._fd)
-            self._fd = -1
+        self._closefd()
 
     def unlink(self):
         """Requests that the underlying shared memory block be destroyed.
@@ -305,6 +308,13 @@ class ShareableList:
         else:
             return 3  # NoneType
 
+    @staticmethod
+    def _encode_value(value):
+        if not isinstance(value, str):
+            return value
+        else:
+            return value.encode(_encoding)
+
     def __init__(self, sequence=None, *, name=None):
         if name is None or sequence is not None:
             sequence = sequence or ()
@@ -312,7 +322,7 @@ class ShareableList:
                 self._types_mapping[type(item)]
                     if not isinstance(item, (str, bytes))
                     else self._types_mapping[type(item)] % (
-                        self._alignment * (len(item) // self._alignment + 1),
+                        self._alignment * ((len(self._encode_value(item)) - 1) // self._alignment + 1),
                     )
                 for item in sequence
             ]
@@ -342,31 +352,40 @@ class ShareableList:
 
         if sequence is not None:
             _enc = _encoding
-            struct.pack_into(
-                "q" + self._format_size_metainfo,
-                self.shm.buf,
-                0,
-                self._list_len,
-                *(self._allocated_offsets)
-            )
-            struct.pack_into(
-                "".join(_formats),
-                self.shm.buf,
-                self._offset_data_start,
-                *(v.encode(_enc) if isinstance(v, str) else v for v in sequence)
-            )
-            struct.pack_into(
-                self._format_packing_metainfo,
-                self.shm.buf,
-                self._offset_packing_formats,
-                *(v.encode(_enc) for v in _formats)
-            )
-            struct.pack_into(
-                self._format_back_transform_codes,
-                self.shm.buf,
-                self._offset_back_transform_codes,
-                *(_recreation_codes)
-            )
+            try:
+                struct.pack_into(
+                    "q" + self._format_size_metainfo,
+                    self.shm.buf,
+                    0,
+                    self._list_len,
+                    *(self._allocated_offsets)
+                )
+                struct.pack_into(
+                    "".join(_formats),
+                    self.shm.buf,
+                    self._offset_data_start,
+                    *(self._encode_value(v) for v in sequence)
+                )
+                struct.pack_into(
+                    self._format_packing_metainfo,
+                    self.shm.buf,
+                    self._offset_packing_formats,
+                    *(v.encode(_enc) for v in _formats)
+                )
+                struct.pack_into(
+                    self._format_back_transform_codes,
+                    self.shm.buf,
+                    self._offset_back_transform_codes,
+                    *(_recreation_codes)
+                )
+            except BaseException:
+                # A value of a supported type may still be unpackable, such as
+                # an int outside the signed 64-bit range.  The block was created
+                # above and the caller gets no object to release it with, so
+                # destroy it here.
+                self.shm.close()
+                self.shm.unlink()
+                raise
 
         else:
             self._list_len = len(self)  # Obtains size from offset 0 in buffer.
@@ -463,8 +482,7 @@ class ShareableList:
         else:
             allocated_length = self._allocated_offsets[position + 1] - item_offset
 
-            encoded_value = (value.encode(_encoding)
-                             if isinstance(value, str) else value)
+            encoded_value = self._encode_value(value)
             if len(encoded_value) > allocated_length:
                 raise ValueError("bytes/str item exceeds available storage")
             if current_format[-1] == "s":

@@ -31,6 +31,7 @@ import unittest
 import urllib.parse
 import warnings
 
+from test import support
 from test.support import (
     SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess
 )
@@ -87,6 +88,33 @@ class ModuleTests(unittest.TestCase):
 
     def test_not_supported_error(self):
         self.assertIsSubclass(sqlite.NotSupportedError, sqlite.DatabaseError)
+
+    def _test_sqlite_version(self, v, string):
+        self.assertIsInstance(v[:], tuple)
+        self.assertEqual(len(v), 3)
+        self.assertIsInstance(v[0], int)
+        self.assertIsInstance(v[1], int)
+        self.assertIsInstance(v[2], int)
+        self.assertIsInstance(v.major, int)
+        self.assertIsInstance(v.minor, int)
+        self.assertIsInstance(v.patch, int)
+        self.assertEqual(v[0], v.major)
+        self.assertEqual(v[1], v.minor)
+        self.assertEqual(v[2], v.patch)
+        self.assertGreaterEqual(v.major, 3)
+        self.assertGreaterEqual(v.minor, 0)
+        self.assertGreaterEqual(v.patch, 0)
+        self.assertEqual(string, '%d.%d.%d' % v)
+
+    def test_sqlite_version(self):
+        if support.verbose:
+            print(f'SQLITE_VERSION = {sqlite.SQLITE_VERSION}', flush=True)
+            print(f'sqlite_version = {sqlite.sqlite_version}', flush=True)
+            print(f'SQLITE_VERSION_INFO = {sqlite.SQLITE_VERSION_INFO}', flush=True)
+            print(f'sqlite_version_info = {sqlite.sqlite_version_info}', flush=True)
+        self._test_sqlite_version(sqlite.SQLITE_VERSION_INFO, sqlite.SQLITE_VERSION)
+        self._test_sqlite_version(sqlite.sqlite_version_info, sqlite.sqlite_version)
+        self.assertEqual(sqlite.SQLITE_VERSION_INFO[0], sqlite.sqlite_version_info[0])
 
     def test_module_constants(self):
         consts = [
@@ -486,6 +514,13 @@ class ConnectionTests(unittest.TestCase):
                     self.assertEqual(cx.isolation_level, "")
                     cx.isolation_level = level
                     self.assertEqual(cx.isolation_level, level)
+
+    def test_connection_delete_isolation_level(self):
+        with memory_database() as cx:
+            with self.assertRaisesRegex(AttributeError,
+                                        "cannot delete attribute"):
+                del cx.isolation_level
+            self.assertEqual(cx.isolation_level, "")
 
     def test_connection_reinit(self):
         with memory_database() as cx:
@@ -1075,9 +1110,16 @@ class CursorTests(unittest.TestCase):
         UINT32_MAX = (1 << 32) - 1
         setter = functools.partial(setattr, self.cu, 'arraysize')
 
+        self.cu.arraysize = 2
         self.assertRaises(TypeError, setter, 1.0)
         self.assertRaises(ValueError, setter, -3)
         self.assertRaises(OverflowError, setter, UINT32_MAX + 1)
+        self.assertRaises(OverflowError, setter, 2**1000)
+        self.assertRaises(ValueError, setter, -2**1000)
+        self.assertRaisesRegex(AttributeError, 'cannot be deleted',
+                               delattr, self.cu, 'arraysize')
+        # a failed assignment does not change the value
+        self.assertEqual(self.cu.arraysize, 2)
 
     def test_fetchmany(self):
         # no active SQL statement

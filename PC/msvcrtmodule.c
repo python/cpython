@@ -34,19 +34,6 @@
 #endif
 
 /*[python input]
-class HANDLE_converter(CConverter):
-    type = 'void *'
-    format_unit = '"_Py_PARSE_UINTPTR"'
-
-    def parse_arg(self, argname, displayname, *, limited_capi):
-        return self.format_code("""
-            {paramname} = PyLong_AsVoidPtr({argname});
-            if (!{paramname} && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """,
-            argname=argname)
-
 class HANDLE_return_converter(CReturnConverter):
     type = 'void *'
 
@@ -76,7 +63,7 @@ class wchar_t_return_converter(CReturnConverter):
             f'{data.parser_retval} = '
             f'PyUnicode_FromOrdinal({data.converter_retval});\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=ed7a4a045a6d0496]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=f61ae699a69482ba]*/
 
 /*[clinic input]
 module msvcrt
@@ -185,8 +172,8 @@ to os.fdopen() to create a file object.
 [clinic start generated code]*/
 
 static long
-msvcrt_open_osfhandle_impl(PyObject *module, void *handle, int flags)
-/*[clinic end generated code: output=b2fb97c4b515e4e6 input=d5db190a307cf4bb]*/
+msvcrt_open_osfhandle_impl(PyObject *module, HANDLE handle, int flags)
+/*[clinic end generated code: output=646759b9fd02ca7b input=d5db190a307cf4bb]*/
 {
     if (PySys_Audit("msvcrt.open_osfhandle", "Ki", handle, flags) < 0) {
         return -1;
@@ -460,8 +447,8 @@ Only available on Debug builds.
 [clinic start generated code]*/
 
 static void *
-msvcrt_CrtSetReportFile_impl(PyObject *module, int type, void *file)
-/*[clinic end generated code: output=9393e8c77088bbe9 input=290809b5f19e65b9]*/
+msvcrt_CrtSetReportFile_impl(PyObject *module, int type, HANDLE file)
+/*[clinic end generated code: output=55858e446d583c5f input=290809b5f19e65b9]*/
 {
     HANDLE res;
 

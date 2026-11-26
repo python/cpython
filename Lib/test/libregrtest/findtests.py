@@ -21,6 +21,7 @@ SPLITTESTDIRS: set[TestName] = {
     "test_asyncio",
     "test_concurrent_futures",
     "test_doctests",
+    "test_free_threading",
     "test_future_stmt",
     "test_gdb",
     "test_inspect",
@@ -91,9 +92,11 @@ def _list_cases(suite: unittest.TestSuite) -> None:
 
 def list_cases(tests: TestTuple, *,
                match_tests: TestFilter | None = None,
+               match_labels: TestFilter | None = None,
                test_dir: StrPath | None = None) -> None:
     support.verbose = False
     cases_by_module, skipped = collect_cases(tests, match_tests=match_tests,
+                                             match_labels=match_labels,
                                              test_dir=test_dir)
     for cases in cases_by_module.values():
         for case_id in cases:
@@ -111,12 +114,13 @@ class _ModuleLoadFailed(Exception):
 
 def collect_cases(tests: TestTuple, *,
                   match_tests: TestFilter | None = None,
+                  match_labels: TestFilter | None = None,
                   test_dir: StrPath | None = None
                   ) -> tuple[dict[TestName, list[str]], list[TestName]]:
     # Install the filter unconditionally: passing None clears any
     # previously installed global filter, so collection is not
     # affected by unrelated state in this process.
-    set_match_tests(match_tests)
+    set_match_tests(match_tests, match_labels)
     result: dict[TestName, list[str]] = {}
     skipped: list[TestName] = []
     for test_name in tests:

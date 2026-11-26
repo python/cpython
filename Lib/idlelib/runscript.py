@@ -93,15 +93,19 @@ class ScriptBinding:
         try:
             # If successful, return the compiled code
             return compile(source, filename, "exec")
-        except (SyntaxError, OverflowError, ValueError) as value:
-            msg = getattr(value, 'msg', '') or value or "<no detail available>"
-            lineno = getattr(value, 'lineno', '') or 1
-            offset = getattr(value, 'offset', '') or 0
+        except SyntaxError as value:
+            msg = value.msg or "<no detail available>"
+            lineno = value.lineno or 1
+            offset = value.offset or 0
             if offset == 0:
                 lineno += 1  #mark end of offending line
             pos = "0.0 + %d lines + %d chars" % (lineno-1, offset-1)
             editwin.colorize_syntax_error(text, pos)
-            self.errorbox("SyntaxError", "%-20s" % msg)
+            self.errorbox(type(value).__name__, msg)
+            return False
+        except Exception as value:
+            msg = str(value) or "<no detail available>"
+            self.errorbox(type(value).__name__, msg)
             return False
         finally:
             shell.set_warning_stream(saved_stream)

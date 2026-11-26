@@ -27,6 +27,10 @@ from test.support import script_helper
 from test.support import socket_helper
 from test.support import warnings_helper
 
+if support.MS_WINDOWS:
+    import _winapi
+
+
 TESTFN = os_helper.TESTFN
 
 
@@ -624,6 +628,20 @@ class TestSupport(unittest.TestCase):
             os.close(fd)
         self.assertEqual(more - start, 1)
 
+    @unittest.skipUnless(support.MS_WINDOWS, "test specific to Windows")
+    def test_handle_count(self):
+        start = os_helper.handle_count()
+        handle = _winapi.CreateFile(
+                        __file__, _winapi.GENERIC_READ,
+                        0, _winapi.NULL,
+                        _winapi.OPEN_EXISTING,
+                        0, _winapi.NULL)
+        try:
+            more = os_helper.handle_count()
+        finally:
+            _winapi.CloseHandle(handle)
+        self.assertEqual(more - start, 1)
+
     def check_print_warning(self, msg, expected):
         stderr = io.StringIO()
         with support.swap_attr(support.print_warning, 'orig_stderr', stderr):
@@ -820,6 +838,10 @@ class TestSupport(unittest.TestCase):
             for v in linked:
                 self.assertIsInstance(v, int)
 
+    def test_built_with_c_assertions(self):
+        # Check that calling the function doesn't raise an exception
+        result = support.built_with_c_assertions()
+        self.assertIsInstance(result, bool)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc
@@ -1231,17 +1253,28 @@ class TestIsolated(unittest.TestCase):
         self.assertEqual(len(result.errors), 1)
         self.assertIn(f'within {TIMEOUT} seconds', result.errors[0][1])
 
+    @support.requires_subprocess()
+    def test_bigmemtest_isolates_a_real_run(self):
+        # A dummy run (no -M) stays in this process, a real run does not.
+        for memlimit in (0, support._1G):
+            with self.subTest(real_max_memuse=memlimit):
+                with support.swap_attr(support, 'real_max_memuse', memlimit):
+                    result = self._run('BigmemSample')
+                self.assertEqual(result.testsRun, 1)
+                self.assertEqual(self._names(result.failures), [])
+                self.assertEqual(self._names(result.errors), [])
+
     def test_skipped_without_subprocess_support(self):
         # On a platform without subprocess support the test is skipped in the
         # parent, before any subprocess is spawned.
         calls = []
-        orig = isolation._run_in_subprocess
+        orig = isolation._start_test
         with support.swap_attr(support, 'has_subprocess_support', False):
-            isolation._run_in_subprocess = lambda *a, **k: calls.append(a)
+            isolation._start_test = lambda *a, **k: calls.append(a)
             try:
                 result = self._run('MethodSample.test_pass')
             finally:
-                isolation._run_in_subprocess = orig
+                isolation._start_test = orig
         self.assertEqual(result.testsRun, 1)
         self.assertEqual(len(result.skipped), 1)
         self.assertEqual(calls, [])

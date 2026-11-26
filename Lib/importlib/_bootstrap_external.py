@@ -33,7 +33,10 @@ import marshal
 _MS_WINDOWS = (sys.platform == 'win32')
 if _MS_WINDOWS:
     import nt as _os
-    import winreg
+    try:
+        import winreg
+    except ImportError:
+        winreg = None
 else:
     import posix as _os
 
@@ -52,7 +55,7 @@ _pathseps_with_colon = {f':{s}' for s in path_separators}
 
 # Bootstrap-related code ######################################################
 _CASE_INSENSITIVE_PLATFORMS_STR_KEY = 'win',
-_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY = 'cygwin', 'darwin', 'ios', 'tvos', 'watchos'
+_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY = 'cygwin', 'darwin', 'ios', 'tvos', 'visionos', 'watchos'
 _CASE_INSENSITIVE_PLATFORMS =  (_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY
                                 + _CASE_INSENSITIVE_PLATFORMS_STR_KEY)
 
@@ -633,6 +636,10 @@ def _bless_my_loader(module_globals):
     missing = object()
     loader = module_globals.get('__loader__', None)
     spec = module_globals.get('__spec__', missing)
+
+    # The __main__ module of a script or the REPL has __spec__ set to None.
+    if spec is None and module_globals.get('__name__') == '__main__':
+        return loader
 
     if loader is None:
         if spec is missing:
@@ -1454,6 +1461,13 @@ class FileFinder:
             while True:
                 try:
                     entry = next(scan_iterator)
+                except StopIteration:
+                    break
+                except OSError:
+                    # A failing scan cannot make progress; end the listing
+                    # like _fill_cache() treats an unreadable directory.
+                    break
+                try:
                     if entry.name == _PYCACHE:
                         continue
                     # packages
@@ -1467,9 +1481,7 @@ class FileFinder:
                             if entry.name.endswith(suffix)
                         }
                 except OSError:
-                    pass  # ignore exceptions from next(scan_iterator) and os.DirEntry
-                except StopIteration:
-                    break
+                    pass  # skip entries whose os.DirEntry methods fail
 
     def discover(self, parent=None):
         if parent and parent.submodule_search_locations is None:
@@ -1563,7 +1575,7 @@ def _get_supported_file_loaders():
     """
     extension_loaders = []
     if hasattr(_imp, 'create_dynamic'):
-        if sys.platform in {"ios", "tvos", "watchos"}:
+        if sys.platform in {"ios", "tvos", "visionos", "watchos"}:
             extension_loaders = [(AppleFrameworkLoader, [
                 suffix.replace(".so", ".fwork")
                 for suffix in _imp.extension_suffixes()
