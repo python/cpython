@@ -3,9 +3,7 @@ import mimetypes
 import os
 import shlex
 import sys
-import unittest
 import unittest.mock
-
 from platform import win32_edition
 from test import support
 from test.support import cpython_only, force_not_colorized, os_helper, requires_subprocess
@@ -543,9 +541,6 @@ class MimeTypesClassTestCase(unittest.TestCase):
             url="scheme:foo.html", strict=True), ("text/html", None))
         self.assertEqual(self.db.guess_all_extensions(
             type='image/jpeg', strict=True), ['.jpg', '.jpe', '.jpeg'])
-
-
-
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
