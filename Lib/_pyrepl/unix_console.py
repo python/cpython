@@ -544,6 +544,12 @@ class UnixConsole(Console):
         trace("push char {char!r}", char=char)
         self.event_queue.push(char)
 
+    def pushback(self, data: str) -> None:
+        """Push characters back into the input queue."""
+        for char in data:
+            for byte in char.encode(self.encoding, "replace"):
+                self.push_char(byte)
+
     def get_event(self, block: bool = True) -> Event | None:
         """
         Get an event from the console event queue.
