@@ -5110,14 +5110,15 @@ class PdbTestColorize(unittest.TestCase):
         self.assertIn("\x1b", output.getvalue())
 
     def test_gen_colors(self):
-        # Do not use @unittest.skipIf(pdb._pyrepl_available()): that is
-        # evaluated at import time, before regrtest may redirect stdin.
-        if not pdb._pyrepl_available():
-            self.skipTest("pyrepl is not available")
+        # gen_colors() only needs _pyrepl.utils and the Pdb instance's do_*
+        # command checks; bypass PdbPyReplInput.__init__ so it does not
+        # require a TTY (or a working pyrepl input) to run.
+        import_module('_pyrepl.utils')
+
         p = pdb.Pdb()
-        if p.pyrepl_input is None:
-            self.skipTest("pyrepl input is not available")
-        gen_colors = p.pyrepl_input.gen_colors
+        pyrepl_input = pdb.PdbPyReplInput.__new__(pdb.PdbPyReplInput)
+        pyrepl_input.pdb_instance = p
+        gen_colors = pyrepl_input.gen_colors
 
         test_cases = [
             ("longlist", [((0, 7), "soft_keyword")]),

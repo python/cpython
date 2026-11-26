@@ -396,7 +396,7 @@ def _pyrepl_available(stdin=None, stdout=None):
             return False
         stdout.fileno()
         return True
-    except (AttributeError, ValueError, OSError):
+    except (AttributeError, TypeError, ValueError, OSError):
         return False
 
 
