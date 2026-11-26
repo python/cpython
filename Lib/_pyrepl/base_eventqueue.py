@@ -86,7 +86,7 @@ class BaseEventQueue:
             # Nothing pending: either idle, or a complete key was already
             # emitted by ``push``.
             return
-        buf = self.buf.take_bytes() # type: ignore[attr-defined]
+        buf = self.buf.take_bytes()
         self.keymap = self.compiled_keymap
         if buf and buf[0] == 27:  # escape
             self.insert(Event('key', '\033', b'\033'))
