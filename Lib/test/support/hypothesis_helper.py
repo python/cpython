@@ -55,3 +55,9 @@ else:
             ),
         )
         hypothesis.settings.load_profile("cpython-local-dev")
+
+
+def mark_hypothesis(func):
+    from test.support import mark
+
+    return mark("hypothesis")(func)
