@@ -1,5 +1,7 @@
 import os
 
+from test.support import mark
+
 try:
     import hypothesis
 except ImportError:
@@ -56,8 +58,4 @@ else:
         )
         hypothesis.settings.load_profile("cpython-local-dev")
 
-
-def mark_hypothesis(func):
-    from test.support import mark
-
-    return mark("hypothesis")(func)
+mark_hypothesis = mark("hypothesis")
