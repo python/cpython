@@ -3783,6 +3783,164 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertIsInstance(repr(Some), str)  # should not crash
         self.assertIsInstance(repr(Some()), str)  # should not crash
 
+    def test_set_module_clears_firstlineno(self):
+        class Meta(type):
+            pass
+
+        class DelegatingMeta(type):
+            def __setattr__(cls, name, value):
+                super().__setattr__(name, value)
+
+        for metaclass in (type, Meta, DelegatingMeta):
+            for module in (__name__, 'new_module'):
+                with self.subTest(metaclass=metaclass, module=module):
+                    class C(metaclass=metaclass):
+                        pass
+
+                    self.assertIsInstance(vars(C)['__firstlineno__'], int)
+                    C.__module__ = module
+                    self.assertEqual(vars(C)['__module__'], module)
+                    self.assertNotIn('__firstlineno__', vars(C))
+                    C.__module__ = module  # Already invalidated.
+                    self.assertNotIn('__firstlineno__', vars(C))
+
+        class Plain:
+            pass
+
+        with self.assertRaises(TypeError):
+            del Plain.__module__
+
+        class C(metaclass=Meta):
+            pass
+
+        lineno = vars(C)['__firstlineno__']
+        del C.__module__
+        self.assertNotIn('__module__', vars(C))
+        self.assertEqual(vars(C)['__firstlineno__'], lineno)
+
+    def test_set_module_respects_metaclass_descriptor(self):
+        calls = []
+
+        class Meta(type):
+            @property
+            def __module__(cls):
+                return vars(cls)['__module__']
+
+            @__module__.setter
+            def __module__(cls, value):
+                calls.append((cls, value))
+
+        class C(metaclass=Meta):
+            pass
+
+        lineno = vars(C)['__firstlineno__']
+        C.__module__ = 'new_module'
+        self.assertEqual(calls, [(C, 'new_module')])
+        self.assertEqual(vars(C)['__module__'], __name__)
+        self.assertEqual(vars(C)['__firstlineno__'], lineno)
+
+    def test_set_module_write_failure_preserves_firstlineno(self):
+        class Meta(type):
+            pass
+
+        class Key:
+            comparisons = 0
+            fail_after = None
+
+            def __hash__(self):
+                return hash('__module__')
+
+            def __eq__(self, other):
+                if other == '__module__':
+                    self.comparisons += 1
+                    if (self.fail_after is not None
+                            and self.comparisons > self.fail_after):
+                        raise ValueError('cannot insert module')
+                return False
+
+        key = Key()
+        with self.assertWarns(RuntimeWarning):
+            C = Meta('C', (), {key: None, '__firstlineno__': 1})
+        del C.__module__
+        # Allow one lookup of the missing key, then fail during insertion.
+        # The number of comparisons in a lookup depends on the hash seed.
+        key.comparisons = 0
+        self.assertNotIn('__module__', vars(C))
+        key.fail_after = key.comparisons
+        key.comparisons = 0
+        keys = list(vars(C))
+        with self.assertRaises(AttributeError):
+            C.__module__ = 'new_module'
+        self.assertEqual(vars(C)['__firstlineno__'], 1)
+        self.assertEqual(list(vars(C)), keys)
+
+    def test_set_module_clear_failure_preserves_module(self):
+        class Meta(type):
+            pass
+
+        class Key:
+            fail = False
+
+            def __hash__(self):
+                return hash('__firstlineno__')
+
+            def __eq__(self, other):
+                if self.fail and other == '__firstlineno__':
+                    raise ValueError('cannot clear firstlineno')
+                return False
+
+        key = Key()
+        namespace = {key: None, '__module__': 'old_module',
+                     '__firstlineno__': 1}
+        with self.assertWarns(RuntimeWarning):
+            C = Meta('C', (), namespace)
+
+        key.fail = True
+        keys = list(vars(C))
+        with self.assertRaisesRegex(ValueError, 'cannot clear firstlineno'):
+            C.__module__ = 'new_module'
+        key.fail = False
+        self.assertEqual(vars(C)['__module__'], 'old_module')
+        self.assertEqual(vars(C)['__firstlineno__'], 1)
+        self.assertEqual(list(vars(C)), keys)
+
+    def test_set_module_invalidates_cache_after_comparison(self):
+        class Meta(type):
+            pass
+
+        holder = {}
+        cache_reads = []
+
+        class Key:
+            in_comparison = False
+
+            def __hash__(self):
+                return hash('__module__')
+
+            def __eq__(self, other):
+                if (other == '__module__' and 'C' in holder
+                        and not self.in_comparison):
+                    self.in_comparison = True
+                    try:
+                        cache_reads.append(holder['C'].__module__)
+                    finally:
+                        self.in_comparison = False
+                return False
+
+        key = Key()
+        namespace = {key: None, '__module__': 'old_module',
+                     '__firstlineno__': 1}
+        with self.assertWarns(RuntimeWarning):
+            C = Meta('C', (), namespace)
+        holder['C'] = C
+
+        C.__module__ = 'new_module'
+
+        self.assertTrue(cache_reads)
+        self.assertIn('old_module', cache_reads)
+        self.assertEqual(vars(C)['__module__'], 'new_module')
+        self.assertEqual(C.__module__, 'new_module')
+
     def test_keyword_arguments(self):
         # Testing keyword arguments to __init__, __call__...
         def f(a): return a

@@ -3363,6 +3363,62 @@ PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 }
 
 
+/* Remove an exact str key without comparing it to non-str keys. The caller
+   must hold the dict lock. */
+int
+_PyDict_Pop_ExactUnicode_LockHeld(PyDictObject *mp, PyObject *key,
+                                  PyObject **result)
+{
+    assert(PyDict_Check(mp));
+    assert(can_modify_dict(mp));
+    assert(PyUnicode_CheckExact(key));
+
+    Py_hash_t hash = hash_unicode_key(key);
+    PyDictKeysObject *dk = mp->ma_keys;
+    Py_ssize_t ix;
+    if (dk->dk_kind == DICT_KEYS_GENERAL) {
+        ix = do_lookup(mp, dk, key, hash, compare_generic_exact_unicode);
+    }
+    else {
+        ix = unicodekeys_lookup_unicode(dk, key, hash);
+    }
+    if (ix < 0) {
+        if (result != NULL) {
+            *result = NULL;
+        }
+        return 0;
+    }
+
+    PyObject *old_value;
+    if (dk->dk_kind == DICT_KEYS_SPLIT) {
+        old_value = mp->ma_values->values[ix];
+    }
+    else if (dk->dk_kind == DICT_KEYS_GENERAL) {
+        old_value = DK_ENTRIES(dk)[ix].me_value;
+    }
+    else {
+        old_value = DK_UNICODE_ENTRIES(dk)[ix].me_value;
+    }
+    if (old_value == NULL) {
+        if (result != NULL) {
+            *result = NULL;
+        }
+        return 0;
+    }
+
+    _PyDict_NotifyEvent(PyDict_EVENT_DELETED, mp, key, NULL);
+    delitem_common(mp, hash, ix, Py_NewRef(old_value));
+
+    if (result != NULL) {
+        *result = old_value;
+    }
+    else {
+        Py_DECREF(old_value);
+    }
+    return 1;
+}
+
+
 /* Internal version of dict.pop(). */
 int
 _PyDict_Pop_KnownHash(PyDictObject *mp, PyObject *key, Py_hash_t hash,

@@ -310,6 +310,40 @@ class TestTypeWatchers(unittest.TestCase):
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
             self.assert_events([])
 
+    def test_type_watcher_not_called_for_failed_module_update(self):
+        class Meta(type):
+            pass
+
+        class Key:
+            fail = False
+
+            def __hash__(self):
+                return hash('__firstlineno__')
+
+            def __eq__(self, other):
+                if self.fail and other == '__firstlineno__':
+                    raise ValueError('cannot clear firstlineno')
+                return False
+
+        key = Key()
+        namespace = {key: None, '__module__': 'old_module',
+                     '__firstlineno__': 1}
+        with self.assertWarns(RuntimeWarning):
+            C = Meta('C', (), namespace)
+        key.fail = True
+
+        with self.watcher(kind=self.ERROR) as wid:
+            self.watch(wid, C)
+            with catch_unraisable_exception() as cm:
+                with self.assertRaisesRegex(ValueError,
+                                            'cannot clear firstlineno'):
+                    C.__module__ = 'new_module'
+                self.assertIsNone(cm.unraisable)
+            key.fail = False
+            self.assertEqual(vars(C)['__module__'], 'old_module')
+            self.assertEqual(vars(C)['__firstlineno__'], 1)
+            self.assert_events([])
+
     def test_two_watchers(self):
         class C1: pass
         class C2: pass

@@ -182,6 +182,11 @@ extern int _PyDict_Pop_KnownHash(
     Py_hash_t hash,
     PyObject **result);
 
+extern int _PyDict_Pop_ExactUnicode_LockHeld(
+    PyDictObject *dict,
+    PyObject *key,
+    PyObject **result);
+
 extern void _PyDict_Clear_LockHeld(PyObject *op);
 
 #ifdef Py_GIL_DISABLED

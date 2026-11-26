@@ -1289,6 +1289,18 @@ class TestBuggyCases(GetSourceBase):
         with self.assertRaisesRegex(OSError, "lineno is out of bounds"):
             inspect.findsource(cls)
 
+    def test_getsource_after_set_module_with_custom_metaclass(self):
+        class Meta(type):
+            pass
+
+        # Keep the original line number within the bounds of inspect.py.
+        ns = {'__name__': __name__, 'Meta': Meta}
+        exec('class C(metaclass=Meta): pass', ns)
+        cls = ns['C']
+        cls.__module__ = inspect.__name__
+        with self.assertRaisesRegex(OSError, 'source code not available'):
+            inspect.getsource(cls)
+
     def test_getsource_on_method(self):
         self.assertSourceEqual(mod2.ClassWithMethod.method, 118, 119)
 

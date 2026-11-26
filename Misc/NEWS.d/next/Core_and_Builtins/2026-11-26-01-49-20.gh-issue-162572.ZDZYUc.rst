@@ -1,0 +1,3 @@
+Assigning :attr:`~type.__module__` now clears :attr:`~type.__firstlineno__`
+when a custom metaclass uses the default attribute setter to update the
+class dictionary.

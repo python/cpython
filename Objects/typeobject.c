@@ -1098,6 +1098,45 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
 #endif
 }
 
+/* Clear valid type versions and lookup caches without notifying watchers.
+   This is used after re-entrant code has repopulated caches during a type
+   update that was already reported to watchers. */
+static void
+type_invalidate_cache_unlocked(PyTypeObject *type)
+{
+    ASSERT_NEW_TYPE_OR_LOCKED(type);
+#ifdef Py_GIL_DISABLED
+    assert(!types_world_is_stopped());
+#endif
+    if (type->tp_version_tag == 0) {
+        return;
+    }
+    assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) == 0);
+
+    PyObject *subclasses = lookup_tp_subclasses(type);
+    if (subclasses != NULL) {
+        assert(PyDict_CheckExact(subclasses));
+
+        Py_ssize_t i = 0;
+        PyObject *ref;
+        while (PyDict_Next(subclasses, &i, NULL, &ref)) {
+            PyTypeObject *subclass = type_from_ref(ref);
+            if (subclass == NULL) {
+                continue;
+            }
+            type_invalidate_cache_unlocked(subclass);
+            Py_DECREF(subclass);
+        }
+    }
+
+    set_version_unlocked(type, 0);
+    _PyTypeCache_Invalidate(type);
+    if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        FT_ATOMIC_STORE_PTR_RELAXED(
+            ((PyHeapTypeObject *)type)->_spec_cache.getitem, NULL);
+    }
+}
+
 void
 _PyType_Modified_Unlocked(PyTypeObject *type)
 {
@@ -6657,25 +6696,31 @@ done:
 // the type versions.
 static int
 type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
-                 PyObject *value, PyObject **old_value)
+                 PyObject *value, PyObject **old_value, PyObject **old_firstlineno)
 {
-    // We don't want any re-entrancy between when we update the dict
-    // and call _PyType_Modified_Unlocked, including running the destructor
-    // of the current value as it can observe the cache in an inconsistent
-    // state.  The name is an exact unicode (see type_setattro()) and
-    // str subclass keys are copied to exact str by type_new_copy_dict()
-    // and type_setattro().  The type dict can still hold non-str keys
-    // (type_new_impl() only warns about them) and comparing with one of
-    // those can run user code that releases the locks.
+    // Resolve all potentially re-entrant lookups before changing the type
+    // dict. A non-str key with a colliding hash can run user code during
+    // lookup, so the firstlineno lookup must not happen after __module__ has
+    // been updated.
     if (_PyDict_GetItemRef_Unicode_LockHeld(dict, name, old_value) < 0) {
         return -1;
     }
 
-    /* Clear the VALID_VERSION flag of 'type' and all its
-        subclasses.  This could possibly be unified with the
-        update_subclasses() recursion in update_slot(), but carefully:
-        they each have their own conditions on which to stop
-        recursing into subclasses. */
+    bool clear_firstlineno = value != NULL && name == &_Py_ID(__module__);
+    if (clear_firstlineno) {
+        PyObject *firstlineno = &_Py_ID(__firstlineno__);
+        PyObject *preflight_value = NULL;
+        if (_PyDict_GetItemRef_Unicode_LockHeld(dict, firstlineno,
+                                                &preflight_value) < 0) {
+            return -1;
+        }
+        Py_XDECREF(preflight_value);
+    }
+
+    /* Clear the VALID_VERSION flag of 'type' and all its subclasses before
+       the update. A comparison during the write can re-enter Python and
+       repopulate the type cache, so successful updates clear caches again
+       after both dict changes are complete. */
     _PyType_Modified_Unlocked(type);
 
     if (_PyDict_SetItem_LockHeld(dict, name, value) < 0) {
@@ -6686,6 +6731,18 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
         return -1;
     }
 
+    if (clear_firstlineno) {
+        // The preflight above preserves lookup errors before the module is
+        // changed. Once the write succeeds, remove only the exact internal
+        // str key; this cannot run user code or fail, so no rollback is
+        // needed.
+        _PyDict_Pop_ExactUnicode_LockHeld(dict, &_Py_ID(__firstlineno__),
+                                          old_firstlineno);
+    }
+
+    if (clear_firstlineno) {
+        type_invalidate_cache_unlocked(type);
+    }
     return 0;
 }
 
@@ -6761,6 +6818,7 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
 #endif
 
     PyObject *old_value = NULL;
+    PyObject *old_firstlineno = NULL;
     PyObject *descr = _PyType_LookupRef(metatype, name);
     if (descr != NULL) {
         descrsetfunc f = Py_TYPE(descr)->tp_descr_set;
@@ -6788,7 +6846,8 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     }
 
     BEGIN_TYPE_DICT_LOCK(dict);
-    res = type_update_dict(type, (PyDictObject *)dict, name, value, &old_value);
+    res = type_update_dict(type, (PyDictObject *)dict, name, value,
+                           &old_value, &old_firstlineno);
     assert(_PyType_CheckConsistency(type));
     if (res == 0) {
         if (is_dunder_name(name) && has_slotdef(name)) {
@@ -6801,8 +6860,9 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
 done:
     Py_DECREF(name);
     Py_XDECREF(descr);
-    // delay decref of the old value as lock-free type cache readers may access it
+    // Delay decrefs as lock-free type cache readers may access the old values.
     _PyObject_XDecRefDelayed(old_value);
+    _PyObject_XDecRefDelayed(old_firstlineno);
     return res;
 }
 
