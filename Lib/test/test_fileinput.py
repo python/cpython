@@ -6,6 +6,7 @@ import io
 import os
 import sys
 import re
+import subprocess
 import fileinput
 import collections
 import builtins
@@ -29,6 +30,7 @@ from test.support.os_helper import TESTFN, FakePath
 from test.support.os_helper import unlink as safe_unlink
 from test.support import os_helper
 from test import support
+from test.support import script_helper
 from unittest import mock
 
 
@@ -1096,6 +1098,82 @@ class MiscTest(unittest.TestCase):
 
     def test_all(self):
         support.check__all__(self, fileinput)
+
+
+@support.requires_subprocess()
+class CommandLineTest(unittest.TestCase):
+
+    def setUp(self):
+        self.tmpdir = self.enterContext(os_helper.temp_dir())
+
+    def write_file(self, name, content):
+        with open(os.path.join(self.tmpdir, name), 'wb') as f:
+            f.write(content)
+
+    def read_file(self, name):
+        with open(os.path.join(self.tmpdir, name), 'rb') as f:
+            return f.read()
+
+    def run_cli(self, *args):
+        _, out, err = script_helper.assert_python_ok(
+            '-m', 'fileinput', *args, __cwd=self.tmpdir)
+        self.assertEqual(err, b'')
+        return out.decode().splitlines()
+
+    def test_files(self):
+        self.write_file('a', b'one\ntwo\n')
+        self.write_file('b', b'three')
+        self.assertEqual(self.run_cli('a', 'b'), [
+            '1: a[1]* one',
+            '2: a[2] two',
+            '3: b[1]* three',
+            '3: b[1]',
+        ])
+
+    def test_strip_line_endings(self):
+        self.write_file('a', b'one\r\ntwo\rthree\n')
+        self.assertEqual(self.run_cli('a'), [
+            '1: a[1]* one',
+            '2: a[2] two',
+            '3: a[3] three',
+            '3: a[3]',
+        ])
+
+    def test_stdin(self):
+        p = script_helper.spawn_python('-m', 'fileinput',
+                                       stderr=subprocess.PIPE)
+        out, err = p.communicate(b'one\ntwo\n')
+        self.assertEqual(p.returncode, 0)
+        self.assertEqual(err, b'')
+        self.assertEqual(out.decode().splitlines(), [
+            '1: <stdin>[1]* one',
+            '2: <stdin>[2] two',
+            '2: <stdin>[2]',
+        ])
+
+    def test_inplace(self):
+        self.write_file('a', b'one\ntwo\n')
+        self.assertEqual(self.run_cli('-i', 'a'), ['2: a[2]'])
+        self.assertEqual(self.read_file('a').decode().splitlines(), [
+            '1: a[1]* one',
+            '2: a[2] two',
+        ])
+        self.assertEqual(os.listdir(self.tmpdir), ['a'])
+
+    def test_inplace_backup(self):
+        self.write_file('a', b'one\ntwo\n')
+        self.assertEqual(self.run_cli('-i', '-b', '.orig', 'a'), ['2: a[2]'])
+        self.assertEqual(self.read_file('a').decode().splitlines(), [
+            '1: a[1]* one',
+            '2: a[2] two',
+        ])
+        self.assertEqual(self.read_file('a.orig'), b'one\ntwo\n')
+
+    def test_unknown_option(self):
+        _, out, err = script_helper.assert_python_failure(
+            '-m', 'fileinput', '-z', __cwd=self.tmpdir)
+        self.assertEqual(out, b'')
+        self.assertIn(b'option -z not recognized', err)
 
 
 if __name__ == "__main__":
