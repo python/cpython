@@ -9,6 +9,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_global_objects.h"  // _Py_SINGLETON()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 
 /***********************************/
@@ -134,7 +135,7 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
         goto error;
     }
 
-    info.newcontext = PyUnicode_AsUTF8(info.name);
+    info.newcontext = _PyUnicode_AsUTF8NoNUL(info.name);
     if (info.newcontext == NULL) {
         goto error;
     }
@@ -149,6 +150,11 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
         if (!PyUnicode_Check(info.filename)) {
             PyErr_SetString(PyExc_TypeError,
                             "module filename must be a string");
+            goto error;
+        }
+        if (PyUnicode_FindChar(info.filename, 0, 0,
+                               PyUnicode_GET_LENGTH(info.filename), 1) != -1) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto error;
         }
 
