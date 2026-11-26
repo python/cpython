@@ -5603,6 +5603,24 @@ class AbstractHookTests:
 
                 self.assertIsNone(wr())
 
+    def test_reducer_override_not_called_for_proxy(self):
+        seen = []
+        class MyPickler(self.pickler_class):
+            def reducer_override(self, obj):
+                seen.append(type(obj))
+                return NotImplemented
+
+        obj = Object()
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                seen.clear()
+                bio = io.BytesIO()
+                MyPickler(bio, proto).dump([obj, copyreg.Proxy(obj)])
+                self.assertIn(Object, seen)
+                self.assertNotIn(copyreg.Proxy, seen)
+                obj2, obj3 = pickle.loads(bio.getvalue())
+                self.assertIs(obj3, obj2)
+
 
 class AbstractDispatchTableTests:
 

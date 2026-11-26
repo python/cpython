@@ -590,6 +590,10 @@ class _Pickler:
             self.write(self.get(x[0]))
             return
 
+        if type(obj) is Proxy:
+            self.save_proxy(obj)
+            return
+
         rv = NotImplemented
         reduce = getattr(self, "reducer_override", _NoValue)
         if reduce is not _NoValue:
@@ -1297,8 +1301,6 @@ class _Pickler:
         self.save(obj, weak=True)
         if not anchored and i in self.memo:
             self._weak_only.add(i)
-
-    dispatch[Proxy] = save_proxy
 
 
 # Unpickling machinery
