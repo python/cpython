@@ -882,6 +882,67 @@ class TypeParamsManglingTest(unittest.TestCase):
         self.assertEqual(Derived.__bases__, (ns["__Base"], Generic))
         self.assertEqual(Derived.kwargs, {"__kwarg": 1})
 
+    def test_nested_generic_private_base(self):
+        for globals_ in ({}, {"__Base": list}):
+            with self.subTest(globals=globals_):
+                ns = run_code("""
+                    class Outer:
+                        __Base = dict
+                        class Plain(__Base): pass
+                        class Inner[T](__Base): pass
+                """, globals_)
+                self.assertEqual(ns["Outer"].Plain.__bases__, (dict,))
+                self.assertEqual(ns["Outer"].Inner.__bases__, (dict, Generic))
+
+        class Outer:
+            def make_class(self):
+                __Base = dict
+                class Inner[T](__Base): pass
+                return Inner
+
+        self.assertEqual(Outer().make_class().__bases__, (dict, Generic))
+
+    def test_nested_generic_private_keyword_values(self):
+        class Meta(type): pass
+
+        class Base:
+            def __init_subclass__(cls, **kwargs):
+                cls.kwargs = kwargs
+
+        class Outer:
+            __Meta = Meta
+            __Value = object()
+            class Inner[T](Base, metaclass=__Meta, __tag=__Value): pass
+
+        self.assertIs(type(Outer.Inner), Meta)
+        self.assertEqual(Outer.Inner.kwargs, {"__tag": Outer._Outer__Value})
+
+    def test_nested_generic_private_bound_and_default(self):
+        class Outer:
+            __Bound = int
+            __Default = str
+            class Inner[T: __Bound = __Default]: pass
+            class Constrained[T: (__Bound, __Default)]: pass
+
+        T, = Outer.Inner.__type_params__
+        self.assertIs(T.__bound__, int)
+        self.assertIs(T.__default__, str)
+        T, = Outer.Constrained.__type_params__
+        self.assertEqual(T.__constraints__, (int, str))
+
+    def test_nested_generic_private_parameter_precedence(self):
+        class Outer:
+            __T = int
+            class Inner[__T, U: __T](list[__T]):
+                param = __T
+
+        Inner = Outer.Inner
+        T, U = Inner.__type_params__
+        self.assertEqual(T.__name__, "__T")
+        self.assertIs(U.__bound__, T)
+        self.assertEqual(Inner.__orig_bases__[0].__args__, (T,))
+        self.assertIs(Inner.param, T)
+
     def test_no_mangling_in_nested_scopes(self):
         ns = run_code("""
             from test.test_type_params import make_base

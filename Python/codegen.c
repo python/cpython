@@ -1728,7 +1728,7 @@ codegen_class(compiler *c, stmt_ty s)
             return ERROR;
         }
         int ret = codegen_enter_scope(c, type_params_name, COMPILE_SCOPE_ANNOTATIONS,
-                                      (void *)type_params, firstlineno, s->v.ClassDef.name, NULL);
+                                      (void *)type_params, firstlineno, NULL, NULL);
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR(ret);
         RETURN_IF_ERROR_IN_SCOPE(c, codegen_type_params(c, type_params));

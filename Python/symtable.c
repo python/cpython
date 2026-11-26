@@ -124,6 +124,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 
     ste->ste_directives = NULL;
     ste->ste_mangled_names = NULL;
+    ste->ste_type_param_mangling_class = NULL;
 
     ste->ste_type = block;
     ste->ste_scope_info = NULL;
@@ -202,6 +203,7 @@ ste_dealloc(PyObject *op)
     Py_XDECREF(ste->ste_directives);
     Py_XDECREF(ste->ste_annotation_block);
     Py_XDECREF(ste->ste_mangled_names);
+    Py_XDECREF(ste->ste_type_param_mangling_class);
     PyObject_Free(ste);
 }
 
@@ -1468,10 +1470,11 @@ symtable_enter_existing_block(struct symtable *st, PySTEntryObject* ste, bool ad
     if (prev) {
         ste->ste_comp_iter_expr = prev->ste_comp_iter_expr;
     }
-    /* No need to inherit ste_mangled_names in classes, where all names
-     * are mangled. */
+    /* A class body starts its own private name mangling context. */
     if (prev && prev->ste_mangled_names != NULL && ste->ste_type != ClassBlock) {
-        ste->ste_mangled_names = Py_NewRef(prev->ste_mangled_names);
+        Py_XSETREF(ste->ste_mangled_names, Py_NewRef(prev->ste_mangled_names));
+        Py_XSETREF(ste->ste_type_param_mangling_class,
+                   Py_NewRef(prev->ste_type_param_mangling_class));
     }
     /* The entry is owned by the stack. Borrow it for st_cur. */
     st->st_cur = ste;
@@ -1981,11 +1984,12 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                                 LOCATION(s))) {
                 return 0;
             }
-            st->st_private = s->v.ClassDef.name;
-            st->st_cur->ste_mangled_names = PySet_New(NULL);
+            Py_XSETREF(st->st_cur->ste_mangled_names, PySet_New(NULL));
             if (!st->st_cur->ste_mangled_names) {
                 return 0;
             }
+            Py_XSETREF(st->st_cur->ste_type_param_mangling_class,
+                       Py_NewRef(s->v.ClassDef.name));
             VISIT_SEQ(st, type_param, s->v.ClassDef.type_params);
         }
         VISIT_SEQ(st, expr, s->v.ClassDef.bases);
@@ -3292,18 +3296,16 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
 PyObject *
 _Py_MaybeMangle(PyObject *privateobj, PySTEntryObject *ste, PyObject *name)
 {
-    /* Special case for type parameter blocks around generic classes:
-     * we want to mangle type parameter names (so a type param with a private
-     * name can be used inside the class body), but we don't want to mangle
-     * any other names that appear within the type parameter scope.
+    /* A generic class header uses the enclosing class for mangling, except
+     * for its type parameters, which must match their uses in the class body.
      */
     if (ste->ste_mangled_names != NULL) {
         int result = PySet_Contains(ste->ste_mangled_names, name);
         if (result < 0) {
             return NULL;
         }
-        if (result == 0) {
-            return Py_NewRef(name);
+        if (result) {
+            privateobj = ste->ste_type_param_mangling_class;
         }
     }
     return _Py_Mangle(privateobj, name);

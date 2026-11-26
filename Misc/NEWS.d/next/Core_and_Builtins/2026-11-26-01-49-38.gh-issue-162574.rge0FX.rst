@@ -1,0 +1,3 @@
+Private names in the header of a nested generic class are now mangled using
+the enclosing class's name. Private type parameters still use the generic
+class's own name.
