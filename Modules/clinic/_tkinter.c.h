@@ -901,10 +901,11 @@ PyDoc_STRVAR(_tkinter_setbusywaitinterval__doc__,
 "setbusywaitinterval($module, new_val, /)\n"
 "--\n"
 "\n"
-"Set the busy-wait interval in milliseconds between successive calls to Tcl_DoOneEvent in a threaded Python interpreter.\n"
+"Set the busy-wait interval in milliseconds.\n"
 "\n"
-"It should be set to a divisor of the maximum time between frames in\n"
-"an animation.");
+"It is the interval between successive calls to Tcl_DoOneEvent when\n"
+"waiting for input at the interactive prompt on Windows.  It should be\n"
+"set to a divisor of the maximum time between frames in an animation.");
 
 #define _TKINTER_SETBUSYWAITINTERVAL_METHODDEF    \
     {"setbusywaitinterval", (PyCFunction)_tkinter_setbusywaitinterval, METH_O, _tkinter_setbusywaitinterval__doc__},
@@ -932,7 +933,7 @@ PyDoc_STRVAR(_tkinter_getbusywaitinterval__doc__,
 "getbusywaitinterval($module, /)\n"
 "--\n"
 "\n"
-"Return the current busy-wait interval between successive calls to Tcl_DoOneEvent in a threaded Python interpreter.");
+"Return the current busy-wait interval in milliseconds.");
 
 #define _TKINTER_GETBUSYWAITINTERVAL_METHODDEF    \
     {"getbusywaitinterval", (PyCFunction)_tkinter_getbusywaitinterval, METH_NOARGS, _tkinter_getbusywaitinterval__doc__},
@@ -981,4 +982,4 @@ _tkinter__finalize_thread(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=c94e363a6f9de67d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=af52d6870d8c6065 input=a9049054013a1b77]*/

@@ -1006,14 +1006,8 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             widget in widget
 
 
-def tcl_is_threaded():
-    return (tcl_version >= (9,) or
-            tkinter.Tcl().eval('info exists tcl_platform(threaded)') == '1')
-
-
 @unittest.skipIf(sys.platform == 'darwin',
                  'Tk only works in the main thread on macOS')
-@unittest.skipUnless(tcl_is_threaded(), 'requires Tcl with thread support')
 @threading_helper.requires_working_threading()
 class MainloopThreadsTest(unittest.TestCase):
     # gh-162647: The mainloop() of Tcl interpreters in different threads

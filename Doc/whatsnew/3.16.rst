@@ -1555,6 +1555,12 @@ Build changes
 
   (Contributed by Russell Keith-Magee in :gh:`159385`.)
 
+* :mod:`tkinter` now requires Tcl/Tk built with thread support.
+  This only affects Tcl/Tk 8, since Tcl/Tk 9 is always built with
+  thread support.
+
+  (Contributed by Michiel de Hoon in :gh:`140494`.)
+
 
 .. _whatsnew316-apple-platforms:
 
