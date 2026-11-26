@@ -6,8 +6,10 @@ import signal
 import sys
 import textwrap
 import threading
+import time
 import unittest
 import weakref
+import _tkinter
 import tkinter
 from tkinter import TclError
 import enum
