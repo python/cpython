@@ -273,6 +273,19 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
         lock.release()
         self.assertFalse(lock.locked())
 
+    async def test_locked_with_waiters(self):
+        lock = asyncio.Lock()
+
+        await lock.acquire()
+        waiter = asyncio.create_task(lock.acquire())
+        await asyncio.sleep(0)
+
+        lock.release()
+        self.assertTrue(lock.locked())
+
+        # Cleanup
+        await waiter
+
     async def test_context_manager(self):
         lock = asyncio.Lock()
         self.assertFalse(lock.locked())
