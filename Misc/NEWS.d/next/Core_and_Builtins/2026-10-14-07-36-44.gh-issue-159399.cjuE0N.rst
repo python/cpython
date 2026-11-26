@@ -1,0 +1,3 @@
+Fix a crash in :func:`codecs.encode` and :func:`codecs.decode` in the
+:term:`free-threaded build` when another thread concurrently unregisters a
+codec search function. Patch by Christian Aurich Zanettini Martins.
