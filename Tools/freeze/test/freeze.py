@@ -138,6 +138,8 @@ def prepare(script=None, outdir=None):
     # Run configure.
     print(f'configuring python in {builddir}...')
     config_args = shlex.split(sysconfig.get_config_var('CONFIG_ARGS') or '')
+    # We can't necessarily write to a system install path, from a test suite
+    config_args = [arg for arg in config_args if not arg.startswith("--libdir=/")]
     # Optimisations such as LTO and PGO only slow down the build of this
     # throwaway interpreter without affecting what the test checks.
     remove_opt(config_args, 'enable-optimizations')
