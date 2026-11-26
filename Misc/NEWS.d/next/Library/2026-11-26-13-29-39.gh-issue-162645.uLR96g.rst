@@ -1,0 +1,2 @@
+Fix :func:`statistics.pstdev` and :func:`statistics.stdev` to round exact
+midpoint ties to the even neighbor for :class:`decimal.Decimal` inputs.
