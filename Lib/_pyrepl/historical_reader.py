@@ -216,13 +216,7 @@ class isearch_bracketed_paste(commands.Command):
     def do(self) -> None:
         r = self.reader
         b = r.buffer
-        done = "\x1b[201~"
-        data = ""
-        while done not in data:
-            ev = r.console.getpending()
-            data += ev.data
-        paste_content = data.replace(done, "")
-        r.isearch_term += paste_content
+        r.isearch_term += commands.read_bracketed_paste(r)
         r.invalidate_prompt()
         if "".join(b[r.pos:r.pos+len(r.isearch_term)]) != r.isearch_term:
             r.isearch_next()
