@@ -207,6 +207,11 @@ class BinaryFormatTestBase(unittest.TestCase):
         collector.export(None)
         return filename, collector
 
+    def _read_offset(self, filename, hdr_off):
+        with open(filename, "rb") as raw:
+            raw.seek(hdr_off)
+            return struct.unpack("=Q", raw.read(8))[0]
+
     def read_block_columns(self, filename):
         """Return the header flags and (decoded size, encoding) per column.
 
@@ -829,6 +834,34 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
                 self.assertEqual(count, 1)
                 self.assert_samples_equal(samples, collector)
 
+    def test_surrogates_in_frame_names(self):
+        cases = [
+            ("\udce9", r"\udce9"),  # A surrogate-escaped filename byte.
+            ("\uddd0", r"\uddd0"),  # The surrogate from gh-160601.
+            ("\ud800", r"\ud800"),
+            ("\udfff", r"\udfff"),
+            ("\ud800\udfff", r"\ud800\udfff"),
+            ("caf\xe9\udce9\U0001f40d", "caf\xe9\\udce9\U0001f40d"),
+        ]
+        for name, escaped_name in cases:
+            with self.subTest(name=name):
+                frames = [
+                    make_frame(f"/path/{name}.py", 42, f"func_{name}"),
+                    make_frame("test.py", 1, "main"),
+                ]
+                samples = [[make_interpreter(0, [make_thread(1, frames)])]] * 3
+                collector, count = self.roundtrip(samples)
+                self.assertEqual(count, 3)
+
+                expected_frames = [
+                    make_frame(f"/path/{escaped_name}.py", 42,
+                               f"func_{escaped_name}"),
+                    frames[1],
+                ]
+                expected = [[make_interpreter(
+                    0, [make_thread(1, expected_frames)])]] * 3
+                self.assert_samples_equal(expected, collector)
+
     def test_special_char_filenames(self):
         """Filenames with special characters roundtrip exactly."""
         filenames = [
@@ -1227,6 +1260,36 @@ class TestBinaryEdgeCases(BinaryFormatTestBase):
             ):
                 self.assertIs(first_frame, second_frame)
 
+    def test_reader_replays_large_file_twice(self):
+        """Replaying more sample data than the reader buffers is exact."""
+        class StackCollector:
+            def __init__(self):
+                self.stacks = []
+
+            def collect(self, stack_frames, timestamps_us):
+                for interp in stack_frames:
+                    for thread in interp.threads:
+                        stack = list(thread.frame_info)
+                        self.stacks.extend([stack] * len(timestamps_us))
+
+        # Deep, shifting stacks give about 2.5 MB of sample data, more than
+        # the reader reads at once on platforms without mmap.
+        frames = [make_frame("deep.py", line, "f") for line in range(1356)]
+        stacks = [frames[i % 1100:i % 1100 + 256] for i in range(5000)]
+        samples = [[make_interpreter(0, [make_thread(1, stack)])]
+                   for stack in stacks]
+        filename = self.create_binary_file(samples)
+        sample_size = (self._read_offset(filename, self.HDR_OFF_STR_TABLE)
+                       - self.FILE_HEADER_PLACEHOLDER_SIZE)
+        self.assertGreater(sample_size, 2 * 1024 * 1024)
+        with BinaryReader(filename) as reader:
+            first = StackCollector()
+            second = StackCollector()
+            self.assertEqual(reader.replay_samples(first), len(samples))
+            self.assertEqual(reader.replay_samples(second), len(samples))
+        self.assertEqual(first.stacks, stacks)
+        self.assertEqual(second.stacks, stacks)
+
     def test_writer_repeat_run_spans_interleaved_streams(self):
         """A thread's repeat run continues across other threads' samples."""
         filename = self.temp_filename()
@@ -1620,11 +1683,6 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
     # Minimum on-disk size of one table entry (see binary_io.h).
     MIN_STRING_ENTRY_SIZE = 1
     MIN_FRAME_ENTRY_SIZE = 7
-
-    def _read_offset(self, filename, hdr_off):
-        with open(filename, "rb") as raw:
-            raw.seek(hdr_off)
-            return struct.unpack("=Q", raw.read(8))[0]
 
     def _patch_footer_count(self, filename, ftr_off, value):
         size = os.path.getsize(filename)
@@ -2023,6 +2081,8 @@ class TestBinaryFormatValidation(BinaryFormatTestBase):
             ("zstd frame size does not match the decoded size",
              frame, len(instructions) + 1),
             ("zstd decompression error: ", bad_checksum, len(instructions)),
+            ("Invalid sample block: stored columns exceed the block limit",
+             b"\x00" * (self.MAX_BLOCK_SIZE + 1), len(instructions)),
         ]
         for message, stored, decoded_size in cases:
             with self.subTest(message):

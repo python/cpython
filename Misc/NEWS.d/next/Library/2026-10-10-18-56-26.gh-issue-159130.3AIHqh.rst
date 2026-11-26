@@ -1,0 +1,2 @@
+Fix :mod:`!_remote_debugging` returning a different thread when the selected
+thread does not match the profiling mode with ``only_active_thread=True``.

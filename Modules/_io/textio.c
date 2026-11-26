@@ -228,6 +228,7 @@ struct nldecoder_object {
 #define nldecoder_object_CAST(op)   ((nldecoder_object *)(op))
 
 /*[clinic input]
+@vectorcall
 _io.IncrementalNewlineDecoder.__init__
     decoder: object
     translate: bool
@@ -247,7 +248,7 @@ static int
 _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
                                             PyObject *decoder, int translate,
                                             PyObject *errors)
-/*[clinic end generated code: output=fbd04d443e764ec2 input=ed547aa257616b0e]*/
+/*[clinic end generated code: output=fbd04d443e764ec2 input=7fd0efad15bc0b69]*/
 {
 
     if (errors == NULL) {
@@ -1150,7 +1151,10 @@ _io.TextIOWrapper.__init__
 Character and line based layer over a BufferedIOBase object, buffer.
 
 encoding gives the name of the encoding that the stream will be
-decoded or encoded with. It defaults to locale.getencoding().
+decoded or encoded with. It defaults to UTF-8; if UTF-8 Mode is
+disabled, the encoding returned by locale.getencoding() is used
+instead.  See the codecs module for the list of supported
+encodings.
 
 errors determines the strictness of encoding and decoding (see
 help(codecs.Codec) or the documentation for codecs.register) and
@@ -1182,7 +1186,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                                 const char *encoding, PyObject *errors,
                                 const char *newline, int line_buffering,
                                 int write_through)
-/*[clinic end generated code: output=72267c0c01032ed2 input=0f077220214c40a4]*/
+/*[clinic end generated code: output=72267c0c01032ed2 input=4f0bee5a0b2302fd]*/
 {
     PyObject *raw, *codec_info = NULL;
     PyObject *res;
@@ -3521,6 +3525,7 @@ static PyType_Slot nldecoder_slots[] = {
     {Py_tp_traverse, incrementalnewlinedecoder_traverse},
     {Py_tp_clear, incrementalnewlinedecoder_clear},
     {Py_tp_init, _io_IncrementalNewlineDecoder___init__},
+    {Py_tp_vectorcall, _io_IncrementalNewlineDecoder_vectorcall},
     {0, NULL},
 };
 

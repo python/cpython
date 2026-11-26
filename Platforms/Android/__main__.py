@@ -227,7 +227,7 @@ def unpack_deps(host, prefix_dir, cache_dir):
         "openssl-3.5.9-0",
         "sqlite-3.53.4-0",
         "xz-5.4.6-1",
-        "zstd-1.5.7-2"
+        "zstd-1.6.0-0"
     ]:
         filename = f"{name_ver}-{host}.tar.gz"
         out_path = download(f"{deps_url}/{name_ver}/{filename}", cache_dir)

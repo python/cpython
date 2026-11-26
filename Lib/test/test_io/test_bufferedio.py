@@ -319,6 +319,14 @@ class BufferedReaderTest(CommonBufferedTests):
         self.assertIsNone(bufio.readinto(b))
         self.assertIsNone(bufio.readinto1(b))
 
+    def test_readinto_with_remaining_buffered_data(self):
+        bufio = self.tp(self.BytesIO(b"abcd"), buffer_size=2)
+        self.assertEqual(bufio.read(1), b"a")
+        b = bytearray(2)
+        self.assertEqual(bufio.readinto(b), 2)
+        self.assertEqual(b, b"bc")
+        self.assertEqual(bufio.read(), b"d")
+
     def test_readinto1(self):
         buffer_size = 10
         rawio = self.MockRawIO((b"abc", b"de", b"fgh", b"jkl"))
@@ -1031,6 +1039,21 @@ class BufferedRWPairTest:
         pair.__init__(self.MockRawIO(), self.MockRawIO())
         self.assertEqual(pair.read(0), b'')
         self.assertEqual(pair.write(b''), 0)
+
+    def test_reinit(self):
+        # gh-162246: Calling __init__() again must release the previous
+        # reader and writer, the writer first so it flushes before the
+        # reader closes a shared raw stream.
+        raw = self.MockRawIO()
+        pair = self.tp(raw, raw)
+        pair.write(b"abc")
+        ref = weakref.ref(raw)
+        pair.__init__(self.MockRawIO(), self.MockRawIO())
+        support.gc_collect()
+        self.assertEqual(raw._write_stack, [b"abc"])
+        del raw
+        support.gc_collect()
+        self.assertIsNone(ref())
 
     def test_detach(self):
         pair = self.tp(self.MockRawIO(), self.MockRawIO())

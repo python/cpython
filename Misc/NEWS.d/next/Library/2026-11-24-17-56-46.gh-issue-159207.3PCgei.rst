@@ -1,0 +1,4 @@
+Reduce the memory used by :mod:`profiling.sampling` when replaying binary
+profiles on Linux and Windows. Sample data is now read one block at a time
+instead of being loaded into memory in full, so the memory used for samples
+stays small even for very long captures.

@@ -853,7 +853,6 @@ _PyBuffer_ReleaseInInterpreterAndRawFree(PyInterpreterState *interp,
 PyObject *
 PyObject_Format(PyObject *obj, PyObject *format_spec)
 {
-    PyObject *meth;
     PyObject *empty = NULL;
     PyObject *result = NULL;
 
@@ -880,21 +879,32 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
         format_spec = empty;
     }
 
-    /* Find the (unbound!) __format__ method */
-    meth = _PyObject_LookupSpecial(obj, &_Py_ID(__format__));
-    if (meth == NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (!_PyErr_Occurred(tstate)) {
-            _PyErr_Format(tstate, PyExc_TypeError,
-                          "Type %.100s doesn't define __format__",
-                          Py_TYPE(obj)->tp_name);
+    /* Find the __format__ method and call it, without creating
+       a temporary bound method where possible. */
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    _PyStackRef self = PyStackRef_FromPyObjectBorrow(obj);
+    int found = _PyObject_LookupSpecialMethod(&_Py_ID(__format__),
+                                              &cref.ref, &self);
+    if (found > 0) {
+        PyObject *meth = PyStackRef_AsPyObjectBorrow(cref.ref);
+        PyObject *args[2] = {PyStackRef_AsPyObjectBorrow(self), format_spec};
+        if (args[0] != NULL) {
+            /* Unbound method: prepend self. */
+            result = PyObject_Vectorcall(meth, args, 2, NULL);
         }
-        goto done;
+        else {
+            result = PyObject_Vectorcall(meth, args + 1, 1, NULL);
+        }
     }
-
-    /* And call it. */
-    result = PyObject_CallOneArg(meth, format_spec);
-    Py_DECREF(meth);
+    else if (found == 0) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "Type %.100s doesn't define __format__",
+                      Py_TYPE(obj)->tp_name);
+    }
+    PyStackRef_XCLOSE(self);
+    _PyThreadState_PopCStackRef(tstate, &cref);
 
     if (result && !PyUnicode_Check(result)) {
         PyErr_Format(PyExc_TypeError,

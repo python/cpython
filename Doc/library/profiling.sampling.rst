@@ -1321,10 +1321,13 @@ data, similar to the ``top`` command for system processes::
 
 .. only:: not latex
 
-   .. figure:: tachyon-live-mode-2.gif
+   .. figure:: tachyon-live-mode-2.svg
       :alt: Tachyon live mode showing all threads
       :align: center
       :width: 100%
+
+   .. This screenshot has been rendered with this one-liner CLI:
+      uvx 'click-extra==10.3.1' screenshot --record --columns 120 --rows 47 --start 6 --end 10 --hold 0 --blank 0 --preset plain --prompt '' --watermark '' --margin 0 --padding 0 --shadow none --border none --output tachyon-live-mode-2.svg -- python3.15 -m profiling.sampling run --live --all-threads --sampling-rate 10khz -m test test_gc test_threading test_list test_dict
 
    Live mode displays real-time profiling statistics, showing combined
    data from multiple threads in a multi-threaded application.
@@ -1346,10 +1349,13 @@ frequently, including specialized variants and their base opcodes.
 
 .. only:: not latex
 
-   .. figure:: tachyon-live-mode-1.gif
+   .. figure:: tachyon-live-mode-1.svg
       :alt: Tachyon live mode with opcode panel
       :align: center
       :width: 100%
+
+   .. This screenshot has been rendered with this one-liner CLI:
+      uvx 'click-extra==10.3.1' screenshot --record --columns 120 --rows 47 --start 6 --end 10 --hold 0 --blank 0 --preset plain --prompt '' --watermark '' --margin 0 --padding 0 --shadow none --border none --output tachyon-live-mode-1.svg -- python3.15 -m profiling.sampling run --live --all-threads --sampling-rate 10khz --opcodes -m test test_gc test_threading test_list test_dict
 
    Live mode with ``--opcodes`` enabled shows an opcode panel with a bytecode
    instruction breakdown for the selected function.
