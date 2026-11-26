@@ -278,6 +278,42 @@ class TestWeakSet(unittest.TestCase):
                 self.assertNotIn(c, self.s)
         self.assertRaises(TypeError, self.s.intersection_update, [[]])
 
+    def test_intersection_update_removes_collected_member(self):
+        item = ustr('a')
+        s = WeakSetSubclass([item])
+        s.intersection_update([item])
+        self.assertIn(item, s)
+        del item
+        support.gc_collect()
+        self.assertEqual(list(s), [])
+        self.assertEqual(len(s), 0)
+
+    def test_iand_equal_member(self):
+        item, equal_item = ustr('a'), ustr('a')
+        s = WeakSet([item])
+        s &= iter([equal_item])
+        self.assertIs(next(iter(s)), equal_item)
+        del equal_item
+        support.gc_collect()
+        self.assertEqual(list(s), [])
+        self.assertNotIn(item, s)
+        self.assertEqual(len(s), 0)
+
+    def test_iand_temporary_member(self):
+        item, unmatched, absent = ustr('a'), ustr('b'), ustr('c')
+        s = WeakSet([item, unmatched])
+
+        def other():
+            yield ustr('a')
+            yield absent
+            support.gc_collect()
+
+        s &= other()
+        support.gc_collect()
+        self.assertEqual(list(s), [])
+        self.assertNotIn(item, s)
+        self.assertEqual(len(s), 0)
+
     def test_iand(self):
         self.s &= set(self.items2)
         for c in (self.items + self.items2):
@@ -314,6 +350,43 @@ class TestWeakSet(unittest.TestCase):
             else:
                 self.assertNotIn(c, self.s)
         self.assertRaises(TypeError, self.s.symmetric_difference_update, [[]])
+
+    def test_symmetric_difference_update_temporary_member(self):
+        kept, shared, added = ustr('a'), ustr('b'), ustr('c')
+
+        def other():
+            yield ustr('d')
+            yield ustr('b')
+            yield shared
+            yield added
+            yield added
+            support.gc_collect()
+
+        for operation in ('symmetric_difference_update', 'symmetric_difference'):
+            with self.subTest(operation=operation):
+                s = WeakSetSubclass([kept, shared])
+                result = getattr(s, operation)(other())
+                if operation == 'symmetric_difference_update':
+                    self.assertIsNone(result)
+                    result = s
+                else:
+                    self.assertIs(type(result), WeakSetSubclass)
+                    self.assertEqual(set(s), {kept, shared})
+                support.gc_collect()
+                self.assertEqual(set(result), {kept, added})
+                self.assertNotIn(shared, result)
+                self.assertEqual(len(result), 2)
+
+    def test_ixor_equal_members(self):
+        first, second = ustr('a'), ustr('a')
+        s = WeakSet()
+        s ^= iter([first, second])
+        self.assertEqual(len(s), 1)
+        self.assertIs(next(iter(s)), first)
+        del first
+        support.gc_collect()
+        self.assertNotIn(second, s)
+        self.assertEqual(len(s), 0)
 
     def test_ixor(self):
         self.s ^= set(self.items2)
