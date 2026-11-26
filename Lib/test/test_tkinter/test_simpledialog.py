@@ -1,7 +1,8 @@
+import contextlib
 import sys
 import unittest
 import tkinter
-from tkinter import messagebox, ttk
+from tkinter import messagebox, ttk, simpledialog
 from test.support import requires, swap_attr
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import AbstractDefaultRootTest, AbstractDialogTest
@@ -11,6 +12,22 @@ from tkinter.simpledialog import (Dialog, SimpleDialog,
                                   _underline_ampersand, _find_alt_key_target)
 
 requires('gui')
+
+
+@contextlib.contextmanager
+def _no_grab(grab, focus=None, destroy=True):
+    # Stand in for _temp_grab_focus: build the dialog without grabbing,
+    # changing the focus or destroying it, so it stays alive to be driven.
+    yield
+
+
+@contextlib.contextmanager
+def _no_modal_loop():
+    # Build a Dialog without running its modal mainloop, so __init__ returns
+    # at once and the dialog can be driven with generated events.
+    with swap_attr(simpledialog, '_temp_grab_focus', _no_grab), \
+         swap_attr(Dialog, 'mainloop', lambda self: None):
+        yield
 
 
 class SimpleDialogTest(AbstractDialogTest, unittest.TestCase):
@@ -271,9 +288,10 @@ class DialogTest(AbstractDialogTest, unittest.TestCase):
     # Dialog's button box is modelled on tk::MessageBox.
 
     def open(self, **kw):
-        with swap_attr(Dialog, 'wait_window', staticmethod(lambda w: None)):
+        with _no_modal_loop():
             d = _QueryInteger('Title', 'Prompt', parent=self.root, **kw)
         self.addCleanup(lambda: d.winfo_exists() and d.destroy())
+        d.quit = d.destroy
         return d
 
     # --- Widget set and appearance ---
@@ -326,7 +344,7 @@ class DialogTest(AbstractDialogTest, unittest.TestCase):
         class MyDialog(Dialog):
             def body(self, master):
                 pass
-        with swap_attr(Dialog, 'wait_window', staticmethod(lambda w: None)):
+        with _no_modal_loop():
             d = MyDialog(self.root, 'Title')
         self.addCleanup(lambda: d.winfo_exists() and d.destroy())
         self.assertEqual(d.children['ok'].winfo_class(), 'Button')
@@ -432,13 +450,12 @@ class DialogTest(AbstractDialogTest, unittest.TestCase):
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
     def test_askinteger(self):
-        @staticmethod
-        def mock_wait_window(w):
+        def mock_mainloop(self):
             nonlocal ismapped
-            ismapped = w.master.winfo_ismapped()
-            w.destroy()
+            ismapped = self.master.winfo_ismapped()
+            # Return without looping; _temp_grab_focus then destroys the dialog.
 
-        with swap_attr(Dialog, 'wait_window', mock_wait_window):
+        with swap_attr(Dialog, 'mainloop', mock_mainloop):
             ismapped = None
             askinteger("Go To Line", "Line number")
             self.assertEqual(ismapped, False)
@@ -454,14 +471,17 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
 
 class QueryDialogTest(AbstractDialogTest, unittest.TestCase):
-    # The query dialogs are modal: their __init__ blocks in wait_window().
-    # Mock that out so the dialog stays alive and can be driven with generated
+    # The query dialogs are modal: their __init__ blocks in mainloop().  Skip
+    # the loop so the dialog stays alive and can be driven with generated
     # events, exercising the <Return>/<Escape> bindings and the validation.
 
     def open(self, query, **kw):
-        with swap_attr(Dialog, 'wait_window', staticmethod(lambda w: None)):
+        with _no_modal_loop():
             d = query("Title", "Prompt", parent=self.root, **kw)
         self.addCleanup(lambda: d.winfo_exists() and d.destroy())
+        # The buttons end the modal loop with quit(); with no loop running,
+        # make that close the dialog so it can be observed via winfo_exists().
+        d.quit = d.destroy
         d.focus_force()
         d.update()
         return d
@@ -565,7 +585,7 @@ class QueryDialogTest(AbstractDialogTest, unittest.TestCase):
             d.entry.delete(0, 'end')
             d.entry.insert(0, value)
             d.ok()
-        with swap_attr(Dialog, 'wait_window', staticmethod(accept)):
+        with swap_attr(Dialog, 'mainloop', accept):
             return ask('Title', 'Prompt', parent=self.root, **kw)
 
     def test_ask_functions(self):
@@ -575,7 +595,7 @@ class QueryDialogTest(AbstractDialogTest, unittest.TestCase):
 
     def test_ask_cancelled(self):
         # A cancelled ask* returns None.
-        with swap_attr(Dialog, 'wait_window', staticmethod(lambda d: d.cancel())):
+        with swap_attr(Dialog, 'mainloop', lambda d: d.cancel()):
             self.assertIsNone(askstring('Title', 'Prompt', parent=self.root))
 
 

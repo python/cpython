@@ -330,10 +330,13 @@ class Dialog(Toplevel):
 
         # wait for window to appear on screen before calling grab_set
         self.wait_visibility()
-        # Dialog destroys itself in ok()/cancel(), so let _temp_grab_focus
-        # save/restore the focus and grab without destroying the window.
-        with _temp_grab_focus(self, self.initial_focus, destroy=False):
-            self.wait_window(self)
+        # Like tk_dialog and tk::MessageBox, the buttons end the modal loop
+        # (via quit()) instead of destroying the window, so that
+        # _temp_grab_focus can restore the focus and the grab and only then
+        # destroy the window -- the focus is restored before the deletion,
+        # otherwise the window manager could take it away.
+        with _temp_grab_focus(self, self.initial_focus):
+            self.mainloop()
 
     def destroy(self):
         '''Destroy the window'''
@@ -430,7 +433,10 @@ class Dialog(Toplevel):
             self.cancel()
 
     def cancel(self, event=None):
-        self.destroy()
+        # End the modal loop; _temp_grab_focus then restores the focus and
+        # grab and destroys the window (cf. the buttons in tk::MessageBox,
+        # which set the vwait variable instead of destroying the window).
+        self.quit()
 
     #
     # command hooks
