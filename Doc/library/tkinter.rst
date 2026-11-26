@@ -17,7 +17,7 @@ demonstrating a simple Tk interface, letting you know that :mod:`!tkinter` is
 properly installed on your system, and also showing what version of Tcl/Tk is
 installed, so you can read the Tcl/Tk documentation specific to that version.
 
-Tkinter supports a range of Tcl/Tk versions, built either with or without
+Tkinter supports a range of Tcl/Tk versions, which must be built with
 thread support.
 Tcl/Tk 8.5.12 is the minimum supported version; the official Python binary
 release bundles Tcl/Tk 9.0.
@@ -26,6 +26,9 @@ supported versions.
 
 .. versionchanged:: 3.11
    Support for Tcl/Tk versions older than 8.5.12 was removed.
+
+.. versionchanged:: next
+   Support for Tcl/Tk built without thread support was removed.
 
 Tkinter is not a thin wrapper, but adds a fair amount of its own logic to
 make the experience more pythonic. This documentation will concentrate on these
@@ -476,18 +479,11 @@ interpreter will fail.
 
 A number of special cases exist:
 
-* Tcl/Tk libraries built without thread support are now rare: Tcl/Tk 9.0 (the
-  bundled version) is always thread-aware, so this case only arises with some
-  older 8.x builds. When the library is not thread-aware,
-  :mod:`!tkinter` calls the library from the originating Python thread, even
-  if this is different than the thread that created the Tcl interpreter. A global
-  lock ensures only one call occurs at a time.
-
 * While :mod:`!tkinter` allows you to create more than one instance of a :class:`Tk`
   object (with its own interpreter), all interpreters that are part of the same
   thread share a common event queue, which gets ugly fast. In practice, don't create
   more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
-  them in separate threads and ensure you're running a thread-aware Tcl/Tk build.
+  them in separate threads.
 
 * Blocking event handlers are not the only way to prevent the Tcl interpreter from
   reentering the event loop. It is even possible to run multiple nested event loops
@@ -2023,6 +2019,31 @@ Base and mixin classes
 
       .. versionadded:: 3.16
 
+   The following members support assistive technologies such as screen
+   readers.
+   They require Tk 9.1 or newer.
+   Tk automatically exposes the standard widgets to the platform
+   accessibility API;
+   the :attr:`!accessible` attributes allow overriding what is exposed,
+   and the :class:`Accessible` methods allow registering custom widgets.
+   If no assistive technology is active when the application starts,
+   setting the attributes has no effect,
+   reading them returns ``0``,
+   and the methods do nothing (except :meth:`!tk_check_screenreader`).
+
+   .. method:: tk_check_screenreader()
+
+      Return whether a screen reader is currently running.
+
+      .. versionadded:: next
+
+   .. attribute:: accessible
+
+      The accessible attributes of the widget,
+      as an :class:`Accessible` object.
+
+      .. versionadded:: next
+
    The methods with the ``busy_`` prefix manage the busy state of a window,
    which shows a busy cursor and ignores user input.
 
@@ -2454,6 +2475,55 @@ Base and mixin classes
 
       .. versionadded:: 3.11
 
+
+.. class:: Accessible()
+
+   The accessible attributes of a widget,
+   returned by the :attr:`~Misc.accessible` property of the widget.
+   The attributes are exposed to assistive technologies
+   such as screen readers.
+   Requires Tk 9.1 or newer.
+
+   Setting an attribute overrides what Tk exposes for the widget;
+   reading an attribute that has not been set raises
+   :exc:`~tkinter.TclError`.
+   A widget must have a role before any other attribute is set or read,
+   otherwise :exc:`~tkinter.TclError` is raised.
+   Tk sets the role of most standard widgets when they are mapped;
+   for other widgets, or before that, set :attr:`!role` first.
+   The supported roles are ``Button``, ``Canvas``, ``Checkbutton``,
+   ``Combobox``, ``Entry``, ``Label``, ``Listbox``, ``Menu``,
+   ``Notebook``, ``Progressbar``, ``Scale``, ``Scrollbar``,
+   ``Spinbox``, ``Table``, ``Text`` and ``Tree``.
+
+   .. versionadded:: next
+
+   .. attribute:: role
+                  name
+                  description
+                  value
+                  state
+                  action
+                  help
+
+      The accessible attributes of the widget.
+
+   .. method:: add_object()
+
+      Register the widget with the platform accessibility API.
+      This is only needed for custom widgets;
+      the standard widgets are registered automatically.
+
+   .. method:: emit_selection_change()
+
+      Notify the platform accessibility API that the selection in the
+      widget has changed.
+
+   .. method:: emit_focus_change()
+
+      Notify the platform accessibility API that the widget has received
+      focus.
+      Not available on macOS.
 
 
 .. class:: Wm()
@@ -6947,6 +7017,17 @@ and :mod:`!tkinter.constants` namespaces.
    edges) plus ``CENTER`` (``'center'``), used as values for the *anchor* and
    *sticky* options and by methods such as :meth:`Misc.grid_anchor`.
 
+.. data:: EN
+          ES
+          WN
+          WS
+
+   Additional values for the *labelanchor* option of :class:`LabelFrame`
+   and :class:`ttk.LabelFrame <tkinter.ttk.LabelFrame>`,
+   which also accept the compass directions above.
+
+   .. versionadded:: next
+
 .. data:: LEFT
           RIGHT
           TOP
@@ -6983,6 +7064,13 @@ and :mod:`!tkinter.constants` namespaces.
    Values for the *wrap* option of the :class:`Text` widget, selecting line
    wrapping on character or word boundaries.
 
+.. data:: TABULAR
+          WORDPROCESSOR
+
+   Values for the *tabstyle* option of the :class:`Text` widget.
+
+   .. versionadded:: next
+
 .. data:: BASELINE
 
    The text-alignment value ``'baseline'``.
@@ -6992,6 +7080,12 @@ and :mod:`!tkinter.constants` namespaces.
 
    Values for the *bordermode* option of the placer (see
    :meth:`Place.place_configure`).
+
+.. data:: IGNORE
+
+   An additional value for the *bordermode* option of the placer.
+
+   .. versionadded:: next
 
 .. data:: INSERT
           CURRENT
@@ -7018,6 +7112,38 @@ and :mod:`!tkinter.constants` namespaces.
 
    Values for the *state* option of various widgets and items.
 
+.. data:: READONLY
+
+   An additional value for the *state* option of :class:`Entry`,
+   :class:`Spinbox` and the themed widgets.
+
+   .. versionadded:: next
+
+.. data:: ALTERNATE
+          BACKGROUND
+          FOCUS
+          HOVER
+          INVALID
+          PRESSED
+          SELECTED
+
+   Names of the themed widget states
+   (see :meth:`ttk.Widget.state <tkinter.ttk.Widget.state>`),
+   in addition to ``ACTIVE``, ``DISABLED`` and ``READONLY``.
+
+   .. versionadded:: next
+
+.. data:: LEAF
+          OPEN
+
+   Names of the themed widget states used by
+   :class:`ttk.Treeview <tkinter.ttk.Treeview>`,
+   as are ``FIRST`` and ``LAST`` for the tabs of
+   :class:`ttk.Notebook <tkinter.ttk.Notebook>`.
+   They require Tk 9.1 or newer.
+
+   .. versionadded:: next
+
 .. data:: CASCADE
           CHECKBUTTON
           COMMAND
@@ -7027,12 +7153,37 @@ and :mod:`!tkinter.constants` namespaces.
    Menu entry types, used as the *itemType* argument of :meth:`Menu.add` and
    :meth:`Menu.insert`.
 
+.. data:: MENUBAR
+          TEAROFF
+
+   Values for the *type* option of the :class:`Menu` widget,
+   in addition to ``NORMAL``.
+
+   .. versionadded:: next
+
 .. data:: SINGLE
           BROWSE
           MULTIPLE
           EXTENDED
 
    Values for the *selectmode* option of the :class:`Listbox` widget.
+
+.. data:: ITEM
+          CELL
+
+   Values for the *selecttype* option of
+   :class:`ttk.Treeview <tkinter.ttk.Treeview>`.
+   It requires Tk 9.0 or newer.
+
+   .. versionadded:: next
+
+.. data:: TREE
+          HEADINGS
+
+   Values for the *show* option of
+   :class:`ttk.Treeview <tkinter.ttk.Treeview>`.
+
+   .. versionadded:: next
 
 .. data:: PIESLICE
           CHORD
@@ -7067,6 +7218,74 @@ and :mod:`!tkinter.constants` namespaces.
 
    Values for the *what* argument of :meth:`XView.xview_scroll` and
    :meth:`YView.yview_scroll`.
+
+.. data:: PIXELS
+
+   An additional value for the *what* argument of
+   :meth:`YView.yview_scroll` of the :class:`Text` widget.
+
+   .. versionadded:: next
+
+.. data:: TEXT
+          IMAGE
+
+   Values for the *compound* option of the themed widgets,
+   in addition to ``CENTER``, ``LEFT``, ``RIGHT``, ``TOP``, ``BOTTOM``
+   and ``NONE``.
+
+   .. versionadded:: next
+
+.. data:: ABOVE
+          BELOW
+          FLUSH
+
+   Values for the *direction* option of :class:`Menubutton` and
+   :class:`ttk.Menubutton <tkinter.ttk.Menubutton>`,
+   in addition to ``LEFT`` and ``RIGHT``.
+
+   .. versionadded:: next
+
+.. data:: ALWAYS
+          MIDDLE
+          NEVER
+
+   Values for the *stretch* option of :meth:`PanedWindow.paneconfigure`,
+   in addition to ``FIRST`` and ``LAST``.
+
+   .. versionadded:: next
+
+.. data:: DETERMINATE
+          INDETERMINATE
+
+   Values for the *mode* option of
+   :class:`ttk.Progressbar <tkinter.ttk.Progressbar>`.
+
+   .. versionadded:: next
+
+.. data:: HOLLOW
+
+   An additional value for the *insertunfocussed* option of the
+   :class:`Text` widget, which also accepts ``NONE`` and ``SOLID``.
+   The option requires Tk 8.6 or newer.
+
+   .. versionadded:: next
+
+.. data:: KEY
+          FOCUSIN
+          FOCUSOUT
+
+   Values for the *validate* option of :class:`Entry`, :class:`Spinbox`
+   and :class:`ttk.Entry <tkinter.ttk.Entry>`,
+   in addition to ``ALL``, ``FOCUS`` and ``NONE``.
+
+   .. versionadded:: next
+
+.. data:: FORCED
+
+   An additional validation reason reported by the ``%V`` substitution
+   of the *validatecommand* option.
+
+   .. versionadded:: next
 
 .. data:: UNDERLINE
           NUMERIC

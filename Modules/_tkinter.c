@@ -29,6 +29,7 @@ Copyright (C) 1994 Steen Lumholt.
 #include "pycore_fileutils.h"     // _Py_stat(), _Py_dup()
 
 #include "pycore_long.h"          // _PyLong_IsNegative()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_INT_RELAXED()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8String
 
 #include <signal.h>               // SIGINT
@@ -40,9 +41,10 @@ Copyright (C) 1994 Steen Lumholt.
 #define CHECK_SIZE(size, elemsize) \
     ((size_t)(size) <= Py_MIN((size_t)INT_MAX, UINT_MAX / (size_t)(elemsize)))
 
-/* If Tcl is compiled for threads, we must also define TCL_THREAD. We define
-   it always; if Tcl is not threaded, the thread functions in
-   Tcl are empty.  */
+/* Tcl 8 headers make the Tcl mutex and condition variable functions
+   no-ops unless TCL_THREADS is defined.  Tcl is required to be built
+   with thread support (this is checked when creating a tkapp), so
+   always define it. */
 #define TCL_THREADS
 
 #ifdef TK_FRAMEWORK
@@ -248,102 +250,94 @@ Tkinter_TkInit(Tcl_Interp *interp)
     return result;
 }
 
-/* The threading situation is complicated.  Tcl is not thread-safe, except
-   when configured with --enable-threads.
+/* Tcl is required to be built with thread support.  A Tcl interpreter is
+   only valid in the thread that created it, and all Tk activity must
+   happen in this thread.  That means that the mainloop must be invoked in
+   the thread that created the interpreter.  Invoking commands from other
+   threads is possible: _tkinter queues an event for the interpreter
+   thread, which executes the command and passes back the result.  If the
+   interpreter thread is not in the mainloop, invoking a command raises an
+   exception; if the mainloop is running but not processing events, the
+   invocation blocks.
 
-   So we need to use a lock around all uses of Tcl.  Previously, the
-   Python interpreter lock was used for this.  However, this causes
-   problems when other Python threads need to run while Tcl is blocked
-   waiting for events.
-
-   To solve this problem, a separate lock for Tcl is introduced.
-   Holding it is incompatible with holding Python's interpreter lock.
-   The following four macros manipulate both locks together.
+   The Python interpreter lock is released while Tcl runs, so that other
+   Python threads can run while Tcl is blocked waiting for events.  The
+   thread state saved for that is kept in tcl_tstate, which is
+   thread-local, since several Tcl interpreters may run in different
+   threads at the same time.  The following macros manage this.
 
    ENTER_TCL and LEAVE_TCL are brackets, just like
    Py_BEGIN_ALLOW_THREADS and Py_END_ALLOW_THREADS.  They should be
    used whenever a call into Tcl is made that could call an event
    handler, or otherwise affect the state of a Tcl interpreter.  These
    assume that the surrounding code has the Python interpreter lock;
-   inside the brackets, the Python interpreter lock has been released
-   and the lock for Tcl has been acquired.
+   inside the brackets, the Python interpreter lock has been released.
 
-   Sometimes, it is necessary to have both the Python lock and the Tcl
-   lock.  (For example, when transferring data from the Tcl
-   interpreter result to a Python string object.)  This can be done by
-   using different macros to close the ENTER_TCL block: ENTER_OVERLAP
-   reacquires the Python lock (and restores the thread state) but
-   doesn't release the Tcl lock; LEAVE_OVERLAP_TCL releases the Tcl
-   lock.
+   Sometimes, it is necessary to use Python inside the ENTER_TCL block,
+   for example when transferring data from the Tcl interpreter result to
+   a Python object.  This can be done by using different macros to close
+   the ENTER_TCL block: ENTER_OVERLAP reacquires the Python interpreter
+   lock (and restores the thread state); LEAVE_OVERLAP_TCL then closes
+   the block.
 
    By contrast, ENTER_PYTHON and LEAVE_PYTHON are used in Tcl event
    handlers when the handler needs to use Python.  Such event handlers
-   are entered while the lock for Tcl is held; the event handler
-   presumably needs to use Python.  ENTER_PYTHON releases the lock for
-   Tcl and acquires the Python interpreter lock, restoring the
-   appropriate thread state, and LEAVE_PYTHON releases the Python
-   interpreter lock and re-acquires the lock for Tcl.  It is okay for
-   ENTER_TCL/LEAVE_TCL pairs to be contained inside the code between
-   ENTER_PYTHON and LEAVE_PYTHON.
+   are called inside an ENTER_TCL block.  ENTER_PYTHON acquires the
+   Python interpreter lock, restoring the saved thread state, and
+   LEAVE_PYTHON releases it again.  It is okay for ENTER_TCL/LEAVE_TCL
+   pairs to be contained inside the code between ENTER_PYTHON and
+   LEAVE_PYTHON.
 
-   These locks expand to several statements and brackets; they should
+   An event handler can also be called when Tcl is not entered with
+   ENTER_TCL, for example from a foreign event loop on Windows, which
+   dispatches a window message to Tk while the Python interpreter lock
+   is released.  Then there is no saved thread state, so ENTER_PYTHON
+   acquires the Python interpreter lock with PyGILState_Ensure() and
+   LEAVE_PYTHON releases it with PyGILState_Release().
+
+   These macros expand to several statements and brackets; they should
    not be used in branches of if statements and the like.
-
-   If Tcl is threaded, this approach won't work anymore. The Tcl
-   interpreter is only valid in the thread that created it, and all Tk
-   activity must happen in this thread, also. That means that the
-   mainloop must be invoked in the thread that created the
-   interpreter. Invoking commands from other threads is possible;
-   _tkinter will queue an event for the interpreter thread, which will
-   then execute the command and pass back the result. If the main
-   thread is not in the mainloop, and invoking commands causes an
-   exception; if the main loop is running but not processing events,
-   the command invocation will block.
-
-   In addition, for a threaded Tcl, a single global tcl_tstate won't
-   be sufficient anymore, since multiple Tcl interpreters may
-   simultaneously dispatch in different threads. So we use the Tcl TLS
-   API.
-
 */
 
-static PyThread_type_lock tcl_lock = 0;
-
-#ifdef TCL_THREADS
 static Tcl_ThreadDataKey state_key;
 #define tcl_tstate \
     (*(PyThreadState**)Tcl_GetThreadData(&state_key, sizeof(PyThreadState*)))
-#else
-static PyThreadState *tcl_tstate = NULL;
-#endif
 
 #define ENTER_TCL \
     { PyThreadState *tstate = PyThreadState_Get(); \
       Py_BEGIN_ALLOW_THREADS \
-      if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
       tcl_tstate = tstate;
 
 #define LEAVE_TCL \
     tcl_tstate = NULL; \
-    if(tcl_lock)PyThread_release_lock(tcl_lock); \
     Py_END_ALLOW_THREADS}
 
 #define ENTER_OVERLAP \
     Py_END_ALLOW_THREADS
 
 #define LEAVE_OVERLAP_TCL \
-    tcl_tstate = NULL; if(tcl_lock)PyThread_release_lock(tcl_lock); }
+    tcl_tstate = NULL; }
 
 #define ENTER_PYTHON \
-    { PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; \
-      if(tcl_lock) \
-        PyThread_release_lock(tcl_lock); \
-      PyEval_RestoreThread((tstate)); }
+    { PyThreadState *tstate = tcl_tstate; \
+      PyGILState_STATE gilstate = PyGILState_UNLOCKED; \
+      if (tstate == NULL) { \
+          gilstate = PyGILState_Ensure(); \
+      } \
+      else { \
+          tcl_tstate = NULL; \
+          PyEval_RestoreThread(tstate); \
+      }
 
 #define LEAVE_PYTHON \
-    { PyThreadState *tstate = PyEval_SaveThread(); \
-      if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
-      tcl_tstate = tstate; }
+      if (tstate == NULL) { \
+          PyGILState_Release(gilstate); \
+      } \
+      else { \
+          tstate = PyEval_SaveThread(); \
+          tcl_tstate = tstate; \
+      } \
+    }
 
 #ifndef FREECAST
 #define FREECAST (char *)
@@ -357,9 +351,10 @@ typedef struct {
     PyObject_HEAD
     Tcl_Interp *interp;
     int wantobjects;
-    int threaded; /* True if tcl_platform[threaded] */
     Tcl_ThreadId thread_id;
     int dispatching;
+    int quitting; /* Set by quit() to stop mainloop() */
+    int event_hook; /* True if counted by EnableEventHook() */
     PyObject *trace;
     /* We cannot include tclInt.h, as this is internal.
        So we cache interesting types here. */
@@ -391,7 +386,7 @@ typedef struct {
 static inline int
 check_tcl_appartment(TkappObject *app)
 {
-    if (app->threaded && app->thread_id != Tcl_GetCurrentThread()) {
+    if (app->thread_id != Tcl_GetCurrentThread()) {
         PyErr_SetString(PyExc_RuntimeError,
                         "Calling Tcl from different apartment");
         return -1;
@@ -410,9 +405,14 @@ check_tcl_appartment(TkappObject *app)
 /**** Error Handling ****/
 
 static PyObject *Tkinter_TclError;
-static int quitMainLoop = 0;
-static int errorInCmd = 0;
-static PyObject *excInCmd;
+
+/* An exception raised in a Python callback, which should be raised by the
+   event loop (mainloop() or the event hook) that called the callback.
+   Callbacks are only called in the thread of their Tcl interpreter, so it
+   is thread-local. */
+static Tcl_ThreadDataKey excInCmd_key;
+#define excInCmd \
+    (*(PyObject **)Tcl_GetThreadData(&excInCmd_key, sizeof(PyObject *)))
 
 
 static PyObject *Tkapp_UnicodeResult(TkappObject *);
@@ -643,8 +643,8 @@ Tcl_AppInit(Tcl_Interp *interp)
  * `tkMain.c'.
  */
 
-static void EnableEventHook(void); /* Forward */
-static void DisableEventHook(void); /* Forward */
+static void EnableEventHook(TkappObject *); /* Forward */
+static void DisableEventHook(TkappObject *); /* Forward */
 
 static TkappObject *
 Tkapp_New(const char *screenName, const char *className,
@@ -653,37 +653,37 @@ Tkapp_New(const char *screenName, const char *className,
 {
     TkappObject *v;
     char *argv0;
+#if TCL_MAJOR_VERSION < 9  /* Tcl 9.x is always threaded */
+    Tcl_Obj* threaded;
+#endif
 
     PyTypeObject *tp = (PyTypeObject *)Tkapp_Type;
     v = (TkappObject *)tp->tp_alloc(tp, 0);
     if (v == NULL)
         return NULL;
 
+    /* Without the GIL, the first-time initialization in Tcl_CreateInterp()
+       is not thread-safe.  Serialize it. */
+    static PyMutex tcl_create_mutex;
+    PyMutex_Lock(&tcl_create_mutex);
     v->interp = Tcl_CreateInterp();
-    v->wantobjects = wantobjects;
-#if TCL_MAJOR_VERSION >= 9
-    v->threaded = 1;
-#else
-    v->threaded = Tcl_GetVar2Ex(v->interp, "tcl_platform", "threaded",
-                                TCL_GLOBAL_ONLY) != NULL;
-#endif
+    PyMutex_Unlock(&tcl_create_mutex);
     v->thread_id = Tcl_GetCurrentThread();
+#if TCL_MAJOR_VERSION < 9  /* Tcl 9.x is always threaded */
+    threaded = Tcl_GetVar2Ex(v->interp,
+                             "tcl_platform",
+                             "threaded",
+                             TCL_GLOBAL_ONLY);
+    if (threaded == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Tcl must be compiled with thread support");
+        Py_DECREF(v);
+        return NULL;
+    }
+#endif
+    v->wantobjects = wantobjects;
     v->dispatching = 0;
     v->trace = NULL;
-
-#ifndef TCL_THREADS
-    if (v->threaded) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Tcl is threaded but _tkinter is not");
-        Py_DECREF(v);
-        return 0;
-    }
-#endif
-    if (v->threaded && tcl_lock) {
-        /* If Tcl is threaded, we don't need the lock. */
-        PyThread_free_lock(tcl_lock);
-        tcl_lock = NULL;
-    }
 
     v->OldBooleanType = Tcl_GetObjType("boolean");
     {
@@ -830,7 +830,7 @@ Tkapp_New(const char *screenName, const char *className,
         return (TkappObject *)result;
     }
 
-    EnableEventHook();
+    EnableEventHook(v);
 
     return v;
 }
@@ -1657,8 +1657,7 @@ Tkapp_Trace(TkappObject *self, PyObject *args)
     } while (0)
 
 /* Tkapp_CallProc is the event procedure that is executed in the context of
-   the Tcl interpreter thread. Initially, it holds the Tcl lock, and doesn't
-   hold the Python lock. */
+   the Tcl interpreter thread. Initially, it doesn't hold the Python lock. */
 
 static int
 Tkapp_CallProc(Tcl_Event *evPtr, int flags)
@@ -1706,13 +1705,10 @@ done:
 
 
 /* This is the main entry point for calling a Tcl command.
-   It supports three cases, with regard to threading:
-   1. Tcl is not threaded: Must have the Tcl lock, then can invoke command in
-      the context of the calling thread.
-   2. Tcl is threaded, caller of the command is in the interpreter thread:
-      Execute the command in the calling thread. Since the Tcl lock will
-      not be used, we can merge that with case 1.
-   3. Tcl is threaded, caller is in a different thread: Must queue an event to
+   It supports two cases, with regard to threading:
+   1. Caller of the command is in the interpreter thread:
+      Execute the command in the calling thread.
+   2. Caller is in a different thread: Must queue an event to
       the interpreter thread. Allocation of Tcl objects needs to occur in the
       interpreter thread, so we ship the PyObject* args to the target thread,
       and perform processing there. */
@@ -1740,7 +1736,7 @@ _tkinter_tkapp_call_impl(TkappObject *self, PyObject *args)
         if (PyTuple_Check(item))
             args = item;
     }
-    if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
+    if (self->thread_id != Tcl_GetCurrentThread()) {
         /* We cannot call the command directly. Instead, we must
            marshal the parameters to the interpreter thread. */
         Tkapp_CallEvent *ev;
@@ -2017,7 +2013,7 @@ static PyObject*
 var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
 {
     TkappObject *self = TkappObject_CAST(selfptr);
-    if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
+    if (self->thread_id != Tcl_GetCurrentThread()) {
         VarEvent *ev;
         // init 'res' and 'exc' to make static analyzers happy
         PyObject *res = NULL, *exc = NULL;
@@ -2051,7 +2047,7 @@ var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
         }
         return res;
     }
-    /* Tcl is not threaded, or this is the interpreter thread. */
+    /* This is the interpreter thread. */
     return func(self, args, flags);
 }
 
@@ -2068,7 +2064,6 @@ SetVar(TkappObject *self, PyObject *args, int flags)
         if (!PyArg_ParseTuple(args, "O&O:setvar",
                               varname_converter, &name1, &newValue))
             return NULL;
-        /* XXX Acquire tcl lock??? */
         newval = AsObj(newValue);
         if (newval == NULL)
             return NULL;
@@ -2099,7 +2094,6 @@ SetVar(TkappObject *self, PyObject *args, int flags)
         CHECK_STRING_LENGTH(name1);
         CHECK_STRING_LENGTH(name2);
 
-        /* XXX must hold tcl lock already??? */
         newval = AsObj(newValue);
         if (newval == NULL) {
             return NULL;
@@ -2588,15 +2582,6 @@ typedef struct {
     PyObject *func;
 } PythonCmd_ClientData;
 
-static int
-PythonCmd_Error(Tcl_Interp *interp)
-{
-    errorInCmd = 1;
-    excInCmd = PyErr_GetRaisedException();
-    LEAVE_PYTHON
-    return TCL_ERROR;
-}
-
 /* This is the Tcl command that acts as a wrapper for Python
  * function or method.
  */
@@ -2609,19 +2594,20 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
     int i;
     Tcl_Obj *obj_res;
     int objargs = data->self->wantobjects >= 2;
+    int result = TCL_ERROR;
 
     ENTER_PYTHON
 
     /* Create argument tuple (objv1, ..., objvN) */
     if (!(args = PyTuple_New(objc - 1)))
-        return PythonCmd_Error(interp);
+        goto error;
 
     for (i = 0; i < (objc - 1); i++) {
         PyObject *s = objargs ? FromObj(data->self, objv[i + 1])
                               : unicodeFromTclObj(data->self, objv[i + 1]);
         if (!s) {
             Py_DECREF(args);
-            return PythonCmd_Error(interp);
+            goto error;
         }
         PyTuple_SET_ITEM(args, i, s);
     }
@@ -2630,19 +2616,24 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
     Py_DECREF(args);
 
     if (res == NULL)
-        return PythonCmd_Error(interp);
+        goto error;
 
     obj_res = AsObj(res);
     if (obj_res == NULL) {
         Py_DECREF(res);
-        return PythonCmd_Error(interp);
+        goto error;
     }
     Tcl_SetObjResult(interp, obj_res);
     Py_DECREF(res);
+    result = TCL_OK;
+    goto done;
 
+error:
+    Py_XSETREF(excInCmd, PyErr_GetRaisedException());
+done:
     LEAVE_PYTHON
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -2712,7 +2703,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
         return NULL;
     }
 
-    if (self->threaded && self->thread_id != Tcl_GetCurrentThread() &&
+    if (self->thread_id != Tcl_GetCurrentThread() &&
         !WaitForMainloop(self))
         return NULL;
 
@@ -2726,7 +2717,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
        (gh-80937).  The command cannot outlive the interpreter. */
     data->self = self;
     data->func = Py_NewRef(func);
-    if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
+    if (self->thread_id != Tcl_GetCurrentThread()) {
         err = 0;  // init to make static analyzers happy
 
         Tcl_Condition cond = NULL;
@@ -2784,7 +2775,7 @@ _tkinter_tkapp_deletecommand_impl(TkappObject *self, const char *name)
 
     TRACE(self, ("((sss))", "rename", name, ""));
 
-    if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
+    if (self->thread_id != Tcl_GetCurrentThread()) {
         err = 0;  // init to make static analyzers happy
 
         Tcl_Condition cond = NULL;
@@ -2876,8 +2867,7 @@ FileHandler(ClientData clientData, int mask)
 
     res = PyObject_CallFunction(func, "Oi", file, mask);
     if (res == NULL) {
-        errorInCmd = 1;
-        excInCmd = PyErr_GetRaisedException();
+        Py_XSETREF(excInCmd, PyErr_GetRaisedException());
     }
     Py_XDECREF(res);
     LEAVE_PYTHON
@@ -3005,8 +2995,7 @@ ChannelHandler(ClientData clientData, int mask)
         res = PyObject_CallFunction(func, "Oi", (PyObject *)self, mask);
         Py_DECREF(func);
         if (res == NULL) {
-            errorInCmd = 1;
-            excInCmd = PyErr_GetRaisedException();
+            Py_XSETREF(excInCmd, PyErr_GetRaisedException());
         }
         Py_XDECREF(res);
         Py_DECREF(self);
@@ -3673,8 +3662,7 @@ TimerHandler(ClientData clientData)
     Py_DECREF(v); /* See Tktt_New() */
 
     if (res == NULL) {
-        errorInCmd = 1;
-        excInCmd = PyErr_GetRaisedException();
+        Py_XSETREF(excInCmd, PyErr_GetRaisedException());
     }
     else
         Py_DECREF(res);
@@ -3731,50 +3719,38 @@ static PyObject *
 _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
 /*[clinic end generated code: output=0ba8eabbe57841b0 input=036bcdcf03d5eca0]*/
 {
-    PyThreadState *tstate = PyThreadState_Get();
-
     CHECK_TCL_APPARTMENT(self);
+    /* mainloop() can be nested, the outer mainloop() still dispatches
+       events after the inner one exits. */
+    int dispatching = self->dispatching;
     self->dispatching = 1;
 
-    quitMainLoop = 0;
+    FT_ATOMIC_STORE_INT_RELAXED(self->quitting, 0);
     while (Tk_GetNumMainWindows() > threshold &&
-           !quitMainLoop &&
-           !errorInCmd)
+           !FT_ATOMIC_LOAD_INT_RELAXED(self->quitting) &&
+           excInCmd == NULL)
     {
         int result;
 
-        if (self->threaded) {
-            /* Allow other Python threads to run. */
-            ENTER_TCL
-            result = Tcl_DoOneEvent(0);
-            LEAVE_TCL
-        }
-        else {
-            Py_BEGIN_ALLOW_THREADS
-            if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1);
-            tcl_tstate = tstate;
-            result = Tcl_DoOneEvent(TCL_DONT_WAIT);
-            tcl_tstate = NULL;
-            if(tcl_lock)PyThread_release_lock(tcl_lock);
-            if (result == 0)
-                Sleep(Tkinter_busywaitinterval);
-            Py_END_ALLOW_THREADS
-        }
+        /* Allow other Python threads to run. */
+        ENTER_TCL
+        result = Tcl_DoOneEvent(0);
+        LEAVE_TCL
 
         if (PyErr_CheckSignals() != 0) {
-            self->dispatching = 0;
+            self->dispatching = dispatching;
             return NULL;
         }
         if (result < 0)
             break;
     }
-    self->dispatching = 0;
-    quitMainLoop = 0;
+    self->dispatching = dispatching;
+    FT_ATOMIC_STORE_INT_RELAXED(self->quitting, 0);
 
-    if (errorInCmd) {
-        errorInCmd = 0;
-        PyErr_SetRaisedException(excInCmd);
+    PyObject *exc = excInCmd;
+    if (exc != NULL) {
         excInCmd = NULL;
+        PyErr_SetRaisedException(exc);
         return NULL;
     }
     Py_RETURN_NONE;
@@ -3800,6 +3776,13 @@ _tkinter_tkapp_dooneevent_impl(TkappObject *self, int flags)
     return PyLong_FromLong(rv);
 }
 
+static int
+QuitEventProc(Tcl_Event *evPtr, int flags)
+{
+    /* Nothing to do: the event only wakes up the event loop. */
+    return 1;
+}
+
 /*[clinic input]
 _tkinter.tkapp.quit
 [clinic start generated code]*/
@@ -3808,7 +3791,19 @@ static PyObject *
 _tkinter_tkapp_quit_impl(TkappObject *self)
 /*[clinic end generated code: output=7f21eeff481f754f input=e03020dc38aff23c]*/
 {
-    quitMainLoop = 1;
+    FT_ATOMIC_STORE_INT_RELAXED(self->quitting, 1);
+    if (self->dispatching && self->thread_id != Tcl_GetCurrentThread()) {
+        /* mainloop() is running in other thread and can wait for an event.
+           Send it an event, so that it checks the flag. */
+        Tcl_Event *ev = (Tcl_Event *)attemptckalloc(sizeof(Tcl_Event));
+        if (ev == NULL) {
+            return PyErr_NoMemory();
+        }
+        memset(ev, 0, sizeof(Tcl_Event));
+        ev->proc = QuitEventProc;
+        Tcl_ThreadQueueEvent(self->thread_id, ev, TCL_QUEUE_TAIL);
+        Tcl_ThreadAlert(self->thread_id);
+    }
     Py_RETURN_NONE;
 }
 
@@ -3963,7 +3958,7 @@ Tkapp_Dealloc(PyObject *op)
     TkappObject *self = (TkappObject *)op;
     PyTypeObject *tp = Py_TYPE(op);
     PyObject_GC_UnTrack(op);
-    if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
+    if (self->thread_id != Tcl_GetCurrentThread()) {
         /* Deleting the interpreter from another thread aborts the process
            ("Tcl_AsyncDelete: async handler deleted by the wrong thread").
            Leak it instead (gh-83274). */
@@ -3981,10 +3976,10 @@ Tkapp_Dealloc(PyObject *op)
         Tcl_DeleteInterp(Tkapp_Interp(self));
         LEAVE_TCL
     }
+    DisableEventHook(self);
     (void)Tkapp_Clear(op);
     tp->tp_free(op);
     Py_DECREF(tp);
-    DisableEventHook();
 }
 
 
@@ -4140,21 +4135,21 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
 }
 
 /*[clinic input]
-@permit_long_summary
 _tkinter.setbusywaitinterval
 
     new_val: int
     /
 
-Set the busy-wait interval in milliseconds between successive calls to Tcl_DoOneEvent in a threaded Python interpreter.
+Set the busy-wait interval in milliseconds.
 
-It should be set to a divisor of the maximum time between frames in
-an animation.
+It is the interval between successive calls to Tcl_DoOneEvent when
+waiting for input at the interactive prompt on Windows.  It should be
+set to a divisor of the maximum time between frames in an animation.
 [clinic start generated code]*/
 
 static PyObject *
 _tkinter_setbusywaitinterval_impl(PyObject *module, int new_val)
-/*[clinic end generated code: output=42bf7757dc2d0ab6 input=0360dd95c8bd8619]*/
+/*[clinic end generated code: output=42bf7757dc2d0ab6 input=05733d51be719869]*/
 {
     if (new_val < 0) {
         PyErr_SetString(PyExc_ValueError,
@@ -4166,15 +4161,14 @@ _tkinter_setbusywaitinterval_impl(PyObject *module, int new_val)
 }
 
 /*[clinic input]
-@permit_long_summary
 _tkinter.getbusywaitinterval -> int
 
-Return the current busy-wait interval between successive calls to Tcl_DoOneEvent in a threaded Python interpreter.
+Return the current busy-wait interval in milliseconds.
 [clinic start generated code]*/
 
 static int
 _tkinter_getbusywaitinterval_impl(PyObject *module)
-/*[clinic end generated code: output=23b72d552001f5c7 input=62d5b36ddab3976b]*/
+/*[clinic end generated code: output=23b72d552001f5c7 input=cd3d96a258e75ade]*/
 {
     return Tkinter_busywaitinterval;
 }
@@ -4338,6 +4332,10 @@ static PyMethodDef moduleMethods[] =
 };
 
 #ifdef WAIT_FOR_STDIN
+/* The number of Tcl interpreters which use the event hook. */
+static Py_ssize_t event_hook_users = 0;
+static PyMutex event_hook_mutex = {0};
+
 #ifndef MS_WINDOWS
 
 static int stdin_ready = 0;
@@ -4355,8 +4353,6 @@ MyFileProc(void *clientData, int mask)
 }
 #endif
 
-static PyThreadState *event_tstate = NULL;
-
 static int
 EventHook(void)
 {
@@ -4365,10 +4361,18 @@ EventHook(void)
     DWORD type;
 #else
     int tfile;
+#endif
+    /* The hook is called with the GIL released, usually by PyOS_Readline()
+       in the thread which reads the input.  Use the thread state of that
+       thread, not of the thread which created the Tcl interpreter. */
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
+    if (tstate == NULL) {
+        return 0;
+    }
+#ifndef MS_WINDOWS
     stdin_ready = 0;
 #endif
-    PyEval_RestoreThread(event_tstate);
-    errorInCmd = 0;
+    PyEval_RestoreThread(tstate);
 #ifdef MS_WINDOWS
     hStdin = GetStdHandle(STD_INPUT_HANDLE);
     type = GetFileType(hStdin);
@@ -4396,27 +4400,32 @@ EventHook(void)
         else if (type == FILE_TYPE_DISK) {
             break;
         }
-#endif
+        /* stdin is not a Tcl event source on Windows, so poll. */
         Py_BEGIN_ALLOW_THREADS
-        if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1);
-        tcl_tstate = event_tstate;
-
+        tcl_tstate = tstate;
         result = Tcl_DoOneEvent(TCL_DONT_WAIT);
-
         tcl_tstate = NULL;
-        if(tcl_lock)PyThread_release_lock(tcl_lock);
         if (result == 0)
             Sleep(Tkinter_busywaitinterval);
         Py_END_ALLOW_THREADS
+#else
+        /* stdin is watched by MyFileProc, so we can wait for an event or
+           input instead of polling. */
+        Py_BEGIN_ALLOW_THREADS
+        tcl_tstate = tstate;
+        result = Tcl_DoOneEvent(0);
+        tcl_tstate = NULL;
+        Py_END_ALLOW_THREADS
+#endif
 
         /* Report an exception raised in a callback, but keep pumping events
            instead of returning to the prompt: without readline there is no
            input waiting on stdin yet, so returning here would block in fgets
            until the user hits enter, freezing later callbacks. */
-        if (errorInCmd) {
-            errorInCmd = 0;
-            PyErr_SetRaisedException(excInCmd);
+        PyObject *exc = excInCmd;
+        if (exc != NULL) {
             excInCmd = NULL;
+            PyErr_SetRaisedException(exc);
             PyErr_Print();
         }
         if (result < 0)
@@ -4433,23 +4442,32 @@ EventHook(void)
 #endif
 
 static void
-EnableEventHook(void)
+EnableEventHook(TkappObject *self)
 {
 #ifdef WAIT_FOR_STDIN
+    PyMutex_Lock(&event_hook_mutex);
+    event_hook_users++;
     if (PyOS_InputHook == NULL) {
-        event_tstate = PyThreadState_Get();
         PyOS_InputHook = EventHook;
     }
+    self->event_hook = 1;
+    PyMutex_Unlock(&event_hook_mutex);
 #endif
 }
 
 static void
-DisableEventHook(void)
+DisableEventHook(TkappObject *self)
 {
 #ifdef WAIT_FOR_STDIN
-    if (Tk_GetNumMainWindows() == 0 && PyOS_InputHook == EventHook) {
+    if (!self->event_hook) {
+        return;
+    }
+    PyMutex_Lock(&event_hook_mutex);
+    self->event_hook = 0;
+    if (--event_hook_users == 0 && PyOS_InputHook == EventHook) {
         PyOS_InputHook = NULL;
     }
+    PyMutex_Unlock(&event_hook_mutex);
 #endif
 }
 
@@ -4500,10 +4518,6 @@ PyInit__tkinter(void)
     }
 
     PyObject *m, *uexe, *cexe;
-
-    tcl_lock = PyThread_allocate_lock();
-    if (tcl_lock == NULL)
-        return PyErr_NoMemory();
 
     m = PyModule_Create(&_tkintermodule);
     if (m == NULL)

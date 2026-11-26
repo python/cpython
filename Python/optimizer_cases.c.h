@@ -1872,6 +1872,8 @@
         case _GET_ANEXT: {
             JitOptRef aiter;
             JitOptRef awaitable;
+            JitOptRef null;
+            JitOptRef none;
             aiter = stack_pointer[-1];
             if (sym_matches_type(aiter, &PyAsyncGen_Type)) {
                 awaitable = sym_new_type(ctx, &_PyAsyncGenASend_Type);
@@ -1879,17 +1881,30 @@
             else {
                 awaitable = sym_new_not_null(ctx);
             }
-            CHECK_STACK_BOUNDS(1);
+            null = PyJitRef_Borrow(sym_new_null(ctx));
+            none = PyJitRef_Borrow(sym_new_const(ctx, Py_None));
+            CHECK_STACK_BOUNDS(3);
             stack_pointer[0] = awaitable;
-            stack_pointer += 1;
+            stack_pointer[1] = null;
+            stack_pointer[2] = none;
+            stack_pointer += 3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
         case _GET_AWAITABLE: {
             JitOptRef iter;
+            JitOptRef null;
+            JitOptRef none;
             iter = sym_new_not_null(ctx);
+            null = PyJitRef_Borrow(sym_new_null(ctx));
+            none = PyJitRef_Borrow(sym_new_const(ctx, Py_None));
+            CHECK_STACK_BOUNDS(2);
             stack_pointer[-1] = iter;
+            stack_pointer[0] = null;
+            stack_pointer[1] = none;
+            stack_pointer += 2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 

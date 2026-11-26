@@ -1437,7 +1437,7 @@ class VarKeywordCConverter(CConverter):
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         raise AssertionError('should never be called')
 
-    def parse_var_keyword(self) -> str:
+    def parse_var_keyword(self, *, stackargs: bool) -> str:
         raise NotImplementedError
 
 
@@ -1448,6 +1448,16 @@ class var_keyword_dict_converter(VarKeywordCConverter):
     def cleanup(self) -> str:
         return f'Py_XDECREF({self.parser_name});\n'
 
-    def parse_var_keyword(self) -> str:
+    def parse_var_keyword(self, *, stackargs: bool) -> str:
         # NULL when there are no keywords: no call allocates an empty dict.
-        return f"{self.parser_name} = Py_XNewRef(kwargs);\n"
+        param_name = self.parser_name
+        if stackargs:
+            return f"""
+                if (kwnames != NULL) {{{{
+                    {param_name} = _PyStack_AsDict(args + nargs, kwnames);
+                    if ({param_name} == NULL) {{{{
+                        goto exit;
+                    }}}}
+                }}}}
+                """
+        return f"{param_name} = Py_XNewRef(kwargs);\n"
