@@ -228,6 +228,7 @@ struct nldecoder_object {
 #define nldecoder_object_CAST(op)   ((nldecoder_object *)(op))
 
 /*[clinic input]
+@vectorcall
 _io.IncrementalNewlineDecoder.__init__
     decoder: object
     translate: bool
@@ -247,7 +248,7 @@ static int
 _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
                                             PyObject *decoder, int translate,
                                             PyObject *errors)
-/*[clinic end generated code: output=fbd04d443e764ec2 input=ed547aa257616b0e]*/
+/*[clinic end generated code: output=fbd04d443e764ec2 input=7fd0efad15bc0b69]*/
 {
 
     if (errors == NULL) {
@@ -3524,6 +3525,7 @@ static PyType_Slot nldecoder_slots[] = {
     {Py_tp_traverse, incrementalnewlinedecoder_traverse},
     {Py_tp_clear, incrementalnewlinedecoder_clear},
     {Py_tp_init, _io_IncrementalNewlineDecoder___init__},
+    {Py_tp_vectorcall, _io_IncrementalNewlineDecoder_vectorcall},
     {0, NULL},
 };
 
