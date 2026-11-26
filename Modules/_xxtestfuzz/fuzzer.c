@@ -325,6 +325,10 @@ static int fuzz_sre_match(const char* data, size_t size) {
 
     PyObject* pattern = compiled_patterns[idx];
     PyObject* match_callable = PyObject_GetAttrString(pattern, "match");
+    if (match_callable == NULL) {
+        Py_DECREF(to_match);
+        return 0;
+    }
 
     PyObject* matches = PyObject_CallOneArg(match_callable, to_match);
 

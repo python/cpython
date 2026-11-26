@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(batched_new__doc__,
@@ -35,7 +36,8 @@ batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n,
                  int strict);
 
 static PyObject *
-batched_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+batched_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -67,13 +69,12 @@ batched_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[3];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 2;
+    Py_ssize_t noptargs = nargs + nkw - 2;
     PyObject *iterable;
     Py_ssize_t n;
     int strict = 0;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -103,6 +104,30 @@ skip_optional_kwonly:
 
 exit:
     return return_value;
+}
+
+static PyObject *
+batched_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return batched_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+batched_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    assert(_PyType_CAST(type)->tp_new == batched_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    return batched_new_helper(_PyType_CAST(type), args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
 }
 
 PyDoc_STRVAR(pairwise_new__doc__,
@@ -137,6 +162,31 @@ exit:
     return return_value;
 }
 
+static PyObject *
+pairwise_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *iterable;
+
+    assert(_PyType_CAST(type)->tp_new == pairwise_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("pairwise", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("pairwise", nargs, 1, 1)) {
+        goto exit;
+    }
+    iterable = args[0];
+    return_value = pairwise_new_impl(_PyType_CAST(type), iterable);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_groupby__doc__,
 "groupby(iterable, key=None)\n"
 "--\n"
@@ -154,7 +204,8 @@ static PyObject *
 itertools_groupby_impl(PyTypeObject *type, PyObject *it, PyObject *keyfunc);
 
 static PyObject *
-itertools_groupby(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_groupby_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -186,12 +237,11 @@ itertools_groupby(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    Py_ssize_t noptargs = nargs + nkw - 1;
     PyObject *it;
     PyObject *keyfunc = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -205,6 +255,44 @@ skip_optional_pos:
     return_value = itertools_groupby_impl(type, it, keyfunc);
 
 exit:
+    return return_value;
+}
+
+static PyObject *
+itertools_groupby(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return itertools_groupby_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+itertools_groupby_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *it;
+    PyObject *keyfunc = Py_None;
+
+    assert(_PyType_CAST(type)->tp_new == itertools_groupby);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs < 1 || nargs > 2) {
+        return itertools_groupby_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    it = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    keyfunc = args[1];
+skip_optional:
+    return_value = itertools_groupby_impl(_PyType_CAST(type), it, keyfunc);
+
     return return_value;
 }
 
@@ -273,6 +361,39 @@ itertools_teedataobject(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     values = PyTuple_GET_ITEM(args, 1);
     next = PyTuple_GET_ITEM(args, 2);
     return_value = itertools_teedataobject_impl(type, it, values, next);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+itertools_teedataobject_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *it;
+    PyObject *values;
+    PyObject *next;
+
+    assert(_PyType_CAST(type)->tp_new == itertools_teedataobject);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("teedataobject", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("teedataobject", nargs, 3, 3)) {
+        goto exit;
+    }
+    it = args[0];
+    if (!PyList_Check(args[1])) {
+        _PyArg_BadArgument("teedataobject", "argument 2", "list", args[1]);
+        goto exit;
+    }
+    values = args[1];
+    next = args[2];
+    return_value = itertools_teedataobject_impl(_PyType_CAST(type), it, values, next);
 
 exit:
     return return_value;
@@ -388,6 +509,31 @@ exit:
     return return_value;
 }
 
+static PyObject *
+itertools_cycle_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *iterable;
+
+    assert(_PyType_CAST(type)->tp_new == itertools_cycle);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("cycle", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("cycle", nargs, 1, 1)) {
+        goto exit;
+    }
+    iterable = args[0];
+    return_value = itertools_cycle_impl(_PyType_CAST(type), iterable);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_dropwhile__doc__,
 "dropwhile(predicate, iterable, /)\n"
 "--\n"
@@ -417,6 +563,33 @@ itertools_dropwhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     func = PyTuple_GET_ITEM(args, 0);
     seq = PyTuple_GET_ITEM(args, 1);
     return_value = itertools_dropwhile_impl(type, func, seq);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+itertools_dropwhile_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *func;
+    PyObject *seq;
+
+    assert(_PyType_CAST(type)->tp_new == itertools_dropwhile);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("dropwhile", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("dropwhile", nargs, 2, 2)) {
+        goto exit;
+    }
+    func = args[0];
+    seq = args[1];
+    return_value = itertools_dropwhile_impl(_PyType_CAST(type), func, seq);
 
 exit:
     return return_value;
@@ -454,6 +627,33 @@ exit:
     return return_value;
 }
 
+static PyObject *
+itertools_takewhile_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *func;
+    PyObject *seq;
+
+    assert(_PyType_CAST(type)->tp_new == itertools_takewhile);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("takewhile", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("takewhile", nargs, 2, 2)) {
+        goto exit;
+    }
+    func = args[0];
+    seq = args[1];
+    return_value = itertools_takewhile_impl(_PyType_CAST(type), func, seq);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_starmap__doc__,
 "starmap(function, iterable, /)\n"
 "--\n"
@@ -486,6 +686,33 @@ exit:
     return return_value;
 }
 
+static PyObject *
+itertools_starmap_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *func;
+    PyObject *seq;
+
+    assert(_PyType_CAST(type)->tp_new == itertools_starmap);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("starmap", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("starmap", nargs, 2, 2)) {
+        goto exit;
+    }
+    func = args[0];
+    seq = args[1];
+    return_value = itertools_starmap_impl(_PyType_CAST(type), func, seq);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_chain_from_iterable__doc__,
 "from_iterable($type, iterable, /)\n"
 "--\n"
@@ -508,6 +735,36 @@ itertools_chain_from_iterable(PyObject *type, PyObject *arg)
     return return_value;
 }
 
+static PyObject *
+chain_next_impl(chainobject *self);
+
+static PyObject *
+chain_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = chain_next_impl((chainobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+static PyObject *
+product_next_impl(productobject *self);
+
+static PyObject *
+product_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = product_next_impl((productobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_combinations__doc__,
 "combinations(iterable, r)\n"
 "--\n"
@@ -521,7 +778,8 @@ itertools_combinations_impl(PyTypeObject *type, PyObject *iterable,
                             Py_ssize_t r);
 
 static PyObject *
-itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_combinations_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -553,11 +811,10 @@ itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *iterable;
     Py_ssize_t r;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -586,6 +843,72 @@ exit:
     return return_value;
 }
 
+static PyObject *
+itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return itertools_combinations_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+itertools_combinations_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *iterable;
+    Py_ssize_t r;
+
+    assert(_PyType_CAST(type)->tp_new == itertools_combinations);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs < 2 || nargs > 2) {
+        return itertools_combinations_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    iterable = args[0];
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        r = ival;
+        if (r < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "r cannot be negative");
+            goto exit;
+        }
+    }
+    return_value = itertools_combinations_impl(_PyType_CAST(type), iterable, r);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+combinations_next_impl(combinationsobject *self);
+
+static PyObject *
+combinations_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = combinations_next_impl((combinationsobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_combinations_with_replacement__doc__,
 "combinations_with_replacement(iterable, r)\n"
 "--\n"
@@ -600,7 +923,8 @@ itertools_combinations_with_replacement_impl(PyTypeObject *type,
                                              Py_ssize_t r);
 
 static PyObject *
-itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_combinations_with_replacement_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -632,11 +956,10 @@ itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyOb
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *iterable;
     Py_ssize_t r;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -665,6 +988,72 @@ exit:
     return return_value;
 }
 
+static PyObject *
+itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return itertools_combinations_with_replacement_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+itertools_combinations_with_replacement_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *iterable;
+    Py_ssize_t r;
+
+    assert(_PyType_CAST(type)->tp_new == itertools_combinations_with_replacement);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs < 2 || nargs > 2) {
+        return itertools_combinations_with_replacement_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    iterable = args[0];
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        r = ival;
+        if (r < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "r cannot be negative");
+            goto exit;
+        }
+    }
+    return_value = itertools_combinations_with_replacement_impl(_PyType_CAST(type), iterable, r);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+cwr_next_impl(cwrobject *self);
+
+static PyObject *
+cwr_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = cwr_next_impl((cwrobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_permutations__doc__,
 "permutations(iterable, r=None)\n"
 "--\n"
@@ -678,7 +1067,8 @@ itertools_permutations_impl(PyTypeObject *type, PyObject *iterable,
                             PyObject *robj);
 
 static PyObject *
-itertools_permutations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_permutations_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -710,12 +1100,11 @@ itertools_permutations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    Py_ssize_t noptargs = nargs + nkw - 1;
     PyObject *iterable;
     PyObject *robj = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -732,6 +1121,59 @@ exit:
     return return_value;
 }
 
+static PyObject *
+itertools_permutations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return itertools_permutations_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+itertools_permutations_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *iterable;
+    PyObject *robj = Py_None;
+
+    assert(_PyType_CAST(type)->tp_new == itertools_permutations);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs < 1 || nargs > 2) {
+        return itertools_permutations_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    iterable = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    robj = args[1];
+skip_optional:
+    return_value = itertools_permutations_impl(_PyType_CAST(type), iterable, robj);
+
+    return return_value;
+}
+
+static PyObject *
+permutations_next_impl(permutationsobject *self);
+
+static PyObject *
+permutations_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = permutations_next_impl((permutationsobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_accumulate__doc__,
 "accumulate(iterable, func=None, *, initial=None)\n"
 "--\n"
@@ -743,7 +1185,8 @@ itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
                           PyObject *binop, PyObject *initial);
 
 static PyObject *
-itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_accumulate_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -775,13 +1218,12 @@ itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[3];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    Py_ssize_t noptargs = nargs + nkw - 1;
     PyObject *iterable;
     PyObject *binop = Py_None;
     PyObject *initial = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -808,6 +1250,45 @@ exit:
     return return_value;
 }
 
+static PyObject *
+itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return itertools_accumulate_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+itertools_accumulate_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    assert(_PyType_CAST(type)->tp_new == itertools_accumulate);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    return itertools_accumulate_helper(_PyType_CAST(type), args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
+}
+
+static PyObject *
+accumulate_next_impl(accumulateobject *self);
+
+static PyObject *
+accumulate_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = accumulate_next_impl((accumulateobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_compress__doc__,
 "compress(data, selectors)\n"
 "--\n"
@@ -821,7 +1302,8 @@ static PyObject *
 itertools_compress_impl(PyTypeObject *type, PyObject *seq1, PyObject *seq2);
 
 static PyObject *
-itertools_compress(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_compress_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -853,11 +1335,10 @@ itertools_compress(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *seq1;
     PyObject *seq2;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -867,6 +1348,40 @@ itertools_compress(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     return_value = itertools_compress_impl(type, seq1, seq2);
 
 exit:
+    return return_value;
+}
+
+static PyObject *
+itertools_compress(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return itertools_compress_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+itertools_compress_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *seq1;
+    PyObject *seq2;
+
+    assert(_PyType_CAST(type)->tp_new == itertools_compress);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs < 2 || nargs > 2) {
+        return itertools_compress_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    seq1 = args[0];
+    seq2 = args[1];
+    return_value = itertools_compress_impl(_PyType_CAST(type), seq1, seq2);
+
     return return_value;
 }
 
@@ -904,6 +1419,33 @@ exit:
     return return_value;
 }
 
+static PyObject *
+itertools_filterfalse_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *func;
+    PyObject *seq;
+
+    assert(_PyType_CAST(type)->tp_new == itertools_filterfalse);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("filterfalse", kwnames)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("filterfalse", nargs, 2, 2)) {
+        goto exit;
+    }
+    func = args[0];
+    seq = args[1];
+    return_value = itertools_filterfalse_impl(_PyType_CAST(type), func, seq);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_count__doc__,
 "count(start=0, step=1)\n"
 "--\n"
@@ -922,7 +1464,8 @@ itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
                      PyObject *long_step);
 
 static PyObject *
-itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+itertools_count_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -954,12 +1497,11 @@ itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    Py_ssize_t noptargs = nargs + nkw - 0;
     PyObject *long_cnt = NULL;
     PyObject *long_step = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -980,4 +1522,60 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a34a31f60100e0ff input=a9049054013a1b77]*/
+
+static PyObject *
+itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return itertools_count_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+itertools_count_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *long_cnt = NULL;
+    PyObject *long_step = NULL;
+
+    assert(_PyType_CAST(type)->tp_new == itertools_count);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs > 2) {
+        return itertools_count_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    long_cnt = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    long_step = args[1];
+skip_optional:
+    return_value = itertools_count_impl(_PyType_CAST(type), long_cnt, long_step);
+
+    return return_value;
+}
+
+static PyObject *
+zip_longest_next_impl(ziplongestobject *self);
+
+static PyObject *
+zip_longest_next(PyObject *self)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = zip_longest_next_impl((ziplongestobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+/*[clinic end generated code: output=60939958c9c9348b input=a9049054013a1b77]*/

@@ -31,6 +31,7 @@
 #include "pycore_time.h"          // _PyLong_FromTime_t()
 #include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_typeobject.h"    // _PyType_AddMethod()
+#include "pycore_warnings.h"      // _PyWarnings_AfterFork()
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"        // _PyLong_FromUid()
@@ -307,13 +308,6 @@
 #  define HAVE_PIPE       1
 #  define HAVE_FSYNC      1
 #  define fsync _commit
-#endif
-
-
-#if !defined(_MSC_VER) && defined(__sgi) && _COMPILER_VERSION>=700
-/* declare ctermid_r if compiling with MIPSPro 7.x in ANSI C mode
-   (default) */
-extern char *ctermid_r(char *);
 #endif
 
 
@@ -722,6 +716,7 @@ PyOS_BeforeFork(void)
     _PyImport_AcquireLock(interp);
     _PyEval_StopTheWorldAll(&_PyRuntime);
     HEAD_LOCK(&_PyRuntime);
+    _PyWarnings_BeforeFork(interp);
 }
 
 void
@@ -791,6 +786,9 @@ PyOS_AfterFork_Child(void)
     // Reinitialize it before any executor cleanup can unregister JIT code.
     _Py_jit_debug_mutex = (PyMutex){0};
 #endif
+
+    // Thread-state cleanup can run finalizers that issue warnings.
+    _PyWarnings_AfterFork(tstate->interp);
 
     reset_remotedebug_data(tstate);
 
@@ -2563,7 +2561,7 @@ static PyStructSequence_Field waitid_result_fields[] = {
 };
 
 static PyStructSequence_Desc waitid_result_desc = {
-    MODNAME ".waitid_result", /* name */
+    "os.waitid_result", /* name */
     waitid_result__doc__, /* doc */
     waitid_result_fields,
     5
@@ -3675,6 +3673,9 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
                      "use dir_fd kwarg instead of AT_EMPTY_PATH flag");
         return NULL;
     }
+    if (!follow_symlinks) {
+        flags |= AT_SYMLINK_NOFOLLOW;
+    }
 
     /* Future bits may refer to members beyond the current size of struct
        statx, so we need to mask them off to prevent memory corruption. */
@@ -4020,6 +4021,12 @@ win32_hchmod(HANDLE hfile, int mode)
     }
     if (mode & _S_IWRITE) {
         info.FileAttributes &= ~FILE_ATTRIBUTE_READONLY;
+        if (info.FileAttributes == 0) {
+            /* SetFileInformationByHandle() interprets FileAttributes == 0
+               as "leave the attributes unchanged"; FILE_ATTRIBUTE_NORMAL
+               is the documented way to clear all attributes. */
+            info.FileAttributes = FILE_ATTRIBUTE_NORMAL;
+        }
     }
     else {
         info.FileAttributes |= FILE_ATTRIBUTE_READONLY;
@@ -5670,8 +5677,9 @@ os__getvolumepathname_impl(PyObject *module, path_t *path)
         goto exit;
     }
     result = PyUnicode_FromWideChar(mountpath, -1);
-    if (PyBytes_Check(path->object))
+    if (result != NULL && PyBytes_Check(path->object)) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    }
 
 exit:
     PyMem_Free(mountpath);
@@ -6766,7 +6774,7 @@ or via the attributes sysname, nodename, release, version, and machine.\n\
 See os.uname for more information.");
 
 static PyStructSequence_Desc uname_result_desc = {
-    MODNAME ".uname_result", /* name */
+    "os.uname_result", /* name */
     uname_result__doc__, /* doc */
     uname_result_fields,
     5
@@ -8367,7 +8375,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
             lastarg = i + 1;
             PyErr_SetString(
                 PyExc_ValueError,
-                "spawnv() arg 2 first element cannot be empty");
+                "spawnve() arg 2 first element cannot be empty");
             goto fail_1;
         }
     }
@@ -8816,7 +8824,7 @@ static PyStructSequence_Field sched_param_fields[] = {
 };
 
 static PyStructSequence_Desc sched_param_desc = {
-    MODNAME ".sched_param", /* name */
+    "os.sched_param", /* name */
     os_sched_param__doc__, /* doc */
     sched_param_fields,
     1
@@ -10089,13 +10097,13 @@ os.getppid
 Return the parent's process id.
 
 If the parent process has already exited, Windows machines will still
-return its id; others systems will return the id of the 'init' proces
+return its id; other systems will return the id of the 'init' process
 (1).
 [clinic start generated code]*/
 
 static PyObject *
 os_getppid_impl(PyObject *module)
-/*[clinic end generated code: output=43b2a946a8c603b4 input=e17c1de18f41316b]*/
+/*[clinic end generated code: output=43b2a946a8c603b4 input=158cc6dd661d54d9]*/
 {
 #ifdef MS_WINDOWS
     return win32_getppid();
@@ -10862,7 +10870,7 @@ os_wait_impl(PyObject *module)
 
 
 // This system call always crashes on older Android versions.
-#if defined(HAVE_PIDFD_OPEN) \
+#if defined(_Py_HAVE_PIDFD_OPEN) \
     || (defined(__linux__) && defined(__NR_pidfd_open) \
         && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 /*[clinic input]
@@ -10880,7 +10888,7 @@ static PyObject *
 os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 /*[clinic end generated code: output=5c7252698947dc41 input=03058b32c389f874]*/
 {
-#ifdef HAVE_PIDFD_OPEN
+#ifdef _Py_HAVE_PIDFD_OPEN
     int fd = pidfd_open(pid, flags);
 #else
     int fd = syscall(__NR_pidfd_open, pid, flags);
@@ -10893,7 +10901,7 @@ os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 #endif
 
 
-#if defined(HAVE_PIDFD_GETFD) \
+#if defined(_Py_HAVE_PIDFD_GETFD) \
     || (defined(__linux__) && defined(__NR_pidfd_getfd) \
         && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 /*[clinic input]
@@ -10914,7 +10922,7 @@ os_pidfd_getfd_impl(PyObject *module, int pidfd, int targetfd,
                     unsigned int flags)
 /*[clinic end generated code: output=e1a1415a13c7137f input=ef6417fb10deb1cc]*/
 {
-#ifdef HAVE_PIDFD_GETFD
+#ifdef _Py_HAVE_PIDFD_GETFD
     int fd = pidfd_getfd(pidfd, targetfd, flags);
 #else
     int fd = syscall(__NR_pidfd_getfd, pidfd, targetfd, flags);
@@ -11374,7 +11382,7 @@ and elapsed.\n\
 See os.times for more information.");
 
 static PyStructSequence_Desc times_result_desc = {
-    MODNAME ".times_result", /* name */
+    "os.times_result", /* name */
     times_result__doc__, /* doc */
     times_result_fields,
     5
@@ -12452,7 +12460,7 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
     if (!PySequence_Check(buffers)) {
         PyErr_SetString(PyExc_TypeError,
-            "preadv2() arg 2 must be a sequence");
+            "preadv() arg 2 must be a sequence");
         return -1;
     }
 
@@ -14144,11 +14152,6 @@ os_WSTOPSIG_impl(PyObject *module, int status)
 
 
 #if defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H)
-#ifdef _SCO_DS
-/* SCO OpenServer 5.0 and later requires _SVID3 before it reveals the
-   needed definitions in sys/statvfs.h */
-#define _SVID3
-#endif
 #include <sys/statvfs.h>
 
 #ifdef __APPLE__
@@ -16838,7 +16841,7 @@ static PyType_Slot DirEntryType_slots[] = {
 };
 
 static PyType_Spec DirEntryType_spec = {
-    .name = MODNAME ".DirEntry",
+    .name = "os.DirEntry",
     .basicsize = sizeof(DirEntry),
     .flags = (
         Py_TPFLAGS_DEFAULT
@@ -17395,7 +17398,7 @@ static PyType_Slot ScandirIteratorType_slots[] = {
 };
 
 static PyType_Spec ScandirIteratorType_spec = {
-    .name = MODNAME ".ScandirIterator",
+    .name = "os.ScandirIterator",
     .basicsize = sizeof(ScandirIterator),
     // bpo-40549: Py_TPFLAGS_BASETYPE should not be used, since
     // PyType_GetModule(Py_TYPE(self)) doesn't work on a subclass instance.

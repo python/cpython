@@ -46,14 +46,17 @@ module.  See module :mod:`glob` for pathname expansion (:mod:`glob` uses
 a period are not special for this module, and are matched by the ``*`` and ``?``
 patterns.
 
-Unless stated otherwise, "filename string" and "pattern string" either refer to
-:class:`str` or ``ISO-8859-1`` encoded :class:`bytes` objects. Note that the
+Unless stated otherwise, "filename string" and "pattern string" refer to
+:class:`str` or ``ISO-8859-1`` encoded :class:`bytes` objects.
+In addition to filename strings, :func:`.filter` and :func:`.filterfalse`
+accept :term:`path-like objects <path-like object>` in *names*. Note that the
 functions documented below do not allow to mix a :class:`!bytes` pattern with
 a :class:`!str` filename, and vice-versa.
 
 Finally, note that :deco:`functools.lru_cache` with a *maxsize* of 32768
 is used to cache the (typed) compiled regex patterns in the following
-functions: :func:`fnmatch`, :func:`fnmatchcase`, :func:`.filter`, :func:`.filterfalse`.
+functions: :func:`~fnmatch.fnmatch`, :func:`fnmatchcase`, :func:`.filter`,
+:func:`.filterfalse`.
 
 
 .. function:: fnmatch(name, pat)
@@ -89,6 +92,9 @@ functions: :func:`fnmatch`, :func:`fnmatchcase`, :func:`.filter`, :func:`.filter
    It is the same as ``[n for n in names if fnmatch(n, pat)]``,
    but implemented more efficiently.
 
+   .. versionchanged:: next
+      Added support for path-like objects in *names*.
+
 
 .. function:: filterfalse(names, pat)
 
@@ -98,6 +104,9 @@ functions: :func:`fnmatch`, :func:`fnmatchcase`, :func:`.filter`, :func:`.filter
    but implemented more efficiently.
 
    .. versionadded:: 3.14
+
+   .. versionchanged:: next
+      Added support for path-like objects in *names*.
 
 
 .. function:: translate(pat)

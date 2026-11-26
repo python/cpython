@@ -260,6 +260,11 @@ PyFloat_AsDouble(PyObject *op)
         return PyFloat_AS_DOUBLE(op);
     }
 
+    // int subclass can override __float__() method
+    if (PyLong_CheckExact(op)) {
+        return PyLong_AsDouble(op);
+    }
+
     nb = Py_TYPE(op)->tp_as_number;
     if (nb == NULL || nb->nb_float == NULL) {
         if (nb && nb->nb_index) {
@@ -942,11 +947,16 @@ double_round(double x, int ndigits) {
     _Py_SET_53BIT_PRECISION_START;
     rounded = _Py_dg_strtod(mybuf, NULL);
     _Py_SET_53BIT_PRECISION_END;
-    if (errno == ERANGE && fabs(rounded) >= 1.)
+    if (errno == ENOMEM) {
+        PyErr_NoMemory();
+    }
+    else if (errno == ERANGE && fabs(rounded) >= 1.) {
         PyErr_SetString(PyExc_OverflowError,
                         "rounded value too large to represent");
-    else
+    }
+    else {
         result = PyFloat_FromDouble(rounded);
+    }
 
     /* done computing value;  now clean up */
     if (mybuf != shortbuf)

@@ -1300,6 +1300,7 @@ PyDictProxy_New(PyObject *mapping)
 }
 
 /*[clinic input]
+@vectorcall
 @classmethod
 mappingproxy.__new__ as mappingproxy_new
 
@@ -1310,7 +1311,7 @@ Read-only proxy of a mapping.
 
 static PyObject *
 mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping)
-/*[clinic end generated code: output=65f27f02d5b68fa7 input=c156df096ef7590c]*/
+/*[clinic end generated code: output=65f27f02d5b68fa7 input=7388846480c052d2]*/
 {
     return PyDictProxy_New(mapping);
 }
@@ -2007,7 +2008,11 @@ static int
 property_clear(PyObject *self)
 {
     propertyobject *pp = (propertyobject *)self;
+    Py_CLEAR(pp->prop_get);
+    Py_CLEAR(pp->prop_set);
+    Py_CLEAR(pp->prop_del);
     Py_CLEAR(pp->prop_doc);
+    Py_CLEAR(pp->prop_name);
     return 0;
 }
 
@@ -2053,6 +2058,7 @@ PyTypeObject PyDictProxy_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     mappingproxy_new,                           /* tp_new */
+    .tp_vectorcall = mappingproxy_vectorcall,
 };
 
 PyTypeObject PyProperty_Type = {

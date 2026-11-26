@@ -39,15 +39,7 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
     if (!__clinic_args) {
         goto exit;
     }
-    if (kwargs == NULL) {
-        __clinic_kwargs = PyDict_New();
-        if (__clinic_kwargs == NULL) {
-            goto exit;
-        }
-    }
-    else {
-        __clinic_kwargs = Py_NewRef(kwargs);
-    }
+    __clinic_kwargs = Py_XNewRef(kwargs);
     return_value = atexit_register_impl(module, func, __clinic_args, __clinic_kwargs);
 
 exit:
@@ -58,4 +50,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=8fd8f691fdbc4e0a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab4b375d516aa59b input=a9049054013a1b77]*/

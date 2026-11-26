@@ -640,11 +640,11 @@ _elementtree_SubElement_impl(PyObject *module, PyObject *parent,
         attrib = PyDict_Copy(attrib);
         if (!attrib)
             return NULL;
-        if (PyDict_Update(attrib, extra) < 0) {
+        if (extra && PyDict_Update(attrib, extra) < 0) {
             Py_DECREF(attrib);
             return NULL;
         }
-    } else if (PyDict_GET_SIZE(extra)) {
+    } else if (extra && PyDict_GET_SIZE(extra)) {
         /* have keyword args */
         attrib = get_attrib_from_keywords(extra);
         if (!attrib)
@@ -2391,7 +2391,9 @@ elementiter_next(PyObject *op)
         if (it->sought_tag == Py_None)
             return (PyObject *)elem;
 
-        rc = PyObject_RichCompareBool(elem->tag, it->sought_tag, Py_EQ);
+        PyObject *tag = Py_NewRef(elem->tag);
+        rc = PyObject_RichCompareBool(tag, it->sought_tag, Py_EQ);
+        Py_DECREF(tag);
         if (rc > 0)
             return (PyObject *)elem;
 
@@ -4285,6 +4287,9 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
     if (events_to_report == Py_None) {
         /* default is "end" only */
         self->end_event_obj = PyUnicode_FromString("end");
+        if (self->end_event_obj == NULL) {
+            return NULL;
+        }
         Py_RETURN_NONE;
     }
 

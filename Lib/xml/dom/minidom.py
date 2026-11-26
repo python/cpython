@@ -300,6 +300,27 @@ defproperty(Node, "lastChild",  doc="Last child node, or None.")
 defproperty(Node, "localName",  doc="Namespace-local name of this node.")
 
 
+# PubidChar (see XML 1.0, 2.3, [13]).
+_PUBID_CHARS = frozenset(
+    " \r\n-'()+,./:=?;!*#@$_%"
+    "0123456789"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz")
+
+
+def _quote_literal(text):
+    """Quote a system literal or a public identifier.
+
+    A literal is delimited with a quote which it does not contain
+    (see XML 1.0, 2.3, [11] and [12]).
+    """
+    if "'" not in text:
+        return "'%s'" % text
+    if '"' not in text:
+        return '"%s"' % text
+    raise ValueError("a literal cannot contain both quotes: %r" % (text,))
+
+
 def _check_name(name):
     if not xml.is_valid_name(name):
         raise xml.dom.InvalidCharacterErr(
@@ -1228,7 +1249,20 @@ class ProcessingInstruction(Childless, Node):
     nodeName = property(_get_nodeName, _set_nodeName)
 
     def writexml(self, writer, indent="", addindent="", newl=""):
-        writer.write("%s<?%s %s?>%s" % (indent,self.target, self.data, newl))
+        target = self.target
+        # PITarget is a Name, except the names matching "xml" in any case
+        # (see XML 1.0, 2.6, [17]).
+        _check_name(target)
+        if target.lower() == "xml":
+            raise ValueError("%r is a reserved processing instruction target"
+                             % (target,))
+        data = self.data
+        # The data cannot contain "?>", which ends the instruction
+        # (see XML 1.0, 2.6, [16]).
+        if "?>" in data:
+            raise ValueError("'?>' is not allowed in a processing "
+                             "instruction node")
+        writer.write("%s<?%s %s?>%s" % (indent, target, data, newl))
 
 
 class CharacterData(Childless, Node):
@@ -1423,9 +1457,14 @@ class Comment(CharacterData):
         self._data = data
 
     def writexml(self, writer, indent="", addindent="", newl=""):
-        if "--" in self.data:
+        data = self.data
+        # The data cannot contain "--", and cannot end with "-", which
+        # would be fused with the closing "-->" (see XML 1.0, 2.5, [15]).
+        if "--" in data:
             raise ValueError("'--' is not allowed in a comment node")
-        writer.write("%s<!--%s-->%s" % (indent, self.data, newl))
+        if data.endswith("-"):
+            raise ValueError("a comment node cannot end with '-'")
+        writer.write("%s<!--%s-->%s" % (indent, data, newl))
 
 
 class CDATASection(Text):
@@ -1571,10 +1610,20 @@ class DocumentType(Identified, Childless, Node):
         writer.write("<!DOCTYPE ")
         writer.write(self.name)
         if self.publicId:
-            writer.write("%s  PUBLIC '%s'%s  '%s'"
-                         % (newl, self.publicId, newl, self.systemId))
+            if not _PUBID_CHARS.issuperset(self.publicId):
+                raise ValueError("invalid public identifier: %r"
+                                 % (self.publicId,))
+            # ExternalID with a public identifier always includes
+            # a system identifier (see XML 1.0, 4.2.2, [75]).
+            if not self.systemId:
+                raise ValueError("a public identifier requires "
+                                 "a system identifier")
+            writer.write("%s  PUBLIC %s%s  %s"
+                         % (newl, _quote_literal(self.publicId),
+                            newl, _quote_literal(self.systemId)))
         elif self.systemId:
-            writer.write("%s  SYSTEM '%s'" % (newl, self.systemId))
+            writer.write("%s  SYSTEM %s" % (newl,
+                                            _quote_literal(self.systemId)))
         if self.internalSubset is not None:
             writer.write(" [")
             writer.write(self.internalSubset)
@@ -2030,8 +2079,9 @@ class Document(Node, DocumentLS):
         result = None
         while stack:
             node = stack.pop()
-            # add child elements to stack for continued searching
-            stack.extend([child for child in node.childNodes
+            # add child elements to stack for continued searching,
+            # last child first so that they are visited in document order
+            stack.extend([child for child in reversed(node.childNodes)
                           if child.nodeType in _nodeTypes_with_children])
             # check this node
             info = self._get_elem_info(node)
@@ -2042,19 +2092,19 @@ class Document(Node, DocumentLS):
                 for attr in node.attributes.values():
                     if attr.namespaceURI:
                         if info.isIdNS(attr.namespaceURI, attr.localName):
-                            self._id_cache[attr.value] = node
+                            self._id_cache.setdefault(attr.value, node)
                             if attr.value == id:
                                 result = node
                             elif not node._magic_id_nodes:
                                 break
                     elif info.isId(attr.name):
-                        self._id_cache[attr.value] = node
+                        self._id_cache.setdefault(attr.value, node)
                         if attr.value == id:
                             result = node
                         elif not node._magic_id_nodes:
                             break
                     elif attr._is_id:
-                        self._id_cache[attr.value] = node
+                        self._id_cache.setdefault(attr.value, node)
                         if attr.value == id:
                             result = node
                         elif node._magic_id_nodes == 1:
@@ -2062,7 +2112,7 @@ class Document(Node, DocumentLS):
             elif node._magic_id_nodes:
                 for attr in node.attributes.values():
                     if attr._is_id:
-                        self._id_cache[attr.value] = node
+                        self._id_cache.setdefault(attr.value, node)
                         if attr.value == id:
                             result = node
             if result is not None:
@@ -2129,15 +2179,17 @@ class Document(Node, DocumentLS):
             prefix = None
             localName = None
         if n.nodeType == Node.ATTRIBUTE_NODE:
+            if prefix is not None:
+                _check_prefix(prefix, namespaceURI, True)
             element = n.ownerElement
             if element is not None:
                 is_id = n._is_id
                 element.removeAttributeNode(n)
         else:
             element = None
+        n.namespaceURI = namespaceURI
         n.prefix = prefix
         n._localName = localName
-        n.namespaceURI = namespaceURI
         n.nodeName = name
         if n.nodeType == Node.ELEMENT_NODE:
             n.tagName = name
@@ -2169,11 +2221,20 @@ def _clone_node(node, deep, newOwnerDocument):
     else:
         operation = xml.dom.UserDataHandler.NODE_IMPORTED
     if node.nodeType == Node.ELEMENT_NODE:
-        clone = newOwnerDocument.createElementNS(node.namespaceURI,
-                                                 node.nodeName)
+        if node.namespaceURI is None:
+            clone = newOwnerDocument.createElement(node.nodeName)
+        else:
+            clone = newOwnerDocument.createElementNS(node.namespaceURI,
+                                                     node.nodeName)
         for attr in node.attributes.values():
-            clone.setAttributeNS(attr.namespaceURI, attr.nodeName, attr.value)
-            a = clone.getAttributeNodeNS(attr.namespaceURI, attr.localName)
+            if attr.namespaceURI is None:
+                clone.setAttribute(attr.nodeName, attr.value)
+                a = clone.getAttributeNode(attr.nodeName)
+            else:
+                clone.setAttributeNS(attr.namespaceURI, attr.nodeName,
+                                     attr.value)
+                a = clone.getAttributeNodeNS(attr.namespaceURI,
+                                             attr.localName)
             a.specified = attr.specified
 
         if deep:
@@ -2200,8 +2261,11 @@ def _clone_node(node, deep, newOwnerDocument):
     elif node.nodeType == Node.ENTITY_REFERENCE_NODE:
         clone = newOwnerDocument.createEntityReference(node.nodeName)
     elif node.nodeType == Node.ATTRIBUTE_NODE:
-        clone = newOwnerDocument.createAttributeNS(node.namespaceURI,
-                                                   node.nodeName)
+        if node.namespaceURI is None:
+            clone = newOwnerDocument.createAttribute(node.nodeName)
+        else:
+            clone = newOwnerDocument.createAttributeNS(node.namespaceURI,
+                                                       node.nodeName)
         clone.specified = True
         clone.value = node.value
     elif node.nodeType == Node.DOCUMENT_TYPE_NODE:

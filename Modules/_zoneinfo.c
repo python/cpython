@@ -302,6 +302,7 @@ get_weak_cache(zoneinfo_state *state, PyTypeObject *type)
 }
 
 /*[clinic input]
+@vectorcall
 @critical_section
 @classmethod
 zoneinfo.ZoneInfo.__new__
@@ -313,7 +314,7 @@ Create a new ZoneInfo instance.
 
 static PyObject *
 zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
-/*[clinic end generated code: output=95e61dab86bb95c3 input=ef73d7a83bf8790e]*/
+/*[clinic end generated code: output=95e61dab86bb95c3 input=8cb93934e6a8d11b]*/
 {
     zoneinfo_state *state = zoneinfo_get_state_by_self(type);
     PyObject *instance = zone_from_strong_cache(state, type, key);
@@ -1436,7 +1437,7 @@ dayrule_year_to_timestamp(TransitionRuleType *base_self, int year)
     // you would use a Julian day, e.g. J91 always refers to April 1st and J365
     // always refers to December 31st.
     uint16_t day = self->day;
-    if (self->julian && day >= 59 && is_leap_year(year)) {
+    if (self->julian && day >= 60 && is_leap_year(year)) {
         day += 1;
     }
 
@@ -2438,11 +2439,9 @@ find_in_strong_cache(const StrongCacheNode *const root, PyObject *const key)
 {
     const StrongCacheNode *node = root;
     while (node != NULL) {
-        int rv = PyObject_RichCompareBool(key, node->key, Py_EQ);
-        if (rv < 0) {
-            return NULL;
-        }
-        if (rv) {
+        if (key == node->key ||
+            (PyUnicode_Check(key) && PyUnicode_Check(node->key) &&
+             PyUnicode_Equal(key, node->key))) {
             return (StrongCacheNode *)node;
         }
 
@@ -2687,6 +2686,7 @@ static PyType_Slot zoneinfo_slots[] = {
     {Py_tp_methods, zoneinfo_methods},
     {Py_tp_members, zoneinfo_members},
     {Py_tp_new, zoneinfo_ZoneInfo},
+    {Py_tp_vectorcall, zoneinfo_ZoneInfo_vectorcall},
     {Py_tp_dealloc, zoneinfo_dealloc},
     {Py_tp_traverse, zoneinfo_traverse},
     {Py_tp_clear, zoneinfo_clear},

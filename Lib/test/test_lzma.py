@@ -514,15 +514,76 @@ class CompressDecompressFunctionTestCase(unittest.TestCase):
         ddata = lzma.decompress(COMPRESSED_XZ + COMPRESSED_ALONE)
         self.assertEqual(ddata, INPUT * 2)
 
+    def test_decompress_multistream_big(self):
+        big = random.randbytes(100_000)
+        streams = [INPUT, b"", big, INPUT, big]
+        expected = b"".join(streams)
+        cdata = b"".join(map(lzma.compress, streams))
+        self.assertEqual(lzma.decompress(cdata), expected)
+        self.assertEqual(lzma.decompress(bytearray(cdata)), expected)
+        self.assertEqual(lzma.decompress(memoryview(cdata)), expected)
+        self.assertEqual(lzma.decompress(cdata + COMPRESSED_BOGUS), expected)
+        self.assertRaises(LZMAError, lzma.decompress, cdata[:-50_000])
+        # The damage is past the first chunk fed for the second stream.
+        damaged = bytearray(lzma.compress(big))
+        damaged[-1] ^= 1
+        self.assertRaises(LZMAError, lzma.decompress, COMPRESSED_XZ + damaged)
+
+    def test_decompress_error_releases_buffer(self):
+        # The argument can be resized while the exception is handled.
+        for cdata in COMPRESSED_XZ[:-10], COMPRESSED_BOGUS:
+            with self.subTest(cdata=cdata[:10]):
+                cdata = bytearray(cdata)
+                try:
+                    lzma.decompress(cdata)
+                except LZMAError:
+                    cdata += b"more"
+                else:
+                    self.fail("no exception")
+
+    def test_decompress_many_streams(self):
+        # The amount of data passed to the decompressors should grow
+        # linearly with the number of streams.
+        class Decompressor:
+            def __init__(self, *args, **kwargs):
+                self.decomp = LZMADecompressor(*args, **kwargs)
+            def __getattr__(self, name):
+                return getattr(self.decomp, name)
+            def decompress(self, data):
+                nonlocal fed
+                fed += len(data)
+                return self.decomp.decompress(data)
+        cdata = lzma.compress(b"")
+        with support.swap_attr(lzma, "LZMADecompressor", Decompressor):
+            fed = 0
+            self.assertEqual(lzma.decompress(cdata * 1000), b"")
+            fed1 = fed
+            fed = 0
+            self.assertEqual(lzma.decompress(cdata * 2000), b"")
+        self.assertLess(fed, fed1 * 3)
+
     # Test robust handling of non-LZMA data following the compressed stream(s).
 
     def test_decompress_trailing_junk(self):
         ddata = lzma.decompress(COMPRESSED_XZ + COMPRESSED_BOGUS)
         self.assertEqual(ddata, INPUT)
+        ddata = lzma.decompress(COMPRESSED_ALONE + COMPRESSED_BOGUS,
+                                lzma.FORMAT_ALONE)
+        self.assertEqual(ddata, INPUT)
 
     def test_decompress_multistream_trailing_junk(self):
         ddata = lzma.decompress(COMPRESSED_XZ * 3 + COMPRESSED_BOGUS)
         self.assertEqual(ddata, INPUT * 3)
+
+    def test_decompress_multistream_damaged_stream(self):
+        # A damaged .xz stream following a valid one is not trailing junk.
+        for pos in 6, 100, -20, -1:
+            damaged = bytearray(COMPRESSED_XZ)
+            damaged[pos] ^= 1
+            for format in lzma.FORMAT_AUTO, lzma.FORMAT_XZ:
+                with self.subTest(pos=pos, format=format):
+                    self.assertRaises(LZMAError, lzma.decompress,
+                                      COMPRESSED_XZ + damaged, format)
 
 
 class TempFile:
@@ -884,6 +945,25 @@ class FileTestCase(unittest.TestCase):
     def test_read_multistream_trailing_junk(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ * 5 + COMPRESSED_BOGUS)) as f:
             self.assertEqual(f.read(), INPUT * 5)
+
+    def test_read_multistream_damaged_stream(self):
+        # A damaged .xz stream following a valid one is not trailing junk,
+        # whatever the size of the reads.
+        for pos in 6, 100, -20, -1:
+            damaged = bytearray(COMPRESSED_XZ)
+            damaged[pos] ^= 1
+            cdata = COMPRESSED_XZ + damaged
+            for format in lzma.FORMAT_AUTO, lzma.FORMAT_XZ:
+                with self.subTest(pos=pos, format=format):
+                    with LZMAFile(BytesIO(cdata), format=format) as f:
+                        self.assertRaises(LZMAError, f.read)
+                    with LZMAFile(BytesIO(cdata), format=format) as f:
+                        self.assertEqual(f.read(len(INPUT)), INPUT)
+                        with self.assertRaises(LZMAError):
+                            while f.read(10):
+                                pass
+                    with LZMAFile(BytesIO(cdata), format=format) as f:
+                        self.assertRaises(LZMAError, f.seek, 0, 2)
 
     def test_read_from_file(self):
         with TempFile(TESTFN, COMPRESSED_XZ):

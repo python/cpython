@@ -2462,10 +2462,11 @@ with the :class:`Pool` class.
    the process which created the pool.
 
    .. warning::
-      :class:`multiprocessing.pool` objects have internal resources that need to be
-      properly managed (like any other resource) by using the pool as a context manager
-      or by calling :meth:`close` and :meth:`terminate` manually. Failure to do this
-      can lead to the process hanging on finalization.
+      :class:`~multiprocessing.pool.Pool` objects have internal resources that
+      need to be properly managed (like any other resource) by using the pool as
+      a context manager or by calling :meth:`close` and :meth:`terminate`
+      manually. Failure to do this can lead to the process hanging on
+      finalization.
 
       Note that it is **not correct** to rely on the garbage collector to destroy the pool
       as CPython does not assure that the finalizer of the pool will be called
@@ -2749,7 +2750,7 @@ multiple connections at the same time.
    assumed to be the fastest available.  See
    :ref:`multiprocessing-address-formats`.  Note that if *family* is
    ``'AF_UNIX'`` and address is ``None`` then the socket will be created in a
-   private temporary directory created using :func:`tempfile.mkstemp`.
+   private temporary directory created using :func:`tempfile.mkdtemp`.
 
    If the listener object uses a socket then *backlog* (1 by default) is passed
    to the :meth:`~socket.socket.listen` method of the socket once it has been

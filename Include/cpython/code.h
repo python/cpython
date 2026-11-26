@@ -177,6 +177,11 @@ static inline int PyUnstable_Code_GetFirstFree(PyCodeObject *op) {
     return op->co_nlocalsplus - op->co_nfreevars;
 }
 
+static inline PyObject *PyUnstable_Code_GetLocalPlusNames(PyCodeObject *op) {
+    assert(PyCode_Check(op));
+    return Py_NewRef(op->co_localsplusnames);
+}
+
 Py_DEPRECATED(3.13) static inline int PyCode_GetFirstFree(PyCodeObject *op) {
     return PyUnstable_Code_GetFirstFree(op);
 }
@@ -232,9 +237,9 @@ PyAPI_FUNC(int) PyCode_Addr2Location(PyCodeObject *, int, int *, int *, int *, i
     V(DESTROY)
 
 typedef enum {
-    #define PY_DEF_EVENT(op) PY_CODE_EVENT_##op,
-    PY_FOREACH_CODE_EVENT(PY_DEF_EVENT)
-    #undef PY_DEF_EVENT
+    #define _Py_DEF_EVENT(op) PY_CODE_EVENT_##op,
+    PY_FOREACH_CODE_EVENT(_Py_DEF_EVENT)
+    #undef _Py_DEF_EVENT
 } PyCodeEvent;
 
 

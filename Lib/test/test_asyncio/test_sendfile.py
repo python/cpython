@@ -176,9 +176,9 @@ class SockSendfileMixin(SendfileBase):
 
     def prepare_socksendfile(self):
         proto = MyProto(self.loop)
-        port = socket_helper.find_unused_port()
         srv_sock = self.make_socket(cleanup=False)
-        srv_sock.bind((socket_helper.HOST, port))
+        srv_sock.bind((socket_helper.HOST, 0))
+        port = srv_sock.getsockname()[1]
         server = self.run_loop(self.loop.create_server(
             lambda: proto, sock=srv_sock))
         self.reduce_receive_buffer_size(srv_sock)
@@ -308,7 +308,6 @@ class SendfileMixin(SendfileBase):
     # Note: sendfile via SSL transport is equal to sendfile fallback
 
     def prepare_sendfile(self, *, is_ssl=False, close_after=0):
-        port = socket_helper.find_unused_port()
         srv_proto = MySendfileProto(loop=self.loop,
                                     close_after=close_after)
         if is_ssl:
@@ -320,7 +319,8 @@ class SendfileMixin(SendfileBase):
             srv_ctx = None
             cli_ctx = None
         srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        srv_sock.bind((socket_helper.HOST, port))
+        srv_sock.bind((socket_helper.HOST, 0))
+        port = srv_sock.getsockname()[1]
         server = self.run_loop(self.loop.create_server(
             lambda: srv_proto, sock=srv_sock, ssl=srv_ctx))
         self.reduce_receive_buffer_size(srv_sock)
@@ -552,6 +552,38 @@ class SendfileMixin(SendfileBase):
         self.assertEqual(srv_proto.nbytes, len(self.DATA))
         self.assertEqual(srv_proto.data, self.DATA)
         self.assertEqual(self.file.tell(), len(self.DATA))
+
+    def test_sendfile_ssl_close_peer_in_the_middle_closes_transport(self):
+        # The protocol closes its transport when the connection is lost, as
+        # aiohttp's does.  That close() must leave a transport on which the
+        # fallback can still restore the protocol: sendfile() raises
+        # ConnectionError, not AttributeError.
+        srv_proto, cli_proto = self.prepare_sendfile(
+            is_ssl=True, close_after=1024)
+        connection_lost = cli_proto.connection_lost
+
+        def close_on_lost(exc):
+            cli_proto.transport.close()
+            connection_lost(exc)
+
+        cli_proto.connection_lost = close_on_lost
+        # Read the file synchronously, so that the fallback only waits in
+        # drain().  A read in the executor that completes in the same loop
+        # iteration as the reset lets the fallback finish before close() is
+        # called, which hides the bug.
+        def run_in_executor(executor, func, *args):
+            fut = self.loop.create_future()
+            fut.set_result(func(*args))
+            return fut
+
+        with mock.patch.object(self.loop, 'run_in_executor', run_in_executor):
+            with self.assertRaises(ConnectionError):
+                self.run_loop(
+                    self.loop.sendfile(cli_proto.transport, self.file))
+        self.run_loop(srv_proto.done)
+        self.run_loop(cli_proto.done)
+        self.assertTrue(1024 <= srv_proto.nbytes < len(self.DATA),
+                        srv_proto.nbytes)
 
     # On Solaris, lowering SO_RCVBUF on a TCP connection after it has been
     # established has no effect. Due to its age, this bug affects both Oracle

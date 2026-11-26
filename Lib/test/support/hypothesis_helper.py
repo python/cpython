@@ -1,10 +1,16 @@
 import os
 
+from test.support import mark
+
 try:
     import hypothesis
 except ImportError:
     from . import _hypothesis_stubs as hypothesis
 else:
+    # Real Hypothesis does not import this submodule on its own; do it here
+    # so that ``hypothesis.stateful`` is available in both modes.
+    import hypothesis.stateful
+
     # Regrtest changes to use a tempdir as the working directory, so we have
     # to tell Hypothesis to use the original in order to persist the database.
     from test.support import has_socket_support
@@ -51,3 +57,5 @@ else:
             ),
         )
         hypothesis.settings.load_profile("cpython-local-dev")
+
+mark_hypothesis = mark("hypothesis")
