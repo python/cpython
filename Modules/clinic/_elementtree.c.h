@@ -31,7 +31,7 @@ PyDoc_STRVAR(_elementtree_Element___init____doc__,
 
 static int
 _elementtree_Element___init___impl(ElementObject *self, PyObject *tag,
-                                   PyObject *attrib, PyObject *extra);
+                                   PyObject *attrib, PyObject *kwds);
 
 static int
 _elementtree_Element___init__(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -39,7 +39,7 @@ _elementtree_Element___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int return_value = -1;
     PyObject *tag;
     PyObject *attrib = NULL;
-    PyObject *extra = NULL;
+    PyObject *__clinic_kwds = NULL;
 
     if (!_PyArg_CheckPositional("Element", PyTuple_GET_SIZE(args), 1, 2)) {
         goto exit;
@@ -50,12 +50,12 @@ _elementtree_Element___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     attrib = PyTuple_GET_ITEM(args, 1);
 skip_optional:
-    extra = Py_XNewRef(kwargs);
-    return_value = _elementtree_Element___init___impl((ElementObject *)self, tag, attrib, extra);
+    __clinic_kwds = Py_XNewRef(kwargs);
+    return_value = _elementtree_Element___init___impl((ElementObject *)self, tag, attrib, __clinic_kwds);
 
 exit:
-    /* Cleanup for extra */
-    Py_XDECREF(extra);
+    /* Cleanup for kwds */
+    Py_XDECREF(__clinic_kwds);
 
     return return_value;
 }
@@ -70,7 +70,7 @@ _elementtree_Element_vectorcall(PyObject *type, PyObject *const *args,
     int _result;
     PyObject *tag;
     PyObject *attrib = NULL;
-    PyObject *extra = NULL;
+    PyObject *__clinic_kwds = NULL;
 
     assert(_PyType_CAST(type)->tp_init == _elementtree_Element___init__);
     /* Make sure the type object is immutable: the generated
@@ -86,8 +86,8 @@ _elementtree_Element_vectorcall(PyObject *type, PyObject *const *args,
     attrib = args[1];
 skip_optional:
     if (kwnames != NULL) {
-        extra = _PyStack_AsDict(args + nargs, kwnames);
-        if (extra == NULL) {
+        __clinic_kwds = _PyStack_AsDict(args + nargs, kwnames);
+        if (__clinic_kwds == NULL) {
             goto exit;
         }
     }
@@ -96,7 +96,7 @@ skip_optional:
     if (self == NULL) {
         goto exit;
     }
-    _result = _elementtree_Element___init___impl((ElementObject *)self, tag, attrib, extra);
+    _result = _elementtree_Element___init___impl((ElementObject *)self, tag, attrib, __clinic_kwds);
     if (_result != 0) {
         Py_DECREF(self);
         goto exit;
@@ -104,8 +104,8 @@ skip_optional:
     return_value = self;
 
 exit:
-    /* Cleanup for extra */
-    Py_XDECREF(extra);
+    /* Cleanup for kwds */
+    Py_XDECREF(__clinic_kwds);
 
     return return_value;
 }
@@ -1574,4 +1574,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e018eb31bcaee24f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=32ada61cc0b37829 input=a9049054013a1b77]*/

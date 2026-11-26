@@ -422,7 +422,7 @@ _elementtree.Element.__init__
     tag: object
     attrib: object(c_default="NULL") = {}
     /
-    **extra: dict
+    **extra as kwds: dict
 
 An XML element.
 
@@ -442,8 +442,8 @@ Example form:
 
 static int
 _elementtree_Element___init___impl(ElementObject *self, PyObject *tag,
-                                   PyObject *attrib, PyObject *extra)
-/*[clinic end generated code: output=d10be095275d5d1a input=a66a3eacbc30aa64]*/
+                                   PyObject *attrib, PyObject *kwds)
+/*[clinic end generated code: output=3f81773682edf81e input=58fd874d3a42aca3]*/
 {
     if (attrib != NULL && !PyAnyDict_Check(attrib)) {
         PyErr_Format(PyExc_TypeError,
@@ -457,15 +457,15 @@ _elementtree_Element___init___impl(ElementObject *self, PyObject *tag,
         attrib = _PyDict_CopyAsDict(attrib);
         if (!attrib)
             return -1;
-        if (extra) {
-            if (PyDict_Update(attrib, extra) < 0) {
+        if (kwds) {
+            if (PyDict_Update(attrib, kwds) < 0) {
                 Py_DECREF(attrib);
                 return -1;
             }
         }
-    } else if (extra) {
+    } else if (kwds) {
         /* have keywords args */
-        attrib = get_attrib_from_keywords(extra);
+        attrib = get_attrib_from_keywords(kwds);
         if (!attrib)
             return -1;
     }
