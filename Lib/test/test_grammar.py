@@ -2063,7 +2063,7 @@ class GrammarTests(unittest.TestCase):
 
         self.assertEqual(test2(), "")
 
-    def test_none_coalescing(self):
+    def test_none_coalescing_operator(self):
         class A:
             v1 = "Hello"
             v2 = None

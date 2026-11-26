@@ -1,2 +1,2 @@
-Add the ``None``-coalesce operator :keyword:`??`, implementing :pep:`824`.
+Add the ``None``-coalescing operator :keyword:`??`, implementing :pep:`824`.
 Patch by Marc Mueller.
