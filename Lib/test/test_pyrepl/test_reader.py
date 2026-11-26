@@ -63,6 +63,17 @@ class TestReader(ScreenEqualMixin, TestCase):
             (13, 3),
         )
 
+    def test_edit_after_wrapped_line_preserves_last_prompt(self):
+        console = prepare_console((), width=14)
+        reader = prepare_reader_multiline_prompt(console)
+        reader.ps4 = "end "
+        reader.insert("x" * 20 + "\nvalue")
+        reader.calc_screen()
+        reader.clear_invalidation()
+
+        reader.insert("!")
+        self.assertEqual(reader.calc_screen().screen_lines[-1], "end value!")
+
     def test_calc_screen_wrap_simple(self):
         events = code_to_events(10 * "a")
         reader, _ = handle_events_narrow_console(events)

@@ -319,12 +319,13 @@ class HistoricalReader(Reader):
             self.restore()
             raise
 
-    def get_prompt(self, lineno: int, cursor_on_line: bool) -> str:
+    def _prompt_for_line(
+        self, lineno: int, cursor_on_line: bool, *, last_lineno: int | None,
+    ) -> str:
         if cursor_on_line and self.isearch_direction != ISEARCH_DIRECTION_NONE:
             d = "rf"[self.isearch_direction == ISEARCH_DIRECTION_FORWARDS]
             return "(%s-search `%s') " % (d, self.isearch_term)
-        else:
-            return super().get_prompt(lineno, cursor_on_line)
+        return super()._prompt_for_line(lineno, cursor_on_line, last_lineno=last_lineno)
 
     def search_next(self, *, forwards: bool) -> None:
         """Search history for the current line contents up to the cursor.

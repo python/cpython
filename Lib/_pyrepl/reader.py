@@ -24,6 +24,7 @@ import _colorize
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields, replace
+from functools import partial
 from typing import Self
 
 from . import commands, console, input
@@ -34,10 +35,10 @@ from .content import (
     build_body_fragments,
     process_prompt as build_prompt_content,
 )
-from .layout import LayoutMap, LayoutResult, LayoutRow, WrappedRow, layout_content_lines
+from .layout import LayoutMap, LayoutRow, WrappedRow, layout_content_lines
 from .layout import wrapped_row_end
 from .render import RenderCell, RenderLine, RenderedScreen, ScreenOverlay
-from .utils import ANSI_ESCAPE_SEQUENCE, ColorSpan, THEME, StyleRef, gen_colors
+from .utils import ANSI_ESCAPE_SEQUENCE, ColorSpan, Span, StyleRef, THEME, gen_colors
 from .trace import trace
 
 
@@ -48,7 +49,6 @@ from .types import (
     Callback,
     CommandName,
     CursorXY,
-    Dimensions,
     EventData,
     KeySpec,
     Keymap,
@@ -59,6 +59,8 @@ from .types import (
 type CommandClass = type[Command]
 type CommandInput = tuple[CommandName | CommandClass, EventData]
 type PromptCellCacheKey = tuple[str, bool]
+type LineKey = tuple[str, bool, str, tuple[ColorSpan, ...]]
+type ScreenContext = tuple[int, _colorize.Syntax, bool]
 
 
 # syntax classes
@@ -160,7 +162,7 @@ class RefreshInvalidation:
     """Which parts of the screen need to be recomputed on the next refresh."""
 
     cursor_only: bool = False
-    buffer_from_pos: int | None = None
+    buffer: bool = False
     prompt: bool = False
     layout: bool = False
     theme: bool = False
@@ -176,7 +178,7 @@ class RefreshInvalidation:
     def needs_screen_refresh(self) -> bool:
         return any(
             (
-                self.buffer_from_pos is not None,
+                self.buffer,
                 self.prompt,
                 self.layout,
                 self.theme,
@@ -190,22 +192,13 @@ class RefreshInvalidation:
     def is_cursor_only(self) -> bool:
         return self.cursor_only and not self.needs_screen_refresh
 
-    @property
-    def buffer_rebuild_from_pos(self) -> int | None:
-        if self.full or self.prompt or self.layout or self.theme:
-            return 0
-        return self.buffer_from_pos
-
     def with_cursor(self) -> Self:
         if self.needs_screen_refresh:
             return self
         return replace(self, cursor_only=True)
 
-    def with_buffer(self, from_pos: int) -> Self:
-        current = from_pos
-        if self.buffer_from_pos is not None:
-            current = min(current, self.buffer_from_pos)
-        return replace(self, cursor_only=False, buffer_from_pos=current)
+    def with_buffer(self) -> Self:
+        return replace(self, cursor_only=False, buffer=True)
 
     def with_prompt(self) -> Self:
         return replace(self, cursor_only=False, prompt=True)
@@ -224,6 +217,23 @@ class RefreshInvalidation:
 
     def with_full(self) -> Self:
         return replace(self, cursor_only=False, full=True)
+
+
+@dataclass(frozen=True, slots=True)
+class LineSnapshot:
+    lines: tuple[RenderLine, ...]
+    rows: tuple[LayoutRow, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ScreenSnapshot:
+    context: ScreenContext
+    text: str
+    prompts: tuple[str, ...]
+    default_colors: bool
+    by_line: dict[LineKey, LineSnapshot]
+    lines: tuple[RenderLine, ...]
+    layout: LayoutMap
 
 
 @dataclass(slots=True)
@@ -309,74 +319,7 @@ class Reader:
     threading_hook: Callback | None = None
     invalidation: RefreshInvalidation = field(init=False)
 
-    ## cached metadata to speed up screen refreshes
-    @dataclass
-    class RefreshCache:
-        """Previously computed render/layout data for incremental refresh."""
-
-        render_lines: list[RenderLine] = field(default_factory=list)
-        layout_rows: list[LayoutRow] = field(default_factory=list)
-        line_end_offsets: list[int] = field(default_factory=list)
-        pos: int = 0
-        dimensions: Dimensions = (0, 0)
-
-        def update_cache(self,
-                         reader: Reader,
-                         render_lines: list[RenderLine],
-                         layout_rows: list[LayoutRow],
-                         line_end_offsets: list[int],
-            ) -> None:
-            self.render_lines = render_lines.copy()
-            self.layout_rows = layout_rows.copy()
-            self.line_end_offsets = line_end_offsets.copy()
-            self.pos = reader.pos
-            self.dimensions = reader.console.width, reader.console.height
-
-        def valid(self, reader: Reader) -> bool:
-            dimensions = reader.console.width, reader.console.height
-            dimensions_changed = dimensions != self.dimensions
-            return not dimensions_changed
-
-        def get_cached_location(
-            self,
-            reader: Reader,
-            buffer_from_pos: int | None = None,
-            *,
-            reuse_full: bool = False,
-        ) -> tuple[int, int]:
-            """Return (buffer_offset, num_reusable_lines) for incremental refresh.
-
-            Three paths:
-            - reuse_full (overlay/message-only): reuse all cached lines.
-            - buffer_from_pos=None (full rebuild): rewind to common cursor pos.
-            - explicit buffer_from_pos: reuse lines before that position.
-            """
-            if reuse_full:
-                if self.line_end_offsets:
-                    last_offset = self.line_end_offsets[-1]
-                    if last_offset >= len(reader.buffer):
-                        return last_offset, len(self.line_end_offsets)
-                return 0, 0
-            if buffer_from_pos is None:
-                buffer_from_pos = min(reader.pos, self.pos)
-            num_common_lines = len(self.line_end_offsets)
-            while num_common_lines > 0:
-                candidate = self.line_end_offsets[num_common_lines - 1]
-                if buffer_from_pos > candidate:
-                    break
-                num_common_lines -= 1
-            # Prompt-only leading rows consume no buffer content. Reusing them
-            # in isolation causes the next incremental rebuild to emit them a
-            # second time.
-            while (
-                num_common_lines > 0
-                and self.layout_rows[num_common_lines - 1].buffer_advance == 0
-            ):
-                num_common_lines -= 1
-            offset = self.line_end_offsets[num_common_lines - 1] if num_common_lines else 0
-            return offset, num_common_lines
-
-    last_refresh_cache: RefreshCache = field(default_factory=RefreshCache)
+    _screen_snapshot: ScreenSnapshot | None = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         # Enable the use of `insert` without a `prepare` call - necessary to
@@ -393,10 +336,7 @@ class Reader:
         self.can_colorize = _colorize.can_colorize()
         self.invalidation = RefreshInvalidation.empty()
 
-        self.last_refresh_cache.layout_rows = list(self.layout.rows)
-        self.last_refresh_cache.pos = self.pos
-
-        self.last_refresh_cache.dimensions = (0, 0)
+        self._screen_snapshot = None
 
     @property
     def screen(self) -> list[str]:
@@ -411,162 +351,81 @@ class Reader:
 
     def calc_screen(self) -> RenderedScreen:
         """Translate the editable buffer into a base rendered screen."""
-        num_common_lines = 0
-        offset = 0
-        if self.last_refresh_cache.valid(self):
+        text = self.get_unicode()
+        logical_lines = text.split("\n")
+        last_lineno = len(logical_lines) - 1
+        cursor_line = text.count("\n", 0, self.pos)
+        self.lxy = self.pos - text.rfind("\n", 0, self.pos) - 1, cursor_line
+        logical_lines = logical_lines[:cursor_line + max(0, self.console.height) + 1]
+
+        get_prompt = self.get_prompt
+        if getattr(get_prompt, "__func__", None) is Reader.get_prompt:
+            get_prompt = partial(self._prompt_for_line, last_lineno=last_lineno)
+        prompts = tuple(get_prompt(i, i == cursor_line) for i in range(len(logical_lines)))
+
+        context = self.console.width, THEME(), self.can_colorize
+        default_colors = not self.can_colorize or self.gen_colors is gen_colors
+        previous = self._screen_snapshot
+        if previous is not None and previous.context == context:
             if (
-                self.invalidation.buffer_from_pos is None
-                and not (
-                    self.invalidation.full
-                    or self.invalidation.prompt
-                    or self.invalidation.layout
-                    or self.invalidation.theme
-                )
-                and (self.invalidation.message or self.invalidation.overlay)
+                previous.text == text
+                and previous.prompts == prompts
+                and previous.default_colors and default_colors
             ):
-                # Fast path: only overlays or messages changed.
-                offset, num_common_lines = self.last_refresh_cache.get_cached_location(
-                    self,
-                    reuse_full=True,
-                )
-                assert not self.last_refresh_cache.line_end_offsets or (
-                    self.last_refresh_cache.line_end_offsets[-1] >= len(self.buffer)
-                ), "Buffer modified without invalidate_buffer() call"
-            else:
-                offset, num_common_lines = self.last_refresh_cache.get_cached_location(
-                    self,
-                    self._buffer_refresh_from_pos(),
-                )
-
-        base_render_lines = self.last_refresh_cache.render_lines[:num_common_lines]
-        layout_rows = self.last_refresh_cache.layout_rows[:num_common_lines]
-        last_refresh_line_end_offsets = self.last_refresh_cache.line_end_offsets[:num_common_lines]
-
-        source_lines = self._build_source_lines(offset, num_common_lines)
-        content_lines = self._build_content_lines(
-            source_lines,
-            prompt_from_cache=bool(offset and self.buffer[offset - 1] != "\n"),
-        )
-        layout_result = self._layout_content(content_lines, offset)
-        base_render_lines.extend(self._render_wrapped_rows(layout_result.wrapped_rows))
-        layout_rows.extend(layout_result.layout_map.rows)
-        last_refresh_line_end_offsets.extend(layout_result.line_end_offsets)
-
-        self.layout = LayoutMap(tuple(layout_rows))
-        self.cxy = self.pos2xy()
-        if not source_lines:
-            # reuse_full path: _build_source_lines didn't run,
-            # so lxy wasn't updated. Derive it from the buffer.
-            self.lxy = self._compute_lxy()
-        self.last_refresh_cache.update_cache(
-            self,
-            base_render_lines,
-            layout_rows,
-            last_refresh_line_end_offsets,
-        )
-        return RenderedScreen(tuple(base_render_lines), self.cxy)
-
-    def _buffer_refresh_from_pos(self) -> int:
-        """Return buffer position from which to rebuild content.
-
-        Returns 0 (full rebuild) when no incremental position is known.
-        """
-        buffer_from_pos = self.invalidation.buffer_rebuild_from_pos
-        if buffer_from_pos is not None:
-            return buffer_from_pos
-        return 0
-
-    def _compute_lxy(self) -> CursorXY:
-        """Derive logical cursor (col, lineno) from the buffer and pos."""
-        text = "".join(self.buffer[:self.pos])
-        lineno = text.count("\n")
-        if lineno:
-            col = self.pos - text.rindex("\n") - 1
+                self.layout = previous.layout
+                self.cxy = self.pos2xy()
+                return RenderedScreen(previous.lines, self.cxy)
+            reusable = previous.by_line
         else:
-            col = self.pos
-        return col, lineno
+            self._prompt_cell_cache.clear()
+            reusable = {}
 
-    def _build_source_lines(
-        self,
-        offset: int,
-        first_lineno: int,
-    ) -> tuple[SourceLine, ...]:
-        if offset == len(self.buffer) and (offset > 0 or first_lineno > 0):
-            return ()
-
-        pos = self.pos - offset
-        lines = "".join(self.buffer[offset:]).split("\n")
-        cursor_found = False
-        lines_beyond_cursor = 0
-        source_lines: list[SourceLine] = []
-        current_offset = offset
-
-        for line_index, line in enumerate(lines):
-            lineno = first_lineno + line_index
-            has_newline = line_index < len(lines) - 1
-            line_len = len(line)
-            cursor_index: int | None = None
-            if 0 <= pos <= line_len:
-                cursor_index = pos
-                self.lxy = pos, lineno
-                cursor_found = True
-            elif cursor_found:
-                lines_beyond_cursor += 1
-                if lines_beyond_cursor > self.console.height:
-                    break
-
-            source_lines.append(
-                SourceLine(
-                    lineno=lineno,
-                    text=line,
-                    start_offset=current_offset,
-                    has_newline=has_newline,
-                    cursor_index=cursor_index,
-                )
+        colors = tuple(self.gen_colors(text)) if self.can_colorize else ()
+        first_color = 0
+        offset = 0
+        by_line: dict[LineKey, LineSnapshot] = {}
+        lines: list[RenderLine] = []
+        rows: list[LayoutRow] = []
+        for lineno, (line, prompt) in enumerate(zip(logical_lines, prompts)):
+            stop = offset + len(line)
+            while first_color < len(colors) and colors[first_color].span.end < offset:
+                first_color += 1
+            end_color = first_color
+            while end_color < len(colors) and colors[end_color].span.start < stop:
+                end_color += 1
+            # Relative offsets let a logical line retain its rows when it moves.
+            line_colors = tuple(
+                ColorSpan(Span(span.start - offset, span.end - offset), tag)
+                for span, tag in colors[first_color:end_color]
             )
-            pos -= line_len + 1
-            current_offset += line_len + (1 if has_newline else 0)
-
-        return tuple(source_lines)
-
-    def _build_content_lines(
-        self,
-        source_lines: tuple[SourceLine, ...],
-        *,
-        prompt_from_cache: bool,
-    ) -> tuple[ContentLine, ...]:
-        if self.can_colorize:
-            colors = list(self.gen_colors(self.get_unicode()))
-        else:
-            colors = None
-        trace("colors = {colors}", colors=colors)
-
-        content_lines: list[ContentLine] = []
-        for source_line in source_lines:
-            if prompt_from_cache:
-                prompt_from_cache = False
-                prompt = ""
-            else:
-                prompt = self.get_prompt(source_line.lineno, source_line.cursor_on_line)
-            content_lines.append(
-                ContentLine(
-                    source=source_line,
+            has_newline = lineno < last_lineno
+            key = line, has_newline, prompt, line_colors
+            snapshot = by_line.get(key) or reusable.get(key)
+            if snapshot is None:
+                content = ContentLine(
+                    source=SourceLine(lineno, line, offset, has_newline),
                     prompt=build_prompt_content(prompt),
                     body=build_body_fragments(
-                        source_line.text,
-                        colors,
-                        source_line.start_offset,
+                        line, list(line_colors) if self.can_colorize else None, 0,
                     ),
                 )
-            )
-        return tuple(content_lines)
+                layout = layout_content_lines((content,), self.console.width, offset)
+                snapshot = LineSnapshot(
+                    tuple(self._render_wrapped_rows(layout.wrapped_rows)),
+                    layout.layout_map.rows,
+                )
+            by_line[key] = snapshot
+            lines.extend(snapshot.lines)
+            rows.extend(snapshot.rows)
+            offset = stop + has_newline
 
-    def _layout_content(
-        self,
-        content_lines: tuple[ContentLine, ...],
-        offset: int,
-    ) -> LayoutResult:
-        return layout_content_lines(content_lines, self.console.width, offset)
+        self.layout = LayoutMap(tuple(rows))
+        self.cxy = self.pos2xy()
+        rendered = tuple(lines)
+        self._screen_snapshot = ScreenSnapshot(
+            context, text, prompts, default_colors, by_line, rendered, self.layout,
+        )
+        return RenderedScreen(rendered, self.cxy)
 
     def _render_wrapped_rows(
         self,
@@ -734,22 +593,25 @@ class Reader:
         return self.arg
 
     def get_prompt(self, lineno: int, cursor_on_line: bool) -> str:
-        """Return what should be in the left-hand margin for line
-        'lineno'."""
+        """Return the prompt to display before a logical line."""
+        return self._prompt_for_line(lineno, cursor_on_line, last_lineno=None)
+
+    def _prompt_for_line(
+        self, lineno: int, cursor_on_line: bool, *, last_lineno: int | None,
+    ) -> str:
         if self.arg is not None and cursor_on_line:
-            prompt = f"(arg: {self.arg}) "
-        elif self.paste_mode:
-            prompt = "(paste) "
-        elif "\n" in self.buffer:
-            if lineno == 0:
-                prompt = self.ps2
-            elif self.ps4 and lineno == self.buffer.count("\n"):
-                prompt = self.ps4
-            else:
-                prompt = self.ps3
-        else:
-            prompt = self.ps1
-        return prompt
+            return f"(arg: {self.arg}) "
+        if self.paste_mode:
+            return "(paste) "
+        if last_lineno is None:
+            last_lineno = self.buffer.count("\n")
+        if last_lineno == 0:
+            return self.ps1
+        if lineno == 0:
+            return self.ps2
+        if self.ps4 and lineno == last_lineno:
+            return self.ps4
+        return self.ps3
 
     def push_input_trans(self, itrans: input.KeymapTranslator) -> None:
         self.input_trans_stack.append(self.input_trans)
@@ -777,8 +639,8 @@ class Reader:
     def invalidate_cursor(self) -> None:
         self.invalidation = self.invalidation.with_cursor()
 
-    def invalidate_buffer(self, from_pos: int) -> None:
-        self.invalidation = self.invalidation.with_buffer(from_pos)
+    def invalidate_buffer(self, _from_pos: int) -> None:
+        self.invalidation = self.invalidation.with_buffer()
 
     def invalidate_prompt(self) -> None:
         self._prompt_cell_cache.clear()
