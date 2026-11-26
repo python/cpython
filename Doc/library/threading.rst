@@ -42,7 +42,7 @@ creating and starting threads using :class:`~threading.Thread`::
        "https://peps.python.org",
    ]
 
-   # Start threads for each link
+   # Create a thread for each link
    threads = []
    for link in links:
        # Using `args` to pass positional arguments and `kwargs` for keyword arguments
