@@ -2104,6 +2104,39 @@ class GeneralModuleTests(unittest.TestCase):
         nameinfo = socket.getnameinfo(sockaddr, socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
         self.assertEqual(nameinfo, ('ff02::1de:c0:face:8d%' + str(ifindex), '1234'))
 
+    def test_getaddrinfo_null_bytes(self):
+        # getaddrinfo() must reject embedded null bytes instead of silently
+        # truncating the host or port at the C boundary.  The checks run
+        # before any name resolution, so no network access is needed.
+        hosts = [
+            # embedded
+            'local\0host', b'local\0host',
+            # trailing
+            'localhost\0', b'localhost\0',
+            # leading (truncates to '')
+            '\0localhost', b'\0localhost',
+            '\0', b'\0',
+            # non-ASCII, goes through IDNA
+            'b\xfccher\0.example',
+        ]
+        for host in hosts:
+            with self.subTest(host=host):
+                with self.assertRaisesRegex(ValueError, 'host'):
+                    socket.getaddrinfo(host, 80)
+
+        ports = [
+            '8\x000',
+            b'8\x000',
+            'http\0',
+            b'http\0',
+            '\0',
+            b'\0'
+        ]
+        for port in ports:
+            with self.subTest(port=port):
+                with self.assertRaisesRegex(ValueError, 'port'):
+                    socket.getaddrinfo("localhost", port)
+
     def test_str_for_enums(self):
         # Make sure that the AF_* and SOCK_* constants have enum-like string
         # reprs.
@@ -3194,6 +3227,26 @@ class BasicTCPTest(SocketConnectedTest):
 
     def _testFromFd(self):
         self.serv_conn.send(MSG)
+
+    def testFromFdError(self):
+        # Make sure that the fromfd() duplicated socket is closed on error.
+        fd = self.cli_conn.fileno()
+        # Wait for the client thread to close its socket, otherwise
+        # fd_count() can race with clientTearDown().
+        self.done.wait()
+        fd_count_before = os_helper.fd_count()
+
+        with self.assertRaises(TypeError):
+            socket.fromfd(fd, "not-a-valid-family", socket.SOCK_STREAM)
+        with self.assertRaises(TypeError):
+            socket.fromfd(fd, socket.AF_INET, "not-a-valid-type")
+        with self.assertRaises(OverflowError):
+            socket.fromfd(fd, socket.AF_INET, 1 << 100)
+
+        self.assertEqual(os_helper.fd_count(), fd_count_before)
+
+    def _testFromFdError(self):
+        pass
 
     def testDup(self):
         # Testing dup()

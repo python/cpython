@@ -109,7 +109,9 @@ of three ways.
 Collections Abstract Base Classes
 ---------------------------------
 
-The collections module offers the following :term:`ABCs <abstract base class>`:
+The collections module offers the following :term:`ABCs <abstract base class>`,
+where the "Abstract Methods" column lists all required abstract methods,
+including those inherited from parent classes:
 
 .. tabularcolumns:: |l|L|L|L|
 
@@ -120,7 +122,8 @@ ABC                            Inherits from          Abstract Methods        Mi
 :class:`Hashable` [1]_                                ``__hash__``
 :class:`Iterable` [1]_ [2]_                           ``__iter__``
 :class:`Iterator` [1]_         :class:`Iterable`      ``__next__``            ``__iter__``
-:class:`Reversible` [1]_       :class:`Iterable`      ``__reversed__``
+:class:`Reversible` [1]_       :class:`Iterable`      ``__iter__``,
+                                                      ``__reversed__``
 :class:`Generator`  [1]_       :class:`Iterator`      ``send``, ``throw``     ``close``, ``__iter__``, ``__next__``
 :class:`Sized`  [1]_                                  ``__len__``
 :class:`Callable`  [1]_                               ``__call__``
@@ -170,7 +173,8 @@ ABC                            Inherits from          Abstract Methods        Mi
 :class:`ValuesView`            :class:`MappingView`,                          ``__contains__``, ``__iter__``
                                :class:`Collection`
 :class:`Awaitable` [1]_                               ``__await__``
-:class:`Coroutine` [1]_        :class:`Awaitable`     ``send``, ``throw``     ``close``
+:class:`Coroutine` [1]_        :class:`Awaitable`     ``__await__``,          ``close``
+                                                      ``send``, ``throw``
 :class:`AsyncIterable` [1]_                           ``__aiter__``
 :class:`AsyncIterator` [1]_    :class:`AsyncIterable` ``__anext__``           ``__aiter__``
 :class:`AsyncGenerator` [1]_   :class:`AsyncIterator` ``asend``, ``athrow``   ``aclose``, ``__aiter__``, ``__anext__``

@@ -198,5 +198,5 @@ the :ref:`Number Protocol <number>` API or use native complex types, like
 
    .. deprecated:: 3.15
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       This function leaves :c:data:`errno` unchanged on success.

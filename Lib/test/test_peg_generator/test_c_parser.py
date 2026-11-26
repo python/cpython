@@ -18,6 +18,7 @@ if support.check_cflags_pgo():
 
 test_tools.skip_if_missing("peg_generator")
 with test_tools.imports_under_tool("peg_generator"):
+    from pegen.build import build_parser
     from pegen.grammar_parser import GeneratedParser as GrammarParser
     from pegen.testutil import (
         parse_string,
@@ -139,6 +140,9 @@ class TestCParser(unittest.TestCase):
 
     def run_test(self, grammar_source, test_source):
         self.build_extension(grammar_source)
+        self.run_extension_test(test_source)
+
+    def run_extension_test(self, test_source):
         test_source = textwrap.indent(textwrap.dedent(test_source), 8 * " ")
         assert_python_ok(
             "-c",
@@ -460,6 +464,47 @@ class TestCParser(unittest.TestCase):
         """
         self.run_test(grammar_source, test_source)
 
+    def test_rule_fastpath(self) -> None:
+        grammar_source = """
+        @subheader '''
+        #define CHECK_INVALID(expected) \\
+            (assert(p->call_invalid_rules == (expected)), _PyPegen_dummy_name(p))
+
+        static int
+        number_fastpath(Parser *p, void *result)
+        {
+            assert(p->call_invalid_rules == 0);
+            expr_ty number = _PyPegen_number_token(p);
+            if (number != NULL) {
+                *(void **)result = number;
+                return 1;
+            }
+            if (_PyPegen_expect_token(p, LPAR)) {
+                p->error_indicator = 1;
+                PyErr_SetString(PyExc_ValueError, "fastpath error");
+            }
+            if (p->error_indicator) {
+                *(void **)result = NULL;
+                return 1;
+            }
+            return 0;
+        }
+        '''
+        start: enable value_without_invalid after NEWLINE ENDMARKER
+        enable: 'enable' { (p->call_invalid_rules = 1, _PyPegen_dummy_name(p)) }
+        value_without_invalid (memo, fastpath=number_fastpath): NAME { CHECK_INVALID(0) }
+        after: NAME { CHECK_INVALID(1) }
+        """
+        test_source = """
+        self.check_input_strings_for_grammar(
+            valid_cases=['enable 42 tail', 'enable name tail'],
+            invalid_cases=['enable + tail', 'enable 42'],
+        )
+        with self.assertRaisesRegex(ValueError, 'fastpath error'):
+            parse.parse_string('enable ( tail', mode=0)
+        """
+        self.run_test(grammar_source, test_source)
+
     def test_left_recursive_rule_cleanup(self) -> None:
         grammar_source = """
         @subheader '''
@@ -673,6 +718,36 @@ class TestCParser(unittest.TestCase):
         self.check_input_strings_for_grammar(valid_cases, invalid_cases)
         """
         self.run_test(grammar_source, test_source)
+
+    def test_included_grammar_file(self) -> None:
+        # The rules of an included grammar file are compiled from a separate
+        # C file, in the same subdirectory as the grammar file; rules call
+        # each other across the two files.
+        grammar_dir = self.enterContext(os_helper.temp_dir())
+        with open(os.path.join(grammar_dir, "main.gram"), "w") as f:
+            f.write(textwrap.dedent("""\
+                @include "errors/invalid.gram"
+                start: stmt+ NEWLINE? ENDMARKER
+                stmt: invalid_stmt | NAME '=' expr
+                expr: NAME | NUMBER
+                """))
+        os.mkdir(os.path.join(grammar_dir, "errors"))
+        with open(os.path.join(grammar_dir, "errors", "invalid.gram"), "w") as f:
+            f.write(textwrap.dedent("""\
+                invalid_stmt: expr '==' expr { RAISE_SYNTAX_ERROR("use '=' to assign") }
+                """))
+        grammar, _, _ = build_parser(Path(grammar_dir, "main.gram"))
+        generate_parser_c_extension(grammar, Path('.'), library_dir=self.library_dir)
+        self.assertTrue(os.path.exists(os.path.join("errors", "parse_invalid.c")))
+        self.run_extension_test("""
+        self.check_input_strings_for_grammar(
+            valid_cases=["a = b", "a = 1"],
+            invalid_cases=["a =", "a == "],
+        )
+        with self.assertRaises(SyntaxError) as e:
+            parse.parse_string("a == b", mode=0)
+        self.assertIn("use '=' to assign", str(e.exception))
+        """)
 
     def test_forced(self) -> None:
         grammar_source = """

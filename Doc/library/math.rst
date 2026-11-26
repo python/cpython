@@ -611,7 +611,7 @@ Trigonometric functions
    Return the arc cosine of *x*, in half-turns. The result is between ``0`` and
    ``1``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. function:: asin(x)
@@ -625,7 +625,7 @@ Trigonometric functions
    Return the arc sine of *x*, in half-turns. The result is between ``-0.5`` and
    ``0.5``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. function:: atan(x)
@@ -639,7 +639,7 @@ Trigonometric functions
    Return the arc tangent of *x*, in half-turns. The result is between ``-0.5`` and
    ``0.5``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. function:: atan2(y, x)
@@ -661,7 +661,7 @@ Trigonometric functions
    For example, ``atanpi(1)`` and ``atan2pi(1, 1)`` are both ``0.25``, but
    ``atan2pi(-1, -1)`` is ``-0.75``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. function:: cos(x)
@@ -673,7 +673,7 @@ Trigonometric functions
 
    Return the cosine of *x* half-turns (*x⋅π* radians).
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. function:: sin(x)
@@ -685,7 +685,7 @@ Trigonometric functions
 
    Return the sine of *x* half-turns (*x⋅π* radians).
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. function:: tan(x)
@@ -697,7 +697,7 @@ Trigonometric functions
 
    Return the tangent of *x* half-turns (*x⋅π* radians).
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 Hyperbolic functions

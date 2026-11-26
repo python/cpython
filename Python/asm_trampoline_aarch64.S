@@ -35,7 +35,12 @@
   #define GNU_PROPERTY_AARCH64_GCS 0
 #endif
 
+/* CPython copies this template into executable memory. */
+#if defined(__ELF__)
+    .section .rodata
+#else
     .text
+#endif
 #if defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
 #if defined(__APPLE__)
     .globl	__Py_trampoline_func_start

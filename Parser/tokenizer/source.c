@@ -71,49 +71,66 @@ reserve_bytes(_PyTok_SourceText *source, Py_ssize_t needed)
 
 static int
 validate_line(const _PyTok_SourceText *source, const char *bytes,
-              Py_ssize_t len)
+              Py_ssize_t len, int append_newline)
 {
-    if (len <= 0 || bytes == NULL ||
+    if (len < 0 || (len == 0 && !append_newline) || bytes == NULL ||
             (source->nlines > 0 &&
              (source->len == 0 || source->bytes[source->len - 1] != '\n'))) {
         PyErr_SetString(PyExc_SystemError, "invalid tokenizer source line");
         return -1;
     }
     const char *newline = memchr(bytes, '\n', len);
-    if (newline != NULL && newline != bytes + len - 1) {
+    if (newline != NULL && (append_newline || newline != bytes + len - 1)) {
         PyErr_SetString(PyExc_SystemError, "invalid tokenizer source line");
         return -1;
     }
     if (source->nlines == INT_MAX ||
-            (source->nlines == INT_MAX - 1 && newline != NULL)) {
+            (source->nlines == INT_MAX - 1 && (newline != NULL || append_newline))) {
         PyErr_SetString(PyExc_OverflowError, "too many tokenizer source lines");
         return -1;
     }
     return 0;
 }
 
-_PyTok_Off
-_PyTok_SourceAppendLine(_PyTok_SourceText *source, const char *bytes,
-                        Py_ssize_t len)
+static _PyTok_Off
+append_line(_PyTok_SourceText *source, const char *bytes,
+            Py_ssize_t len, int append_newline)
 {
-    if (validate_line(source, bytes, len) < 0) {
+    if (validate_line(source, bytes, len, append_newline) < 0) {
         return -1;
     }
-    if (source->len > PY_SSIZE_T_MAX - len - 1 ||
-            source->base_offset > PY_SSIZE_T_MAX - source->len - len) {
+    if (source->len > PY_SSIZE_T_MAX - len - append_newline - 1 ||
+            source->base_offset > PY_SSIZE_T_MAX - source->len - len - append_newline) {
         PyErr_NoMemory();
         return -1;
     }
-    if (reserve_bytes(source, source->len + len + 1) < 0) {
+    if (reserve_bytes(source, source->len + len + append_newline + 1) < 0) {
         return -1;
     }
 
     _PyTok_Off start = source->len;
     memcpy(source->bytes + start, bytes, len);
     source->len += len;
+    if (append_newline) {
+        source->bytes[source->len++] = '\n';
+    }
     source->bytes[source->len] = '\0';
     source->nlines++;
     return source->base_offset + start;
+}
+
+_PyTok_Off
+_PyTok_SourceAppendLine(_PyTok_SourceText *source, const char *bytes,
+                        Py_ssize_t len)
+{
+    return append_line(source, bytes, len, 0);
+}
+
+_PyTok_Off
+_PyTok_SourceAppendLineWithNewline(_PyTok_SourceText *source, const char *bytes,
+                                   Py_ssize_t len)
+{
+    return append_line(source, bytes, len, 1);
 }
 
 const char *

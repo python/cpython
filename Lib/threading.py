@@ -363,10 +363,11 @@ class Condition:
                 waiter.acquire()
                 gotit = True
             else:
-                if timeout > 0:
-                    gotit = waiter.acquire(True, timeout)
-                else:
+                if timeout <= 0:
                     gotit = waiter.acquire(False)
+                else:
+                    # A NaN timeout is rejected by acquire().
+                    gotit = waiter.acquire(True, timeout)
             return gotit
         finally:
             self._acquire_restore(saved_state)

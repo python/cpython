@@ -576,9 +576,10 @@ visit_reachable(PyObject *op, void *arg)
  * But _gc_next in unreachable list has NEXT_MASK_UNREACHABLE flag.
  * So we can not gc_list_* functions for unreachable until we remove the flag.
  */
-static void
+static Py_ssize_t
 move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 {
+    Py_ssize_t reachable = 0;
     // previous elem in the young list, used for restore gc_prev.
     PyGC_Head *prev = young;
     PyGC_Head *gc = GC_NEXT(young);
@@ -615,7 +616,21 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
             _PyGCHead_SET_PREV(gc, prev);
             // gc is not COLLECTING state after here.
             gc_clear_collecting(gc);
-            prev = gc;
+            if (PyTuple_CheckExact(op)) {
+                // Untracking gc overwrites the gc_refs of the next object.
+                PyGC_Head *next = GC_NEXT(gc);
+                uintptr_t next_refs = next->_gc_prev;
+                _PyTuple_MaybeUntrack(op);
+                next->_gc_prev = next_refs;
+                if (gc->_gc_next != 0) {
+                    prev = gc;
+                    reachable++;
+                }
+            }
+            else {
+                prev = gc;
+                reachable++;
+            }
         }
         else {
             /* This *may* be unreachable.  To make progress,
@@ -648,32 +663,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
     young->_gc_prev = (uintptr_t)prev;
     // don't let the pollution of the list head's next pointer leak
     unreachable->_gc_next &= ~NEXT_MASK_UNREACHABLE;
-}
-
-/* In theory, all tuples should be younger than the
-* objects they refer to, as tuples are immortal.
-* Therefore, untracking tuples in oldest-first order in the
-* young generation before promoting them should have tracked
-* all the tuples that can be untracked.
-*
-* Unfortunately, the C API allows tuples to be created
-* and then filled in. So this won't untrack all tuples
-* that can be untracked. It should untrack most of them
-* and is much faster than a more complex approach that
-* would untrack all relevant tuples.
-*/
-static void
-untrack_tuples(PyGC_Head *head)
-{
-    PyGC_Head *gc = GC_NEXT(head);
-    while (gc != head) {
-        PyObject *op = FROM_GC(gc);
-        PyGC_Head *next = GC_NEXT(gc);
-        if (PyTuple_CheckExact(op)) {
-            _PyTuple_MaybeUntrack(op);
-        }
-        gc = next;
-    }
+    return reachable;
 }
 
 /* Return true if object has a pre-PEP 442 finalization method. */
@@ -1006,11 +996,55 @@ clear_weakrefs(PyGC_Head *unreachable)
     }
 }
 
-static void
+/* "gc: " + " <" + " 0x" + 16 hex digits + ">\n" + NUL, excluding msg and
+ * tp_name */
+#define DEBUG_LINE_FIXED_LEN 32
+
+static char *
 debug_cycle(const char *msg, PyObject *op)
 {
-    PySys_FormatStderr("gc: %s <%s %p>\n",
-                       msg, Py_TYPE(op)->tp_name, op);
+    const char *name = Py_TYPE(op)->tp_name;
+    size_t size = strlen(msg) + strlen(name) + DEBUG_LINE_FIXED_LEN;
+    char *line = PyMem_RawMalloc(size);
+    if (line == NULL) {
+        return NULL;
+    }
+    /* Not %p: its output is platform-specific (no "0x" prefix on Windows). */
+    PyOS_snprintf(line, size, "gc: %s <%s 0x%" PRIxPTR ">\n",
+                  msg, name, (uintptr_t)op);
+    return line;
+}
+
+/* Format a line for each object in `list` before printing any of them,
+ * since sys.stderr.write() can run Python code that frees objects in the
+ * list.
+ */
+static Py_ssize_t
+debug_cycles(const char *msg, PyGC_Head *list)
+{
+    Py_ssize_t n = gc_list_size(list);
+    if (n == 0) {
+        return n;
+    }
+
+    char **lines = PyMem_RawCalloc(n, sizeof(char *));
+    if (lines == NULL) {
+        return n;
+    }
+
+    Py_ssize_t i = 0;
+    for (PyGC_Head *gc = GC_NEXT(list); gc != list; gc = GC_NEXT(gc), i++) {
+        lines[i] = debug_cycle(msg, FROM_GC(gc));
+    }
+
+    for (i = 0; i < n; i++) {
+        if (lines[i] != NULL) {
+            PySys_FormatStderr("%s", lines[i]);
+        }
+        PyMem_RawFree(lines[i]);
+    }
+    PyMem_RawFree(lines);
+    return n;
 }
 
 /* Handle uncollectable garbage (cycles with tp_del slots, and stuff reachable
@@ -1175,7 +1209,8 @@ flag is cleared (for example, by using 'clear_unreachable_mask' function or
 by a call to 'move_legacy_finalizers'), the 'unreachable' list is not a normal
 list and we can not use most gc_list_* functions for it. */
 static inline Py_ssize_t
-deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
+deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable,
+                   Py_ssize_t *reachable) {
     validate_list(base, collecting_clear_unreachable_clear);
     /* Using ob_refcnt and gc_refs, calculate which objects in the
      * container set are reachable from outside the set (i.e., have a
@@ -1221,7 +1256,8 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
      * worth complicating the code to speed just a little.
      */
     gc_list_init(unreachable);
-    move_unreachable(base, unreachable);  // gc_prev is pointer again
+    // gc_prev is pointer again
+    *reachable = move_unreachable(base, unreachable);
     validate_list(base, collecting_clear_unreachable_clear);
     validate_list(unreachable, collecting_set_unreachable_set);
     return candidates;
@@ -1252,7 +1288,8 @@ handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
     // have the PREV_MARK_COLLECTING set, but the objects are going to be
     // removed so we can skip the expense of clearing the flag.
     PyGC_Head* resurrected = unreachable;
-    deduce_unreachable(resurrected, still_unreachable);
+    Py_ssize_t reachable;
+    deduce_unreachable(resurrected, still_unreachable, &reachable);
     clear_unreachable_mask(still_unreachable);
 
     // Move the resurrected objects to the old generation for future collection.
@@ -1442,7 +1479,6 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     PyGC_Head *old; /* next older generation */
     PyGC_Head unreachable; /* non-problematic unreachable trash */
     PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
-    PyGC_Head *gc;
     GCState *gcstate = &tstate->interp->gc;
 
     // gc_collect_main() must not be called before _PyGC_Init
@@ -1521,13 +1557,13 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
     validate_list(old, collecting_clear_unreachable_clear);
 
-    stats.candidates = deduce_unreachable(young, &unreachable);
+    Py_ssize_t reachable;
+    stats.candidates = deduce_unreachable(young, &unreachable, &reachable);
 
-    untrack_tuples(young);
     /* Move reachable objects to next generation. */
     if (young != old) {
         if (generation == NUM_GENERATIONS - 2) {
-            gcstate->long_lived_pending += gc_list_size(young);
+            gcstate->long_lived_pending += reachable;
         }
         gc_list_merge(young, old);
     }
@@ -1540,7 +1576,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         // site; the cost is slightly more work for full collections on dicts
         // with only atomic values.
         gcstate->long_lived_pending = 0;
-        gcstate->long_lived_total = gc_list_size(young);
+        gcstate->long_lived_total = reachable;
     }
 
     /* All objects in unreachable are trash, but objects reachable from
@@ -1565,9 +1601,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     if (gcstate->debug & _PyGC_DEBUG_COLLECTABLE) {
         /* sys.stderr.write() can resurrect objects. */
         needs_resurrection_check = true;
-        for (gc = GC_NEXT(&unreachable); gc != &unreachable; gc = GC_NEXT(gc)) {
-            debug_cycle("collectable", FROM_GC(gc));
-        }
+        debug_cycles("collectable", &unreachable);
     }
 
     /* Clear weakrefs and invoke callbacks as necessary. */
@@ -1610,13 +1644,12 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     /* Collect statistics on uncollectable objects found and print
      * debugging information. */
-    Py_ssize_t n = 0;
-    for (gc = GC_NEXT(&finalizers); gc != &finalizers; gc = GC_NEXT(gc)) {
-        n++;
-        if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE)
-            debug_cycle("uncollectable", FROM_GC(gc));
+    if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE) {
+        stats.uncollectable = debug_cycles("uncollectable", &finalizers);
     }
-    stats.uncollectable = n;
+    else {
+        stats.uncollectable = gc_list_size(&finalizers);
+    }
     (void)PyTime_PerfCounterRaw(&stats.ts_stop);
     stats.duration = PyTime_AsSecondsDouble(stats.ts_stop - stats.ts_start);
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
@@ -2034,7 +2067,7 @@ static PyObject *
 gc_alloc(PyTypeObject *tp, size_t basicsize, size_t presize)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (basicsize > PY_SSIZE_T_MAX - presize) {
+    if (basicsize > (size_t)PY_SSIZE_T_MAX - presize) {
         return _PyErr_NoMemory(tstate);
     }
     size_t size = presize + basicsize;
@@ -2105,6 +2138,13 @@ PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
 PyVarObject *
 _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
+#ifdef Py_DEBUG
+    if (nitems < 0) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+#endif
+
     const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
     const size_t presize = _PyType_PreHeaderSize(Py_TYPE(op));
     _PyObject_ASSERT((PyObject *)op, !_PyObject_GC_IS_TRACKED(op));

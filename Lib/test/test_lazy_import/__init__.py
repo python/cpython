@@ -308,6 +308,22 @@ class LazyImportTypeTests(LazyImportTestCase):
         """)
         assert_python_ok("-c", code)
 
+    @support.run_with_limited_c_stack(depth=10_000, size=256 * 1024)
+    def test_deeply_dotted_name(self):
+        """A long dotted name must not overflow the C stack."""
+        m = types.SimpleNamespace()
+        # Every lookup in m.m.m... succeeds, so resolve() only fails if the
+        # C stack runs out.
+        m.m = m
+        ns = {"__builtins__": {"__lazy_import__": __lazy_import__,
+                               "__import__": lambda *args: m}}
+        # Free the chain on the main thread: a thread with a small C stack
+        # postpones deep deallocations and never gets back to them.
+        self.addCleanup(ns.clear)
+        exec("lazy import " + ".".join(["m"] * 10_000) + " as x", ns)
+        with contextlib.suppress(RecursionError):
+            ns["x"].resolve()
+
 
 class SyntaxRestrictionTests(LazyImportTestCase):
     """Tests for syntax restrictions on lazy imports."""
@@ -753,6 +769,20 @@ class DunderLazyImportTests(LazyImportTestCase):
         self.assertIn(
             b"TypeError: Item in ``from list'' must be str, not int",
             result.err)
+
+    @support.requires_subprocess()
+    def test_dunder_lazy_import_explicit_none(self):
+        """__lazy_import__ should accept None for globals and locals."""
+        code = textwrap.dedent("""
+            import sys
+            import types
+
+            lazy = __lazy_import__("test.test_lazy_import.data.basic2",
+                                   globals=None, locals=None)
+            assert type(globals()["lazy"]) is types.LazyImportType
+            assert "test.test_lazy_import.data.basic2" not in sys.modules
+        """)
+        assert_python_ok("-c", code)
 
     def test_dunder_lazy_import_builtins(self):
         """__lazy_import__ should use module's __builtins__ for __import__."""

@@ -48,7 +48,9 @@ Entries of the slots array use the following structure:
     typedef struct {
         uint16_t sl_id;
         uint16_t sl_flags;
-        uint32_t _reserved;  // must be 0
+        union {
+            uint32_t sl_reserved;  // must be 0
+        };
         union {
             void *sl_ptr;
             void (*sl_func)(void);
@@ -195,7 +197,7 @@ Convenience macros
          {NAME, PySlot_INTPTR, {0}, {(void*)(VALUE)}}
 
       #define PySlot_PTR_STATIC(NAME, VALUE) \
-         {NAME, PySlot_INTPTR|Py_SLOT_STATIC, {0}, {(void*)(VALUE)}}
+         {NAME, PySlot_INTPTR|PySlot_STATIC, {0}, {(void*)(VALUE)}}
 
    .. versionadded:: 3.15
 

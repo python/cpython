@@ -72,7 +72,7 @@ This module provides the following exception, type object and data items:
    This may be different from the Expat library actually used at runtime,
    which is available as :const:`version_info`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. data:: version_info
@@ -81,7 +81,7 @@ This module provides the following exception, type object and data items:
    loaded by the interpreter,
    with the same fields as :const:`VERSION_INFO`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.16
       It is now a named tuple.
 
 
@@ -123,7 +123,7 @@ The :mod:`!xml.parsers.expat` module contains two functions:
       applied to aliases like UTF8).
       These restrictions only apply if *encoding* is not given.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.16
          Added support for multi-byte encodings.
 
    .. _xmlparser-non-root:
@@ -236,7 +236,7 @@ XMLParser Objects
    Only meaningful inside a :attr:`StartElementHandler` call,
    and only if :attr:`ordered_attributes` is true.
 
-   .. versionadded:: next
+   .. versionadded:: 3.16
 
 
 .. method:: xmlparser.GetInputContext()
@@ -603,7 +603,7 @@ otherwise stated.
    Called for each declared attribute for an element type.  If an attribute list
    declaration declares three attributes, this handler is called three times, once
    for each attribute.  *elname* is the name of the element to which the
-   declaration applies and *attname* is the name of the attribute declared.  The
+   declaration applies and *attname* is the name of the attribute declared.
    The attribute type is a string passed as *type*:
    ``'CDATA'``, ``'ID'``, ``'IDREF'``, ``'IDREFS'``, ``'ENTITY'``,
    ``'ENTITIES'``, ``'NMTOKEN'`` or ``'NMTOKENS'``,

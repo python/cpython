@@ -50,9 +50,7 @@ WIN32 is still required for the locale module.
 
 #define HAVE_IO_H
 #define HAVE_SYS_UTIME_H
-#define HAVE_TEMPNAM
 #define HAVE_TMPFILE
-#define HAVE_TMPNAM
 #define HAVE_CLOCK
 #define HAVE_STRERROR
 
@@ -100,16 +98,14 @@ WIN32 is still required for the locale module.
 #endif
 
 /* Define to 1 when compiling for experimental free-threaded builds */
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) && Py_GIL_DISABLED == 0
 /* We undefine if it was set to zero because all later checks are #ifdef.
  * Note that non-Windows builds do not do this, and so every effort should
  * be made to avoid defining the variable at all when not desired. However,
  * sysconfig.get_config_var always returns a 1 or a 0, and so it seems likely
  * that a build backend will define it with the value.
  */
-#if Py_GIL_DISABLED == 0
 #undef Py_GIL_DISABLED
-#endif
 #endif
 
 /* Compiler specific defines */
@@ -254,11 +250,7 @@ typedef _W64 int Py_ssize_t;
 
 typedef int pid_t;
 
-/* define some ANSI types that are not defined in earlier Win headers */
-#if _MSC_VER >= 1200
-/* This file only exists in VC 6.0 or higher */
 #include <basetsd.h>
-#endif
 
 #endif /* _MSC_VER */
 
@@ -385,8 +377,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       define SIZEOF_HKEY 4
 #       define SIZEOF_SIZE_T 4
 #       define ALIGNOF_SIZE_T 4
-        /* MS VS2005 changes time_t to a 64-bit type on all platforms */
-#       if defined(_MSC_VER) && _MSC_VER >= 1400
+#       if defined(_MSC_VER)
 #       define SIZEOF_TIME_T 8
 #       else
 #       define SIZEOF_TIME_T 4
@@ -404,18 +395,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define SIZEOF_DOUBLE 8
 #define SIZEOF_FLOAT 4
 
-/* VC 7.1 has them and VC 6.0 does not.  VC 6.0 has a version number of 1200.
-   Microsoft eMbedded Visual C++ 4.0 has a version number of 1201 and doesn't
-   define these.
-   If some compiler does not provide them, modify the #if appropriately. */
 #if defined(_MSC_VER)
-#if _MSC_VER > 1300
 #define HAVE_UINTPTR_T 1
 #define HAVE_INTPTR_T 1
-#else
-/* VC6, VS 2002 and eVC4 don't support the C99 LL suffix for 64-bit integer literals */
-#define Py_LL(x) x##I64
-#endif  /* _MSC_VER > 1300  */
 #endif  /* _MSC_VER */
 
 #endif
@@ -522,11 +504,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have the putenv function.  */
 #define HAVE_PUTENV
 
-/* Define if your compiler supports function prototypes */
-#define HAVE_PROTOTYPES
-
-/* Define if  you can safely include both <sys/select.h> and <sys/time.h>
-   (which you can't on SCO ODT 3.0). */
+/* Define if  you can safely include both <sys/select.h> and <sys/time.h> */
 /* #undef SYS_SELECT_WITH_SYS_TIME */
 
 /* Define if you want build the _decimal module using a coroutine-local rather
@@ -554,9 +532,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define when any dynamic module loading is enabled */
 #define HAVE_DYNAMIC_LOADING
 
-/* Define if you have ftime.  */
-#define HAVE_FTIME
-
 /* Define if you have getpeername.  */
 #define HAVE_GETPEERNAME
 
@@ -568,9 +543,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if you have gettimeofday.  */
 /* #undef HAVE_GETTIMEOFDAY */
-
-/* Define if you have getwd.  */
-/* #undef HAVE_GETWD */
 
 /* Define if you have lstat.  */
 /* #undef HAVE_LSTAT */
@@ -624,7 +596,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #undef HAVE_WAITPID */
 
 /* Define to 1 if you have the `wcsftime' function. */
-#if defined(_MSC_VER) && _MSC_VER >= 1310
+#if defined(_MSC_VER)
 #define HAVE_WCSFTIME 1
 #endif
 
@@ -654,9 +626,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if you have the <stddef.h> header file.  */
 #define HAVE_STDDEF_H 1
-
-/* Define if you have the <sys/audioio.h> header file.  */
-/* #undef HAVE_SYS_AUDIOIO_H */
 
 /* Define if you have the <sys/param.h> header file.  */
 /* #define HAVE_SYS_PARAM_H 1 */

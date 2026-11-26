@@ -68,8 +68,8 @@ typedef struct TaskObj {
     PyObject *task_context;
     struct llist_node task_node;
 #ifdef Py_GIL_DISABLED
-    // thread id of the thread where this task was created
-    uintptr_t task_tid;
+    // unique id of the thread state where the task was registered
+    uint64_t task_tstate_id;
 #endif
 } TaskObj;
 
@@ -872,6 +872,7 @@ future_cancel(asyncio_state *state, FutureObj *fut, PyObject *msg)
 }
 
 /*[clinic input]
+@vectorcall
 _asyncio.Future.__init__
 
     *
@@ -893,7 +894,7 @@ This class is *almost* compatible with concurrent.futures.Future.
 
 static int
 _asyncio_Future___init___impl(FutureObj *self, PyObject *loop)
-/*[clinic end generated code: output=9ed75799eaccb5d6 input=89af317082bc0bf8]*/
+/*[clinic end generated code: output=9ed75799eaccb5d6 input=28ff6d3b6c3aa828]*/
 
 {
     return future_init(self, loop);
@@ -1734,6 +1735,7 @@ static PyType_Slot Future_slots[] = {
     {Py_tp_methods, FutureType_methods},
     {Py_tp_getset, FutureType_getsetlist},
     {Py_tp_init, _asyncio_Future___init__},
+    {Py_tp_vectorcall, _asyncio_Future_vectorcall},
     {Py_tp_new, PyType_GenericNew},
     {Py_tp_finalize, FutureObj_finalize},
 
@@ -1795,10 +1797,9 @@ FutureIter_dealloc(PyObject *it)
 }
 
 static PySendResult
-FutureIter_am_send_lock_held(futureiterobject *it, PyObject **result)
+FutureIter_am_send_lock_held(FutureObj *fut, PyObject **result)
 {
     PyObject *res;
-    FutureObj *fut = it->future;
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
 
     *result = NULL;
@@ -1829,11 +1830,24 @@ FutureIter_am_send(PyObject *op,
                    PyObject **result)
 {
     futureiterobject *it = (futureiterobject*)op;
+
+    FutureObj *fut;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    fut = (FutureObj*)Py_XNewRef(it->future);
+    Py_END_CRITICAL_SECTION();
+
+    if (fut == NULL) {
+        PyErr_SetNone(PyExc_StopIteration);
+        *result = NULL;
+        return PYGEN_ERROR;
+    }
+
     /* arg is unused, see the comment on FutureIter_send for clarification */
     PySendResult res;
-    Py_BEGIN_CRITICAL_SECTION(it->future);
-    res = FutureIter_am_send_lock_held(it, result);
+    Py_BEGIN_CRITICAL_SECTION(fut);
+    res = FutureIter_am_send_lock_held(fut, result);
     Py_END_CRITICAL_SECTION();
+    Py_DECREF(fut);
     return res;
 }
 
@@ -1927,7 +1941,9 @@ FutureIter_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
         goto fail;
     }
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     Py_CLEAR(self->future);
+    Py_END_CRITICAL_SECTION();
 
     PyErr_Restore(type, val, tb);
 
@@ -1940,19 +1956,22 @@ FutureIter_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
     return NULL;
 }
 
+static PyObject *
+FutureIter_close(PyObject *self, PyObject *arg)
+{
+    futureiterobject *it = (futureiterobject*)self;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    Py_CLEAR(it->future);
+    Py_END_CRITICAL_SECTION();
+    Py_RETURN_NONE;
+}
+
 static int
 FutureIter_clear(PyObject *op)
 {
     futureiterobject *it = (futureiterobject*)op;
     Py_CLEAR(it->future);
     return 0;
-}
-
-static PyObject *
-FutureIter_close(PyObject *self, PyObject *arg)
-{
-    (void)FutureIter_clear(self);
-    Py_RETURN_NONE;
 }
 
 static int
@@ -1971,6 +1990,22 @@ static PyMethodDef FutureIter_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
+static PyObject *
+FutureIter_get_fi_future(PyObject *op, void *Py_UNUSED(closure))
+{
+    futureiterobject *it = (futureiterobject*)op;
+    PyObject *fut;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    fut = it->future ? Py_NewRef(it->future) : Py_None;
+    Py_END_CRITICAL_SECTION();
+    return fut;
+}
+
+static PyGetSetDef FutureIter_getsetlist[] = {
+    {"fi_future", FutureIter_get_fi_future, NULL, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyType_Slot FutureIter_slots[] = {
     {Py_tp_dealloc, FutureIter_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -1979,6 +2014,7 @@ static PyType_Slot FutureIter_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, FutureIter_iternext},
     {Py_tp_methods, FutureIter_methods},
+    {Py_tp_getset, FutureIter_getsetlist},
 
     // async methods
     {Py_am_send, FutureIter_am_send},
@@ -2151,6 +2187,9 @@ register_task(_PyThreadStateImpl *ts, TaskObj *task)
         assert(task->task_node.prev != NULL);
         return;
     }
+#ifdef Py_GIL_DISABLED
+    task->task_tstate_id = ts->base.id;
+#endif
     struct llist_node *head = &ts->asyncio_tasks_head;
     llist_insert_tail(head, &task->task_node);
 }
@@ -2170,15 +2209,15 @@ static void
 unregister_task(TaskObj *task)
 {
 #ifdef Py_GIL_DISABLED
-    // check if we are in the same thread
-    // if so, we can avoid locking
-    if (task->task_tid == _Py_ThreadId()) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    // The task can only be on this thread's list if this thread state
+    // registered it, in which case no locking is needed.
+    if (task->task_tstate_id == tstate->id) {
         unregister_task_safe(task);
     }
     else {
-        // we are in a different thread
-        // stop the world then check and remove the task
-        PyThreadState *tstate = _PyThreadState_GET();
+        // The task is on another thread's list or on the interpreter's
+        // list of lingering tasks: stop the world to remove it.
         _PyEval_StopTheWorld(tstate->interp);
         unregister_task_safe(task);
         _PyEval_StartTheWorld(tstate->interp);
@@ -2253,6 +2292,7 @@ swap_current_task(_PyThreadStateImpl *ts, PyObject *loop, PyObject *task)
 /* ----- Task */
 
 /*[clinic input]
+@vectorcall
 _asyncio.Task.__init__
 
     coro: object
@@ -2269,7 +2309,7 @@ static int
 _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
                             PyObject *name, PyObject *context,
                             int eager_start)
-/*[clinic end generated code: output=7aced2d27836f1a1 input=18e3f113a51b829d]*/
+/*[clinic end generated code: output=7aced2d27836f1a1 input=de87c52b0800ab4b]*/
 {
     if (future_init((FutureObj*)self, loop)) {
         return -1;
@@ -2306,9 +2346,6 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     }
 
     Py_CLEAR(self->task_fut_waiter);
-#ifdef Py_GIL_DISABLED
-    self->task_tid = _Py_ThreadId();
-#endif
     self->task_must_cancel = 0;
     self->task_log_destroy_pending = 1;
     self->task_num_cancels_requested = 0;
@@ -2769,7 +2806,12 @@ _asyncio_Task_get_name_impl(TaskObj *self)
 {
     if (self->task_name) {
         if (PyLong_CheckExact(self->task_name)) {
-            PyObject *name = PyUnicode_FromFormat("Task-%S", self->task_name);
+            // Formatting can run arbitrary code (e.g. a GC finalizer that logs
+            // and re-enters get_name()), which may replace self->task_name.
+            // Hold a strong reference to the counter while formatting it.
+            PyObject *counter = Py_NewRef(self->task_name);
+            PyObject *name = PyUnicode_FromFormat("Task-%S", counter);
+            Py_DECREF(counter);
             if (name == NULL) {
                 return NULL;
             }
@@ -2913,6 +2955,7 @@ static PyType_Slot Task_slots[] = {
     {Py_tp_methods, TaskType_methods},
     {Py_tp_getset, TaskType_getsetlist},
     {Py_tp_init, _asyncio_Task___init__},
+    {Py_tp_vectorcall, _asyncio_Task_vectorcall},
     {Py_tp_new, PyType_GenericNew},
     {Py_tp_finalize, TaskObj_finalize},
 
@@ -3452,17 +3495,36 @@ task_eager_start(_PyThreadStateImpl *ts, asyncio_state *state, TaskObj *task)
 
     int retval = 0;
 
+    // gh-157299: the eager step must record the awaited_by edge
+    int eager_edge = TaskOrFuture_Check(state, prevtask);
     PyObject *stepres;
     Py_BEGIN_CRITICAL_SECTION(task);
-    stepres = task_step_impl(state, task, NULL);
-    Py_END_CRITICAL_SECTION();
+    if (eager_edge &&
+        future_awaited_by_add(state, (FutureObj *)task, prevtask) < 0)
+    {
+        eager_edge = 0;
+        task->task_log_destroy_pending = 0;
+        unregister_task(task);
+        stepres = NULL;
+    }
+    else {
+        stepres = task_step_impl(state, task, NULL);
+    }
+
+    PyObject *exc = stepres == NULL ? PyErr_GetRaisedException() : NULL;
+    if (eager_edge) {
+        int res = future_awaited_by_discard(state, (FutureObj *)task, prevtask);
+        if (res) {
+            retval = -1;
+        }
+    }
     if (stepres == NULL) {
-        PyObject *exc = PyErr_GetRaisedException();
         _PyErr_ChainExceptions1(exc);
         retval = -1;
     } else {
         Py_DECREF(stepres);
     }
+    Py_END_CRITICAL_SECTION();
 
     PyObject *curtask = swap_current_task(ts, task->task_loop, prevtask);
     Py_DECREF(prevtask);
@@ -3948,7 +4010,6 @@ add_tasks_llist(struct llist_node *head, PyListObject *tasks)
     struct llist_node *node;
     llist_for_each_safe(node, head) {
         TaskObj *task = llist_data(node, TaskObj, task_node);
-        assert(task->task_state == STATE_PENDING);
         // The linked list holds borrowed references to task
         // as such it is possible that the task is concurrently
         // deallocated while added to this list.
@@ -4157,6 +4218,23 @@ _asyncio_future_discard_from_awaited_by_impl(PyObject *module, PyObject *fut,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_asyncio._clear_caches
+
+Clear internal caches. Used for internal tests.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio__clear_caches_impl(PyObject *module)
+/*[clinic end generated code: output=9691a293f83d4303 input=6e1ae31e51dc906c]*/
+{
+    asyncio_state *state = get_asyncio_state(module);
+    if (PySet_Clear(state->iscoroutine_typecache) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static int
 module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
@@ -4328,6 +4406,7 @@ static PyMethodDef asyncio_methods[] = {
     _ASYNCIO_ALL_TASKS_METHODDEF
     _ASYNCIO_FUTURE_ADD_TO_AWAITED_BY_METHODDEF
     _ASYNCIO_FUTURE_DISCARD_FROM_AWAITED_BY_METHODDEF
+    _ASYNCIO__CLEAR_CACHES_METHODDEF
     {NULL, NULL}
 };
 

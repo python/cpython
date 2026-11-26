@@ -1,2 +1,0 @@
-Fix ``python -m asyncio ps`` failing on a process that has a task with a
-name longer than 255 characters.
