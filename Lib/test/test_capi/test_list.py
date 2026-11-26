@@ -467,29 +467,6 @@ class ListBuilderTests(unittest.TestCase):
         # Test PyListBuilder_ExtendArraySteal()
         self.check_extend('extend_array_steal')
 
-    def test_from_format(self):
-        # Test PyListBuilder_FromFormat()
-
-        # Allocate a small array on the stack (1 item)
-        builder = self.create_builder(0)
-        builder.from_format_i(123)
-        self.list_equal(builder.finish(), [123])
-
-        # Allocate an array on the heap (16 items)
-        items = tuple(range(100, 100+16))
-        builder = self.create_builder(0)
-        builder.from_format_i16(items)
-        self.list_equal(builder.finish(), items)
-
-        # Test error: call PyListBuilder_FromFormat(builder, "iiO", 1, 2, NULL).
-        # First items before the error must not be added.
-        builder = self.create_builder(0)
-        builder.append("before")
-        with self.assertRaises(SystemError):
-            builder.from_format_error()
-        builder.append("after")
-        self.list_equal(builder.finish(), ["before", "after"])
-
     def test_from_buffer(self):
         # Test PyListBuilder_FromBuffer()
         builder = self.create_builder(0)

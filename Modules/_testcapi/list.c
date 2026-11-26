@@ -288,83 +288,6 @@ builder_extend_array_steal(PyObject *self_raw, PyObject *tuple)
 }
 
 
-// Test PyListBuilder_FromFormat("i")
-static PyObject*
-builder_from_format_i(PyObject *self_raw, PyObject *arg)
-{
-    BuilderObject *self = (BuilderObject *)self_raw;
-    if (builder_check(self) < 0) {
-        return NULL;
-    }
-
-    int value;
-    if (!PyArg_Parse(arg, "i", &value)) {
-        return NULL;
-    }
-
-    if (PyListBuilder_FromFormat(self->builder, "i", value) < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-
-// Test PyListBuilder_FromFormat("i")
-static PyObject*
-builder_from_format_i16(PyObject *self_raw, PyObject *tuple)
-{
-    BuilderObject *self = (BuilderObject *)self_raw;
-    if (builder_check(self) < 0) {
-        return NULL;
-    }
-
-    // Test size larger than small_array size in PyListBuilder_FromFormat()
-    int values[16];
-    Py_ssize_t len = Py_ARRAY_LENGTH(values);
-    if (!PyTuple_Check(tuple) || PyTuple_GET_SIZE(tuple) != len) {
-        PyErr_Format(PyExc_ValueError,
-                     "expect a tuple of %zd integers", len);
-        return NULL;
-    }
-    for (Py_ssize_t i = 0; i < len; i++) {
-        int value = PyLong_AsInt(PyTuple_GET_ITEM(tuple, i));
-        if (value == -1 && PyErr_Occurred()) {
-            return NULL;
-        }
-        values[i] = value;
-    }
-
-    int res = PyListBuilder_FromFormat(self->builder,
-        "iiiiiiiiiiiiiiii",
-        values[0], values[1], values[2], values[3],
-        values[4], values[5], values[6], values[7],
-        values[8], values[9], values[10], values[11],
-        values[12], values[13], values[14], values[15]
-    );
-    if (res < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-
-// Test PyListBuilder_FromFormat() error
-static PyObject*
-builder_from_format_error(PyObject *self_raw, PyObject *Py_UNUSED(args))
-{
-    BuilderObject *self = (BuilderObject *)self_raw;
-    if (builder_check(self) < 0) {
-        return NULL;
-    }
-
-    int res = PyListBuilder_FromFormat(self->builder, "iiO", 1, 2, NULL);
-    if (res < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-
 // Test PyListBuilder_FromBuffer() error
 static PyObject*
 builder_from_buffer(PyObject *self_raw, PyObject *obj)
@@ -425,9 +348,6 @@ static PyMethodDef builder_methods[] = {
     {"extend", _PyCFunction_CAST(builder_extend), METH_O},
     {"extend_array", _PyCFunction_CAST(builder_extend_array), METH_O},
     {"extend_array_steal", _PyCFunction_CAST(builder_extend_array_steal), METH_O},
-    {"from_format_i", _PyCFunction_CAST(builder_from_format_i), METH_O},
-    {"from_format_i16", _PyCFunction_CAST(builder_from_format_i16), METH_O},
-    {"from_format_error", _PyCFunction_CAST(builder_from_format_error), METH_NOARGS},
     {"from_buffer", _PyCFunction_CAST(builder_from_buffer), METH_O},
     {"finish", _PyCFunction_CAST(builder_finish), METH_NOARGS},
     {"discard", _PyCFunction_CAST(builder_discard), METH_NOARGS},

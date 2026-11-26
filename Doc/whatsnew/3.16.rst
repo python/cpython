@@ -1609,7 +1609,6 @@ New features
   * :c:func:`PyListBuilder_Extend`
   * :c:func:`PyListBuilder_ExtendArray`
   * :c:func:`PyListBuilder_ExtendArraySteal`
-  * :c:func:`PyListBuilder_FromFormat`
   * :c:func:`PyListBuilder_FromBuffer`
 
   (Contributed by Victor Stinner in :gh:`158660`.)

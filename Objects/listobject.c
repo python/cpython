@@ -4708,29 +4708,3 @@ PyListBuilder_ExtendArraySteal(PyListBuilder *builder,
 {
     return listbuilder_extend_array(builder, items, nitem, 1);
 }
-
-
-int
-PyListBuilder_FromFormat(PyListBuilder *builder, const char *format, ...)
-{
-    PyObject* small_array[8];
-    Py_ssize_t size;
-    PyObject **array;
-
-    va_list vargs;
-    va_start(vargs, format);
-    int res = _Py_VaBuildArray(
-        &array, &size,
-        small_array, Py_ARRAY_LENGTH(small_array),
-        format, vargs);
-    va_end(vargs);
-    if (res < 0) {
-        return -1;
-    }
-
-    res = PyListBuilder_ExtendArraySteal(builder, array, size);
-    if (array != small_array) {
-        PyMem_Free(array);
-    }
-    return res;
-}
