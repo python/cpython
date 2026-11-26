@@ -273,6 +273,34 @@ class TestConsole(TestCase):
         self.assertEqual(con.posxy, (4, 0))
         con.restore()
 
+    def test_write_after_pending_wrap_stays_on_row(self, _os_write):
+        # gh-145448: updating "abcde" to "abcdf" in a five-column terminal
+        # rewrites the last column while the terminal is in pending wrap
+        # state.  The cursor must be moved explicitly first, otherwise the
+        # "f" would be written on the next row.
+        from _pyrepl.render import LineUpdate, RenderCell
+        con = unix_console(iter([]), width=5)
+        cells = tuple(RenderCell(ch, 1) for ch in "abcde")
+        con._UnixConsole__apply_line_update(LineUpdate(
+            kind="replace_span", y=0, start_cell=0, start_x=0,
+            cells=cells, char_width=5,
+        ))
+        buffer = con._UnixConsole__buffer
+        start = len(buffer)
+        con._UnixConsole__apply_line_update(LineUpdate(
+            kind="replace_char", y=0, start_cell=4, start_x=4,
+            cells=(RenderCell("f", 1),), char_width=1,
+        ))
+        written = b"".join(
+            text if is_code else text.encode()
+            for text, is_code in buffer[start:]
+        )
+        self.assertEqual(
+            written, b"\r" + TERM_CAPABILITIES["cuf"] + b":4" + b"f"
+        )
+        self.assertEqual(con.posxy, (4, 0))
+        con.restore()
+
     def test_insert_char_only_for_midline_insert(self, _os_write):
         insert_char = b"<insert-char>"
         events = itertools.chain(

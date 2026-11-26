@@ -186,6 +186,7 @@ class UnixConsole(Console):
     __gone_tall: bool
     __move: _MoveFunc
     __offset: int
+    __pending_wrap: bool
 
     def __init__(
         self,
@@ -496,6 +497,7 @@ class UnixConsole(Console):
         self.height, self.width = self.getheightwidth()
 
         self.posxy = 0, 0
+        self.__pending_wrap = False
         self.__gone_tall = False
         self.__move = self.__move_short
         self.__offset = 0
@@ -720,6 +722,7 @@ class UnixConsole(Console):
         self.__gone_tall = True
         self.__move = self.__move_tall
         self.posxy = 0, 0
+        self.__pending_wrap = False
         self.sync_rendered_screen(RenderedScreen.empty(), self.posxy)
 
     @property
@@ -949,10 +952,12 @@ class UnixConsole(Console):
         # When a write reaches the last column, the terminal enters the
         # "pending wrap" state and the cursor physically stays at width - 1.
         # Record that position so later relative moves (CUB) don't overshoot
-        # by one cell (gh-145448).
+        # by one cell, and remember the pending wrap so the next move clears
+        # it before anything else is written (gh-145448).
         x, y = self.posxy
         if x >= self.width:
             self.posxy = self.width - 1, y
+            self.__pending_wrap = True
 
         if update.reset_to_margin:
             # Non-SGR terminal controls can affect the cursor position.
@@ -1005,12 +1010,21 @@ class UnixConsole(Console):
             self.__write_code(self._cub, -dx)
 
     def __move_short(self, x, y):
+        if self.__pending_wrap:
+            # A relative move may emit nothing when the target is the
+            # current cell, and the next write would then wrap to the
+            # following row.  A carriage return always clears the pending
+            # wrap state, so start the move from column 0.
+            self.__write("\r")
+            self.posxy = 0, self.posxy[1]
+            self.__pending_wrap = False
         self.__move_x(x)
         self.__move_y(y)
 
     def __move_tall(self, x, y):
         assert 0 <= y - self.__offset < self.height, y - self.__offset
         self.__write_code(self._cup, y - self.__offset, x)
+        self.__pending_wrap = False
 
     def __sigwinch(self, signum, frame):
         self.event_queue.insert(Event("resize", ""))
