@@ -690,6 +690,38 @@ class WindowsConsoleGetEventTests(TestCase):
         event = self.console.get_event(block=False)
         self.assertEqual(event.data, "\n")
 
+    def test_bracketed_paste_two_pastes_in_one_read(self):
+        # Two complete pastes arrive in a single console read.  The second
+        # one is already queued, so it must be submitted without another
+        # read, which would block on a real console.
+        # See gh-156186.
+
+        self.console = WindowsConsole(encoding='utf-8')
+        self.console._WindowsConsole__vt_support = True
+        self.console._WindowsConsole__original_input_mode = 0
+        self.console.wait = MagicMock(return_value=True)
+        self.console._hide_cursor = MagicMock()
+        self.console._show_cursor = MagicMock()
+        self.console.out = MagicMock()
+        self.console.getheightwidth = MagicMock(return_value=(25, 80))
+
+        # start marker
+        start_marker_records = [self.get_input_record(x) for x in "\x1b[200~"]
+
+        # body 1, end marker \x1b[201~, \r, start marker \x1b[200~, body 2, end marker, \r
+        bulk_records = [self.get_input_record(x) for x in "a\x1b[201~\r\x1b[200~b\x1b[201~\r"]
+        bulk_array = (len(bulk_records) * wc.INPUT_RECORD)(*bulk_records)
+        bulk_reads = [(bulk_array, len(bulk_array))]
+
+        self.console._read_input = MagicMock(side_effect=start_marker_records)
+        self.console._read_input_bulk = MagicMock(side_effect=bulk_reads)
+
+        reader = default_prepare_reader(self.console, paste_mode=False)
+        with patch.object(wc, "SetConsoleMode", return_value=1):
+            self.assertEqual(reader.readline(), "a")
+            self.assertEqual(reader.readline(), "b")
+        self.assertEqual(self.console._read_input_bulk.call_count, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

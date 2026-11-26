@@ -676,6 +676,11 @@ class WindowsConsole(Console):
                 e.data += e2.data
                 e.raw += e2.raw
 
+        # _read_input_bulk() blocks until the console has input,
+        # so return the queued input without reading.
+        if e.raw:
+            return e
+
         text = ""
         while True:
             recs, rec_count = self._read_input_bulk(1024)
