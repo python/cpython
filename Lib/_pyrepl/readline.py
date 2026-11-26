@@ -277,7 +277,21 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
             # reusing a colon from an earlier line or one-line suite.
             return False
         break
-    return i >= 0 and buffer_str[i] == ":"
+    if i < 0 or buffer_str[i] != ":":
+        return False
+
+    # A colon only triggers an indent if the new line is not already deeper
+    # than the line with the colon.  Otherwise a preceding indented line
+    # (for example a comment) has already entered the block, and reusing the
+    # colon would add a second level of indentation.
+    colon_line_start = i
+    while colon_line_start > 0 and buffer_str[colon_line_start - 1] != "\n":
+        colon_line_start -= 1
+    colon_indent = 0
+    while (colon_line_start + colon_indent <= i
+           and buffer_str[colon_line_start + colon_indent] in " \t"):
+        colon_indent += 1
+    return _get_this_line_indent(buffer, pos) <= colon_indent
 
 
 class maybe_accept(commands.Command):

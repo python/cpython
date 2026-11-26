@@ -617,17 +617,15 @@ class TestPyReplAutoindent(TestCase):
         self.assertEqual(output, output_code)
 
         # fmt: off
-        events = itertools.chain(
-            code_to_events("def f():\n"),
-            [
-                Event(evt="key", data="backspace", raw=b"\x08"),
-            ],
-            code_to_events("# foo\npass\n\n")
+        events = code_to_events(
+            "def f():\n"
+            "# foo\n"
+            "pass\n\n"
         )
 
         output_code = (
             "def f():\n"
-            "# foo\n"
+            "    # foo\n"
             "    pass\n"
             "    "
         )
