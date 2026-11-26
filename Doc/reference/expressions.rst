@@ -2362,7 +2362,7 @@ returns a boolean value regardless of the type of its argument
 (for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
 
 .. versionadded:: 3.16
-   Added the ``None``-coalesce operator :keyword:`??`.
+   Added the ``None``-coalescing operator :keyword:`??`.
 
 
 .. index::

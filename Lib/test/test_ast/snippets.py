@@ -376,7 +376,7 @@ eval_tests = [
   "t'{a!r}'",
   "t'{a!r:.2f}'",
   "t'foo({a})'",
-  # None-coalesce operator
+  # None-coalescing operator
   "a ?? b",
 ]
 
