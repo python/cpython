@@ -184,7 +184,7 @@ def get_preparation_data(name):
         sys_argv=sys.argv,
         orig_dir=process.ORIGINAL_DIR,
         dir=os.getcwd(),
-        start_method=get_start_method(),
+        start_method=get_start_method(allow_none=True),
         )
 
     # Figure out whether to initialise main in the subprocess as a module

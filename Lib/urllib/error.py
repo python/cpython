@@ -11,6 +11,7 @@ an application may want to handle an exception like a regular
 response.
 """
 import io
+import sys
 import urllib.response
 
 __all__ = ['URLError', 'HTTPError', 'ContentTooShortError']
@@ -18,7 +19,7 @@ __all__ = ['URLError', 'HTTPError', 'ContentTooShortError']
 
 class URLError(OSError):
     # URLError is a sub-type of OSError, but it doesn't share any of
-    # the implementation.  need to override __init__ and __str__.
+    # the implementation. It overrides __init__ and __str__.
     # It sets self.args for compatibility with other OSError
     # subclasses, but args doesn't have the typical format with errno in
     # slot 0 and strerror in slot 1.  This may be better than nothing.
@@ -27,6 +28,13 @@ class URLError(OSError):
         self.reason = reason
         if filename is not None:
             self.filename = filename
+        if isinstance(reason, OSError):
+            # OSError.__init__() is not called, so copy the attributes
+            # it would have set from the wrapped error (gh-50720).
+            self.errno = reason.errno
+            self.strerror = reason.strerror
+            if sys.platform == 'win32':
+                self.winerror = reason.winerror
 
     def __str__(self):
         return '<urlopen error %s>' % self.reason

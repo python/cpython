@@ -25,7 +25,7 @@ is especially true for :mimetype:`image/\*` and :mimetype:`text/\*` type message
 containing binary data.
 
 The :mod:`email` package provides some convenient encoders in its
-:mod:`~email.encoders` module.  These encoders are actually used by the
+:mod:`!encoders` module.  These encoders are actually used by the
 :class:`~email.mime.audio.MIMEAudio` and :class:`~email.mime.image.MIMEImage`
 class constructors to provide default encodings.  All encoder functions take
 exactly one argument, the message object to encode.  They usually extract the

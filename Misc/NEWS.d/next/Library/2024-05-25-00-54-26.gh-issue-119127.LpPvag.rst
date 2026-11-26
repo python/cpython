@@ -1,2 +1,0 @@
-Positional arguments of :func:`functools.partial` objects
-now support placeholders via :data:`functools.Placeholder`.

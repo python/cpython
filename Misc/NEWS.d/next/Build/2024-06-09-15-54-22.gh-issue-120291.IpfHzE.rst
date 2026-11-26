@@ -1,1 +1,0 @@
-Make the ``python-config`` shell script compatible with non-bash shells.

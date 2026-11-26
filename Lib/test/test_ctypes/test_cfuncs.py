@@ -5,7 +5,8 @@ from ctypes import (CDLL,
                     c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong,
                     c_float, c_double, c_longdouble)
-from test.support import import_helper
+from test import support
+from test.support import import_helper, threading_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 
@@ -13,9 +14,10 @@ class CFunctions(unittest.TestCase):
     _dll = CDLL(_ctypes_test.__file__)
 
     def S(self):
-        return c_longlong.in_dll(self._dll, "last_tf_arg_s").value
+        return _ctypes_test.get_last_tf_arg_s()
+
     def U(self):
-        return c_ulonglong.in_dll(self._dll, "last_tf_arg_u").value
+        return _ctypes_test.get_last_tf_arg_u()
 
     def test_byte(self):
         self._dll.tf_b.restype = c_byte
@@ -69,6 +71,16 @@ class CFunctions(unittest.TestCase):
         self._dll.tf_i.restype = c_int
         self._dll.tf_i.argtypes = (c_int,)
         self.assertEqual(self._dll.tf_i(-2147483646), -715827882)
+        self.assertEqual(self.S(), -2147483646)
+
+    def test_int_resized(self):
+        # gh-160708: only the value of a resized object is passed,
+        # not the extra space added by resize().
+        self._dll.tf_i.restype = c_int
+        self._dll.tf_i.argtypes = (c_int,)
+        value = c_int(-2147483646)
+        ctypes.resize(value, 1024)
+        self.assertEqual(self._dll.tf_i(value), -715827882)
         self.assertEqual(self.S(), -2147483646)
 
     def test_int_plus(self):
@@ -190,6 +202,23 @@ class CFunctions(unittest.TestCase):
         self.assertEqual(self.S(), 42)
         self.assertEqual(self._dll.tv_i(-42), None)
         self.assertEqual(self.S(), -42)
+
+    @threading_helper.requires_working_threading()
+    @support.requires_resource("cpu")
+    @unittest.skipUnless(support.Py_GIL_DISABLED, "only meaningful on free-threading")
+    def test_thread_safety(self):
+        from threading import Thread
+
+        def concurrent():
+            for _ in range(100):
+                self._dll.tf_b.restype = c_byte
+                self._dll.tf_b.argtypes = (c_byte,)
+
+        with threading_helper.catch_threading_exception() as exc:
+            with threading_helper.start_threads((Thread(target=concurrent) for _ in range(10))):
+                pass
+
+            self.assertIsNone(exc.exc_value)
 
 
 # The following repeats the above tests with stdcall functions (where

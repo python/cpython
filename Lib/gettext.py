@@ -41,14 +41,10 @@ internationalized, to the local language and cultural habits.
 #   to do binary searches and lazy initializations.  Or you might want to use
 #   the undocumented double-hash algorithm for .mo files with hash tables, but
 #   you'll need to study the GNU gettext code to do this.
-#
-# - Support Solaris .mo file formats.  Unfortunately, we've been unable to
-#   find this format documented anywhere.
 
 
 import operator
 import os
-import re
 import sys
 
 
@@ -70,22 +66,26 @@ _default_localedir = os.path.join(sys.base_prefix, 'share', 'locale')
 # https://www.gnu.org/software/gettext/manual/gettext.html#Plural-forms
 # http://git.savannah.gnu.org/cgit/gettext.git/tree/gettext-runtime/intl/plural.y
 
-_token_pattern = re.compile(r"""
-        (?P<WHITESPACES>[ \t]+)                    | # spaces and horizontal tabs
-        (?P<NUMBER>[0-9]+\b)                       | # decimal integer
-        (?P<NAME>n\b)                              | # only n is allowed
-        (?P<PARENTHESIS>[()])                      |
-        (?P<OPERATOR>[-*/%+?:]|[><!]=?|==|&&|\|\|) | # !, *, /, %, +, -, <, >,
-                                                     # <=, >=, ==, !=, &&, ||,
-                                                     # ? :
-                                                     # unary and bitwise ops
-                                                     # not allowed
-        (?P<INVALID>\w+|.)                           # invalid token
-    """, re.VERBOSE|re.DOTALL)
-
+_token_pattern = None
 
 def _tokenize(plural):
-    for mo in re.finditer(_token_pattern, plural):
+    global _token_pattern
+    if _token_pattern is None:
+        import re
+        _token_pattern = re.compile(r"""
+                (?P<WHITESPACES>[ \t]+)                    | # spaces and horizontal tabs
+                (?P<NUMBER>[0-9]+\b)                       | # decimal integer
+                (?P<NAME>n\b)                              | # only n is allowed
+                (?P<PARENTHESIS>[()])                      |
+                (?P<OPERATOR>[-*/%+?:]|[><!]=?|==|&&|\|\|) | # !, *, /, %, +, -, <, >,
+                                                             # <=, >=, ==, !=, &&, ||,
+                                                             # ? :
+                                                             # unary and bitwise ops
+                                                             # not allowed
+                (?P<INVALID>\w+|.)                           # invalid token
+            """, re.VERBOSE|re.DOTALL)
+
+    for mo in _token_pattern.finditer(plural):
         kind = mo.lastgroup
         if kind == 'WHITESPACES':
             continue
@@ -111,8 +111,9 @@ _binary_ops = (
     ('+', '-'),
     ('*', '/', '%'),
 )
-_binary_ops = {op: i for i, ops in enumerate(_binary_ops, 1) for op in ops}
-_c2py_ops = {'||': 'or', '&&': 'and', '/': '//'}
+_binary_ops = frozendict({op: i for i, ops in enumerate(_binary_ops, 1)
+                          for op in ops})
+_c2py_ops = frozendict({'||': 'or', '&&': 'and', '/': '//'})
 
 
 def _parse(tokens, priority=-1):
@@ -135,6 +136,9 @@ def _parse(tokens, priority=-1):
         except ValueError:
             raise _error(nexttok) from None
         result = '%s%d' % (result, value)
+    # Unary '!' binds tighter than binary operators in C, unlike 'not'.
+    if result.startswith('not '):
+        result = '(%s)' % result
     nexttok = next(tokens)
 
     j = 100
@@ -358,6 +362,8 @@ class GNUTranslations(NullTranslations):
         self.plural = lambda n: int(n != 1) # germanic plural by default
         buf = fp.read()
         buflen = len(buf)
+        if buflen < 20:
+            raise OSError(0, 'File is corrupt', filename)
         # Are we big endian or little endian?
         magic = unpack('<I', buf[:4])[0]
         if magic == self.LE_MAGIC:
@@ -373,6 +379,11 @@ class GNUTranslations(NullTranslations):
 
         if major_version not in self.VERSIONS:
             raise OSError(0, 'Bad version number ' + str(major_version), filename)
+
+        # The seek tables must lie within the file.
+        if (masteridx + 8 * msgcount > buflen
+                or transidx + 8 * msgcount > buflen):
+            raise OSError(0, 'File is corrupt', filename)
 
         # Now put all messages from the .mo file buffer into the catalog
         # dictionary.

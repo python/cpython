@@ -1,16 +1,22 @@
 #include "Python.h"
-#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION_MUT()
-#include "pycore_interp.h"        // PyInterpreterState.warnings
+#include "pycore_critical_section.h" // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
+#include "pycore_frame.h"         // PyFrameObject
+#include "pycore_genobject.h"     // PyAsyncGenObject
+#include "pycore_import.h"        // _PyImport_GetModules()
+#include "pycore_interpframe.h"   // _PyFrame_GetCode()
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_object.h"        // _Py_XGetRef()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_SSIZE_ACQUIRE()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
+#include "pycore_tuple.h"         // _PyTuple_FromPair
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
+#include "pycore_warnings.h"      // _PyWarnings_AfterFork()
 
 #include <stdbool.h>
-
 #include "clinic/_warnings.c.h"
+
 
 #define MODULE_NAME "_warnings"
 
@@ -67,6 +73,7 @@ warnings_clear_state(WarningsState *st)
     Py_CLEAR(st->filters);
     Py_CLEAR(st->once_registry);
     Py_CLEAR(st->default_action);
+    Py_CLEAR(st->context);
 }
 
 #ifndef Py_DEBUG
@@ -138,6 +145,7 @@ _PyWarnings_InitState(PyInterpreterState *interp)
         if (st->filters == NULL) {
             return -1;
         }
+        PyUnstable_EnableTryIncRef(st->filters);
     }
 
     if (st->once_registry == NULL) {
@@ -145,11 +153,20 @@ _PyWarnings_InitState(PyInterpreterState *interp)
         if (st->once_registry == NULL) {
             return -1;
         }
+        PyUnstable_EnableTryIncRef(st->once_registry);
     }
 
     if (st->default_action == NULL) {
         st->default_action = PyUnicode_FromString("default");
         if (st->default_action == NULL) {
+            return -1;
+        }
+        PyUnstable_EnableTryIncRef(st->default_action);
+    }
+
+    if (st->context == NULL) {
+        st->context = PyContextVar_New("_warnings_context", NULL);
+        if (st->context == NULL) {
             return -1;
         }
     }
@@ -162,7 +179,7 @@ _PyWarnings_InitState(PyInterpreterState *interp)
 /*************************************************************************/
 
 static int
-check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg)
+check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg, PyObject *arg2)
 {
     PyObject *result;
     int rc;
@@ -173,6 +190,9 @@ check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg)
 
     /* An internal plain text default filter must match exactly */
     if (PyUnicode_CheckExact(obj)) {
+        if (arg == NULL) {
+            return 0;
+        }
         int cmp_result = PyUnicode_Compare(obj, arg);
         if (cmp_result == -1 && PyErr_Occurred()) {
             return -1;
@@ -181,10 +201,19 @@ check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg)
     }
 
     /* Otherwise assume a regex filter and call its match() method */
-    result = PyObject_CallMethodOneArg(obj, &_Py_ID(match), arg);
+    if (arg != NULL) {
+        result = PyObject_CallMethodOneArg(obj, &_Py_ID(match), arg);
+    }
+    else {
+        PyObject *match = PyImport_ImportModuleAttrString("_py_warnings", "_match_filename");
+        if (match == NULL) {
+            return -1;
+        }
+        result = PyObject_CallFunctionObjArgs(match, obj, arg2, NULL);
+        Py_DECREF(match);
+    }
     if (result == NULL)
         return -1;
-
     rc = PyObject_IsTrue(result);
     Py_DECREF(result);
     return rc;
@@ -232,21 +261,183 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
     return obj;
 }
 
+static inline void
+warnings_lock(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    assert(st != NULL);
+    _PyRecursiveMutex_Lock(&st->lock);
+}
 
+static inline int
+warnings_unlock(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    assert(st != NULL);
+    return _PyRecursiveMutex_TryUnlock(&st->lock);
+}
+
+static inline bool
+warnings_lock_held(WarningsState *st)
+{
+    return PyMutex_IsLocked(&st->lock.mutex);
+}
+
+#ifdef HAVE_FORK
+void
+_PyWarnings_BeforeFork(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    st->lock_held_at_fork = _PyRecursiveMutex_IsLockedByCurrentThread(&st->lock);
+}
+
+void
+_PyWarnings_AfterFork(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    _PyRecursiveMutex_at_fork_reinit(&st->lock, st->lock_held_at_fork);
+    st->lock_held_at_fork = false;
+}
+#endif
+
+static PyObject *
+get_warnings_context(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    assert(PyContextVar_CheckExact(st->context));
+    PyObject *ctx;
+    if (PyContextVar_Get(st->context, NULL, &ctx) < 0) {
+        return NULL;
+    }
+    if (ctx == NULL) {
+        Py_RETURN_NONE;
+    }
+    return ctx;
+}
+
+static PyObject *
+get_warnings_context_filters(PyInterpreterState *interp)
+{
+    PyObject *ctx = get_warnings_context(interp);
+    if (ctx == NULL) {
+        return NULL;
+    }
+    if (ctx == Py_None) {
+        Py_RETURN_NONE;
+    }
+    PyObject *context_filters = PyObject_GetAttr(ctx, &_Py_ID(_filters));
+    Py_DECREF(ctx);
+    if (context_filters == NULL) {
+        return NULL;
+    }
+    if (!PyList_Check(context_filters)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "_filters of warnings._warnings_context must be a list");
+        Py_DECREF(context_filters);
+        return NULL;
+    }
+    return context_filters;
+}
+
+/* Store 'value' in the warnings state field '*ptr'. */
+static void
+update_state_ref(PyObject **ptr, PyObject *value)
+{
+    if (FT_ATOMIC_LOAD_PTR_ACQUIRE(*ptr) == value) {
+        return;
+    }
+    PyUnstable_EnableTryIncRef(value);
+    PyObject *old = _Py_atomic_exchange_ptr(ptr, Py_NewRef(value));
+    Py_XDECREF(old);
+}
+
+/* Return a new reference to the warnings state field '*ptr'. */
+static PyObject *
+get_state_ref(PyObject **ptr)
+{
+#ifdef Py_GIL_DISABLED
+    return _Py_XGetRef(ptr);
+#else
+    return Py_XNewRef(*ptr);
+#endif
+}
+
+// Returns a new reference to the list.
+static PyObject *
+get_warnings_filters(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
+    if (warnings_filters == NULL) {
+        if (PyErr_Occurred())
+            return NULL;
+        warnings_filters = get_state_ref(&st->filters);
+    }
+    else {
+        update_state_ref(&st->filters, warnings_filters);
+    }
+
+    PyObject *filters = warnings_filters;
+    if (filters == NULL || !PyList_Check(filters)) {
+        PyErr_SetString(PyExc_ValueError,
+                        MODULE_NAME ".filters must be a list");
+        Py_XDECREF(filters);
+        return NULL;
+    }
+    return filters;
+}
+
+/*[clinic input]
+_acquire_lock as warnings_acquire_lock
+
+[clinic start generated code]*/
+
+static PyObject *
+warnings_acquire_lock_impl(PyObject *module)
+/*[clinic end generated code: output=594313457d1bf8e1 input=46ec20e55acca52f]*/
+{
+    PyInterpreterState *interp = get_current_interp();
+    if (interp == NULL) {
+        return NULL;
+    }
+    warnings_lock(interp);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_release_lock as warnings_release_lock
+
+[clinic start generated code]*/
+
+static PyObject *
+warnings_release_lock_impl(PyObject *module)
+/*[clinic end generated code: output=d73d5a8789396750 input=ea01bb77870c5693]*/
+{
+    PyInterpreterState *interp = get_current_interp();
+    if (interp == NULL) {
+        return NULL;
+    }
+    if (warnings_unlock(interp) < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "cannot release un-acquired lock");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+// Returns a new reference.
 static PyObject *
 get_once_registry(PyInterpreterState *interp)
 {
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
-
     PyObject *registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
     if (registry == NULL) {
         if (PyErr_Occurred())
             return NULL;
-        assert(st->once_registry);
-        return st->once_registry;
+        registry = get_state_ref(&st->once_registry);
+        assert(registry != NULL);
+        return registry;
     }
     if (!PyDict_Check(registry)) {
         PyErr_Format(PyExc_TypeError,
@@ -256,26 +447,26 @@ get_once_registry(PyInterpreterState *interp)
         Py_DECREF(registry);
         return NULL;
     }
-    Py_SETREF(st->once_registry, registry);
+    update_state_ref(&st->once_registry, registry);
     return registry;
 }
 
 
+// Returns a new reference.
 static PyObject *
 get_default_action(PyInterpreterState *interp)
 {
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
-
     PyObject *default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
     if (default_action == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
         }
-        assert(st->default_action);
-        return st->default_action;
+        default_action = get_state_ref(&st->default_action);
+        assert(default_action != NULL);
+        return default_action;
     }
     if (!PyUnicode_Check(default_action)) {
         PyErr_Format(PyExc_TypeError,
@@ -285,39 +476,21 @@ get_default_action(PyInterpreterState *interp)
         Py_DECREF(default_action);
         return NULL;
     }
-    Py_SETREF(st->default_action, default_action);
+    update_state_ref(&st->default_action, default_action);
     return default_action;
 }
 
-
-/* The item is a new reference. */
-static PyObject*
-get_filter(PyInterpreterState *interp, PyObject *category,
-           PyObject *text, Py_ssize_t lineno,
-           PyObject *module, PyObject **item)
-{
-    WarningsState *st = warnings_get_state(interp);
-    assert(st != NULL);
-
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
-
-    PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
-    if (warnings_filters == NULL) {
-        if (PyErr_Occurred())
-            return NULL;
-    }
-    else {
-        Py_SETREF(st->filters, warnings_filters);
-    }
-
-    PyObject *filters = st->filters;
-    if (filters == NULL || !PyList_Check(filters)) {
-        PyErr_SetString(PyExc_ValueError,
-                        MODULE_NAME ".filters must be a list");
-        return NULL;
-    }
-
-    /* WarningsState.filters could change while we are iterating over it. */
+/* Search filters list of match, returns false on error.  If no match
+ * then 'matched_action' is NULL.  */
+static bool
+filter_search(PyInterpreterState *interp, PyObject *category,
+              PyObject *text, Py_ssize_t lineno,
+              PyObject *module, PyObject *filename, char *list_name, PyObject *filters,
+              PyObject **item, PyObject **matched_action) {
+    bool result = true;
+    *matched_action = NULL;
+    /* Avoid the filters list changing while we iterate over it. */
+    Py_BEGIN_CRITICAL_SECTION(filters);
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(filters); i++) {
         PyObject *tmp_item, *action, *msg, *cat, *mod, *ln_obj;
         Py_ssize_t ln;
@@ -326,8 +499,9 @@ get_filter(PyInterpreterState *interp, PyObject *category,
         tmp_item = PyList_GET_ITEM(filters, i);
         if (!PyTuple_Check(tmp_item) || PyTuple_GET_SIZE(tmp_item) != 5) {
             PyErr_Format(PyExc_ValueError,
-                         MODULE_NAME ".filters item %zd isn't a 5-tuple", i);
-            return NULL;
+                         "warnings.%s item %zd isn't a 5-tuple", list_name, i);
+            result = false;
+            break;
         }
 
         /* Python code: action, msg, cat, mod, ln = item */
@@ -343,42 +517,98 @@ get_filter(PyInterpreterState *interp, PyObject *category,
                          "action must be a string, not '%.200s'",
                          Py_TYPE(action)->tp_name);
             Py_DECREF(tmp_item);
-            return NULL;
+            result = false;
+            break;
         }
 
-        good_msg = check_matched(interp, msg, text);
+        good_msg = check_matched(interp, msg, text, NULL);
         if (good_msg == -1) {
             Py_DECREF(tmp_item);
-            return NULL;
+            result = false;
+            break;
         }
 
-        good_mod = check_matched(interp, mod, module);
+        good_mod = check_matched(interp, mod, module, filename);
         if (good_mod == -1) {
             Py_DECREF(tmp_item);
-            return NULL;
+            result = false;
+            break;
         }
 
         is_subclass = PyObject_IsSubclass(category, cat);
         if (is_subclass == -1) {
             Py_DECREF(tmp_item);
-            return NULL;
+            result = false;
+            break;
         }
 
         ln = PyLong_AsSsize_t(ln_obj);
         if (ln == -1 && PyErr_Occurred()) {
             Py_DECREF(tmp_item);
-            return NULL;
+            result = false;
+            break;
         }
 
         if (good_msg && is_subclass && good_mod && (ln == 0 || lineno == ln)) {
             *item = tmp_item;
-            return action;
+            *matched_action = action;
+            result = true;
+            break;
         }
 
         Py_DECREF(tmp_item);
     }
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
 
-    PyObject *action = get_default_action(interp);
+/* The returned action and the item are new references. */
+static PyObject*
+get_filter(PyInterpreterState *interp, PyObject *category,
+           PyObject *text, Py_ssize_t lineno,
+           PyObject *module, PyObject *filename, PyObject **item)
+{
+    /* check _warning_context _filters list */
+    PyObject *context_filters = get_warnings_context_filters(interp);
+    if (context_filters == NULL) {
+        return NULL;
+    }
+    bool use_global_filters = false;
+    if (context_filters == Py_None) {
+        use_global_filters = true;
+    } else {
+        PyObject *context_action = NULL;
+        if (!filter_search(interp, category, text, lineno, module, filename, "_warnings_context _filters",
+                           context_filters, item, &context_action)) {
+            Py_DECREF(context_filters);
+            return NULL;
+        }
+        Py_DECREF(context_filters);
+        if (context_action != NULL) {
+            return Py_NewRef(context_action);
+        }
+    }
+
+    PyObject *action;
+
+    if (use_global_filters) {
+        /* check warnings.filters list */
+        PyObject *filters = get_warnings_filters(interp);
+        if (filters == NULL) {
+            return NULL;
+        }
+        bool ok = filter_search(interp, category, text, lineno, module,
+                                filename, "filters", filters, item, &action);
+        Py_DECREF(filters);
+        if (!ok) {
+            return NULL;
+        }
+        if (action != NULL) {
+            return Py_NewRef(action);
+        }
+    }
+
+    action = get_default_action(interp);
     if (action != NULL) {
         *item = Py_NewRef(Py_None);
         return action;
@@ -388,105 +618,143 @@ get_filter(PyInterpreterState *interp, PyObject *category,
 }
 
 
+/* Returns 1 if 'registry' is stamped with 'version', 0 if not, -1 on error. */
 static int
-already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
-               int should_set)
+registry_version_matches(PyObject *registry, Py_ssize_t version)
 {
-    PyObject *already_warned;
-
-    if (key == NULL)
-        return -1;
-
-    WarningsState *st = warnings_get_state(interp);
-    assert(st != NULL);
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
-
     PyObject *version_obj;
     if (PyDict_GetItemRef(registry, &_Py_ID(version), &version_obj) < 0) {
         return -1;
     }
-    bool should_update_version = (
-        version_obj == NULL
-        || !PyLong_CheckExact(version_obj)
-        || PyLong_AsLong(version_obj) != st->filters_version
-    );
+    int rc = 0;
+    if (version_obj != NULL && PyLong_CheckExact(version_obj)) {
+        int overflow;
+        long long v = PyLong_AsLongLongAndOverflow(version_obj, &overflow);
+        rc = (!overflow && v == version);
+    }
     Py_XDECREF(version_obj);
-    if (should_update_version) {
-        PyDict_Clear(registry);
-        version_obj = PyLong_FromLong(st->filters_version);
-        if (version_obj == NULL)
-            return -1;
-        if (PyDict_SetItem(registry, &_Py_ID(version), version_obj) < 0) {
-            Py_DECREF(version_obj);
-            return -1;
-        }
-        Py_DECREF(version_obj);
-    }
-    else {
-        if (PyDict_GetItemRef(registry, key, &already_warned) < 0) {
-            return -1;
-        }
-        if (already_warned != NULL) {
-            int rc = PyObject_IsTrue(already_warned);
-            Py_DECREF(already_warned);
-            if (rc != 0)
-                return rc;
-        }
-    }
-
-    /* This warning wasn't found in the registry, set it. */
-    if (should_set)
-        return PyDict_SetItem(registry, key, Py_True);
-    return 0;
-}
-
-/* New reference. */
-static PyObject *
-normalize_module(PyObject *filename)
-{
-    PyObject *module;
-    int kind;
-    const void *data;
-    Py_ssize_t len;
-
-    len = PyUnicode_GetLength(filename);
-    if (len < 0)
-        return NULL;
-
-    if (len == 0)
-        return PyUnicode_FromString("<unknown>");
-
-    kind = PyUnicode_KIND(filename);
-    data = PyUnicode_DATA(filename);
-
-    /* if filename.endswith(".py"): */
-    if (len >= 3 &&
-        PyUnicode_READ(kind, data, len-3) == '.' &&
-        PyUnicode_READ(kind, data, len-2) == 'p' &&
-        PyUnicode_READ(kind, data, len-1) == 'y')
-    {
-        module = PyUnicode_Substring(filename, 0, len-3);
-    }
-    else {
-        module = Py_NewRef(filename);
-    }
-    return module;
+    return rc;
 }
 
 static int
-update_registry(PyInterpreterState *interp, PyObject *registry, PyObject *text,
-                PyObject *category, int add_zero)
+set_registry_version(PyObject *registry, Py_ssize_t version)
 {
-    PyObject *altkey;
+    PyObject *version_obj = PyLong_FromSsize_t(version);
+    if (version_obj == NULL) {
+        return -1;
+    }
+    int rc = PyDict_SetItem(registry, &_Py_ID(version), version_obj);
+    Py_DECREF(version_obj);
+    return rc;
+}
+
+/* Make 'registry' usable for filters 'version', clearing it if it is stamped
+   with a different version.  Returns 1 if it can be used, 0 if 'version' is
+   no longer current, -1 on error. */
+static int
+check_registry_version(PyInterpreterState *interp, PyObject *registry,
+                       Py_ssize_t version)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(registry);
+    WarningsState *st = warnings_get_state(interp);
+
+    int rc = registry_version_matches(registry, version);
+    if (rc != 0) {
+        return rc;
+    }
+    if (version != FT_ATOMIC_LOAD_SSIZE_ACQUIRE(st->filters_version)) {
+        // The caller's filter search is stale, don't record its result.
+        return 0;
+    }
+
+    PyDict_Clear(registry);
+    return set_registry_version(registry, version) < 0 ? -1 : 1;
+}
+
+static int
+registry_contains(PyObject *registry, PyObject *key)
+{
+    PyObject *value;
+    if (PyDict_GetItemRef(registry, key, &value) < 0) {
+        return -1;
+    }
+    if (value == NULL) {
+        return 0;
+    }
+    int rc = PyObject_IsTrue(value);
+    Py_DECREF(value);
+    return rc;
+}
+
+/* Returns 1 if 'key' is recorded in 'registry' for the current filters version,
+   0 if not, -1 on error.  Stores the version checked in '*pversion'. */
+static int
+already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
+               Py_ssize_t *pversion)
+{
     int rc;
+    Py_BEGIN_CRITICAL_SECTION(registry);
+    WarningsState *st = warnings_get_state(interp);
+    Py_ssize_t version = FT_ATOMIC_LOAD_SSIZE_ACQUIRE(st->filters_version);
+    *pversion = version;
+    rc = registry_version_matches(registry, version);
+    if (rc > 0) {
+        rc = registry_contains(registry, key);
+    }
+    else if (rc == 0) {
+        /* Stamped with an old version, reset it.  'key' can't be present. */
+        PyDict_Clear(registry);
+        if (set_registry_version(registry, version) < 0) {
+            rc = -1;
+        }
+    }
+    Py_END_CRITICAL_SECTION();
+    return rc;
+}
 
-    if (add_zero)
-        altkey = PyTuple_Pack(3, text, category, _PyLong_GetZero());
-    else
-        altkey = PyTuple_Pack(2, text, category);
+/* Returns 1 if 'key' was already in 'registry', 0 if it was added, -1 on
+   error. */
+static int
+registry_add(PyObject *registry, PyObject *key)
+{
+    int rc = registry_contains(registry, key);
+    if (rc == 0 && PyDict_SetItem(registry, key, Py_True) < 0) {
+        rc = -1;
+    }
+    return rc;
+}
 
-    rc = already_warned(interp, registry, altkey, 1);
-    Py_XDECREF(altkey);
+/* Record 'key' and 'altkey' (either may be NULL) in 'registry' for filters
+   'version'.  Returns 0 if the warning should be shown, 1 if it was already
+   recorded, -1 on error. */
+static int
+record_warning(PyInterpreterState *interp, PyObject *registry,
+               PyObject *key, PyObject *altkey, Py_ssize_t version)
+{
+    int rc;
+    Py_BEGIN_CRITICAL_SECTION(registry);
+    rc = check_registry_version(interp, registry, version);
+    if (rc > 0) {
+        rc = 0;
+        if (key != NULL) {
+            rc = registry_add(registry, key);
+        }
+        if (rc == 0 && altkey != NULL) {
+            rc = registry_add(registry, altkey);
+        }
+        if (rc >= 0) {
+            /* The critical section may have been suspended while the keys
+               were added, letting another thread clear and re-stamp the
+               registry.  If so, invalidate it. */
+            int match = registry_version_matches(registry, version);
+            if (match < 0 ||
+                (match == 0 && set_registry_version(registry, -1) < 0))
+            {
+                rc = -1;
+            }
+        }
+    }
+    Py_END_CRITICAL_SECTION();
     return rc;
 }
 
@@ -494,7 +762,7 @@ static void
 show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
              PyObject *text, PyObject *category, PyObject *sourceline)
 {
-    PyObject *f_stderr;
+    PyObject *f_stderr = NULL;
     PyObject *name;
     char lineno_str[128];
 
@@ -505,8 +773,7 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         goto error;
     }
 
-    f_stderr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
-    if (f_stderr == NULL) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &f_stderr) <= 0) {
         fprintf(stderr, "lost sys.stderr\n");
         goto error;
     }
@@ -556,6 +823,7 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
     }
 
 error:
+    Py_XDECREF(f_stderr);
     Py_XDECREF(name);
     PyErr_Clear();
 }
@@ -564,7 +832,7 @@ static int
 call_show_warning(PyThreadState *tstate, PyObject *category,
                   PyObject *text, PyObject *message,
                   PyObject *filename, int lineno, PyObject *lineno_obj,
-                  PyObject *sourceline, PyObject *source)
+                  PyObject *sourceline, PyObject *source, PyObject *module)
 {
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
     PyInterpreterState *interp = tstate->interp;
@@ -595,7 +863,9 @@ call_show_warning(PyThreadState *tstate, PyObject *category,
     }
 
     msg = PyObject_CallFunctionObjArgs(warnmsg_cls, message, category,
-            filename, lineno_obj, Py_None, Py_None, source,
+            filename, lineno_obj, Py_None,
+            sourceline ? sourceline : Py_None,
+            source ? source : Py_None, module,
             NULL);
     Py_DECREF(warnmsg_cls);
     if (msg == NULL)
@@ -623,8 +893,8 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
               PyObject *source)
 {
     PyObject *key = NULL, *text = NULL, *result = NULL, *lineno_obj = NULL;
-    PyObject *item = NULL;
-    PyObject *action;
+    PyObject *item = NULL, *action = NULL;
+    PyObject *altkey = NULL, *once_registry = NULL;
     int rc;
     PyInterpreterState *interp = tstate->interp;
 
@@ -640,22 +910,9 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
         return NULL;
     }
 
-    /* Normalize module. */
-    if (module == NULL) {
-        module = normalize_module(filename);
-        if (module == NULL)
-            return NULL;
-    }
-    else
-        Py_INCREF(module);
-
     /* Normalize message. */
     Py_INCREF(message);  /* DECREF'ed in cleanup. */
-    rc = PyObject_IsInstance(message, PyExc_Warning);
-    if (rc == -1) {
-        goto cleanup;
-    }
-    if (rc == 1) {
+    if (PyObject_TypeCheck(message, (PyTypeObject *)PyExc_Warning)) {
         text = PyObject_Str(message);
         if (text == NULL)
             goto cleanup;
@@ -681,16 +938,25 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     if (key == NULL)
         goto cleanup;
 
+    /* The warnings lock is not held.  'version' ties the registry updates
+       to the filters searched; a result from filters that changed since is
+       never recorded. */
+    Py_ssize_t version;
     if ((registry != NULL) && (registry != Py_None)) {
-        rc = already_warned(interp, registry, key, 0);
+        rc = already_warned(interp, registry, key, &version);
         if (rc == -1)
             goto cleanup;
         else if (rc == 1)
             goto return_none;
         /* Else this warning hasn't been generated before. */
     }
+    else {
+        registry = NULL;
+        WarningsState *st = warnings_get_state(interp);
+        version = FT_ATOMIC_LOAD_SSIZE_ACQUIRE(st->filters_version);
+    }
 
-    action = get_filter(interp, category, text, lineno, module, &item);
+    action = get_filter(interp, category, text, lineno, module, filename, &item);
     if (action == NULL)
         goto cleanup;
 
@@ -705,55 +971,62 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
 
     /* Store in the registry that we've been here, *except* when the action
        is "always" or "all". */
-    rc = 0;
     if (!_PyUnicode_EqualToASCIIString(action, "always") && !_PyUnicode_EqualToASCIIString(action, "all")) {
-        if (registry != NULL && registry != Py_None &&
-            PyDict_SetItem(registry, key, Py_True) < 0)
+        bool is_once = _PyUnicode_EqualToASCIIString(action, "once");
+        bool is_module = _PyUnicode_EqualToASCIIString(action, "module");
+        if (!is_once && !is_module &&
+            !_PyUnicode_EqualToASCIIString(action, "default"))
         {
-            goto cleanup;
-        }
-
-        if (_PyUnicode_EqualToASCIIString(action, "once")) {
-            if (registry == NULL || registry == Py_None) {
-                registry = get_once_registry(interp);
-                if (registry == NULL)
-                    goto cleanup;
-            }
-            /* WarningsState.once_registry[(text, category)] = 1 */
-            rc = update_registry(interp, registry, text, category, 0);
-        }
-        else if (_PyUnicode_EqualToASCIIString(action, "module")) {
-            /* registry[(text, category, 0)] = 1 */
-            if (registry != NULL && registry != Py_None)
-                rc = update_registry(interp, registry, text, category, 0);
-        }
-        else if (!_PyUnicode_EqualToASCIIString(action, "default")) {
             PyErr_Format(PyExc_RuntimeError,
                         "Unrecognized action (%R) in warnings.filters:\n %R",
                         action, item);
             goto cleanup;
         }
+
+        if (is_once && registry == NULL) {
+            /* WarningsState.once_registry[(text, category)] = 1 */
+            once_registry = get_once_registry(interp);
+            if (once_registry == NULL)
+                goto cleanup;
+            altkey = _PyTuple_FromPair(text, category);
+            if (altkey == NULL)
+                goto cleanup;
+            rc = record_warning(interp, once_registry, NULL, altkey, version);
+        }
+        else if (registry != NULL) {
+            /* registry[key] = 1, and for "once" and "module" also
+               registry[(text, category)] = 1 */
+            if (is_once || is_module) {
+                altkey = _PyTuple_FromPair(text, category);
+                if (altkey == NULL)
+                    goto cleanup;
+            }
+            rc = record_warning(interp, registry, key, altkey, version);
+        }
+        else {
+            rc = 0;
+        }
+        if (rc == -1)
+            goto cleanup;
+        if (rc == 1)  /* Already warned for this module. */
+            goto return_none;
     }
 
-    if (rc == 1)  /* Already warned for this module. */
-        goto return_none;
-    if (rc == 0) {
-        if (call_show_warning(tstate, category, text, message, filename,
-                              lineno, lineno_obj, sourceline, source) < 0)
-            goto cleanup;
-    }
-    else /* if (rc == -1) */
+    if (call_show_warning(tstate, category, text, message, filename,
+                          lineno, lineno_obj, sourceline, source, module) < 0)
         goto cleanup;
 
  return_none:
     result = Py_NewRef(Py_None);
 
  cleanup:
+    Py_XDECREF(once_registry);
+    Py_XDECREF(altkey);
+    Py_XDECREF(action);
     Py_XDECREF(item);
     Py_XDECREF(key);
     Py_XDECREF(text);
     Py_XDECREF(lineno_obj);
-    Py_DECREF(module);
     Py_XDECREF(message);
     return result;  /* Py_None or NULL. */
 }
@@ -803,7 +1076,8 @@ is_filename_to_skip(PyObject *filename, PyTupleObject *skip_file_prefixes)
         for (Py_ssize_t idx = 0; idx < prefixes; ++idx)
         {
             PyObject *prefix = PyTuple_GET_ITEM(skip_file_prefixes, idx);
-            Py_ssize_t found = PyUnicode_Tailmatch(filename, prefix, 0, -1, -1);
+            Py_ssize_t found = PyUnicode_Tailmatch(filename, prefix,
+                                                   0, PY_SSIZE_T_MAX, -1);
             if (found == 1) {
                 return true;
             }
@@ -894,6 +1168,9 @@ setup_context(Py_ssize_t stack_level,
     if (f == NULL) {
         globals = interp->sysdict;
         *filename = PyUnicode_FromString("<sys>");
+        if (*filename == NULL) {
+            return 0;
+        }
         *lineno = 0;
     }
     else {
@@ -907,7 +1184,7 @@ setup_context(Py_ssize_t stack_level,
 
     /* Setup registry. */
     assert(globals != NULL);
-    assert(PyDict_Check(globals));
+    assert(PyAnyDict_Check(globals));
     int rc = PyDict_GetItemRef(globals, &_Py_ID(__warningregistry__),
                                registry);
     if (rc < 0) {
@@ -951,26 +1228,25 @@ setup_context(Py_ssize_t stack_level,
 static PyObject *
 get_category(PyObject *message, PyObject *category)
 {
-    int rc;
-
-    /* Get category. */
-    rc = PyObject_IsInstance(message, PyExc_Warning);
-    if (rc == -1)
-        return NULL;
-
-    if (rc == 1)
-        category = (PyObject*)Py_TYPE(message);
-    else if (category == NULL || category == Py_None)
-        category = PyExc_UserWarning;
+    if (PyObject_TypeCheck(message, (PyTypeObject *)PyExc_Warning)) {
+        /* Ignore the category argument. */
+        return (PyObject*)Py_TYPE(message);
+    }
+    if (category == NULL || category == Py_None) {
+        return PyExc_UserWarning;
+    }
 
     /* Validate category. */
-    rc = PyObject_IsSubclass(category, PyExc_Warning);
-    /* category is not a subclass of PyExc_Warning or
-       PyObject_IsSubclass raised an error */
-    if (rc == -1 || rc == 0) {
+    if (!PyType_Check(category)) {
         PyErr_Format(PyExc_TypeError,
-                     "category must be a Warning subclass, not '%s'",
-                     Py_TYPE(category)->tp_name);
+                     "category must be a Warning subclass, not '%T'",
+                     category);
+        return NULL;
+    }
+    if (!PyType_IsSubtype((PyTypeObject *)category, (PyTypeObject *)PyExc_Warning)) {
+        PyErr_Format(PyExc_TypeError,
+                     "category must be a Warning subclass, not class '%N'",
+                     (PyTypeObject *)category);
         return NULL;
     }
 
@@ -993,15 +1269,8 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
                        &filename, &lineno, &module, &registry))
         return NULL;
 
-#ifdef Py_GIL_DISABLED
-    WarningsState *st = warnings_get_state(tstate->interp);
-    assert(st != NULL);
-#endif
-
-    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
                         NULL, source);
-    Py_END_CRITICAL_SECTION();
     Py_DECREF(filename);
     Py_DECREF(registry);
     Py_DECREF(module);
@@ -1021,7 +1290,7 @@ warn as warnings_warn
     source: object = None
       If supplied, the destroyed object which emitted a ResourceWarning
     *
-    skip_file_prefixes: object(type='PyTupleObject *', subclass_of='&PyTuple_Type') = NULL
+    skip_file_prefixes: object(type='PyTupleObject *', subclass_of='&PyTuple_Type', c_default='NULL') = ()
       An optional tuple of module filename prefixes indicating frames to skip
       during stacklevel computations for stack frame attribution.
 
@@ -1032,7 +1301,7 @@ static PyObject *
 warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
                    Py_ssize_t stacklevel, PyObject *source,
                    PyTupleObject *skip_file_prefixes)
-/*[clinic end generated code: output=a68e0f6906c65f80 input=eb37c6a18bec4ea1]*/
+/*[clinic end generated code: output=a68e0f6906c65f80 input=2b52e8b20f508f51]*/
 {
     category = get_category(message, category);
     if (category == NULL)
@@ -1043,7 +1312,6 @@ warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
                 stacklevel = 2;
             }
         } else {
-            Py_DECREF((PyObject *)skip_file_prefixes);
             skip_file_prefixes = NULL;
         }
     }
@@ -1066,11 +1334,32 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
         return NULL;
     }
 
-    int rc = PyDict_GetItemRef(module_globals, &_Py_ID(__name__),
-                               &module_name);
-    if (rc < 0 || rc == 0) {
+    /* Prefer __spec__.name: __name__ is "__main__" for the module executed
+       as a script, but the loader can only handle its own module name. */
+    PyObject *spec;
+    if (PyDict_GetItemRef(module_globals, &_Py_ID(__spec__), &spec) < 0) {
         Py_DECREF(loader);
         return NULL;
+    }
+    module_name = NULL;
+    if (spec != NULL) {
+        int rc = PyObject_GetOptionalAttr(spec, &_Py_ID(name), &module_name);
+        Py_DECREF(spec);
+        if (rc < 0) {
+            Py_DECREF(loader);
+            return NULL;
+        }
+        if (module_name == Py_None) {
+            Py_CLEAR(module_name);
+        }
+    }
+    if (module_name == NULL) {
+        int rc = PyDict_GetItemRef(module_globals, &_Py_ID(__name__),
+                                   &module_name);
+        if (rc <= 0) {  // not found or error
+            Py_DECREF(loader);
+            return NULL;
+        }
     }
 
     /* Make sure the loader implements the optional get_source() method. */
@@ -1085,6 +1374,11 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     Py_DECREF(get_source);
     Py_DECREF(module_name);
     if (!source) {
+        /* The source line is optional: the loader can be unable to provide
+           the source of the module, for example if it is not its loader. */
+        if (PyErr_ExceptionMatches(PyExc_ImportError)) {
+            PyErr_Clear();
+        }
         return NULL;
     }
     if (source == Py_None) {
@@ -1100,8 +1394,11 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     }
 
     /* Get the source line. */
-    source_line = PyList_GetItem(source_list, lineno-1);
-    Py_XINCREF(source_line);
+    if (lineno < 1 || lineno > PyList_GET_SIZE(source_list)) {
+        Py_DECREF(source_list);
+        return NULL;
+    }
+    source_line = Py_NewRef(PyList_GET_ITEM(source_list, lineno-1));
     Py_DECREF(source_list);
     return source_line;
 }
@@ -1137,10 +1434,11 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
     }
 
     if (module_globals && module_globals != Py_None) {
-        if (!PyDict_Check(module_globals)) {
+        if (!PyAnyDict_Check(module_globals)) {
             PyErr_Format(PyExc_TypeError,
-                         "module_globals must be a dict, not '%.200s'",
-                         Py_TYPE(module_globals)->tp_name);
+                         "module_globals must be a dict or a frozendict, "
+                         "not %T",
+                         module_globals);
             return NULL;
         }
 
@@ -1150,27 +1448,20 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
         }
     }
 
-#ifdef Py_GIL_DISABLED
-    WarningsState *st = warnings_get_state(tstate->interp);
-    assert(st != NULL);
-#endif
-
-    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     returned = warn_explicit(tstate, category, message, filename, lineno,
                              mod, registry, source_line, sourceobj);
-    Py_END_CRITICAL_SECTION();
     Py_XDECREF(source_line);
     return returned;
 }
 
 /*[clinic input]
-_filters_mutated as warnings_filters_mutated
+_filters_mutated_lock_held as warnings_filters_mutated_lock_held
 
 [clinic start generated code]*/
 
 static PyObject *
-warnings_filters_mutated_impl(PyObject *module)
-/*[clinic end generated code: output=8ce517abd12b88f4 input=35ecbf08ee2491b2]*/
+warnings_filters_mutated_lock_held_impl(PyObject *module)
+/*[clinic end generated code: output=df5c84f044e856ec input=34208bf03d70e432]*/
 {
     PyInterpreterState *interp = get_current_interp();
     if (interp == NULL) {
@@ -1180,13 +1471,16 @@ warnings_filters_mutated_impl(PyObject *module)
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
-    st->filters_version++;
-    Py_END_CRITICAL_SECTION();
+    // Note that the lock must be held by the caller.
+    if (!warnings_lock_held(st)) {
+        PyErr_SetString(PyExc_RuntimeError, "warnings lock is not held");
+        return NULL;
+    }
+
+    FT_ATOMIC_ADD_SSIZE(st->filters_version, 1);
 
     Py_RETURN_NONE;
 }
-
 
 /* Function to issue a warning message; may raise an exception. */
 
@@ -1302,15 +1596,8 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
         return -1;
     }
 
-#ifdef Py_GIL_DISABLED
-    WarningsState *st = warnings_get_state(tstate->interp);
-    assert(st != NULL);
-#endif
-
-    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno,
                         module, registry, NULL, NULL);
-    Py_END_CRITICAL_SECTION();
     if (res == NULL)
         return -1;
     Py_DECREF(res);
@@ -1375,15 +1662,8 @@ PyErr_WarnExplicitFormat(PyObject *category,
         PyObject *res;
         PyThreadState *tstate = get_current_tstate();
         if (tstate != NULL) {
-#ifdef Py_GIL_DISABLED
-            WarningsState *st = warnings_get_state(tstate->interp);
-            assert(st != NULL);
-#endif
-
-            Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
             res = warn_explicit(tstate, category, message, filename, lineno,
                                 module, registry, NULL, NULL);
-            Py_END_CRITICAL_SECTION();
             Py_DECREF(message);
             if (res != NULL) {
                 Py_DECREF(res);
@@ -1406,7 +1686,8 @@ _PyErr_WarnUnawaitedAgenMethod(PyAsyncGenObject *agen, PyObject *method)
                           "coroutine method %R of %R was never awaited",
                           method, agen->ag_qualname) < 0)
     {
-        PyErr_WriteUnraisable((PyObject *)agen);
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "finalizing async generator %R", agen);
     }
     PyErr_SetRaisedException(exc);
 }
@@ -1448,14 +1729,17 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
     }
 
     if (PyErr_Occurred()) {
-        PyErr_WriteUnraisable(coro);
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "finalizing coroutine %R", coro);
     }
+
     if (!warned) {
         if (_PyErr_WarnFormat(coro, PyExc_RuntimeWarning, 1,
                               "coroutine '%S' was never awaited",
                               ((PyCoroObject *)coro)->cr_qualname) < 0)
         {
-            PyErr_WriteUnraisable(coro);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "finalizing coroutine %R", coro);
         }
     }
 }
@@ -1463,7 +1747,9 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF
     WARNINGS_WARN_EXPLICIT_METHODDEF
-    WARNINGS_FILTERS_MUTATED_METHODDEF
+    WARNINGS_FILTERS_MUTATED_LOCK_HELD_METHODDEF
+    WARNINGS_ACQUIRE_LOCK_METHODDEF
+    WARNINGS_RELEASE_LOCK_METHODDEF
     /* XXX(brett.cannon): add showwarning? */
     /* XXX(brett.cannon): Reasonable to add formatwarning? */
     {NULL, NULL}                /* sentinel */
@@ -1490,11 +1776,15 @@ warnings_module_exec(PyObject *module)
     if (PyModule_AddObjectRef(module, "_defaultaction", st->default_action) < 0) {
         return -1;
     }
+    if (PyModule_AddObjectRef(module, "_warnings_context", st->context) < 0) {
+        return -1;
+    }
     return 0;
 }
 
 
 static PyModuleDef_Slot warnings_slots[] = {
+    _Py_ABI_SLOT,
     {Py_mod_exec, warnings_module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

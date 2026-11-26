@@ -18,7 +18,7 @@ PyAPI_FUNC(void) PyErr_Fetch(PyObject **, PyObject **, PyObject **);
 PyAPI_FUNC(void) PyErr_Restore(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyErr_GetRaisedException(void);
 PyAPI_FUNC(void) PyErr_SetRaisedException(PyObject *);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 11)
 PyAPI_FUNC(PyObject*) PyErr_GetHandledException(void);
 PyAPI_FUNC(void) PyErr_SetHandledException(PyObject *);
 #endif
@@ -91,6 +91,9 @@ PyAPI_DATA(PyObject *) PyExc_EOFError;
 PyAPI_DATA(PyObject *) PyExc_FloatingPointError;
 PyAPI_DATA(PyObject *) PyExc_OSError;
 PyAPI_DATA(PyObject *) PyExc_ImportError;
+#if !defined(Py_LIMITED_API)
+PyAPI_DATA(PyObject *) PyExc_ImportCycleError;
+#endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03060000
 PyAPI_DATA(PyObject *) PyExc_ModuleNotFoundError;
 #endif
@@ -236,7 +239,7 @@ PyAPI_FUNC(void) PyErr_WriteUnraisable(PyObject *);
 /* In signalmodule.c */
 PyAPI_FUNC(int) PyErr_CheckSignals(void);
 PyAPI_FUNC(void) PyErr_SetInterrupt(void);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 10)
 PyAPI_FUNC(int) PyErr_SetInterruptEx(int signum);
 #endif
 

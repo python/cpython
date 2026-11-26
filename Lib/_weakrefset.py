@@ -8,32 +8,11 @@ from types import GenericAlias
 __all__ = ['WeakSet']
 
 
-class _IterationGuard:
-    # This context manager registers itself in the current iterators of the
-    # weak container, such as to delay all removals until the context manager
-    # exits.
-    # This technique should be relatively thread-safe (since sets are).
-
-    def __init__(self, weakcontainer):
-        # Don't create cycles
-        self.weakcontainer = ref(weakcontainer)
-
-    def __enter__(self):
-        w = self.weakcontainer()
-        if w is not None:
-            w._iterating.add(self)
-        return self
-
-    def __exit__(self, e, t, b):
-        w = self.weakcontainer()
-        if w is not None:
-            s = w._iterating
-            s.remove(self)
-            if not s:
-                w._commit_removals()
-
-
 class WeakSet:
+    # Slots give __getstate__() a uniform (dict, slots) shape for __reduce__.
+    # __dict__ carries user attributes; add() needs __weakref__.
+    __slots__ = '__dict__', '__weakref__', 'data', '_remove'
+
     def __init__(self, data=None):
         self.data = set()
 
@@ -65,7 +44,14 @@ class WeakSet:
         return wr in self.data
 
     def __reduce__(self):
-        return self.__class__, (list(self),), self.__getstate__()
+        # Pickle the elements as weak references; data and _remove are
+        # rebuilt by the reconstructor.  Copying shares the elements.
+        dict, slots = self.__getstate__()
+        for name in ('data', '_remove'):
+            slots.pop(name, None)
+        state = (dict, slots) if dict or slots else None
+        return (_restore_weakset, (self.__class__, [ref(item) for item in self]),
+                state)
 
     def add(self, item):
         self.data.add(ref(item, self._remove))
@@ -170,3 +156,10 @@ class WeakSet:
         return repr(self.data)
 
     __class_getitem__ = classmethod(GenericAlias)
+
+
+def _restore_weakset(cls, refs):
+    self = cls.__new__(cls)
+    WeakSet.__init__(self)
+    self.update(item for r in refs for item in [r()] if item is not None)
+    return self

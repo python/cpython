@@ -95,15 +95,16 @@ perform some operation on a file. ::
    See :ref:`arg-parsing-string-and-buffers` for a description of this macro.
 
 Setting :c:member:`PyConfig.program_name` should be called before
-:c:func:`Py_InitializeFromConfig` to inform the interpreter about paths to Python run-time
-libraries.  Next, the Python interpreter is initialized with
-:c:func:`Py_Initialize`, followed by the execution of a hard-coded Python script
-that prints the date and time.  Afterwards, the :c:func:`Py_FinalizeEx` call shuts
-the interpreter down, followed by the end of the program.  In a real program,
-you may want to get the Python script from another source, perhaps a text-editor
-routine, a file, or a database.  Getting the Python code from a file can better
-be done by using the :c:func:`PyRun_SimpleFile` function, which saves you the
-trouble of allocating memory space and loading the file contents.
+:c:func:`Py_InitializeFromConfig` to inform the interpreter about paths to
+Python run-time libraries.  Next, the Python interpreter is initialized with
+:c:func:`Py_InitializeFromConfig`, followed by the execution of a hard-coded
+Python script that prints the date and time.  Afterwards, the
+:c:func:`Py_FinalizeEx` call shuts the interpreter down, followed by the end of
+the program.  In a real program, you may want to get the Python script from
+another source, perhaps a text-editor routine, a file, or a database.  Getting
+the Python code from a file can better be done by using the
+:c:func:`PyRun_SimpleFile` function, which saves you the trouble of allocating
+memory space and loading the file contents.
 
 
 .. _lower-level-embedding:
@@ -196,8 +197,8 @@ interesting part with respect to embedding Python starts with ::
 
 After initializing the interpreter, the script is loaded using
 :c:func:`PyImport_Import`.  This routine needs a Python string as its argument,
-which is constructed using the :c:func:`PyUnicode_FromString` data conversion
-routine. ::
+which is constructed using the :c:func:`PyUnicode_DecodeFSDefault` data
+conversion routine. ::
 
    pFunc = PyObject_GetAttrString(pModule, argv[2]);
    /* pFunc is a new reference */
@@ -245,21 +246,23 @@ Python extension.  For example::
        return PyLong_FromLong(numargs);
    }
 
-   static PyMethodDef EmbMethods[] = {
+   static PyMethodDef emb_module_methods[] = {
        {"numargs", emb_numargs, METH_VARARGS,
         "Return the number of arguments received by the process."},
        {NULL, NULL, 0, NULL}
    };
 
-   static PyModuleDef EmbModule = {
-       PyModuleDef_HEAD_INIT, "emb", NULL, -1, EmbMethods,
-       NULL, NULL, NULL, NULL
+   static struct PyModuleDef emb_module = {
+       .m_base = PyModuleDef_HEAD_INIT,
+       .m_name = "emb",
+       .m_size = 0,
+       .m_methods = emb_module_methods,
    };
 
    static PyObject*
    PyInit_emb(void)
    {
-       return PyModule_Create(&EmbModule);
+       return PyModuleDef_Init(&emb_module);
    }
 
 Insert the above code just above the :c:func:`main` function. Also, insert the

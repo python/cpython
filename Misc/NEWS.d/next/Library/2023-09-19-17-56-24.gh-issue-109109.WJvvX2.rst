@@ -1,5 +1,0 @@
-You can now get the raw TLS certificate chains from TLS connections via
-:meth:`ssl.SSLSocket.get_verified_chain` and
-:meth:`ssl.SSLSocket.get_unverified_chain` methods.
-
-Contributed by Mateusz Nowak.

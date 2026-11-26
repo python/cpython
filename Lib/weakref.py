@@ -19,9 +19,10 @@ from _weakref import (
      ReferenceType,
      _remove_dead_weakref)
 
-from _weakrefset import WeakSet, _IterationGuard
+from _weakrefset import WeakSet
 
 import _collections_abc  # Import after _weakref to avoid circular import.
+import copyreg
 import sys
 import itertools
 
@@ -34,6 +35,12 @@ __all__ = ["ref", "proxy", "getweakrefcount", "getweakrefs",
 
 
 _collections_abc.MutableSet.register(WeakSet)
+
+
+# Pickle reconstructs a reference to a dead object as this singleton -- all
+# dead references are interchangeable.  Born dead: nothing else holds the set.
+_dead_ref = ref(set())
+
 
 class WeakMethod(ref):
     """
@@ -89,12 +96,34 @@ class WeakMethod(ref):
     __hash__ = ref.__hash__
 
 
+# Pickling support for weak methods.  A WeakMethod is reduced to a weak
+# reference to its instance; the bound method is rebuilt on unpickling by
+# looking the function up on the instance.  The callback is not preserved.
+
+def _restore_weakmethod(obj_ref, name):
+    return WeakMethod(getattr(obj_ref(), name))
+
+
+def _reduce_weakmethod(self):
+    meth = self()
+    if meth is None:
+        raise TypeError(
+            "cannot pickle a weak reference to a dead object")
+    return (_restore_weakmethod, (ref(meth.__self__), meth.__func__.__name__))
+
+copyreg.pickle(WeakMethod, _reduce_weakmethod)
+
+
 class WeakValueDictionary(_collections_abc.MutableMapping):
     """Mapping class that references values weakly.
 
     Entries in the dictionary will be discarded when no strong
     reference to the value exists anymore
     """
+    # Slots give __getstate__() a uniform (dict, slots) shape for __reduce__.
+    # __dict__ carries user attributes; the removal callback needs __weakref__.
+    __slots__ = '__dict__', '__weakref__', 'data', '_remove'
+
     # We inherit the constructor without worrying about the input
     # dictionary; since it uses our .update() method, we get the right
     # checks (if the other dictionary is a WeakValueDictionary,
@@ -105,34 +134,14 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         def remove(wr, selfref=ref(self), _atomic_removal=_remove_dead_weakref):
             self = selfref()
             if self is not None:
-                if self._iterating:
-                    self._pending_removals.append(wr.key)
-                else:
-                    # Atomic removal is necessary since this function
-                    # can be called asynchronously by the GC
-                    _atomic_removal(self.data, wr.key)
+                # Atomic removal is necessary since this function
+                # can be called asynchronously by the GC
+                _atomic_removal(self.data, wr.key)
         self._remove = remove
-        # A list of keys to be removed
-        self._pending_removals = []
-        self._iterating = set()
         self.data = {}
         self.update(other, **kw)
 
-    def _commit_removals(self, _atomic_removal=_remove_dead_weakref):
-        pop = self._pending_removals.pop
-        d = self.data
-        # We shouldn't encounter any KeyError, because this method should
-        # always be called *before* mutating the dict.
-        while True:
-            try:
-                key = pop()
-            except IndexError:
-                return
-            _atomic_removal(d, key)
-
     def __getitem__(self, key):
-        if self._pending_removals:
-            self._commit_removals()
         o = self.data[key]()
         if o is None:
             raise KeyError(key)
@@ -140,18 +149,12 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
             return o
 
     def __delitem__(self, key):
-        if self._pending_removals:
-            self._commit_removals()
         del self.data[key]
 
     def __len__(self):
-        if self._pending_removals:
-            self._commit_removals()
         return len(self.data)
 
     def __contains__(self, key):
-        if self._pending_removals:
-            self._commit_removals()
         try:
             o = self.data[key]()
         except KeyError:
@@ -162,38 +165,38 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         return "<%s at %#x>" % (self.__class__.__name__, id(self))
 
     def __setitem__(self, key, value):
-        if self._pending_removals:
-            self._commit_removals()
         self.data[key] = KeyedRef(value, self._remove, key)
 
     def copy(self):
-        if self._pending_removals:
-            self._commit_removals()
         new = WeakValueDictionary()
-        with _IterationGuard(self):
-            for key, wr in self.data.items():
-                o = wr()
-                if o is not None:
-                    new[key] = o
+        for key, wr in self.data.copy().items():
+            o = wr()
+            if o is not None:
+                new[key] = o
         return new
 
     __copy__ = copy
 
     def __deepcopy__(self, memo):
         from copy import deepcopy
-        if self._pending_removals:
-            self._commit_removals()
         new = self.__class__()
-        with _IterationGuard(self):
-            for key, wr in self.data.items():
-                o = wr()
-                if o is not None:
-                    new[deepcopy(key, memo)] = o
+        for key, wr in self.data.copy().items():
+            o = wr()
+            if o is not None:
+                new[deepcopy(key, memo)] = o
         return new
 
+    def __reduce__(self):
+        # Pickle the values as weak references; data and _remove are rebuilt
+        # by the reconstructor.  Copying uses __copy__/__deepcopy__ instead.
+        dict, slots = self.__getstate__()
+        for name in ('data', '_remove'):
+            slots.pop(name, None)
+        state = (dict, slots) if dict or slots else None
+        items = [(key, ref(o)) for key, o in self.items()]
+        return (_restore_weakvaluedict, (self.__class__, items), state)
+
     def get(self, key, default=None):
-        if self._pending_removals:
-            self._commit_removals()
         try:
             wr = self.data[key]
         except KeyError:
@@ -207,21 +210,15 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
                 return o
 
     def items(self):
-        if self._pending_removals:
-            self._commit_removals()
-        with _IterationGuard(self):
-            for k, wr in self.data.items():
-                v = wr()
-                if v is not None:
-                    yield k, v
+        for k, wr in self.data.copy().items():
+            v = wr()
+            if v is not None:
+                yield k, v
 
     def keys(self):
-        if self._pending_removals:
-            self._commit_removals()
-        with _IterationGuard(self):
-            for k, wr in self.data.items():
-                if wr() is not None:
-                    yield k
+        for k, wr in self.data.copy().items():
+            if wr() is not None:
+                yield k
 
     __iter__ = keys
 
@@ -235,23 +232,15 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         keep the values around longer than needed.
 
         """
-        if self._pending_removals:
-            self._commit_removals()
-        with _IterationGuard(self):
-            yield from self.data.values()
+        yield from self.data.copy().values()
 
     def values(self):
-        if self._pending_removals:
-            self._commit_removals()
-        with _IterationGuard(self):
-            for wr in self.data.values():
-                obj = wr()
-                if obj is not None:
-                    yield obj
+        for wr in self.data.copy().values():
+            obj = wr()
+            if obj is not None:
+                yield obj
 
     def popitem(self):
-        if self._pending_removals:
-            self._commit_removals()
         while True:
             key, wr = self.data.popitem()
             o = wr()
@@ -259,8 +248,6 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
                 return key, o
 
     def pop(self, key, *args):
-        if self._pending_removals:
-            self._commit_removals()
         try:
             o = self.data.pop(key)()
         except KeyError:
@@ -279,16 +266,12 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         except KeyError:
             o = None
         if o is None:
-            if self._pending_removals:
-                self._commit_removals()
             self.data[key] = KeyedRef(default, self._remove, key)
             return default
         else:
             return o
 
     def update(self, other=None, /, **kwargs):
-        if self._pending_removals:
-            self._commit_removals()
         d = self.data
         if other is not None:
             if not hasattr(other, "items"):
@@ -308,9 +291,7 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
         keep the values around longer than needed.
 
         """
-        if self._pending_removals:
-            self._commit_removals()
-        return list(self.data.values())
+        return list(self.data.copy().values())
 
     def __ior__(self, other):
         self.update(other)
@@ -330,6 +311,16 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
             c.update(self)
             return c
         return NotImplemented
+
+
+def _restore_weakvaluedict(cls, items):
+    self = cls.__new__(cls)
+    WeakValueDictionary.__init__(self)
+    for key, r in items:
+        o = r()
+        if o is not None:
+            self[key] = o
+    return self
 
 
 class KeyedRef(ref):
@@ -363,63 +354,30 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
     can be especially useful with objects that override attribute
     accesses.
     """
+    # See the comment on WeakValueDictionary.__slots__.
+    __slots__ = '__dict__', '__weakref__', 'data', '_remove'
 
     def __init__(self, dict=None):
         self.data = {}
         def remove(k, selfref=ref(self)):
             self = selfref()
             if self is not None:
-                if self._iterating:
-                    self._pending_removals.append(k)
-                else:
-                    try:
-                        del self.data[k]
-                    except KeyError:
-                        pass
+                try:
+                    del self.data[k]
+                except KeyError:
+                    pass
         self._remove = remove
-        # A list of dead weakrefs (keys to be removed)
-        self._pending_removals = []
-        self._iterating = set()
-        self._dirty_len = False
         if dict is not None:
             self.update(dict)
 
-    def _commit_removals(self):
-        # NOTE: We don't need to call this method before mutating the dict,
-        # because a dead weakref never compares equal to a live weakref,
-        # even if they happened to refer to equal objects.
-        # However, it means keys may already have been removed.
-        pop = self._pending_removals.pop
-        d = self.data
-        while True:
-            try:
-                key = pop()
-            except IndexError:
-                return
-
-            try:
-                del d[key]
-            except KeyError:
-                pass
-
-    def _scrub_removals(self):
-        d = self.data
-        self._pending_removals = [k for k in self._pending_removals if k in d]
-        self._dirty_len = False
-
     def __delitem__(self, key):
-        self._dirty_len = True
         del self.data[ref(key)]
 
     def __getitem__(self, key):
         return self.data[ref(key)]
 
     def __len__(self):
-        if self._dirty_len and self._pending_removals:
-            # self._pending_removals may still contain keys which were
-            # explicitly removed, we have to scrub them (see issue #21173).
-            self._scrub_removals()
-        return len(self.data) - len(self._pending_removals)
+        return len(self.data)
 
     def __repr__(self):
         return "<%s at %#x>" % (self.__class__.__name__, id(self))
@@ -429,11 +387,10 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
 
     def copy(self):
         new = WeakKeyDictionary()
-        with _IterationGuard(self):
-            for key, value in self.data.items():
-                o = key()
-                if o is not None:
-                    new[o] = value
+        for key, value in self.data.copy().items():
+            o = key()
+            if o is not None:
+                new[o] = value
         return new
 
     __copy__ = copy
@@ -441,12 +398,21 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
     def __deepcopy__(self, memo):
         from copy import deepcopy
         new = self.__class__()
-        with _IterationGuard(self):
-            for key, value in self.data.items():
-                o = key()
-                if o is not None:
-                    new[o] = deepcopy(value, memo)
+        for key, value in self.data.copy().items():
+            o = key()
+            if o is not None:
+                new[o] = deepcopy(value, memo)
         return new
+
+    def __reduce__(self):
+        # Pickle the keys as weak references; data and _remove are rebuilt
+        # by the reconstructor.  Copying uses __copy__/__deepcopy__ instead.
+        dict, slots = self.__getstate__()
+        for name in ('data', '_remove'):
+            slots.pop(name, None)
+        state = (dict, slots) if dict or slots else None
+        items = [(ref(key), value) for key, value in self.items()]
+        return (_restore_weakkeydict, (self.__class__, items), state)
 
     def get(self, key, default=None):
         return self.data.get(ref(key),default)
@@ -459,26 +425,23 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         return wr in self.data
 
     def items(self):
-        with _IterationGuard(self):
-            for wr, value in self.data.items():
-                key = wr()
-                if key is not None:
-                    yield key, value
+        for wr, value in self.data.copy().items():
+            key = wr()
+            if key is not None:
+                yield key, value
 
     def keys(self):
-        with _IterationGuard(self):
-            for wr in self.data:
-                obj = wr()
-                if obj is not None:
-                    yield obj
+        for wr in self.data.copy():
+            obj = wr()
+            if obj is not None:
+                yield obj
 
     __iter__ = keys
 
     def values(self):
-        with _IterationGuard(self):
-            for wr, value in self.data.items():
-                if wr() is not None:
-                    yield value
+        for wr, value in self.data.copy().items():
+            if wr() is not None:
+                yield value
 
     def keyrefs(self):
         """Return a list of weak references to the keys.
@@ -493,7 +456,6 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         return list(self.data)
 
     def popitem(self):
-        self._dirty_len = True
         while True:
             key, value = self.data.popitem()
             o = key()
@@ -501,21 +463,22 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
                 return o, value
 
     def pop(self, key, *args):
-        self._dirty_len = True
         return self.data.pop(ref(key), *args)
 
     def setdefault(self, key, default=None):
         return self.data.setdefault(ref(key, self._remove),default)
 
     def update(self, dict=None, /, **kwargs):
+        if kwargs:
+            msg = ("Keyword arguments are not supported: "
+                   "cannot create weak reference to 'str' object")
+            raise TypeError(msg)
         d = self.data
         if dict is not None:
             if not hasattr(dict, "items"):
                 dict = type({})(dict)
             for key, value in dict.items():
                 d[ref(key, self._remove)] = value
-        if len(kwargs):
-            self.update(kwargs)
 
     def __ior__(self, other):
         self.update(other)
@@ -535,6 +498,16 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
             c.update(self)
             return c
         return NotImplemented
+
+
+def _restore_weakkeydict(cls, items):
+    self = cls.__new__(cls)
+    WeakKeyDictionary.__init__(self)
+    for r, value in items:
+        key = r()
+        if key is not None:
+            self[key] = value
+    return self
 
 
 class finalize:

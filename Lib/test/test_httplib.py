@@ -4,8 +4,10 @@ from http import client, HTTPStatus
 import io
 import itertools
 import os
+import pickle
 import array
 import re
+import select
 import socket
 import threading
 
@@ -16,6 +18,7 @@ TestCase = unittest.TestCase
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
+from test.support import threading_helper
 
 support.requires_working_socket(module=True)
 
@@ -125,6 +128,7 @@ class FakeSocketHTTPConnection(client.HTTPConnection):
         super().__init__('example.com')
         self.fake_socket_args = args
         self._create_connection = self.create_connection
+        self._select = self.fake_select
 
     def connect(self):
         """Count the number of times connect() is invoked"""
@@ -133,6 +137,23 @@ class FakeSocketHTTPConnection(client.HTTPConnection):
 
     def create_connection(self, *pos, **kw):
         return FakeSocket(*self.fake_socket_args)
+
+    @staticmethod
+    def fake_select(rlist, wlist, xlist, timeout=None):
+        """Real select.select() won't work on our fake socket"""
+        # Only needs to support read select for current tests
+        ret = []
+        for r in rlist:
+            assert isinstance(r, FakeSocket)
+            if r.data and not hasattr(r, 'file'):
+                # Has data to read, hasn't called makefile() yet
+                ret.append(r)
+            elif getattr(r, 'file', None) and not r.file_closed:
+                if r.file.read(1):
+                    r.file.seek(r.file.tell() - 1)
+                    ret.append(r)
+        return ret, [], []
+
 
 class HeaderTests(TestCase):
     def test_auto_headers(self):
@@ -179,7 +200,7 @@ class HeaderTests(TestCase):
         # Here, we're testing that methods expecting a body get a
         # content-length set to zero if the body is empty (either None or '')
         bodies = (None, '')
-        methods_with_body = ('PUT', 'POST', 'PATCH')
+        methods_with_body = ('PUT', 'POST', 'PATCH', 'QUERY')
         for method, body in itertools.product(methods_with_body, bodies):
             conn = client.HTTPConnection('example.com')
             conn.sock = FakeSocket(None)
@@ -273,7 +294,7 @@ class HeaderTests(TestCase):
         sock = FakeSocket('')
         conn.sock = sock
         conn.request('GET', '/foo')
-        self.assertTrue(sock.data.startswith(expected))
+        self.assertStartsWith(sock.data, expected)
 
         expected = b'GET /foo HTTP/1.1\r\nHost: [2001:102A::]\r\n' \
                    b'Accept-Encoding: identity\r\n\r\n'
@@ -281,7 +302,7 @@ class HeaderTests(TestCase):
         sock = FakeSocket('')
         conn.sock = sock
         conn.request('GET', '/foo')
-        self.assertTrue(sock.data.startswith(expected))
+        self.assertStartsWith(sock.data, expected)
 
         expected = b'GET /foo HTTP/1.1\r\nHost: [fe80::]\r\n' \
                    b'Accept-Encoding: identity\r\n\r\n'
@@ -289,7 +310,7 @@ class HeaderTests(TestCase):
         sock = FakeSocket('')
         conn.sock = sock
         conn.request('GET', '/foo')
-        self.assertTrue(sock.data.startswith(expected))
+        self.assertStartsWith(sock.data, expected)
 
         expected = b'GET /foo HTTP/1.1\r\nHost: [fe80::]:81\r\n' \
                    b'Accept-Encoding: identity\r\n\r\n'
@@ -297,7 +318,7 @@ class HeaderTests(TestCase):
         sock = FakeSocket('')
         conn.sock = sock
         conn.request('GET', '/foo')
-        self.assertTrue(sock.data.startswith(expected))
+        self.assertStartsWith(sock.data, expected)
 
     def test_malformed_headers_coped_with(self):
         # Issue 19996
@@ -335,9 +356,9 @@ class HeaderTests(TestCase):
         self.assertIsNotNone(resp.getheader('obs-text'))
         self.assertIn('obs-text', resp.msg)
         for folded in (resp.getheader('obs-fold'), resp.msg['obs-fold']):
-            self.assertTrue(folded.startswith('text'))
+            self.assertStartsWith(folded, 'text')
             self.assertIn(' folded with space', folded)
-            self.assertTrue(folded.endswith('folded with tab'))
+            self.assertEndsWith(folded, 'folded with tab')
 
     def test_invalid_headers(self):
         conn = client.HTTPConnection('example.com')
@@ -369,6 +390,56 @@ class HeaderTests(TestCase):
                 with self.assertRaisesRegex(ValueError, 'Invalid header'):
                     conn.putheader(name, value)
 
+    def test_invalid_tunnel_headers(self):
+        cases = (
+            ('Invalid\r\nName', 'ValidValue'),
+            ('Invalid\rName', 'ValidValue'),
+            ('Invalid\nName', 'ValidValue'),
+            ('\r\nInvalidName', 'ValidValue'),
+            ('\rInvalidName', 'ValidValue'),
+            ('\nInvalidName', 'ValidValue'),
+            (' InvalidName', 'ValidValue'),
+            ('\tInvalidName', 'ValidValue'),
+            ('Invalid:Name', 'ValidValue'),
+            (':InvalidName', 'ValidValue'),
+            ('ValidName', 'Invalid\r\nValue'),
+            ('ValidName', 'Invalid\rValue'),
+            ('ValidName', 'Invalid\nValue'),
+            ('ValidName', 'InvalidValue\r\n'),
+            ('ValidName', 'InvalidValue\r'),
+            ('ValidName', 'InvalidValue\n'),
+        )
+        for name, value in cases:
+            with self.subTest((name, value)):
+                conn = client.HTTPConnection('example.com')
+                conn.set_tunnel('tunnel', headers={
+                    name: value
+                })
+                conn.sock = FakeSocket('')
+                with self.assertRaisesRegex(ValueError, 'Invalid header'):
+                    conn._tunnel()  # Called in .connect()
+
+    def test_invalid_tunnel_host(self):
+        cases = (
+            'invalid\r.host',
+            '\ninvalid.host',
+            'invalid.host\r\n',
+            'invalid.host\x00',
+            'invalid host',
+            # The IDNA codec normalizes these to an ASCII space
+            'invalid\xa0host',
+            'invalid\u3000host',
+            # ... and this one to a space and a combining character
+            'invalid\xa8host',
+        )
+        for tunnel_host in cases:
+            with self.subTest(tunnel_host):
+                conn = client.HTTPConnection('example.com')
+                conn.set_tunnel(tunnel_host)
+                conn.sock = FakeSocket('')
+                with self.assertRaisesRegex(ValueError, 'Tunnel host can\'t contain control characters'):
+                    conn._tunnel()  # Called in .connect()
+
     def test_headers_debuglevel(self):
         body = (
             b'HTTP/1.1 200 OK\r\n'
@@ -386,6 +457,81 @@ class HeaderTests(TestCase):
         self.assertEqual(lines[2], "header: Second: val1")
         self.assertEqual(lines[3], "header: Second: val2")
 
+    def test_max_response_headers(self):
+        max_headers = client._MAXHEADERS + 20
+        headers = [f"Name{i}: Value{i}".encode() for i in range(max_headers)]
+        body = b"HTTP/1.1 200 OK\r\n" + b"\r\n".join(headers)
+
+        with self.subTest(max_headers=None):
+            sock = FakeSocket(body)
+            resp = client.HTTPResponse(sock)
+            with self.assertRaisesRegex(
+                client.HTTPException, f"got more than 100 headers"
+            ):
+                resp.begin()
+
+        with self.subTest(max_headers=max_headers):
+            sock = FakeSocket(body)
+            resp = client.HTTPResponse(sock)
+            resp.begin(_max_headers=max_headers)
+
+    def test_max_connection_headers(self):
+        max_headers = client._MAXHEADERS + 20
+        headers = (
+            f"Name{i}: Value{i}".encode() for i in range(max_headers - 1)
+        )
+        body = (
+            b"HTTP/1.1 200 OK\r\n"
+            + b"\r\n".join(headers)
+            + b"\r\nContent-Length: 12\r\n\r\nDummy body\r\n"
+        )
+
+        with self.subTest(max_headers=None):
+            conn = client.HTTPConnection("example.com")
+            conn.sock = FakeSocket(body)
+            conn.request("GET", "/")
+            with self.assertRaisesRegex(
+                client.HTTPException, f"got more than {client._MAXHEADERS} headers"
+            ):
+                response = conn.getresponse()
+
+        with self.subTest(max_headers=None):
+            conn = client.HTTPConnection(
+                "example.com", max_response_headers=max_headers
+            )
+            conn.sock = FakeSocket(body)
+            conn.request("GET", "/")
+            response = conn.getresponse()
+            response.read()
+
+    def test_max_connection_trailers(self):
+        # max_response_headers also limits trailer lines of a chunked
+        # response, which are read and discarded by read().
+        max_trailers = client._MAXHEADERS + 20
+        trailer_lines = "".join(
+            f"X-Trailer{i}: {i}\r\n" for i in range(max_trailers - 1)
+        )
+        body = chunked_start + last_chunk + trailer_lines + chunked_end
+
+        with self.subTest(max_response_headers=None):
+            conn = client.HTTPConnection("example.com")
+            conn.sock = FakeSocket(body)
+            conn.request("GET", "/")
+            response = conn.getresponse()
+            with self.assertRaisesRegex(
+                client.HTTPException,
+                f"got more than {client._MAXHEADERS} trailers",
+            ):
+                response.read()
+
+        with self.subTest(max_response_headers=max_trailers):
+            conn = client.HTTPConnection(
+                "example.com", max_response_headers=max_trailers
+            )
+            conn.sock = FakeSocket(body)
+            conn.request("GET", "/")
+            response = conn.getresponse()
+            self.assertEqual(response.read(), chunked_expected)
 
 class HttpMethodTests(TestCase):
     def test_invalid_method_names(self):
@@ -407,6 +553,34 @@ class HttpMethodTests(TestCase):
                 conn = client.HTTPConnection('example.com')
                 conn.sock = FakeSocket(None)
                 conn.request(method=method, url="/")
+
+    def test_query_request(self):
+        # QUERY (RFC 10008) is sent with a body, like PUT/POST/PATCH.
+        conn = client.HTTPConnection('example.com')
+        conn.sock = FakeSocket(None)
+        conn.request('QUERY', '/contacts', body='name=python',
+                     headers={'Content-Type': 'application/x-www-form-urlencoded'})
+        self.assertEqual(conn.sock.data,
+                         b'QUERY /contacts HTTP/1.1\r\n'
+                         b'Host: example.com\r\n'
+                         b'Accept-Encoding: identity\r\n'
+                         b'Content-Length: 11\r\n'
+                         b'Content-Type: application/x-www-form-urlencoded\r\n'
+                         b'\r\n'
+                         b'name=python')
+
+    def test_query_request_no_body(self):
+        # A QUERY without a body still gets Content-Length: 0, since some
+        # servers respond with 411 otherwise.
+        conn = client.HTTPConnection('example.com')
+        conn.sock = FakeSocket(None)
+        conn.request('QUERY', '/contacts')
+        self.assertEqual(conn.sock.data,
+                         b'QUERY /contacts HTTP/1.1\r\n'
+                         b'Host: example.com\r\n'
+                         b'Accept-Encoding: identity\r\n'
+                         b'Content-Length: 0\r\n'
+                         b'\r\n')
 
 
 class TransferEncodingTest(TestCase):
@@ -594,8 +768,9 @@ class BasicTest(TestCase):
             CONTINUE = 100, 'Continue', 'Request received, please continue'
             SWITCHING_PROTOCOLS = (101, 'Switching Protocols',
                     'Switching to new protocol; obey Upgrade header')
-            PROCESSING = 102, 'Processing'
-            EARLY_HINTS = 103, 'Early Hints'
+            PROCESSING = 102, 'Processing', 'Server is processing the request'
+            EARLY_HINTS = (103, 'Early Hints',
+                'Headers sent to prepare for the response')
             # success
             OK = 200, 'OK', 'Request fulfilled, document follows'
             CREATED = 201, 'Created', 'Document created, URL follows'
@@ -606,9 +781,11 @@ class BasicTest(TestCase):
             NO_CONTENT = 204, 'No Content', 'Request fulfilled, nothing follows'
             RESET_CONTENT = 205, 'Reset Content', 'Clear input form for further input'
             PARTIAL_CONTENT = 206, 'Partial Content', 'Partial content follows'
-            MULTI_STATUS = 207, 'Multi-Status'
-            ALREADY_REPORTED = 208, 'Already Reported'
-            IM_USED = 226, 'IM Used'
+            MULTI_STATUS = (207, 'Multi-Status',
+                'Response contains multiple statuses in the body')
+            ALREADY_REPORTED = (208, 'Already Reported',
+                'Operation has already been reported')
+            IM_USED = 226, 'IM Used', 'Request completed using instance manipulations'
             # redirection
             MULTIPLE_CHOICES = (300, 'Multiple Choices',
                 'Object has several resources -- see URI list')
@@ -665,15 +842,19 @@ class BasicTest(TestCase):
             EXPECTATION_FAILED = (417, 'Expectation Failed',
                 'Expect condition could not be satisfied')
             IM_A_TEAPOT = (418, 'I\'m a Teapot',
-                'Server refuses to brew coffee because it is a teapot.')
+                'Server refuses to brew coffee because it is a teapot')
             MISDIRECTED_REQUEST = (421, 'Misdirected Request',
                 'Server is not able to produce a response')
-            UNPROCESSABLE_CONTENT = 422, 'Unprocessable Content'
+            UNPROCESSABLE_CONTENT = (422, 'Unprocessable Content',
+                'Server is not able to process the contained instructions')
             UNPROCESSABLE_ENTITY = UNPROCESSABLE_CONTENT
-            LOCKED = 423, 'Locked'
-            FAILED_DEPENDENCY = 424, 'Failed Dependency'
-            TOO_EARLY = 425, 'Too Early'
-            UPGRADE_REQUIRED = 426, 'Upgrade Required'
+            LOCKED = 423, 'Locked', 'Resource of a method is locked'
+            FAILED_DEPENDENCY = (424, 'Failed Dependency',
+                'Dependent action of the request failed')
+            TOO_EARLY = (425, 'Too Early',
+                'Server refuses to process a request that might be replayed')
+            UPGRADE_REQUIRED = (426, 'Upgrade Required',
+                'Server refuses to perform the request using the current protocol')
             PRECONDITION_REQUIRED = (428, 'Precondition Required',
                 'The origin server requires the request to be conditional')
             TOO_MANY_REQUESTS = (429, 'Too Many Requests',
@@ -700,10 +881,14 @@ class BasicTest(TestCase):
                 'The gateway server did not receive a timely response')
             HTTP_VERSION_NOT_SUPPORTED = (505, 'HTTP Version Not Supported',
                 'Cannot fulfill request')
-            VARIANT_ALSO_NEGOTIATES = 506, 'Variant Also Negotiates'
-            INSUFFICIENT_STORAGE = 507, 'Insufficient Storage'
-            LOOP_DETECTED = 508, 'Loop Detected'
-            NOT_EXTENDED = 510, 'Not Extended'
+            VARIANT_ALSO_NEGOTIATES = (506, 'Variant Also Negotiates',
+                'Server has an internal configuration error')
+            INSUFFICIENT_STORAGE = (507, 'Insufficient Storage',
+                'Server is not able to store the representation')
+            LOOP_DETECTED = (508, 'Loop Detected',
+                'Server encountered an infinite loop while processing a request')
+            NOT_EXTENDED = (510, 'Not Extended',
+                'Request does not meet the resource access policy')
             NETWORK_AUTHENTICATION_REQUIRED = (511,
                 'Network Authentication Required',
                 'The client needs to authenticate to gain network access')
@@ -989,8 +1174,7 @@ class BasicTest(TestCase):
             sock = FakeSocket(body)
             conn.sock = sock
             conn.request('GET', '/foo', body)
-            self.assertTrue(sock.data.startswith(expected), '%r != %r' %
-                    (sock.data[:len(expected)], expected))
+            self.assertStartsWith(sock.data, expected)
 
     def test_send(self):
         expected = b'this is a test this is only a test'
@@ -1080,6 +1264,25 @@ class BasicTest(TestCase):
         resp.begin()
         self.assertEqual(resp.read(), expected)
         resp.close()
+
+        # Explicit full read
+        for n in (-123, -1, None):
+            with self.subTest('full read', n=n):
+                sock = FakeSocket(chunked_start + last_chunk + chunked_end)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertTrue(resp.chunked)
+                self.assertEqual(resp.read(n), expected)
+                resp.close()
+
+        # Read first chunk
+        with self.subTest('read1(-1)'):
+            sock = FakeSocket(chunked_start + last_chunk + chunked_end)
+            resp = client.HTTPResponse(sock, method="GET")
+            resp.begin()
+            self.assertTrue(resp.chunked)
+            self.assertEqual(resp.read1(-1), b"hello worl")
+            resp.close()
 
         # Various read sizes
         for n in range(1, 12):
@@ -1199,6 +1402,49 @@ class BasicTest(TestCase):
         self.assertEqual(resp.read(), b'Hello\r\n')
         self.assertTrue(resp.isclosed())
 
+    def test_malformed_content_length(self):
+        # RFC 9112: Content-Length = 1*DIGIT.  Values that int() accepts but
+        # the grammar forbids must not be used to frame the body.
+        for value in ('+5', '5_0', '5 0'):
+            with self.subTest(value=value):
+                sock = FakeSocket(
+                    'HTTP/1.1 200 OK\r\nContent-Length: %s\r\n\r\nHello\r\n' % value)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertIsNone(resp.length)
+                self.assertEqual(resp.read(), b'Hello\r\n')
+                resp.close()
+
+    def test_content_length_with_whitespace(self):
+        # RFC 9112, section 5.1: optional whitespace (SP / HTAB) around
+        # the field value is not part of the value, so it must not
+        # prevent the Content-Length from being used to frame the body.
+        for value in ('7 ', '7\t', '7 \t ', ' 7 '):
+            with self.subTest(value=value):
+                sock = FakeSocket(
+                    'HTTP/1.1 200 OK\r\nContent-Length: %s\r\n\r\n'
+                    'Hello\r\nextra' % value)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertEqual(resp.length, 7)
+                self.assertEqual(resp.read(), b'Hello\r\n')
+                self.assertTrue(resp.isclosed())
+                resp.close()
+
+    def test_malformed_chunk_size(self):
+        # RFC 9112: chunk-size = 1*HEXDIG.  Reject sizes that int(_, 16) accepts
+        # but the grammar forbids (a sign, an "0x" prefix, underscores or
+        # leading whitespace).
+        start = 'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n'
+        for size in ('-5', '+5', '0x5', '1_f', ' 5'):
+            with self.subTest(size=size):
+                sock = FakeSocket(start + '%s\r\nHELLO\r\n0\r\n\r\n' % size)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertRaises(client.IncompleteRead, resp.read)
+                self.assertTrue(resp.isclosed())
+                resp.close()
+
     def test_incomplete_read(self):
         sock = FakeSocket('HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nHello\r\n')
         resp = client.HTTPResponse(sock, method="GET")
@@ -1257,6 +1503,35 @@ class BasicTest(TestCase):
         # do not want can also be HTTPException derived.
         self.assertIn('got more than ', str(cm.exception))
         self.assertIn('headers', str(cm.exception))
+
+    def test_too_many_interim_responses(self):
+        # A server streaming "100 Continue" responses forever must not
+        # hang getresponse().
+        body = (
+            'HTTP/1.1 100 Continue\r\n\r\n'
+            * (client._MAXINTERIMRESPONSES + 1)
+        )
+        resp = client.HTTPResponse(FakeSocket(body))
+        with self.assertRaises(client.HTTPException) as cm:
+            resp.begin()
+        self.assertIn('got more than ', str(cm.exception))
+        self.assertIn('interim responses', str(cm.exception))
+
+    def test_multiple_interim_responses(self):
+        # A reasonable number of interim responses before the final
+        # response is skipped as before.
+        body = (
+            'HTTP/1.1 100 Continue\r\n\r\n' * 3 +
+            'HTTP/1.1 200 OK\r\n'
+            'Content-Length: 5\r\n'
+            '\r\n'
+            'hello'
+        )
+        resp = client.HTTPResponse(FakeSocket(body), method="GET")
+        resp.begin()
+        self.assertEqual(resp.status, 200)
+        self.assertEqual(resp.read(), b'hello')
+        resp.close()
 
     def test_overflowing_chunked_line(self):
         body = (
@@ -1327,6 +1602,35 @@ class BasicTest(TestCase):
         self.assertEqual(resp.read(), expected)
         # we should have reached the end of the file
         self.assertEqual(sock.file.read(), b"") #we read to the end
+        resp.close()
+
+    def test_chunked_too_many_trailers(self):
+        """A response streaming endless trailer lines must raise, not hang"""
+        too_many_trailers = "".join(
+            f"X-Trailer{i}: {i}\r\n" for i in range(client._MAXHEADERS + 1)
+        )
+        # An unbounded read() reaches the trailers via the final 0 chunk.
+        sock = FakeSocket(
+            chunked_start + last_chunk + too_many_trailers + chunked_end)
+        resp = client.HTTPResponse(sock, method="GET")
+        resp.begin()
+        with self.assertRaisesRegex(
+            client.HTTPException,
+            f"got more than {client._MAXHEADERS} trailers",
+        ):
+            resp.read()
+        resp.close()
+
+        # A bounded read(amt) larger than the body hits the same limit.
+        sock = FakeSocket(
+            chunked_start + last_chunk + too_many_trailers + chunked_end)
+        resp = client.HTTPResponse(sock, method="GET")
+        resp.begin()
+        with self.assertRaisesRegex(
+            client.HTTPException,
+            f"got more than {client._MAXHEADERS} trailers",
+        ):
+            resp.read(len(chunked_expected) + 1)
         resp.close()
 
     def test_chunked_sync(self):
@@ -1436,6 +1740,72 @@ class BasicTest(TestCase):
         thread.join()
         self.assertEqual(result, b"proxied data\n")
 
+    def test_large_content_length(self):
+        serv = socket.create_server((HOST, 0))
+        self.addCleanup(serv.close)
+
+        def run_server():
+            [conn, address] = serv.accept()
+            with conn:
+                while conn.recv(1024):
+                    conn.sendall(
+                        b"HTTP/1.1 200 Ok\r\n"
+                        b"Content-Length: %d\r\n"
+                        b"\r\n" % size)
+                    conn.sendall(b'A' * (size//3))
+                    conn.sendall(b'B' * (size - size//3))
+
+        thread = threading.Thread(target=run_server)
+        thread.start()
+        self.addCleanup(thread.join, 1.0)
+
+        conn = client.HTTPConnection(*serv.getsockname())
+        try:
+            for w in range(15, 27):
+                size = 1 << w
+                conn.request("GET", "/")
+                with conn.getresponse() as response:
+                    self.assertEqual(len(response.read()), size)
+        finally:
+            conn.close()
+            thread.join(1.0)
+
+    def test_large_content_length_truncated(self):
+        serv = socket.create_server((HOST, 0))
+        self.addCleanup(serv.close)
+
+        def run_server():
+            while True:
+                [conn, address] = serv.accept()
+                with conn:
+                    conn.recv(1024)
+                    if not size:
+                        break
+                    conn.sendall(
+                        b"HTTP/1.1 200 Ok\r\n"
+                        b"Content-Length: %d\r\n"
+                        b"\r\n"
+                        b"Text" % size)
+
+        thread = threading.Thread(target=run_server)
+        thread.start()
+        self.addCleanup(thread.join, 1.0)
+
+        conn = client.HTTPConnection(*serv.getsockname())
+        try:
+            for w in range(18, 65):
+                size = 1 << w
+                conn.request("GET", "/")
+                with conn.getresponse() as response:
+                    self.assertRaises(client.IncompleteRead, response.read)
+                conn.close()
+        finally:
+            conn.close()
+            size = 0
+            conn.request("GET", "/")
+            conn.close()
+            thread.join(1.0)
+
     def test_putrequest_override_domain_validation(self):
         """
         It should be possible to override the default validation
@@ -1534,7 +1904,7 @@ class ExtendedReadTest(TestCase):
                 # then unbounded peek
                 p2 = resp.peek()
                 self.assertGreaterEqual(len(p2), len(p))
-                self.assertTrue(p2.startswith(p))
+                self.assertStartsWith(p2, p)
                 next = resp.read(len(p2))
                 self.assertEqual(next, p2)
             else:
@@ -1559,7 +1929,7 @@ class ExtendedReadTest(TestCase):
             line = readline(limit)
             if line and line != b"foo":
                 if len(line) < 5:
-                    self.assertTrue(line.endswith(b"\n"))
+                    self.assertEndsWith(line, b"\n")
             all.append(line)
             if not line:
                 break
@@ -1754,7 +2124,7 @@ class OfflineTest(TestCase):
         ]
         for const in expected:
             with self.subTest(constant=const):
-                self.assertTrue(hasattr(client, const))
+                self.assertHasAttr(client, const)
 
 
 class SourceAddressTest(TestCase):
@@ -2073,8 +2443,8 @@ class HTTPSTest(TestCase):
 
     def test_tls13_pha(self):
         import ssl
-        if not ssl.HAS_TLSv1_3:
-            self.skipTest('TLS 1.3 support required')
+        if not ssl.HAS_TLSv1_3 or not ssl.HAS_PHA:
+            self.skipTest('TLS 1.3 PHA support required')
         # just check status of PHA flag
         h = client.HTTPSConnection('localhost', 443)
         self.assertTrue(h._context.post_handshake_auth)
@@ -2185,6 +2555,274 @@ class RequestBodyTest(TestCase):
             self.assertEqual("chunked", message.get("Transfer-Encoding"))
             self.assertNotIn("Content-Length", message)
             self.assertEqual(b'5\r\nbody\xc1\r\n0\r\n\r\n', f.read())
+
+
+class ExpectContinueTests(TestCase):
+
+    def test_data_sent_on_continue(self):
+        # Prior versions would pass this too, as they send body immediately
+        # and ignore the Continue, but make sure it still behaves as expected.
+        conn = FakeSocketHTTPConnection(
+            b'HTTP/1.1 100 Continue\r\n'
+            b'\r\n'
+            b'HTTP/1.1 200 OK\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        conn.request('PUT', '/', headers={'Expect': '100-continue'},
+                     body=b'Body content')
+        resp = conn.getresponse()
+        self.assertEqual(resp.code, 200)
+        self.assertIn(b'Expect: 100-continue', conn.sock.data)
+        self.assertIn(b'Body content', conn.sock.data)
+
+    def test_data_not_sent_on_error(self):
+        conn = FakeSocketHTTPConnection(
+            b'HTTP/1.1 429 Too Many Requests\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        conn.request('PUT', '/', headers={'Expect': '100-continue'},
+                     body=b'Body content')
+        resp = conn.getresponse()
+        self.assertEqual(resp.code, 429)
+        self.assertIn(b'Expect: 100-continue', conn.sock.data)
+        self.assertNotIn(b'Body content', conn.sock.data)
+
+    def test_request_continue_timeout(self):
+        conn = FakeSocketHTTPConnection(
+            b'HTTP/1.1 100 Continue\r\n'
+            b'\r\n'
+            b'HTTP/1.1 200 OK\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        conn._select = mock.Mock(wraps=conn.fake_select)
+        conn.request('PUT', '/', headers={'Expect': '100-continue'},
+                     body=b'Body content', continue_timeout=0.25)
+        conn._select.assert_called_once_with([conn.sock], [], [], 0.25)
+        self.assertEqual(conn.getresponse().code, 200)
+
+    def test_putrequest_continue_timeout(self):
+        conn = FakeSocketHTTPConnection(
+            b'HTTP/1.1 100 Continue\r\n'
+            b'\r\n'
+            b'HTTP/1.1 200 OK\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        conn._select = mock.Mock(wraps=conn.fake_select)
+        conn.putrequest('PUT', '/', continue_timeout=0.25)
+        conn.putheader('Expect', '100-continue')
+        conn.putheader('Content-Length', '12')
+        conn.endheaders(b'Body content')
+        conn._select.assert_called_once_with([conn.sock], [], [], 0.25)
+        self.assertIn(b'Body content', conn.sock.data)
+        self.assertEqual(conn.getresponse().code, 200)
+
+    def test_failed_putrequest_preserves_continue_timeout(self):
+        conn = FakeSocketHTTPConnection(
+            b'HTTP/1.1 100 Continue\r\n'
+            b'\r\n'
+        )
+        conn._select = mock.Mock(wraps=conn.fake_select)
+        conn.putrequest('PUT', '/', continue_timeout=0.25)
+        with self.assertRaises(client.CannotSendRequest):
+            conn.putrequest('GET', '/', continue_timeout=10)
+        conn.putheader('Expect', '100-continue')
+        conn.putheader('Content-Length', '12')
+        conn.endheaders(b'Body content')
+        conn._select.assert_called_once_with([conn.sock], [], [], 0.25)
+
+    def test_invalid_continue_timeout(self):
+        conn = FakeSocketHTTPConnection(b'')
+        for timeout in (0, -1):
+            with self.subTest(timeout=timeout):
+                with self.assertRaises(ValueError):
+                    conn.request('PUT', '/', body=b'Body content',
+                                 continue_timeout=timeout)
+                with self.assertRaises(ValueError):
+                    conn.putrequest('PUT', '/', continue_timeout=timeout)
+
+    @unittest.skipUnless(hasattr(client, 'HTTPSConnection'),
+                         'ssl support required')
+    def test_https_pending_data_skips_select(self):
+        # Data already decrypted and buffered in the SSLSocket is not
+        # visible to select(), so it must be checked with pending().
+        class FakeSSLSocket(FakeSocket):
+            def pending(self):
+                return len(self.text)
+
+        conn = client.HTTPSConnection('example.com')
+        conn.sock = FakeSSLSocket(
+            b'HTTP/1.1 417 Expectation Failed\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        conn._select = mock.Mock(side_effect=AssertionError('select called'))
+        with mock.patch.object(client, 'ssl',
+                               mock.Mock(SSLSocket=FakeSSLSocket)):
+            conn.request('PUT', '/', headers={'Expect': '100-continue'},
+                         body=b'Body content')
+        conn._select.assert_not_called()
+        self.assertEqual(conn.getresponse().code, 417)
+        self.assertNotIn(b'Body content', conn.sock.data)
+
+    @unittest.skipUnless(hasattr(client, 'HTTPSConnection'),
+                         'ssl support required')
+    def test_https_no_pending_data_uses_select(self):
+        class FakeSSLSocket(FakeSocket):
+            def pending(self):
+                return 0
+
+        conn = client.HTTPSConnection('example.com')
+        conn.sock = FakeSSLSocket(
+            b'HTTP/1.1 100 Continue\r\n'
+            b'\r\n'
+            b'HTTP/1.1 200 OK\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        conn._select = mock.Mock(wraps=FakeSocketHTTPConnection.fake_select)
+        with mock.patch.object(client, 'ssl',
+                               mock.Mock(SSLSocket=FakeSSLSocket)):
+            conn.request('PUT', '/', headers={'Expect': '100-continue'},
+                         body=b'Body content', continue_timeout=0.25)
+        conn._select.assert_called_once_with([conn.sock], [], [], 0.25)
+        self.assertEqual(conn.getresponse().code, 200)
+        self.assertIn(b'Body content', conn.sock.data)
+
+    def test_pending_response_kept_on_invalid_putrequest(self):
+        # A real socket is needed: FakeSocket.makefile() returns the whole
+        # response again, which would hide a lost early response.
+        def server_thread(sock):
+            conn, _ = sock.accept()
+            with conn:
+                conn.recv(4096)
+                conn.sendall(
+                    b'HTTP/1.1 417 Expectation Failed\r\n'
+                    b'Content-Length: 4\r\n'
+                    b'\r\n'
+                    b'nope'
+                )
+                # Keep the connection open until the client is done.
+                conn.recv(4096)
+
+        with socket.socket() as sock:
+            sock.bind(('localhost', 0))
+            sock.listen(1)
+            t = threading.Thread(target=server_thread, args=(sock,))
+            t.start()
+            conn = client.HTTPConnection('localhost', sock.getsockname()[1],
+                                         timeout=support.SHORT_TIMEOUT)
+            try:
+                conn.request('PUT', '/',
+                             headers={'Expect': '100-continue'},
+                             body=b'Body content')
+                with self.assertRaises(client.CannotSendRequest):
+                    conn.putrequest('GET', '/')
+                with conn.getresponse() as resp:
+                    self.assertEqual(resp.status, 417)
+                    self.assertEqual(resp.read(), b'nope')
+            finally:
+                conn.close()
+                t.join()
+
+    def test_body_sent_on_timeout(self):
+        def client_thread(port):
+            conn = client.HTTPConnection('localhost', port)
+            conn.request('PUT', '/',
+                         headers={'Expect': '100-continue'},
+                         body=b'Body content', continue_timeout=0.75)
+            resp = conn.getresponse()
+            self.assertEqual(resp.code, 200)
+            resp.close()
+            conn.close()
+
+        with threading_helper.catch_threading_exception() as cm:
+            with socket.socket() as sock:
+                sock.bind(('localhost', 0))
+                sock.listen(1)
+                t = threading.Thread(target=client_thread,
+                                     args=(sock.getsockname()[1],))
+                t.start()
+                conn, _ = sock.accept()
+                req_data = conn.recv(4096)
+                self.assertTrue(req_data.startswith(b'PUT / HTTP/1.1\r\n'))
+                self.assertIn(b'Expect: 100-continue\r\n', req_data)
+                self.assertIn(b'Content-Length: 12\r\n', req_data)
+                # Client should not send body data yet
+                self.assertNotIn(b'Body content', req_data)
+
+                # Server does not respond to the continue request with 100 Continue
+                # so the client will time out and send the body data
+                # Wait for 0.5 seconds to see if the client sends the body data
+                rr, _, _ = select.select([conn], [], [], 0.5)
+                self.assertEqual(rr, [])
+                # Client should time out and send body data in another ~0.25s
+                rr, _, _ = select.select([conn], [], [], 0.5)
+                self.assertEqual(rr, [conn])
+                body = conn.recv(4096)
+                self.assertEqual(body, b'Body content')
+                conn.sendall(
+                    b'HTTP/1.1 200 OK\r\n'
+                    b'Content-Length: 0\r\n'
+                    b'\r\n'
+                )
+                conn.close()
+                sock.close()
+                t.join()
+            if cm.exc_value is not None:
+                raise cm.exc_value
+
+    def test_manual_getresponse(self):
+        def client_thread(port):
+            conn = client.HTTPConnection('localhost', port)
+            conn.putrequest("PUT", "/file", continue_timeout=0.1)
+            conn.putheader('Expect', '100-Continue')
+            conn.putheader('Content-Length', '42')
+            conn.endheaders()
+            with conn.getresponse(support_continue=True) as resp:
+                self.assertEqual(resp.status, 100)
+            conn.send(b'Go away or I shall taunt you a second time')
+            with conn.getresponse() as resp:
+                self.assertEqual(resp.status, 200)
+            conn.close()
+
+        with threading_helper.catch_threading_exception() as cm:
+            with socket.socket() as sock:
+                sock.bind(('localhost', 0))
+                sock.listen(1)
+                t = threading.Thread(target=client_thread,
+                                     args=(sock.getsockname()[1],))
+                t.start()
+                conn, _ = sock.accept()
+                req_data = conn.recv(4096)
+                self.assertTrue(req_data.startswith(b'PUT /file HTTP/1.1\r\n'))
+                self.assertIn(b'Expect: 100-Continue\r\n', req_data)
+                self.assertIn(b'Content-Length: 42\r\n', req_data)
+                self.assertNotIn(b'I shall taunt you', req_data)
+                # Client is not expected to send body data until we respond,
+                # regardless of continue_timeout
+                rr, _, _ = select.select([conn], [], [], 1.0)
+                self.assertEqual(rr, [])
+                conn.sendall(b'HTTP/1.1 100 Continue\r\n\r\n')
+                rr, _, _ = select.select([conn], [], [], 0.5)
+                self.assertEqual(rr, [conn])
+                b = conn.recv(42)
+                self.assertEqual(
+                    b, b'Go away or I shall taunt you a second time')
+                conn.sendall(
+                    b'HTTP/1.1 200 OK\r\n'
+                    b'Content-Length: 0\r\n'
+                    b'\r\n'
+                )
+                conn.close()
+                sock.close()
+                t.join()
+            if cm.exc_value is not None:
+                raise cm.exc_value
+
 
 
 class HTTPResponseTest(TestCase):
@@ -2396,8 +3034,7 @@ class TunnelTests(TestCase):
                 msg=f'unexpected number of send calls: {mock_send.mock_calls}')
         proxy_setup_data_sent = mock_send.mock_calls[0][1][0]
         self.assertIn(b'CONNECT destination.com', proxy_setup_data_sent)
-        self.assertTrue(
-                proxy_setup_data_sent.endswith(b'\r\n\r\n'),
+        self.assertEndsWith(proxy_setup_data_sent, b'\r\n\r\n',
                 msg=f'unexpected proxy data sent {proxy_setup_data_sent!r}')
 
     def test_connect_put_request(self):
@@ -2471,6 +3108,36 @@ class TunnelTests(TestCase):
         headers = self.conn.get_proxy_response_headers()
         self.assertIsNone(headers)
 
+    def test_tunnel_error(self):
+        response_text = (
+            'HTTP/1.1 407 Proxy Authentication Required\r\n'
+            'Proxy-Authenticate: Basic realm="proxy"\r\n\r\n'
+        )
+        self.conn._create_connection = self._create_connection(response_text)
+        self.conn.set_tunnel('destination.com')
+
+        with self.assertRaises(client.ProxyTunnelError) as cm:
+            self.conn.request('HEAD', '/', '')
+        exc = cm.exception
+        self.assertIsInstance(exc, OSError)
+        self.assertEqual(exc.code, 407)
+        self.assertEqual(exc.reason, 'Proxy Authentication Required')
+        self.assertEqual(exc.headers['Proxy-Authenticate'],
+                         'Basic realm="proxy"')
+        self.assertEqual(str(exc), 'Tunnel connection failed: '
+                                   '407 Proxy Authentication Required')
+        self.assertIsNone(self.conn.sock)
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                copy = pickle.loads(pickle.dumps(exc, proto))
+                self.assertIs(type(copy), client.ProxyTunnelError)
+                self.assertEqual(copy.code, 407)
+                self.assertEqual(copy.reason, exc.reason)
+                self.assertEqual(copy.headers['Proxy-Authenticate'],
+                                 'Basic realm="proxy"')
+                self.assertEqual(str(copy), str(exc))
+
     def test_tunnel_leak(self):
         sock = None
 
@@ -2493,6 +3160,23 @@ class TunnelTests(TestCase):
             exc = e
         self.assertIsNotNone(exc)
         self.assertTrue(sock.file_closed)
+
+    def test_tunnel_nonstr_headers(self):
+        class CustomObject:
+            def __str__(self):
+                return 'custom-str'
+
+        self.conn.set_tunnel('destination.com', headers={
+            'None-Value': None,
+            'Integer-Value': 9,
+            'Custom-Value': CustomObject(),
+        })
+
+        self.conn.request('HEAD', '/', '')
+
+        self.assertIn(b'None-Value: None\r\n', self.conn.sock.data)
+        self.assertIn(b'Integer-Value: 9\r\n', self.conn.sock.data)
+        self.assertIn(b'Custom-Value: custom-str\r\n', self.conn.sock.data)
 
 
 if __name__ == '__main__':

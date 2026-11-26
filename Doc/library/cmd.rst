@@ -4,8 +4,6 @@
 .. module:: cmd
    :synopsis: Build line-oriented command interpreters.
 
-.. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
-
 **Source code:** :source:`Lib/cmd.py`
 
 --------------
@@ -14,6 +12,13 @@ The :class:`Cmd` class provides a simple framework for writing line-oriented
 command interpreters.  These are often useful for test harnesses, administrative
 tools, and prototypes that will later be wrapped in a more sophisticated
 interface.
+
+A command interpreter built with :class:`Cmd` typically presents the user
+with an interactive prompt, reads input one line at a time, and dispatches each
+command to a method named ``do_`` followed by the command name.  For example,
+the ``help`` command is handled by the :meth:`~Cmd.do_help` method.  Apart from
+the built-in ``help`` command, most of the interpreter's behavior is defined by
+the ``do_*`` methods you add in your own subclass.
 
 .. class:: Cmd(completekey='tab', stdin=None, stdout=None)
 
@@ -105,15 +110,15 @@ A :class:`Cmd` instance has the following methods:
    undocumented commands.
 
 
-.. method:: Cmd.onecmd(str)
+.. method:: Cmd.onecmd(line)
 
    Interpret the argument as though it had been typed in response to the prompt.
    This may be overridden, but should not normally need to be; see the
    :meth:`precmd` and :meth:`postcmd` methods for useful execution hooks.  The
    return value is a flag indicating whether interpretation of commands by the
    interpreter should stop.  If there is a :meth:`!do_\*` method for the command
-   *str*, the return value of that method is returned, otherwise the return value
-   from the :meth:`default` method is returned.
+   *line*, the return value of that method is returned, otherwise the return
+   value from the :meth:`default` method is returned.
 
 
 .. method:: Cmd.emptyline()
@@ -243,9 +248,7 @@ Instances of :class:`Cmd` subclasses have some public instance variables:
 Cmd Example
 -----------
 
-.. sectionauthor:: Raymond Hettinger <python at rcn dot com>
-
-The :mod:`cmd` module is mainly useful for building custom shells that let a
+The :mod:`!cmd` module is mainly useful for building custom shells that let a
 user work with a program interactively.
 
 This section presents a simple example of how to build a shell around a few of

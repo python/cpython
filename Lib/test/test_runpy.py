@@ -12,11 +12,17 @@ import tempfile
 import textwrap
 import unittest
 import warnings
-from test.support import (infinite_recursion, no_tracing, verbose,
-                          requires_subprocess, requires_resource)
+from test.support import (
+    force_not_colorized_test_class,
+    requires_subprocess,
+    verbose,
+)
+from test import support
+from test.support import os_helper
 from test.support.import_helper import forget, make_legacy_pyc, unload
 from test.support.os_helper import create_empty_file, temp_dir, FakePath
 from test.support.script_helper import make_script, make_zip_script
+from test.test_importlib.util import temporary_pycache_prefix
 
 
 import runpy
@@ -49,7 +55,6 @@ nested = runpy._run_module_code('x=1\\n', mod_name='<run>')
 implicit_namespace = {
     "__name__": None,
     "__file__": None,
-    "__cached__": None,
     "__package__": None,
     "__doc__": None,
     "__spec__": None
@@ -210,6 +215,25 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
         # Package without __main__.py
         self.expect_import_error("multiprocessing")
 
+    def test_invalid_names_set_name_attribute(self):
+        cases = [
+            # (mod_name, expected_name)  -- comment indicates raise site
+            ("nonexistent_runpy_test_module",
+                "nonexistent_runpy_test_module"),    # spec is None
+            ("sys.imp.eric", "sys.imp.eric"),        # find_spec error
+            (".relative_name", ".relative_name"),    # relative name rejected
+            ("sys", "sys"),                          # builtin: no code object
+            ("multiprocessing", "multiprocessing"),  # package without __main__
+        ]
+        for mod_name, expected_name in cases:
+            with self.subTest(mod_name=mod_name):
+                try:
+                    run_module(mod_name)
+                except ImportError as exc:
+                    self.assertEqual(exc.name, expected_name)
+                else:
+                    self.fail("Expected ImportError for %r" % mod_name)
+
     def test_library_module(self):
         self.assertEqual(run_module("runpy")["__name__"], "runpy")
 
@@ -278,7 +302,6 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
     def _fix_ns_for_legacy_pyc(self, ns, alter_sys):
         char_to_add = "c"
         ns["__file__"] += char_to_add
-        ns["__cached__"] = ns["__file__"]
         spec = ns["__spec__"]
         new_spec = importlib.util.spec_from_file_location(spec.name,
                                                           ns["__file__"])
@@ -298,7 +321,6 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
         expected_ns.update({
             "__name__": mod_name,
             "__file__": mod_fname,
-            "__cached__": mod_spec.cached,
             "__package__": mod_name.rpartition(".")[0],
             "__spec__": mod_spec,
         })
@@ -315,14 +337,16 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
             self.check_code_execution(create_ns, expected_ns)
             importlib.invalidate_caches()
             __import__(mod_name)
-            os.remove(mod_fname)
             if not sys.dont_write_bytecode:
-                make_legacy_pyc(mod_fname)
+                make_legacy_pyc(mod_fname, allow_compile=True)
                 unload(mod_name)  # In case loader caches paths
+                os.remove(mod_fname)
                 importlib.invalidate_caches()
                 if verbose > 1: print("Running from compiled:", mod_name)
                 self._fix_ns_for_legacy_pyc(expected_ns, alter_sys)
                 self.check_code_execution(create_ns, expected_ns)
+            else:
+                os.remove(mod_fname)
         finally:
             self._del_pkg(pkg_dir)
         if verbose > 1: print("Module executed successfully")
@@ -339,7 +363,6 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
         expected_ns.update({
             "__name__": mod_name,
             "__file__": mod_fname,
-            "__cached__": importlib.util.cache_from_source(mod_fname),
             "__package__": pkg_name,
             "__spec__": mod_spec,
         })
@@ -356,14 +379,16 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
             self.check_code_execution(create_ns, expected_ns)
             importlib.invalidate_caches()
             __import__(mod_name)
-            os.remove(mod_fname)
             if not sys.dont_write_bytecode:
-                make_legacy_pyc(mod_fname)
+                make_legacy_pyc(mod_fname, allow_compile=True)
                 unload(mod_name)  # In case loader caches paths
+                os.remove(mod_fname)
                 if verbose > 1: print("Running from compiled:", pkg_name)
                 importlib.invalidate_caches()
                 self._fix_ns_for_legacy_pyc(expected_ns, alter_sys)
                 self.check_code_execution(create_ns, expected_ns)
+            else:
+                os.remove(mod_fname)
         finally:
             self._del_pkg(pkg_dir)
         if verbose > 1: print("Package executed successfully")
@@ -416,7 +441,7 @@ from ..uncle.cousin import nephew
             importlib.invalidate_caches()
             __import__(mod_name)
             os.remove(mod_fname)
-            if not sys.dont_write_bytecode:
+            if not sys.dont_write_bytecode and sys.implementation.cache_tag:
                 make_legacy_pyc(mod_fname)
                 unload(mod_name)  # In case the loader caches paths
                 if verbose > 1: print("Running from compiled:", mod_name)
@@ -544,7 +569,6 @@ from ..uncle.cousin import nephew
         expected_ns.update({
             "__name__": run_name,
             "__file__": mod_fname,
-            "__cached__": importlib.util.cache_from_source(mod_fname),
             "__package__": mod_name.rpartition(".")[0],
             "__spec__": mod_spec,
         })
@@ -624,7 +648,6 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
         expected_ns.update({
             "__name__": expected_name,
             "__file__": expected_file,
-            "__cached__": mod_cached,
             "__package__": "",
             "__spec__": mod_spec,
             "run_argv0": expected_argv0,
@@ -674,6 +697,8 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             self._check_script(script_name, "<run_path>", script_name,
                                script_name, expect_spec=False)
 
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag')
     def test_script_compiled(self):
         with temp_dir() as script_dir:
             mod_name = 'script'
@@ -694,12 +719,10 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
         with temp_dir() as script_dir:
             mod_name = '__main__'
             script_name = self._make_test_script(script_dir, mod_name)
-            compiled_name = py_compile.compile(script_name, doraise=True)
+            legacy_pyc = make_legacy_pyc(script_name, allow_compile=True)
             os.remove(script_name)
-            if not sys.dont_write_bytecode:
-                legacy_pyc = make_legacy_pyc(script_name)
-                self._check_script(script_dir, "<run_path>", legacy_pyc,
-                                   script_dir, mod_name=mod_name)
+            self._check_script(script_dir, "<run_path>", legacy_pyc,
+                               script_dir, mod_name=mod_name)
 
     def test_directory_error(self):
         with temp_dir() as script_dir:
@@ -707,6 +730,17 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             script_name = self._make_test_script(script_dir, mod_name)
             msg = "can't find '__main__' module in %r" % script_dir
             self._check_import_error(script_dir, msg)
+
+    def test_directory_error_sets_name_attribute(self):
+        with temp_dir() as script_dir:
+            self._make_test_script(script_dir, 'not_main')
+            try:
+                run_path(script_dir)
+            except ImportError as exc:
+                self.assertEqual(exc.name, '__main__')
+            else:
+                self.fail("Expected ImportError for directory without "
+                          "__main__.py")
 
     def test_zipfile(self):
         with temp_dir() as script_dir:
@@ -720,7 +754,8 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
         with temp_dir() as script_dir:
             mod_name = '__main__'
             script_name = self._make_test_script(script_dir, mod_name)
-            compiled_name = py_compile.compile(script_name, doraise=True)
+            compiled_name = script_name + 'c'
+            py_compile.compile(script_name, compiled_name, doraise=True)
             zip_name, fname = make_zip_script(script_dir, 'test_zip',
                                               compiled_name)
             self._check_script(zip_name, "<run_path>", fname, zip_name,
@@ -734,17 +769,17 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             msg = "can't find '__main__' module in %r" % zip_name
             self._check_import_error(zip_name, msg)
 
-    @no_tracing
-    @requires_resource('cpu')
-    def test_main_recursion_error(self):
+    def test_main_no_recursion(self):
+        # gh-75221: __main__ is searched only in the executed directory or
+        # zipfile, so running a directory without __main__ from a zipfile's
+        # __main__ fails instead of recursing.
         with temp_dir() as script_dir, temp_dir() as dummy_dir:
             mod_name = '__main__'
             source = ("import runpy\n"
                       "runpy.run_path(%r)\n") % dummy_dir
             script_name = self._make_test_script(script_dir, mod_name, source)
             zip_name, fname = make_zip_script(script_dir, 'test_zip', script_name)
-            with infinite_recursion(25):
-                self.assertRaises(RecursionError, run_path, zip_name)
+            self.assertRaises(ImportError, run_path, zip_name)
 
     def test_encoding(self):
         with temp_dir() as script_dir:
@@ -757,7 +792,49 @@ s = "non-ASCII: h\xe9"
             result = run_path(filename)
             self.assertEqual(result['s'], "non-ASCII: h\xe9")
 
+    def test_run_module_filter_syntax_warnings_by_module(self):
+        module_re = r'test\.test_import\.data\.syntax_warnings\z'
+        with (temp_dir() as tmpdir,
+              temporary_pycache_prefix(tmpdir),
+              warnings.catch_warnings(record=True) as wlog):
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=module_re)
+            warnings.filterwarnings('error', module='syntax_warnings')
+            ns = run_module('test.test_import.data.syntax_warnings')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        filename = ns['__file__']
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
 
+    def test_run_path_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'<run_path>\z')
+            warnings.filterwarnings('error', module='test')
+            warnings.filterwarnings('error', module='syntax_warnings')
+            warnings.filterwarnings('error',
+                    module=r'test\.test_import\.data\.syntax_warnings')
+            run_path(filename)
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package\.script\z')
+            warnings.filterwarnings('error', module='<run_path>')
+            warnings.filterwarnings('error', module='test')
+            warnings.filterwarnings('error', module='syntax_warnings')
+            warnings.filterwarnings('error',
+                    module=r'test\.test_import\.data\.syntax_warnings')
+            run_path(filename, run_name='package.script')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+
+
+@force_not_colorized_test_class
 class TestExit(unittest.TestCase):
     STATUS_CONTROL_C_EXIT = 0xC000013A
     EXPECTED_CODE = (
@@ -789,7 +866,7 @@ class TestExit(unittest.TestCase):
         # Use -E to ignore PYTHONSAFEPATH
         cmd = [sys.executable, '-E', *cmd]
         proc = subprocess.run(cmd, *args, **kwargs, text=True, stderr=subprocess.PIPE)
-        self.assertTrue(proc.stderr.endswith("\nKeyboardInterrupt\n"), proc.stderr)
+        self.assertEndsWith(proc.stderr, "\nKeyboardInterrupt\n")
         self.assertEqual(proc.returncode, self.EXPECTED_CODE)
 
     def test_pymain_run_file(self):
@@ -836,6 +913,96 @@ class TestExit(unittest.TestCase):
     def test_pymain_run_module(self):
         ham = self.ham
         self.assertSigInt(["-m", ham.stem], cwd=ham.parent)
+
+
+class MiscTests(unittest.TestCase):
+    def test_remove_sys_path0(self):
+        # Check that all path0 copies are removed
+        PATH0 = '/path/zero'
+        STDLIB_PATH = '/to/stdlib'
+        OTHER_PATH = '/other/path'
+        sys_path = [PATH0, STDLIB_PATH, PATH0, '', OTHER_PATH, PATH0]
+        expected = [STDLIB_PATH, '', OTHER_PATH]
+        with (support.swap_attr(sys, '_stdlib_dir', STDLIB_PATH),
+              support.swap_attr(sys, '_path0', PATH0),
+              support.swap_attr(sys, 'path', sys_path)):
+            runpy._remove_sys_path0()
+            self.assertEqual(sys.path, expected)
+
+            # Calling it twice does nothing
+            runpy._remove_sys_path0()
+            self.assertEqual(sys.path, expected)
+
+        # Do nothing if sys._path0 is sys._stdlib_dir
+        sys_path = ['', STDLIB_PATH, OTHER_PATH]
+        expected = sys_path.copy()
+        with (support.swap_attr(sys, '_stdlib_dir', STDLIB_PATH),
+              support.swap_attr(sys, '_path0', STDLIB_PATH),
+              support.swap_attr(sys, 'path', sys_path)):
+            runpy._remove_sys_path0()
+            self.assertEqual(sys.path, expected)
+
+        # Do nothing if sys._path0 is None
+        sys_path = ['', STDLIB_PATH, OTHER_PATH]
+        expected = sys_path.copy()
+        with (support.swap_attr(sys, '_stdlib_dir', STDLIB_PATH),
+              support.swap_attr(sys, '_path0', None),
+              support.swap_attr(sys, 'path', sys_path)):
+            runpy._remove_sys_path0()
+            self.assertEqual(sys.path, expected)
+
+    def run_python(self, *args, PYTHONPATH=None):
+        cmd = [sys.executable, *args]
+        env = support.make_clean_env()
+        if PYTHONPATH:
+            env['PYTHONPATH'] = PYTHONPATH
+        proc = subprocess.run(cmd, text=True, stderr=subprocess.PIPE, env=env)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    @support.requires_subprocess()
+    def test_remove_sys_path0_run_python(self):
+        CODE = textwrap.dedent("""
+            import runpy, sys
+
+            # Remove sys.path[0]
+            orig_path = sys.path.copy()
+            path0 = sys._path0
+            runpy._remove_sys_path0()
+
+            if path0 is not None and path0 in sys.path:
+                raise Exception(f"path0 {path0!r} found in sys.path {sys.path!r}")
+            if not sys.flags.safe_path:
+                if sys.path == orig_path:
+                    raise Exception("sys.path was not changed")
+            else:
+                if sys.path != orig_path:
+                    raise Exception("sys.path was changed")
+
+            # Calling it twice must do nothing
+            clean_path = sys.path.copy()
+            runpy._remove_sys_path0()
+            if sys.path != clean_path:
+                raise Exception("sys.path was changed")
+        """)
+
+        # Test "python -c code"
+        self.run_python('-c', CODE)
+        self.run_python('-P', '-c', CODE)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            name = 'test_remove_sys_path0'
+            filename = os.path.join(tmpdir, f'{name}.py')
+            with open(filename, 'w') as fp:
+                fp.write(CODE)
+
+            # Test "python script.py"
+            self.run_python(filename)
+            self.run_python('-P', filename)
+
+            with os_helper.change_cwd(tmpdir):
+                # Test "python -m module"
+                self.run_python('-m', name)
+                self.run_python('-P', '-m', name, PYTHONPATH=tmpdir)
 
 
 if __name__ == "__main__":

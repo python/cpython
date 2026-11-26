@@ -175,7 +175,6 @@ IMPORT_MAPPING.update({
     'SimpleDialog': 'tkinter.simpledialog',
     'DocXMLRPCServer': 'xmlrpc.server',
     'SimpleHTTPServer': 'http.server',
-    'CGIHTTPServer': 'http.server',
     # For compatibility with broken pickles saved in old Python 3 versions
     'UserDict': 'collections',
     'UserList': 'collections',
@@ -217,8 +216,6 @@ REVERSE_NAME_MAPPING.update({
         ('DocXMLRPCServer', 'DocCGIXMLRPCRequestHandler'),
     ('http.server', 'SimpleHTTPRequestHandler'):
         ('SimpleHTTPServer', 'SimpleHTTPRequestHandler'),
-    ('http.server', 'CGIHTTPRequestHandler'):
-        ('CGIHTTPServer', 'CGIHTTPRequestHandler'),
     ('_socket', 'socket'): ('socket', '_socketobject'),
 })
 
@@ -243,6 +240,7 @@ for excname in PYTHON3_OSERROR_EXCEPTIONS:
     REVERSE_NAME_MAPPING[('builtins', excname)] = ('exceptions', 'OSError')
 
 PYTHON3_IMPORTERROR_EXCEPTIONS = (
+    'ImportCycleError',
     'ModuleNotFoundError',
 )
 

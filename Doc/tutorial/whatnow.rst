@@ -11,9 +11,10 @@ should you go to learn more?
 This tutorial is part of Python's documentation set.   Some other documents in
 the set are:
 
-* :ref:`library-index`:
+* :ref:`builtins-index`: gives details about Python's built-in types and
+  functions.
 
-  You should browse through this manual, which gives complete (though terse)
+* :ref:`library-index`: gives complete (though terse)
   reference material about types, functions, and the modules in the standard
   library.  The standard Python distribution includes a *lot* of additional code.
   There are modules to read Unix mailboxes, retrieve documents via HTTP, generate
@@ -30,7 +31,7 @@ the set are:
 
 More Python resources:
 
-* https://www.python.org:  The major Python web site.  It contains code,
+* https://www.python.org:  The major Python website.  It contains code,
   documentation, and pointers to Python-related pages around the web.
 
 * https://docs.python.org:  Fast access to Python's  documentation.
@@ -68,6 +69,6 @@ already contain the solution for your problem.
 
 .. rubric:: Footnotes
 
-.. [#] "Cheese Shop" is a Monty Python's sketch: a customer enters a cheese shop,
+.. [#] "Cheese Shop" is a Monty Python sketch: a customer enters a cheese shop,
    but whatever cheese he asks for, the clerk says it's missing.
 

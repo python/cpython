@@ -5,6 +5,7 @@ Extending/Embedding FAQ
 .. only:: html
 
    .. contents::
+      :local:
 
 .. highlight:: c
 
@@ -37,24 +38,9 @@ Writing C is hard; are there any alternatives?
 ----------------------------------------------
 
 There are a number of alternatives to writing your own C extensions, depending
-on what you're trying to do.
-
-.. XXX make sure these all work
-
-`Cython <https://cython.org>`_ and its relative `Pyrex
-<https://www.csse.canterbury.ac.nz/greg.ewing/python/Pyrex/>`_ are compilers
-that accept a slightly modified form of Python and generate the corresponding
-C code.  Cython and Pyrex make it possible to write an extension without having
-to learn Python's C API.
-
-If you need to interface to some C or C++ library for which no Python extension
-currently exists, you can try wrapping the library's data types and functions
-with a tool such as `SWIG <https://www.swig.org>`_.  `SIP
-<https://github.com/Python-SIP/sip>`__, `CXX
-<https://cxx.sourceforge.net/>`_ `Boost
-<https://www.boost.org/libs/python/doc/index.html>`_, or `Weave
-<https://github.com/scipy/weave>`_ are also
-alternatives for wrapping C++ libraries.
+on what you're trying to do. :ref:`Recommended third party tools <c-api-tools>`
+offer both simpler and more sophisticated approaches to creating C and C++
+extensions for Python.
 
 
 How can I execute arbitrary Python statements from C?
@@ -223,25 +209,20 @@ minor that it doesn't seem worth the effort.)
 How do I debug an extension?
 ----------------------------
 
-When using GDB with dynamically loaded extensions, you can't set a breakpoint in
-your extension until your extension is loaded.
-
-In your ``.gdbinit`` file (or interactively), add the command:
-
-.. code-block:: none
-
-   br _PyImport_LoadDynamicModule
-
-Then, when you run GDB:
+When using GDB with dynamically loaded extensions, enable pending breakpoints
+to set a breakpoint before the extension is loaded.  For example, to stop in
+a function named ``myfunction``:
 
 .. code-block:: shell-session
 
    $ gdb /local/bin/python
-   gdb) run myscript.py
-   gdb) continue # repeat until your extension is loaded
-   gdb) finish   # so that your extension is loaded
-   gdb) br myfunction.c:50
-   gdb) continue
+   (gdb) set breakpoint pending on
+   (gdb) break myfunction
+   (gdb) run myscript.py
+
+GDB resolves the breakpoint when the extension is loaded and stops when the
+function is called.  You can also set a pending breakpoint directly in your
+extension's source code, for example with ``break myfunction.c:50``.
 
 I want to compile a Python module on my Linux system, but some files are missing. Why?
 --------------------------------------------------------------------------------------

@@ -27,3 +27,8 @@ overview:
    inspect.rst
    annotationlib.rst
    site.rst
+
+.. seealso::
+
+   * See the :mod:`concurrent.interpreters` module, which similarly
+     exposes core runtime functionality.

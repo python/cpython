@@ -14,9 +14,12 @@ This module defines utilities to manipulate HTML.
 
    Convert the characters ``&``, ``<`` and ``>`` in string *s* to HTML-safe
    sequences.  Use this if you need to display text that might contain such
-   characters in HTML.  If the optional flag *quote* is true, the characters
-   (``"``) and (``'``) are also translated; this helps for inclusion in an HTML
-   attribute value delimited by quotes, as in ``<a href="...">``.
+   characters in HTML.  If the optional flag *quote* is true (the default), the
+   characters (``"``) and (``'``) are also translated; this helps for inclusion
+   in an HTML attribute value delimited by quotes, as in ``<a href="...">``.
+   If *quote* is set to false, the characters (``"``) and (``'``) are not
+   translated.
+
 
    .. versionadded:: 3.2
 

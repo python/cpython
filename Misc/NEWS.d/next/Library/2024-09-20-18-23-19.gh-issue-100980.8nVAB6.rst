@@ -1,3 +1,0 @@
-The :attr:`~ctypes.Structure._fields_` attribute of
-:class:`ctypes.Structure` and :class:`~ctypes.Union` is no longer set if
-the setattr operation raises an error.

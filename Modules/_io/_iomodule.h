@@ -4,28 +4,29 @@
 
 #include "exports.h"
 
+#include "pycore_fileutils.h"     // Py_off_t
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "structmember.h"
 
 /* Type specs */
-extern PyType_Spec bufferediobase_spec;
-extern PyType_Spec bufferedrandom_spec;
-extern PyType_Spec bufferedreader_spec;
-extern PyType_Spec bufferedrwpair_spec;
-extern PyType_Spec bufferedwriter_spec;
-extern PyType_Spec bytesio_spec;
-extern PyType_Spec bytesiobuf_spec;
-extern PyType_Spec fileio_spec;
-extern PyType_Spec iobase_spec;
-extern PyType_Spec nldecoder_spec;
-extern PyType_Spec rawiobase_spec;
-extern PyType_Spec stringio_spec;
-extern PyType_Spec textiobase_spec;
-extern PyType_Spec textiowrapper_spec;
+extern PyType_Spec _Py_bufferediobase_spec;
+extern PyType_Spec _Py_bufferedrandom_spec;
+extern PyType_Spec _Py_bufferedreader_spec;
+extern PyType_Spec _Py_bufferedrwpair_spec;
+extern PyType_Spec _Py_bufferedwriter_spec;
+extern PyType_Spec _Py_bytesio_spec;
+extern PyType_Spec _Py_bytesiobuf_spec;
+extern PyType_Spec _Py_fileio_spec;
+extern PyType_Spec _Py_iobase_spec;
+extern PyType_Spec _Py_nldecoder_spec;
+extern PyType_Spec _Py_rawiobase_spec;
+extern PyType_Spec _Py_stringio_spec;
+extern PyType_Spec _Py_textiobase_spec;
+extern PyType_Spec _Py_textiowrapper_spec;
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
-extern PyType_Spec winconsoleio_spec;
+extern PyType_Spec _Py_winconsoleio_spec;
 #endif
 
 /* These functions are used as METH_NOARGS methods, are normally called
@@ -78,7 +79,7 @@ extern Py_ssize_t _PyIO_find_line_ending(
 */
 extern int _PyIO_trap_eintr(void);
 
-#define DEFAULT_BUFFER_SIZE (8 * 1024)  /* bytes */
+#define DEFAULT_BUFFER_SIZE (128 * 1024)  /* bytes */
 
 /*
  * Offset type for positioning.
@@ -94,8 +95,6 @@ extern int _PyIO_trap_eintr(void);
 
 #ifdef MS_WINDOWS
 
-/* Windows uses long long for offsets */
-typedef long long Py_off_t;
 # define PyLong_AsOff_t     PyLong_AsLongLong
 # define PyLong_FromOff_t   PyLong_FromLongLong
 # define PY_OFF_T_MAX       LLONG_MAX
@@ -106,7 +105,6 @@ typedef long long Py_off_t;
 #else
 
 /* Other platforms use off_t */
-typedef off_t Py_off_t;
 #if (SIZEOF_OFF_T == SIZEOF_SIZE_T)
 # define PyLong_AsOff_t     PyLong_AsSsize_t
 # define PyLong_FromOff_t   PyLong_FromSsize_t

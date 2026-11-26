@@ -1,2 +1,0 @@
-``ctx`` arguments to the constructors of :mod:`ast` node classes now default
-to :class:`ast.Load() <ast.Load>`. Patch by Jelle Zijlstra.

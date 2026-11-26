@@ -1,12 +1,5 @@
 """A powerful, extensible, and easy-to-use option parser.
 
-By Greg Ward <gward@python.net>
-
-Originally distributed as Optik.
-
-For support, use the optik-users@lists.sourceforge.net mailing list
-(http://lists.sourceforge.net/lists/listinfo/optik-users).
-
 Simple usage example:
 
    from optparse import OptionParser
@@ -20,8 +13,6 @@ Simple usage example:
 
    (options, args) = parser.parse_args()
 """
-
-__version__ = "1.5.3"
 
 __all__ = ['Option',
            'make_option',
@@ -41,40 +32,40 @@ __all__ = ['Option',
            'BadOptionError',
            'check_choice']
 
-__copyright__ = """
-Copyright (c) 2001-2006 Gregory P. Ward.  All rights reserved.
-Copyright (c) 2002-2006 Python Software Foundation.  All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-  * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-
-  * Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-
-  * Neither the name of the author nor the names of its
-    contributors may be used to endorse or promote products derived from
-    this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-"""
+# Copyright (c) 2001-2006 Gregory P. Ward.  All rights reserved.
+# Copyright (c) 2002 Python Software Foundation.  All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+#  * Neither the name of the author nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import sys, os
-import textwrap
+lazy import warnings
+from gettext import gettext as _, ngettext
+
 
 def _repr(self):
     return "<%s at 0x%x: %s>" % (self.__class__.__name__, id(self), self)
@@ -85,19 +76,6 @@ def _repr(self):
 #   Id: option.py 522 2006-06-11 16:22:03Z gward
 #   Id: help.py 527 2006-07-23 15:21:30Z greg
 #   Id: errors.py 509 2006-04-20 00:58:24Z gward
-
-try:
-    from gettext import gettext, ngettext
-except ImportError:
-    def gettext(message):
-        return message
-
-    def ngettext(singular, plural, n):
-        if n == 1:
-            return singular
-        return plural
-
-_ = gettext
 
 
 class OptParseError (Exception):
@@ -263,6 +241,7 @@ class HelpFormatter:
         Format a paragraph of free-form text for inclusion in the
         help output at the current indentation level.
         """
+        import textwrap
         text_width = max(self.width - self.current_indent, 11)
         indent = " "*self.current_indent
         return textwrap.fill(text,
@@ -319,6 +298,7 @@ class HelpFormatter:
             indent_first = 0
         result.append(opts)
         if option.help:
+            import textwrap
             help_text = self.expand_default(option)
             help_lines = textwrap.wrap(help_text, self.help_width)
             result.append("%*s%s\n" % (indent_first, "", help_lines[0]))
@@ -419,10 +399,12 @@ def _parse_num(val, type):
 def _parse_int(val):
     return _parse_num(val, int)
 
-_builtin_cvt = { "int" : (_parse_int, _("integer")),
-                 "long" : (_parse_int, _("integer")),
-                 "float" : (float, _("floating-point")),
-                 "complex" : (complex, _("complex")) }
+_builtin_cvt = frozendict({
+    "int": (_parse_int, _("integer")),
+    "long": (_parse_int, _("integer")),
+    "float": (float, _("floating-point")),
+    "complex": (complex, _("complex")),
+})
 
 def check_builtin(option, opt, value):
     (cvt, what) = _builtin_cvt[option.type]
@@ -839,6 +821,12 @@ class Values:
             return self.__dict__ == other
         else:
             return NotImplemented
+
+    def __replace__(self, /, **changes):
+        new = self.__class__()
+        new.__dict__.update(self.__dict__)
+        new.__dict__.update(changes)
+        return new
 
     def _update_careful(self, dict):
         """
@@ -1384,7 +1372,7 @@ class OptionParser (OptionContainer):
         self.values = values
 
         try:
-            stop = self._process_args(largs, rargs, values)
+            self._process_args(largs, rargs, values)
         except (BadOptionError, OptionValueError) as err:
             self.error(str(err))
 
@@ -1679,3 +1667,43 @@ def _match_abbrev(s, wordmap):
 # which will become a factory function when there are many Option
 # classes.
 make_option = Option
+
+
+def __getattr__(name):
+    if name in ("__version__", "__copyright__"):
+        warnings._deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "__version__": "1.5.3",
+            "__copyright__": """
+Copyright (c) 2001-2006 Gregory P. Ward.  All rights reserved.
+Copyright (c) 2002 Python Software Foundation.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+
+  * Neither the name of the author nor the names of its
+    contributors may be used to endorse or promote products derived from
+    this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+""",
+        }[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

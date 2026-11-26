@@ -4,14 +4,11 @@
 .. module:: http.cookies
    :synopsis: Support for HTTP state management (cookies).
 
-.. moduleauthor:: Timothy O'Malley <timo@alum.mit.edu>
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-
 **Source code:** :source:`Lib/http/cookies.py`
 
 --------------
 
-The :mod:`http.cookies` module defines classes for abstracting the concept of
+The :mod:`!http.cookies` module defines classes for abstracting the concept of
 cookies, an HTTP state management mechanism. It supports both simple string-only
 cookies, and provides an abstraction for having any serializable data-type as
 cookie value.
@@ -65,7 +62,7 @@ in a cookie name (as :attr:`~Morsel.key`).
 
    Module :mod:`http.cookiejar`
       HTTP cookie handling for web *clients*.  The :mod:`http.cookiejar` and
-      :mod:`http.cookies` modules do not depend on each other.
+      :mod:`!http.cookies` modules do not depend on each other.
 
    :rfc:`2109` - HTTP State Management Mechanism
       This is the state management specification implemented by this module.
@@ -98,7 +95,7 @@ Cookie Objects
 .. method:: BaseCookie.output(attrs=None, header='Set-Cookie:', sep='\r\n')
 
    Return a string representation suitable to be sent as HTTP headers. *attrs* and
-   *header* are sent to each :class:`Morsel`'s :meth:`output` method. *sep* is used
+   *header* are sent to each :class:`Morsel`'s :meth:`~Morsel.output` method. *sep* is used
    to join the headers together, and is by default the combination ``'\r\n'``
    (CRLF).
 
@@ -109,6 +106,12 @@ Cookie Objects
    supports JavaScript, will act the same as if the HTTP headers was sent.
 
    The meaning for *attrs* is the same as in :meth:`output`.
+
+   .. deprecated-removed:: 3.15 3.19
+      This method generates a JavaScript snippet to set cookies in the browser,
+      which is no longer considered a standard or recommended approach.
+      Use :meth:`~http.cookies.BaseCookie.output` instead to generate HTTP
+      headers.
 
 
 .. method:: BaseCookie.load(rawdata)
@@ -142,14 +145,31 @@ Morsel Objects
                     version
                     httponly
                     samesite
+                    partitioned
 
    The attribute :attr:`httponly` specifies that the cookie is only transferred
    in HTTP requests, and is not accessible through JavaScript. This is intended
    to mitigate some forms of cross-site scripting.
 
-   The attribute :attr:`samesite` specifies that the browser is not allowed to
-   send the cookie along with cross-site requests. This helps to mitigate CSRF
-   attacks. Valid values for this attribute are "Strict" and "Lax".
+   The attribute :attr:`samesite` controls when the browser sends the cookie with
+   cross-site requests. This helps to mitigate CSRF attacks. Valid values are
+   "Strict" (only sent with same-site requests), "Lax" (sent with same-site
+   requests and top-level navigations), and "None" (sent with same-site and
+   cross-site requests). When using "None", the "secure" attribute must also
+   be set, as required by modern browsers.
+
+   The attribute :attr:`partitioned` indicates to user agents that these
+   cross-site cookies *should* only be available in the same top-level context
+   that the cookie was first set in. For this to be accepted by the user agent,
+   you **must** also set ``Secure``.
+
+   In addition, it is recommended to use the ``__Host-`` prefix when setting
+   partitioned cookies to make them bound to the hostname and not the
+   registrable domain. Read
+   `CHIPS (Cookies Having Independent Partitioned State)`_
+   for full details and examples.
+
+   .. _CHIPS (Cookies Having Independent Partitioned State): https://github.com/privacycg/CHIPS/blob/main/README.md
 
    The keys are case-insensitive and their default value is ``''``.
 
@@ -165,6 +185,14 @@ Morsel Objects
    .. versionchanged:: 3.8
       Added support for the :attr:`samesite` attribute.
 
+   .. versionchanged:: 3.14
+      Added support for the :attr:`partitioned` attribute.
+
+   .. versionchanged:: next
+      :meth:`!__setitem__` and :meth:`!__ior__` now raise :exc:`CookieError` if
+      a value string for any attribute except :attr:`comment` contains the
+      reserved separator character ``;``. (If :attr:`comment` contains ``;``
+      it will be escaped in the output.)
 
 .. attribute:: Morsel.value
 
@@ -206,6 +234,12 @@ Morsel Objects
 
    The meaning for *attrs* is the same as in :meth:`output`.
 
+   .. deprecated-removed:: 3.15 3.19
+      This method generates a JavaScript snippet to set cookies in the browser,
+      which is no longer considered a standard or recommended approach.
+      Use :meth:`~http.cookies.Morsel.output` instead to generate HTTP
+      headers.
+
 
 .. method:: Morsel.OutputString(attrs=None)
 
@@ -224,6 +258,10 @@ Morsel Objects
    .. versionchanged:: 3.5
       an error is raised for invalid keys.
 
+   .. versionchanged:: next
+      :exc:`CookieError` is now raised if a value string for any attribute
+      except :attr:`comment` contains the reserved separator character ``;``.
+      (If :attr:`comment` contains ``;`` it will be escaped in the output.)
 
 .. method:: Morsel.copy(value)
 
@@ -238,13 +276,17 @@ Morsel Objects
    Raise an error if key is not a valid :rfc:`2109` attribute, otherwise
    behave the same as :meth:`dict.setdefault`.
 
+   .. versionchanged:: next
+      :exc:`CookieError` is now raised if the value string for any attribute
+      except :attr:`comment` contains the reserved separator character ``;``.
+      (If :attr:`comment` contains ``;`` it will be escaped in the output.)
 
 .. _cookie-example:
 
 Example
 -------
 
-The following example demonstrates how to use the :mod:`http.cookies` module.
+The following example demonstrates how to use the :mod:`!http.cookies` module.
 
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
@@ -272,9 +314,9 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
    Set-Cookie: chips=ahoy
    Set-Cookie: vienna=finger
    >>> C = cookies.SimpleCookie()
-   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
+   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=;";')
    >>> print(C)
-   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
+   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=;"
    >>> C = cookies.SimpleCookie()
    >>> C["oreo"] = "doublestuff"
    >>> C["oreo"]["path"] = "/"

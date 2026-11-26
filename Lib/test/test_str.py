@@ -7,6 +7,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 """
 import _string
 import codecs
+import datetime
 import itertools
 import operator
 import pickle
@@ -266,6 +267,30 @@ class StrTest(string_tests.StringLikeTest,
             pass
         self.checkequal(3, MyStr('aaa'), 'count', 'a')
 
+    def test_find_adaptive_widths(self):
+        # The adaptive path in Objects/stringlib/fastsearch.h needs a haystack
+        # of at least 2500 characters and a needle of at least a third of it,
+        # and it is compiled once per character width. Exercise all four.
+        cases = [
+            ('ascii', 'a', 'b', 'c'),
+            ('latin1', '\xe9', '\xea', '\xeb'),
+            ('ucs2', '\u0100', '\u0101', '\u0102'),
+            ('ucs4', '\U0001d11e', '\U0001d11f', '\U0001d120'),
+        ]
+        for kind, c, d, x in cases:
+            # A needle of 2000 characters, none of which is x.
+            needle = c * 1000 + d * 1000
+            with self.subTest(kind=kind):
+                # 4000 characters, mostly x: the skip branches jump by m.
+                haystack = c * 1000 + x * 3000
+                self.assertEqual(haystack.find(needle), -1)
+                self.assertEqual(haystack.count(needle), 0)
+                # A match at 3000 in a haystack of 5000, so count() reaches
+                # the match branch inside adaptive_find rather than two-way.
+                haystack = c * 1000 + x * 2000 + needle
+                self.assertEqual(haystack.find(needle), 3000)
+                self.assertEqual(haystack.count(needle), 1)
+
     def test_find(self):
         string_tests.StringLikeTest.test_find(self)
         # test implementation details of the memchr fast path
@@ -453,6 +478,13 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual("[a\xe9]".translate(str.maketrans({'a': '<\u20ac>'})),
                          "[<\u20ac>\xe9]")
 
+        # with frozendict
+        tbl = self.type2test.maketrans(frozendict({'s': 'S', 'T': 't'}))
+        self.assertEqual(tbl, {ord('s'): 'S', ord('T'): 't'})
+        self.assertEqual('sTan'.translate(tbl), 'Stan')
+        tbl = self.type2test.maketrans(frozendict({'a': None, 'b': '<i>'}))
+        self.checkequalnofix('<i><i><i>c', 'abababc', 'translate', tbl)
+
         # invalid Unicode characters
         invalid_char = 0x10ffff+1
         for before in "a\xe9\u20ac\U0010ffff":
@@ -558,6 +590,18 @@ class StrTest(string_tests.StringLikeTest,
         self.checkequalnofix('a b c d', ' ', 'join', ['a', 'b', 'c', 'd'])
         self.checkequalnofix('abcd', '', 'join', ('a', 'b', 'c', 'd'))
         self.checkequalnofix('w x y z', ' ', 'join', string_tests.Sequence('wxyz'))
+        # mixed kinds of the separator and the items
+        self.checkequalnofix('a\xe9b', '\xe9', 'join', ['a', 'b'])
+        self.checkequalnofix('a\u20acb', '\u20ac', 'join', ['a', 'b'])
+        self.checkequalnofix('a\xe9', '', 'join', ['a', '\xe9'])
+        self.checkequalnofix('\u20ac\xe9', '', 'join', ['\u20ac', '\xe9'])
+        self.checkequalnofix('\xe9-\u20ac-\U0001f600', '-', 'join',
+                             ['\xe9', '\u20ac', '\U0001f600'])
+        self.checkequalnofix('\U0001f600-a', '-', 'join', ['\U0001f600', 'a'])
+        # a single item which is a str subclass is copied
+        class S(str): pass
+        for s in 'a', '\xe9', '\u20ac', '\U0001f600':
+            self.checkequalnofix(s, '-', 'join', [S(s)])
         self.checkraises(TypeError, ' ', 'join', ['1', '2', MyWrapper('foo')])
         self.checkraises(TypeError, ' ', 'join', ['1', '2', '3', bytes()])
         self.checkraises(TypeError, ' ', 'join', [1, 2, 3])
@@ -598,6 +642,16 @@ class StrTest(string_tests.StringLikeTest,
         pattern = 'abc'
         text = 'abc def'
         self.assertIs(text.replace(pattern, pattern), text)
+
+    @support.nomemtest
+    def test_replace_oom(self):
+        # https://github.com/python/cpython/issues/152228
+        s1 = "轘" * 4
+        s2 = "&"
+        s3 = "&amp;"
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                s1.replace(s2, s3)  # this line used to crash before
 
     def test_repeat_id_preserving(self):
         a = '123abc1@'
@@ -851,6 +905,15 @@ class StrTest(string_tests.StringLikeTest,
 
         self.assertTrue('\U0001F46F'.isprintable())
         self.assertFalse('\U000E0020'.isprintable())
+
+    @support.requires_resource('cpu')
+    def test_isprintable_invariant(self):
+        for codepoint in range(sys.maxunicode + 1):
+            char = chr(codepoint)
+            category = unicodedata.category(char)
+            self.assertEqual(char.isprintable(),
+                             category[0] not in ('C', 'Z')
+                             or char == ' ')
 
     def test_surrogates(self):
         for s in ('a\uD800b\uDFFF', 'a\uDFFFb\uD800',
@@ -1221,10 +1284,10 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual('{0:\x00^6}'.format(3), '\x00\x003\x00\x00\x00')
         self.assertEqual('{0:<6}'.format(3), '3     ')
 
-        self.assertEqual('{0:\x00<6}'.format(3.14), '3.14\x00\x00')
-        self.assertEqual('{0:\x01<6}'.format(3.14), '3.14\x01\x01')
-        self.assertEqual('{0:\x00^6}'.format(3.14), '\x003.14\x00')
-        self.assertEqual('{0:^6}'.format(3.14), ' 3.14 ')
+        self.assertEqual('{0:\x00<6}'.format(3.25), '3.25\x00\x00')
+        self.assertEqual('{0:\x01<6}'.format(3.25), '3.25\x01\x01')
+        self.assertEqual('{0:\x00^6}'.format(3.25), '\x003.25\x00')
+        self.assertEqual('{0:^6}'.format(3.25), ' 3.25 ')
 
         self.assertEqual('{0:\x00<12}'.format(3+2.0j), '(3+2j)\x00\x00\x00\x00\x00\x00')
         self.assertEqual('{0:\x01<12}'.format(3+2.0j), '(3+2j)\x01\x01\x01\x01\x01\x01')
@@ -1568,17 +1631,40 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual('%X' % letter_m, '6D')
         self.assertEqual('%o' % letter_m, '155')
         self.assertEqual('%c' % letter_m, 'm')
-        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not float', operator.mod, '%x', 3.14)
-        self.assertRaisesRegex(TypeError, '%X format: an integer is required, not float', operator.mod, '%X', 2.11)
-        self.assertRaisesRegex(TypeError, '%o format: an integer is required, not float', operator.mod, '%o', 1.79)
-        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not PseudoFloat', operator.mod, '%x', pi)
-        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not complex', operator.mod, '%x', 3j)
-        self.assertRaisesRegex(TypeError, '%X format: an integer is required, not complex', operator.mod, '%X', 2j)
-        self.assertRaisesRegex(TypeError, '%o format: an integer is required, not complex', operator.mod, '%o', 1j)
-        self.assertRaisesRegex(TypeError, '%u format: a real number is required, not complex', operator.mod, '%u', 3j)
-        self.assertRaisesRegex(TypeError, '%i format: a real number is required, not complex', operator.mod, '%i', 2j)
-        self.assertRaisesRegex(TypeError, '%d format: a real number is required, not complex', operator.mod, '%d', 1j)
-        self.assertRaisesRegex(TypeError, r'%c requires an int or a unicode character, not .*\.PseudoFloat', operator.mod, '%c', pi)
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %x requires an integer, not float'):
+            '%x' % 3.14
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %X requires an integer, not float'):
+            '%X' % 2.11
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %o requires an integer, not float'):
+            '%o' % 1.79
+        with self.assertRaisesRegex(TypeError,
+                r'format argument: %x requires an integer, not .*\.PseudoFloat'):
+            '%x' % pi
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %x requires an integer, not complex'):
+            '%x' % 3j
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %X requires an integer, not complex'):
+            '%X' % 2j
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %o requires an integer, not complex'):
+            '%o' % 1j
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %u requires a real number, not complex'):
+            '%u' % 3j
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %i requires a real number, not complex'):
+            '%i' % 2j
+        with self.assertRaisesRegex(TypeError,
+                'format argument: %d requires a real number, not complex'):
+            '%d' % 1j
+        with self.assertRaisesRegex(TypeError,
+                r'format argument: %c requires an integer or a unicode character, '
+                r'not .*\.PseudoFloat'):
+            '%c' % pi
 
         class RaisingNumber:
             def __int__(self):
@@ -1665,7 +1751,7 @@ class StrTest(string_tests.StringLikeTest,
             self.assertIn('str', exc)
             self.assertIn('tuple', exc)
 
-    @support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
+    @support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR', '')
     def test_format_float(self):
         # should not format with a comma, but always with C locale
         self.assertEqual('1.0', '%.1f' % 1.0)
@@ -1907,6 +1993,12 @@ class StrTest(string_tests.StringLikeTest,
                               (b'\xF4'+cb+b'\x80\x80').decode, 'utf-8')
             self.assertRaises(UnicodeDecodeError,
                               (b'\xF4'+cb+b'\xBF\xBF').decode, 'utf-8')
+
+    def test_issue127903(self):
+        # gh-127903: ``_copy_characters`` crashes on DEBUG builds when
+        # there is nothing to copy.
+        d = datetime.datetime(2013, 11, 10, 14, 20, 59)
+        self.assertEqual(d.strftime('%z'), '')
 
     def test_issue8271(self):
         # Issue #8271: during the decoding of an invalid UTF-8 byte sequence,
@@ -2549,7 +2641,7 @@ class StrTest(string_tests.StringLikeTest,
                 self.assertFalse(copy1 != copy2)
 
                 self.assertTrue(copy1 <= copy2)
-                self.assertTrue(copy2 >= copy2)
+                self.assertTrue(copy1 >= copy2)
 
         self.assertTrue(ascii < ascii2)
         self.assertTrue(ascii < latin)
@@ -2589,7 +2681,8 @@ class StrTest(string_tests.StringLikeTest,
 
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, str)
-        support.check_free_after_iterating(self, reversed, str)
+        if not support.Py_GIL_DISABLED:
+            support.check_free_after_iterating(self, reversed, str)
 
     def test_check_encoding_errors(self):
         # bpo-37388: str(bytes) and str.decode() must check encoding and errors

@@ -2,6 +2,10 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_contextvars_Context_get__doc__,
@@ -10,8 +14,8 @@ PyDoc_STRVAR(_contextvars_Context_get__doc__,
 "\n"
 "Return the value for `key` if `key` has the value in the context object.\n"
 "\n"
-"If `key` does not exist, return `default`. If `default` is not given,\n"
-"return None.");
+"If `key` does not exist, return `default`.  If `default` is not\n"
+"given, return None.");
 
 #define _CONTEXTVARS_CONTEXT_GET_METHODDEF    \
     {"get", _PyCFunction_CAST(_contextvars_Context_get), METH_FASTCALL, _contextvars_Context_get__doc__},
@@ -21,7 +25,7 @@ _contextvars_Context_get_impl(PyContext *self, PyObject *key,
                               PyObject *default_value);
 
 static PyObject *
-_contextvars_Context_get(PyContext *self, PyObject *const *args, Py_ssize_t nargs)
+_contextvars_Context_get(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
@@ -36,7 +40,7 @@ _contextvars_Context_get(PyContext *self, PyObject *const *args, Py_ssize_t narg
     }
     default_value = args[1];
 skip_optional:
-    return_value = _contextvars_Context_get_impl(self, key, default_value);
+    return_value = _contextvars_Context_get_impl((PyContext *)self, key, default_value);
 
 exit:
     return return_value;
@@ -57,9 +61,9 @@ static PyObject *
 _contextvars_Context_items_impl(PyContext *self);
 
 static PyObject *
-_contextvars_Context_items(PyContext *self, PyObject *Py_UNUSED(ignored))
+_contextvars_Context_items(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _contextvars_Context_items_impl(self);
+    return _contextvars_Context_items_impl((PyContext *)self);
 }
 
 PyDoc_STRVAR(_contextvars_Context_keys__doc__,
@@ -75,9 +79,9 @@ static PyObject *
 _contextvars_Context_keys_impl(PyContext *self);
 
 static PyObject *
-_contextvars_Context_keys(PyContext *self, PyObject *Py_UNUSED(ignored))
+_contextvars_Context_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _contextvars_Context_keys_impl(self);
+    return _contextvars_Context_keys_impl((PyContext *)self);
 }
 
 PyDoc_STRVAR(_contextvars_Context_values__doc__,
@@ -93,9 +97,9 @@ static PyObject *
 _contextvars_Context_values_impl(PyContext *self);
 
 static PyObject *
-_contextvars_Context_values(PyContext *self, PyObject *Py_UNUSED(ignored))
+_contextvars_Context_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _contextvars_Context_values_impl(self);
+    return _contextvars_Context_values_impl((PyContext *)self);
 }
 
 PyDoc_STRVAR(_contextvars_Context_copy__doc__,
@@ -111,9 +115,91 @@ static PyObject *
 _contextvars_Context_copy_impl(PyContext *self);
 
 static PyObject *
-_contextvars_Context_copy(PyContext *self, PyObject *Py_UNUSED(ignored))
+_contextvars_Context_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _contextvars_Context_copy_impl(self);
+    return _contextvars_Context_copy_impl((PyContext *)self);
+}
+
+static PyObject *
+contextvar_tp_new_impl(PyTypeObject *type, PyObject *name, PyObject *def);
+
+static PyObject *
+contextvar_tp_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(default), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "default", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "ContextVar",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t noptargs = nargs + nkw - 1;
+    PyObject *name;
+    PyObject *def = NULL;
+
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    name = fastargs[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    def = fastargs[1];
+skip_optional_kwonly:
+    return_value = contextvar_tp_new_impl(type, name, def);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+contextvar_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return contextvar_tp_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+contextvar_tp_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    assert(_PyType_CAST(type)->tp_new == contextvar_tp_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    return contextvar_tp_new_helper(_PyType_CAST(type), args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
 }
 
 PyDoc_STRVAR(_contextvars_ContextVar_get__doc__,
@@ -122,10 +208,12 @@ PyDoc_STRVAR(_contextvars_ContextVar_get__doc__,
 "\n"
 "Return a value for the context variable for the current context.\n"
 "\n"
-"If there is no value for the variable in the current context, the method will:\n"
-" * return the value of the default argument of the method, if provided; or\n"
-" * return the default value for the context variable, if it was created\n"
-"   with one; or\n"
+"If there is no value for the variable in the current context, the\n"
+"method will:\n"
+" * return the value of the default argument of the method, if\n"
+"   provided; or\n"
+" * return the default value for the context variable, if it was\n"
+"   created with one; or\n"
 " * raise a LookupError.");
 
 #define _CONTEXTVARS_CONTEXTVAR_GET_METHODDEF    \
@@ -135,7 +223,7 @@ static PyObject *
 _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value);
 
 static PyObject *
-_contextvars_ContextVar_get(PyContextVar *self, PyObject *const *args, Py_ssize_t nargs)
+_contextvars_ContextVar_get(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *default_value = NULL;
@@ -148,7 +236,7 @@ _contextvars_ContextVar_get(PyContextVar *self, PyObject *const *args, Py_ssize_
     }
     default_value = args[0];
 skip_optional:
-    return_value = _contextvars_ContextVar_get_impl(self, default_value);
+    return_value = _contextvars_ContextVar_get_impl((PyContextVar *)self, default_value);
 
 exit:
     return return_value;
@@ -160,13 +248,27 @@ PyDoc_STRVAR(_contextvars_ContextVar_set__doc__,
 "\n"
 "Call to set a new value for the context variable in the current context.\n"
 "\n"
-"The required value argument is the new value for the context variable.\n"
+"The required value argument is the new value for the context\n"
+"variable.\n"
 "\n"
-"Returns a Token object that can be used to restore the variable to its previous\n"
-"value via the `ContextVar.reset()` method.");
+"Returns a Token object that can be used to restore the variable to\n"
+"its previous value via the `ContextVar.reset()` method.");
 
 #define _CONTEXTVARS_CONTEXTVAR_SET_METHODDEF    \
     {"set", (PyCFunction)_contextvars_ContextVar_set, METH_O, _contextvars_ContextVar_set__doc__},
+
+static PyObject *
+_contextvars_ContextVar_set_impl(PyContextVar *self, PyObject *value);
+
+static PyObject *
+_contextvars_ContextVar_set(PyObject *self, PyObject *value)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _contextvars_ContextVar_set_impl((PyContextVar *)self, value);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_contextvars_ContextVar_reset__doc__,
 "reset($self, token, /)\n"
@@ -174,9 +276,73 @@ PyDoc_STRVAR(_contextvars_ContextVar_reset__doc__,
 "\n"
 "Reset the context variable.\n"
 "\n"
-"The variable is reset to the value it had before the `ContextVar.set()` that\n"
-"created the token was used.");
+"The variable is reset to the value it had before the\n"
+"`ContextVar.set()` that created the token was used.");
 
 #define _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF    \
     {"reset", (PyCFunction)_contextvars_ContextVar_reset, METH_O, _contextvars_ContextVar_reset__doc__},
-/*[clinic end generated code: output=b667826178444c3f input=a9049054013a1b77]*/
+
+static PyObject *
+_contextvars_ContextVar_reset_impl(PyContextVar *self, PyObject *token);
+
+static PyObject *
+_contextvars_ContextVar_reset(PyObject *self, PyObject *token)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _contextvars_ContextVar_reset_impl((PyContextVar *)self, token);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(token_enter__doc__,
+"__enter__($self, /)\n"
+"--\n"
+"\n"
+"Enter into Token context manager.");
+
+#define TOKEN_ENTER_METHODDEF    \
+    {"__enter__", (PyCFunction)token_enter, METH_NOARGS, token_enter__doc__},
+
+static PyObject *
+token_enter_impl(PyContextToken *self);
+
+static PyObject *
+token_enter(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return token_enter_impl((PyContextToken *)self);
+}
+
+PyDoc_STRVAR(token_exit__doc__,
+"__exit__($self, type, val, tb, /)\n"
+"--\n"
+"\n"
+"Exit from Token context manager, restore the linked ContextVar.");
+
+#define TOKEN_EXIT_METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(token_exit), METH_FASTCALL, token_exit__doc__},
+
+static PyObject *
+token_exit_impl(PyContextToken *self, PyObject *type, PyObject *val,
+                PyObject *tb);
+
+static PyObject *
+token_exit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *type;
+    PyObject *val;
+    PyObject *tb;
+
+    if (!_PyArg_CheckPositional("__exit__", nargs, 3, 3)) {
+        goto exit;
+    }
+    type = args[0];
+    val = args[1];
+    tb = args[2];
+    return_value = token_exit_impl((PyContextToken *)self, type, val, tb);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=488efab9f3932fbb input=a9049054013a1b77]*/

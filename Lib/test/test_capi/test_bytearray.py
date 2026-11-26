@@ -1,5 +1,9 @@
+import sys
+import textwrap
 import unittest
+from test import support
 from test.support import import_helper
+from test.support.script_helper import assert_python_failure
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
@@ -20,6 +24,7 @@ class CAPITest(unittest.TestCase):
     def test_check(self):
         # Test PyByteArray_Check()
         check = _testlimitedcapi.bytearray_check
+        self.assertTrue(check(bytearray(b'')))
         self.assertTrue(check(bytearray(b'abc')))
         self.assertFalse(check(b'abc'))
         self.assertTrue(check(ByteArraySubclass(b'abc')))
@@ -33,6 +38,7 @@ class CAPITest(unittest.TestCase):
     def test_checkexact(self):
         # Test PyByteArray_CheckExact()
         check = _testlimitedcapi.bytearray_checkexact
+        self.assertTrue(check(bytearray(b'')))
         self.assertTrue(check(bytearray(b'abc')))
         self.assertFalse(check(b'abc'))
         self.assertFalse(check(ByteArraySubclass(b'abc')))
@@ -53,7 +59,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromstringandsize(b'', 0), bytearray())
         self.assertEqual(fromstringandsize(NULL, 0), bytearray())
         self.assertEqual(len(fromstringandsize(NULL, 3)), 3)
-        self.assertRaises(MemoryError, fromstringandsize, NULL, PY_SSIZE_T_MAX)
+        self.assertRaises(OverflowError, fromstringandsize, NULL, PY_SSIZE_T_MAX)
+        self.assertRaises(OverflowError, fromstringandsize, NULL,
+                          PY_SSIZE_T_MAX-sys.getsizeof(b'') + 1)
 
         self.assertRaises(SystemError, fromstringandsize, b'abc', -1)
         self.assertRaises(SystemError, fromstringandsize, b'abc', PY_SSIZE_T_MIN)
@@ -64,6 +72,7 @@ class CAPITest(unittest.TestCase):
         # Test PyByteArray_FromObject()
         fromobject = _testlimitedcapi.bytearray_fromobject
 
+        self.assertEqual(fromobject(b''), bytearray(b''))
         self.assertEqual(fromobject(b'abc'), bytearray(b'abc'))
         self.assertEqual(fromobject(bytearray(b'abc')), bytearray(b'abc'))
         self.assertEqual(fromobject(ByteArraySubclass(b'abc')), bytearray(b'abc'))
@@ -78,7 +87,7 @@ class CAPITest(unittest.TestCase):
     def test_size(self):
         # Test PyByteArray_Size()
         size = _testlimitedcapi.bytearray_size
-
+        self.assertEqual(size(bytearray(b'')), 0)
         self.assertEqual(size(bytearray(b'abc')), 3)
         self.assertEqual(size(ByteArraySubclass(b'abc')), 3)
 
@@ -89,7 +98,7 @@ class CAPITest(unittest.TestCase):
     def test_asstring(self):
         """Test PyByteArray_AsString()"""
         asstring = _testlimitedcapi.bytearray_asstring
-
+        self.assertEqual(asstring(bytearray(b''), 1), b'\0')
         self.assertEqual(asstring(bytearray(b'abc'), 4), b'abc\0')
         self.assertEqual(asstring(ByteArraySubclass(b'abc'), 4), b'abc\0')
         self.assertEqual(asstring(bytearray(b'abc\0def'), 8), b'abc\0def\0')
@@ -105,6 +114,7 @@ class CAPITest(unittest.TestCase):
         ba = bytearray(b'abc')
         self.assertEqual(concat(ba, b'def'), bytearray(b'abcdef'))
         self.assertEqual(ba, b'abc')
+        self.assertEqual(concat(ba, ba), bytearray(b'abcabc'))
 
         self.assertEqual(concat(b'abc', b'def'), bytearray(b'abcdef'))
         self.assertEqual(concat(b'a\0b', b'c\0d'), bytearray(b'a\0bc\0d'))
@@ -112,6 +122,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(concat(b'abc', bytearray(b'def')), bytearray(b'abcdef'))
         self.assertEqual(concat(bytearray(b'abc'), b''), bytearray(b'abc'))
         self.assertEqual(concat(b'', bytearray(b'def')), bytearray(b'def'))
+        self.assertEqual(concat(bytearray(b''), bytearray(b'')), bytearray(b''))
         self.assertEqual(concat(memoryview(b'xabcy')[1:4], b'def'),
                          bytearray(b'abcdef'))
         self.assertEqual(concat(b'abc', memoryview(b'xdefy')[1:4]),
@@ -147,17 +158,42 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(resize(ba, 0), 0)
         self.assertEqual(ba, bytearray())
 
+        ba = bytearray(b'')
+        self.assertEqual(resize(ba, 0), 0)
+        self.assertEqual(ba, bytearray())
+
         ba = ByteArraySubclass(b'abcdef')
         self.assertEqual(resize(ba, 3), 0)
         self.assertEqual(ba, bytearray(b'abc'))
 
+        self.assertRaises(ValueError, resize, bytearray(), -1)
+        self.assertRaises(ValueError, resize, bytearray(), -200)
         self.assertRaises(MemoryError, resize, bytearray(), PY_SSIZE_T_MAX)
         self.assertRaises(MemoryError, resize, bytearray(1000), PY_SSIZE_T_MAX)
 
-        # CRASHES resize(bytearray(b'abc'), -1)
         # CRASHES resize(b'abc', 0)
         # CRASHES resize(object(), 0)
         # CRASHES resize(NULL, 0)
+
+    @unittest.skipUnless(support.Py_DEBUG, 'need debug build (Py_DEBUG)')
+    def test_detect_overflow(self):
+        # Test detection of buffer overflow
+        size = 123    # bytes
+        overflow = 1  # bytes
+        code = textwrap.dedent(f'''
+            from test.support import SuppressCrashReport
+            import _testcapi
+
+            size = {size}
+            overflow = {overflow}
+            with SuppressCrashReport():
+                # Trigger a buffer overflow in a new bytearray
+                ba = _testcapi.bytearray_overflow(size, overflow)
+                ba = None
+        ''')
+        proc = assert_python_failure('-c', code)
+        self.assertIn(b'Buffer overflow detected in bytearray object', proc.err)
+        self.assertIn(f'at position {size}'.encode(), proc.err)
 
 
 if __name__ == "__main__":

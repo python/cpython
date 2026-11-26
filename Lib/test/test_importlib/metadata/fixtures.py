@@ -1,11 +1,14 @@
-import sys
-import copy
-import json
-import shutil
-import pathlib
-import textwrap
-import functools
 import contextlib
+import copy
+import functools
+import json
+import pathlib
+import shutil
+import sys
+import textwrap
+import zipfile
+from importlib import resources
+from importlib.metadata import FastPath
 
 from test.support import import_helper
 from test.support import os_helper
@@ -13,15 +16,6 @@ from test.support import requires_zlib
 
 from . import _path
 from ._path import FilesSpec
-
-
-try:
-    from importlib import resources  # type: ignore
-
-    getattr(resources, 'files')
-    getattr(resources, 'as_file')
-except (ImportError, AttributeError):
-    import importlib_resources as resources  # type: ignore
 
 
 @contextlib.contextmanager
@@ -79,7 +73,7 @@ class SiteBuilder(SiteDir):
 
 
 class DistInfoPkg(OnSysPath, SiteBuilder):
-    files: FilesSpec = {
+    files: FilesSpec = frozendict({
         "distinfo_pkg-1.0.0.dist-info": {
             "METADATA": """
                 Name: distinfo-pkg
@@ -103,7 +97,7 @@ class DistInfoPkg(OnSysPath, SiteBuilder):
             def main():
                 print("hello world")
             """,
-    }
+    })
 
     def make_uppercase(self):
         """
@@ -122,7 +116,7 @@ class DistInfoPkgEditable(DistInfoPkg):
     """
 
     some_hash = '524127ce937f7cb65665130c695abd18ca386f60bb29687efb976faa1596fdcc'
-    files: FilesSpec = {
+    files: FilesSpec = frozendict({
         'distinfo_pkg-1.0.0.dist-info': {
             'direct_url.json': json.dumps({
                 "archive_info": {
@@ -132,22 +126,22 @@ class DistInfoPkgEditable(DistInfoPkg):
                 "url": "file:///path/to/distinfo_pkg-1.0.0.editable-py3-none-any.whl",
             })
         },
-    }
+    })
 
 
 class DistInfoPkgWithDot(OnSysPath, SiteBuilder):
-    files: FilesSpec = {
+    files: FilesSpec = frozendict({
         "pkg_dot-1.0.0.dist-info": {
             "METADATA": """
                 Name: pkg.dot
                 Version: 1.0.0
                 """,
         },
-    }
+    })
 
 
 class DistInfoPkgWithDotLegacy(OnSysPath, SiteBuilder):
-    files: FilesSpec = {
+    files: FilesSpec = frozendict({
         "pkg.dot-1.0.0.dist-info": {
             "METADATA": """
                 Name: pkg.dot
@@ -160,7 +154,7 @@ class DistInfoPkgWithDotLegacy(OnSysPath, SiteBuilder):
                 Version: 1.0.0
                 """,
         },
-    }
+    })
 
 
 class DistInfoPkgOffPath(SiteBuilder):
@@ -168,7 +162,7 @@ class DistInfoPkgOffPath(SiteBuilder):
 
 
 class EggInfoPkg(OnSysPath, SiteBuilder):
-    files: FilesSpec = {
+    files: FilesSpec = frozendict({
         "egginfo_pkg.egg-info": {
             "PKG-INFO": """
                 Name: egginfo-pkg
@@ -200,11 +194,11 @@ class EggInfoPkg(OnSysPath, SiteBuilder):
             def main():
                 print("hello world")
             """,
-    }
+    })
 
 
 class EggInfoPkgPipInstalledNoToplevel(OnSysPath, SiteBuilder):
-    files: FilesSpec = {
+    files: FilesSpec = frozendict({
         "egg_with_module_pkg.egg-info": {
             "PKG-INFO": "Name: egg_with_module-pkg",
             # SOURCES.txt is made from the source archive, and contains files
@@ -231,11 +225,11 @@ class EggInfoPkgPipInstalledNoToplevel(OnSysPath, SiteBuilder):
             def main():
                 print("hello world")
             """,
-    }
+    })
 
 
 class EggInfoPkgPipInstalledExternalDataFiles(OnSysPath, SiteBuilder):
-    files: FilesSpec = {
+    files: FilesSpec = frozendict({
         "egg_with_module_pkg.egg-info": {
             "PKG-INFO": "Name: egg_with_module-pkg",
             # SOURCES.txt is made from the source archive, and contains files
@@ -265,11 +259,11 @@ class EggInfoPkgPipInstalledExternalDataFiles(OnSysPath, SiteBuilder):
             def main():
                 print("hello world")
             """,
-    }
+    })
 
 
 class EggInfoPkgPipInstalledNoModules(OnSysPath, SiteBuilder):
-    files: FilesSpec = {
+    files: FilesSpec = frozendict({
         "egg_with_no_modules_pkg.egg-info": {
             "PKG-INFO": "Name: egg_with_no_modules-pkg",
             # SOURCES.txt is made from the source archive, and contains files
@@ -291,11 +285,11 @@ class EggInfoPkgPipInstalledNoModules(OnSysPath, SiteBuilder):
             # top_level.txt correctly reflects that no modules are installed
             "top_level.txt": b"\n",
         },
-    }
+    })
 
 
 class EggInfoPkgSourcesFallback(OnSysPath, SiteBuilder):
-    files: FilesSpec = {
+    files: FilesSpec = frozendict({
         "sources_fallback_pkg.egg-info": {
             "PKG-INFO": "Name: sources_fallback-pkg",
             # SOURCES.txt is made from the source archive, and contains files
@@ -313,11 +307,11 @@ class EggInfoPkgSourcesFallback(OnSysPath, SiteBuilder):
             def main():
                 print("hello world")
             """,
-    }
+    })
 
 
 class EggInfoFile(OnSysPath, SiteBuilder):
-    files: FilesSpec = {
+    files: FilesSpec = frozendict({
         "egginfo_file.egg-info": """
             Metadata-Version: 1.0
             Name: egginfo_file
@@ -330,7 +324,7 @@ class EggInfoFile(OnSysPath, SiteBuilder):
             Description: UNKNOWN
             Platform: UNKNOWN
             """,
-    }
+    })
 
 
 # dedent all text strings before writing
@@ -373,11 +367,21 @@ class ZipFixtures:
         assert file.name.startswith('example'), file.name
         sys.path.insert(0, str(file))
         self.resources.callback(sys.path.pop, 0)
+        self.resources.callback(self._close_cached_zip, str(file))
+
+    @staticmethod
+    def _close_cached_zip(root):
+        # TODO gh-162342: Remove once FastPath no longer leaks the zip file.
+        zip_path = getattr(FastPath(root).joinpath, '__self__', None)
+        if isinstance(zip_path, zipfile.Path):
+            zip_path.root.close()
 
     def setUp(self):
         # Add self.zip_name to the front of sys.path.
         self.resources = contextlib.ExitStack()
         self.addCleanup(self.resources.close)
+        # Registered first so it runs last, after every zip has been closed.
+        self.resources.callback(FastPath.__new__.cache_clear)
 
 
 def parameterize(*args_set):

@@ -102,7 +102,7 @@ Shrink the number of inline :opcode:`CACHE` entries used by
 .. date: 2023-03-08-08-37-36
 .. gh-issue: 102491
 .. nonce: SFvvsC
-.. section: Core and Builtins
+.. section: Library
 
 Improve import time of ``platform`` by removing IronPython version parsing.
 The IronPython version parsing was not functional (see
@@ -187,7 +187,7 @@ Improve build support for the Xbox. Patch by Max Bachmann.
 .. date: 2023-02-21-23-42-39
 .. gh-issue: 102027
 .. nonce: fQARG0
-.. section: Core and Builtins
+.. section: Build
 
 Fix SSE2 and SSE3 detection in ``_blake2`` internal module. Patch by Max
 Bachmann.
@@ -207,7 +207,7 @@ Deprecate ``co_lnotab`` in code objects, schedule it for removal in Python
 .. bpo: 1635741
 .. date: 2020-07-04-09-04-41
 .. nonce: ZsP31Y
-.. section: Core and Builtins
+.. section: Library
 
 Adapt :mod:`!_pickle` to :pep:`687`. Patch by Mohamed Koubaa and Erlend
 Aasland.

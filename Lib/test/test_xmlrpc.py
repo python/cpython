@@ -208,6 +208,17 @@ class XMLRPCTestCase(unittest.TestCase):
         self.assertEqual(xmlrpclib.loads(strg)[0][0], value)
         self.assertEqual(xmlrpclib.loads(strg)[1], methodname)
 
+    def test_dump_escape_methodname(self):
+        payload = 'foo</methodName><injected attr="evil"/><methodName>bar'
+        s = xmlrpclib.dumps((), methodname=payload)
+        self.assertIn(
+            '<methodName>foo&lt;/methodName&gt;&lt;injected attr="evil"/&gt;'
+            '&lt;methodName&gt;bar</methodName>', s
+        )
+        self.assertNotIn('<injected attr="evil"/>', s)
+        load, m = xmlrpclib.loads(s)
+        self.assertEqual(m, payload)
+
     def test_dump_bytes(self):
         sample = b"my dog has fleas"
         self.assertEqual(sample, xmlrpclib.Binary(sample))
@@ -240,6 +251,18 @@ class XMLRPCTestCase(unittest.TestCase):
                 '<member><name>b</name><value><spam/></value></member>'
                 '</struct></value></param></params>')
         self.assertRaises(ResponseError, xmlrpclib.loads, data)
+
+    def test_loads_nested_scalars(self):
+        template = '<params><param><value>%s</value></param></params>'
+        # CDATA splits 'ab' into two fragments so that joining them again
+        # would allocate another string. str.join() can reuse a single fragment.
+        data = template % '<string><string>a<![CDATA[b]]></string></string>'
+        values, _ = xmlrpclib.loads(data)
+        self.assertEqual(values, ('ab', ''))
+
+        data = template % '<int><int>1</int>2</int>'
+        values, _ = xmlrpclib.loads(data)
+        self.assertEqual(values, (1, 2))
 
     def check_loads(self, s, value, **kwargs):
         dump = '<params><param><value>%s</value></param></params>' % s

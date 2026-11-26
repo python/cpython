@@ -1,2 +1,0 @@
-:mod:`datetime` no longer crashes in certain complex reference cycle
-situations.

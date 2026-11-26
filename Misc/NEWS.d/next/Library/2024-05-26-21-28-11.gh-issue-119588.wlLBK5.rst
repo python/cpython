@@ -1,1 +1,0 @@
-``zipfile.Path.is_symlink`` now assesses if the given path is a symlink.

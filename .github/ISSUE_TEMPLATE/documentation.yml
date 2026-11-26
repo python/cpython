@@ -1,0 +1,22 @@
+name: Documentation
+description: Report a problem with the documentation
+labels: ["docs"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!NOTE]
+        > Trivial changes (for example typos) don’t require an issue before opening a PR.
+  - type: input
+    id: url
+    attributes:
+      label: "Documentation URL"
+      description: "A link to the relevant documentation page, if applicable."
+      placeholder: "https://docs.python.org/3/..."
+  - type: textarea
+    id: description
+    attributes:
+      label: "Documentation"
+      description: "A clear and concise description of the issue."
+    validations:
+      required: true

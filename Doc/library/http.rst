@@ -12,7 +12,7 @@
 
 --------------
 
-:mod:`http` is a package that collects several modules for working with the
+:mod:`!http` is a package that collects several modules for working with the
 HyperText Transfer Protocol:
 
 * :mod:`http.client` is a low-level HTTP protocol client; for high-level URL
@@ -22,7 +22,7 @@ HyperText Transfer Protocol:
 * :mod:`http.cookiejar` provides persistence of cookies
 
 
-The :mod:`http` module also defines the following enums that help you work with http related code:
+The :mod:`!http` module also defines the following enums that help you work with http related code:
 
 .. class:: HTTPStatus
 
@@ -35,7 +35,7 @@ The :mod:`http` module also defines the following enums that help you work with 
 
       >>> from http import HTTPStatus
       >>> HTTPStatus.OK
-      HTTPStatus.OK
+      <HTTPStatus.OK: 200>
       >>> HTTPStatus.OK == 200
       True
       >>> HTTPStatus.OK.value
@@ -45,7 +45,7 @@ The :mod:`http` module also defines the following enums that help you work with 
       >>> HTTPStatus.OK.description
       'Request fulfilled, document follows'
       >>> list(HTTPStatus)
-      [HTTPStatus.CONTINUE, HTTPStatus.SWITCHING_PROTOCOLS, ...]
+      [<HTTPStatus.CONTINUE: 100>, <HTTPStatus.SWITCHING_PROTOCOLS: 101>, ...]
 
 .. _http-status-codes:
 
@@ -139,7 +139,8 @@ equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
 
 .. versionchanged:: 3.13
    Implemented RFC9110 naming for status constants. Old constant names are preserved for
-   backwards compatibility.
+   backwards compatibility: ``413 REQUEST_ENTITY_TOO_LARGE``, ``414 REQUEST_URI_TOO_LONG``,
+   ``416 REQUESTED_RANGE_NOT_SATISFIABLE`` and ``422 UNPROCESSABLE_ENTITY``.
 
 HTTP status category
 --------------------
@@ -193,6 +194,7 @@ Property             Indicates that           Details
        <HTTPMethod.PATCH>,
        <HTTPMethod.POST>,
        <HTTPMethod.PUT>,
+       <HTTPMethod.QUERY>,
        <HTTPMethod.TRACE>]
 
 .. _http-methods:
@@ -216,4 +218,5 @@ Method      Enum Name                           Details
 ``OPTIONS`` ``OPTIONS``                         HTTP Semantics :rfc:`9110`, Section 9.3.7
 ``TRACE``   ``TRACE``                           HTTP Semantics :rfc:`9110`, Section 9.3.8
 ``PATCH``   ``PATCH``                           HTTP/1.1 :rfc:`5789`
+``QUERY``   ``QUERY``                           The HTTP QUERY Method :rfc:`10008`
 =========== =================================== ==================================================================

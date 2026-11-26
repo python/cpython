@@ -138,7 +138,12 @@ extern "C" {
    Delete attribute named attr_name, for object o. Returns
    -1 on failure.
 
-   This is the equivalent of the Python statement: del o.attr_name. */
+   This is the equivalent of the Python statement: del o.attr_name.
+
+   Implemented as a macro in the limited C API 3.12 and older. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 13)
+#  define PyObject_DelAttrString(O, A) PyObject_SetAttrString((O), (A), NULL)
+#endif
 
 
 /* Implemented elsewhere:
@@ -147,7 +152,12 @@ extern "C" {
 
    Delete attribute named attr_name, for object o. Returns -1
    on failure.  This is the equivalent of the Python
-   statement: del o.attr_name. */
+   statement: del o.attr_name.
+
+   Implemented as a macro in the limited C API 3.12 and older. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 13)
+#  define PyObject_DelAttr(O, A) PyObject_SetAttr((O), (A), NULL)
+#endif
 
 
 /* Implemented elsewhere:
@@ -272,7 +282,7 @@ PyAPI_FUNC(Py_ssize_t) PyVectorcall_NARGS(size_t nargsf);
    "tuple" and keyword arguments "dict". "dict" may also be NULL */
 PyAPI_FUNC(PyObject *) PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 12)
 #define PY_VECTORCALL_ARGUMENTS_OFFSET \
     (_Py_STATIC_CAST(size_t, 1) << (8 * sizeof(size_t) - 1))
 
@@ -397,7 +407,7 @@ PyAPI_FUNC(int) PyIter_Check(PyObject *);
    This function always succeeds. */
 PyAPI_FUNC(int) PyAIter_Check(PyObject *);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
 /* Return 1 and set 'item' to the next item of 'iter' on success.
  * Return 0 and set 'item' to NULL when there are no remaining values.
  * Return -1, set 'item' to NULL and set an exception on error.
@@ -416,7 +426,7 @@ PyAPI_FUNC(int) PyIter_NextItem(PyObject *iter, PyObject **item);
    Prefer PyIter_NextItem() instead. */
 PyAPI_FUNC(PyObject *) PyIter_Next(PyObject *);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 10)
 
 /* Takes generator, coroutine or iterator object and sends the value into it.
    Returns:
@@ -735,22 +745,6 @@ PyAPI_FUNC(PyObject *) PySequence_List(PyObject *o);
    TypeError exception with 'm' as the message text. */
 PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
 
-/* Return the size of the sequence 'o', assuming that 'o' was returned by
-   PySequence_Fast and is not NULL. */
-#define PySequence_Fast_GET_SIZE(o) \
-    (PyList_Check(o) ? PyList_GET_SIZE(o) : PyTuple_GET_SIZE(o))
-
-/* Return the 'i'-th element of the sequence 'o', assuming that o was returned
-   by PySequence_Fast, and that i is within bounds. */
-#define PySequence_Fast_GET_ITEM(o, i)\
-     (PyList_Check(o) ? PyList_GET_ITEM((o), (i)) : PyTuple_GET_ITEM((o), (i)))
-
-/* Return a pointer to the underlying item array for
-   an object returned by PySequence_Fast */
-#define PySequence_Fast_ITEMS(sf) \
-    (PyList_Check(sf) ? ((PyListObject *)(sf))->ob_item \
-                      : ((PyTupleObject *)(sf))->ob_item)
-
 /* Return the number of occurrences on value on 'o', that is, return
    the number of keys for which o[key] == value.
 
@@ -891,7 +885,7 @@ PyAPI_FUNC(PyObject *) PyMapping_GetItemString(PyObject *o,
    If an error other than KeyError is raised, return -1 and
    set *result to NULL.
 */
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 PyAPI_FUNC(int) PyMapping_GetOptionalItem(PyObject *, PyObject *, PyObject **);
 PyAPI_FUNC(int) PyMapping_GetOptionalItemString(PyObject *, const char *, PyObject **);
 #endif

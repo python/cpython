@@ -3,9 +3,6 @@
 Sorting Techniques
 ******************
 
-:Author: Andrew Dalke and Raymond Hettinger
-
-
 Python lists have a built-in :meth:`list.sort` method that modifies the list
 in-place.  There is also a :func:`sorted` built-in function that builds a new
 sorted list from an iterable.
@@ -47,11 +44,14 @@ lists. In contrast, the :func:`sorted` function accepts any iterable.
 Key Functions
 =============
 
-Both :meth:`list.sort` and :func:`sorted` have a *key* parameter to specify a
-function (or other callable) to be called on each list element prior to making
+The :meth:`list.sort` method and the functions :func:`sorted`,
+:func:`min`, :func:`max`, :func:`heapq.nsmallest`, and
+:func:`heapq.nlargest` have a *key* parameter to specify a function (or
+other callable) to be called on each list element prior to making
 comparisons.
 
-For example, here's a case-insensitive string comparison:
+For example, here's a case-insensitive string comparison using
+:meth:`str.casefold`:
 
 .. doctest::
 
@@ -272,6 +272,70 @@ to make it usable as a key function::
 
     sorted(words, key=cmp_to_key(strcoll))  # locale-aware sort order
 
+Strategies For Unorderable Types and Values
+===========================================
+
+A number of type and value issues can arise when sorting.
+Here are some strategies that can help:
+
+* Convert non-comparable input types to strings prior to sorting:
+
+.. doctest::
+
+   >>> data = ['twelve', '11', 10]
+   >>> sorted(map(str, data))
+   ['10', '11', 'twelve']
+
+This is needed because most cross-type comparisons raise a
+:exc:`TypeError`.
+
+* Remove special values prior to sorting:
+
+.. doctest::
+
+   >>> from math import isnan
+   >>> from itertools import filterfalse
+   >>> data = [3.3, float('nan'), 1.1, 2.2]
+   >>> sorted(filterfalse(isnan, data))
+   [1.1, 2.2, 3.3]
+
+This is needed because the `IEEE-754 standard
+<https://en.wikipedia.org/wiki/IEEE_754>`_ specifies that, "Every NaN
+shall compare unordered with everything, including itself."
+
+Likewise, ``None`` can be stripped from datasets as well:
+
+.. doctest::
+
+   >>> data = [3.3, None, 1.1, 2.2]
+   >>> sorted(x for x in data if x is not None)
+   [1.1, 2.2, 3.3]
+
+This is needed because ``None`` is not comparable to other types.
+
+* Convert mapping types into sorted item lists before sorting:
+
+.. doctest::
+
+   >>> data = [{'a': 1}, {'b': 2}]
+   >>> sorted(data, key=lambda d: sorted(d.items()))
+   [{'a': 1}, {'b': 2}]
+
+This is needed because dict-to-dict comparisons raise a
+:exc:`TypeError`.
+
+* Convert set types into sorted lists before sorting:
+
+.. doctest::
+
+    >>> data = [{'a', 'b', 'c'}, {'b', 'c', 'd'}]
+    >>> sorted(map(sorted, data))
+    [['a', 'b', 'c'], ['b', 'c', 'd']]
+
+This is needed because the elements contained in set types do not have a
+deterministic order.  For example, ``list({'a', 'b'})`` may produce
+either ``['a', 'b']`` or ``['b', 'a']``.
+
 Odds and Ends
 =============
 
@@ -308,7 +372,7 @@ Odds and Ends
   :meth:`~object.__lt__` is not implemented (see :func:`object.__lt__`
   for details on the mechanics).  To avoid surprises, :pep:`8`
   recommends that all six comparison methods be implemented.
-  The :func:`~functools.total_ordering` decorator is provided to make that
+  The :deco:`~functools.total_ordering` decorator is provided to make that
   task easier.
 
 * Key functions need not depend directly on the objects being sorted. A key

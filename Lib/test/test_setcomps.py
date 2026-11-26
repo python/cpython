@@ -154,7 +154,7 @@ We also repeat each of the above scoping tests inside a function
 class SetComprehensionTest(unittest.TestCase):
     def test_exception_locations(self):
         # The location of an exception raised from __init__ or
-        # __next__ should should be the iterator expression
+        # __next__ should be the iterator expression
 
         def init_raises():
             try:
@@ -187,6 +187,18 @@ class SetComprehensionTest(unittest.TestCase):
                 self.assertEqual(f.end_lineno, co.co_firstlineno + 2)
                 self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
                                  expected)
+
+    def test_hash_error(self):
+        class Unhashable:
+            def __hash__(self):
+                0/0
+
+        with self.assertRaises(ZeroDivisionError):
+            {unhashable for unhashable in [Unhashable()]}
+
+
+if __name__ == "__main__":
+    unittest.main()
 
 __test__ = {'doctests' : doctests}
 

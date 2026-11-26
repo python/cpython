@@ -18,7 +18,7 @@ PyAPI_DATA(PyLongObject) _Py_FalseStruct;
 PyAPI_DATA(PyLongObject) _Py_TrueStruct;
 
 /* Use these macros */
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 #  define Py_False Py_GetConstantBorrowed(Py_CONSTANT_FALSE)
 #  define Py_True Py_GetConstantBorrowed(Py_CONSTANT_TRUE)
 #else
@@ -34,9 +34,16 @@ PyAPI_FUNC(int) Py_IsTrue(PyObject *x);
 PyAPI_FUNC(int) Py_IsFalse(PyObject *x);
 #define Py_IsFalse(x) Py_Is((x), Py_False)
 
-/* Macros for returning Py_True or Py_False, respectively */
-#define Py_RETURN_TRUE return Py_True
-#define Py_RETURN_FALSE return Py_False
+/* Macros for returning Py_True or Py_False, respectively.
+ * Only treat Py_True and Py_False as immortal in the limited C API 3.12
+ * and newer. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 12)
+#  define Py_RETURN_TRUE return Py_NewRef(Py_True)
+#  define Py_RETURN_FALSE return Py_NewRef(Py_False)
+#else
+#  define Py_RETURN_TRUE return Py_True
+#  define Py_RETURN_FALSE return Py_False
+#endif
 
 /* Function to return a bool from a C long */
 PyAPI_FUNC(PyObject *) PyBool_FromLong(long);

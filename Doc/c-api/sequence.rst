@@ -67,7 +67,7 @@ Sequence Protocol
    Assign object *v* to the *i*\ th element of *o*.  Raise an exception
    and return ``-1`` on failure; return ``0`` on success.  This
    is the equivalent of the Python statement ``o[i] = v``.  This function *does
-   not* steal a reference to *v*.
+   not* ":term:`steal`" a reference to *v*.
 
    If *v* is ``NULL``, the element is deleted, but this feature is
    deprecated in favour of using :c:func:`PySequence_DelItem`.
@@ -103,6 +103,14 @@ Sequence Protocol
    Determine if *o* contains *value*.  If an item in *o* is equal to *value*,
    return ``1``, otherwise return ``0``. On error, return ``-1``.  This is
    equivalent to the Python expression ``value in o``.
+
+
+.. c:function:: int PySequence_In(PyObject *o, PyObject *value)
+
+   Alias for :c:func:`PySequence_Contains`.
+
+   .. soft-deprecated:: 3.14
+      The function should no longer be used to write new code.
 
 
 .. c:function:: Py_ssize_t PySequence_Index(PyObject *o, PyObject *value)

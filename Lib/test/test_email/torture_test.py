@@ -1,4 +1,4 @@
-# Copyright (C) 2002-2004 Python Software Foundation
+# Copyright (C) 2002 Python Software Foundation
 #
 # A torture test of the email package.  This should not be run as part of the
 # standard Python test suite since it requires several meg of email messages

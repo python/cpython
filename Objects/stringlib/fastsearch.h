@@ -69,8 +69,8 @@ STRINGLIB(find_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
            and UCS4 representations. */
         if (needle != 0) {
             do {
-                void *candidate = memchr(p, needle,
-                                         (e - p) * sizeof(STRINGLIB_CHAR));
+                const void *candidate = memchr(p, needle,
+                                               (e - p) * sizeof(STRINGLIB_CHAR));
                 if (candidate == NULL)
                     return -1;
                 s1 = p;
@@ -595,7 +595,7 @@ STRINGLIB(default_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
                 continue;
             }
             /* miss: check if next character is part of pattern */
-            if (!STRINGLIB_BLOOM(mask, ss[i+1])) {
+            if (i + 1 <= w && !STRINGLIB_BLOOM(mask, ss[i+1])) {
                 i = i + m;
             }
             else {
@@ -604,7 +604,7 @@ STRINGLIB(default_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
         }
         else {
             /* skip: check if next character is part of pattern */
-            if (!STRINGLIB_BLOOM(mask, ss[i+1])) {
+            if (i + 1 <= w && !STRINGLIB_BLOOM(mask, ss[i+1])) {
                 i = i + m;
             }
         }
@@ -668,7 +668,7 @@ STRINGLIB(adaptive_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
                 }
             }
             /* miss: check if next character is part of pattern */
-            if (!STRINGLIB_BLOOM(mask, ss[i+1])) {
+            if (i + 1 <= w && !STRINGLIB_BLOOM(mask, ss[i+1])) {
                 i = i + m;
             }
             else {
@@ -677,7 +677,7 @@ STRINGLIB(adaptive_find)(const STRINGLIB_CHAR* s, Py_ssize_t n,
         }
         else {
             /* skip: check if next character is part of pattern */
-            if (!STRINGLIB_BLOOM(mask, ss[i+1])) {
+            if (i + 1 <= w && !STRINGLIB_BLOOM(mask, ss[i+1])) {
                 i = i + m;
             }
         }

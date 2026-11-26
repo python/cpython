@@ -13,7 +13,7 @@ MOCK_ANY = mock.ANY
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class EagerTaskFactoryLoopTests:
@@ -68,6 +68,20 @@ class EagerTaskFactoryLoopTests:
             return await fut
 
         self.assertEqual(self.run_coro(run()), 'my message')
+
+    def test_awaited_by_during_eager_step(self):
+        async def run():
+            parent = asyncio.current_task()
+
+            async def coro():
+                self.assertEqual(asyncio.current_task()._asyncio_awaited_by,
+                                 frozenset({parent}))
+
+            t = self.loop.create_task(coro())
+            self.assertFalse(t._asyncio_awaited_by)
+            await t
+
+        self.run_coro(run())
 
     def test_eager_completion(self):
 
@@ -217,13 +231,19 @@ class EagerTaskFactoryLoopTests:
         # See https://github.com/python/cpython/issues/124309
 
         async def fail():
-            await asyncio.sleep(0)
+            # Raise without suspending: staggered_race() cancels unfinished
+            # coroutines once another one wins, so yielding first could turn
+            # this into a CancelledError when the event loop is busy.
             raise ValueError("no good")
+
+        async def blocked():
+            fut = asyncio.Future()
+            await fut
 
         async def run():
             winner, index, excs = await asyncio.staggered.staggered_race(
                 [
-                    lambda: asyncio.sleep(2, result="sleep2"),
+                    lambda: blocked(),
                     lambda: asyncio.sleep(1, result="sleep1"),
                     lambda: fail()
                 ],
@@ -259,10 +279,58 @@ class EagerTaskFactoryLoopTests:
 
         self.run_coro(run())
 
+    def test_eager_start_false(self):
+        name = None
+
+        async def asyncfn():
+            nonlocal name
+            name = asyncio.current_task().get_name()
+
+        async def main():
+            t = asyncio.get_running_loop().create_task(
+                asyncfn(), eager_start=False, name="example"
+            )
+            self.assertFalse(t.done())
+            self.assertIsNone(name)
+            await t
+            self.assertEqual(name, "example")
+
+        self.run_coro(main())
 
 
 class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):
     Task = tasks._PyTask
+
+    def setUp(self):
+        self._all_tasks = asyncio.all_tasks
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._py_current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = asyncio.tasks._py_all_tasks
+
+        futures = asyncio.futures
+
+        self._future_add_to_awaited_by = asyncio.future_add_to_awaited_by
+        futures.future_add_to_awaited_by = futures._py_future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = futures.future_add_to_awaited_by
+
+        self._future_discard_from_awaited_by = asyncio.future_discard_from_awaited_by
+        futures.future_discard_from_awaited_by = futures._py_future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = futures.future_discard_from_awaited_by
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = self._all_tasks
+
+        futures = asyncio.futures
+
+        futures.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+        asyncio.future_discard_from_awaited_by = self._future_discard_from_awaited_by
+
+        futures.future_add_to_awaited_by = self._future_add_to_awaited_by
+        asyncio.future_add_to_awaited_by = self._future_add_to_awaited_by
+        return super().tearDown()
+
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
@@ -270,9 +338,64 @@ class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase
 class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):
     Task = getattr(tasks, '_CTask', None)
 
+    def setUp(self):
+        self._current_task = asyncio.current_task
+        self._all_tasks = asyncio.all_tasks
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._c_current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = asyncio.tasks._c_all_tasks
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = self._all_tasks
+        return super().tearDown()
+
+    def test_eager_step_with_non_native_parent(self):
+        async def child():
+            self.assertFalse(asyncio.current_task()._asyncio_awaited_by)
+
+        async def run():
+            parent = tasks._c_swap_current_task(self.loop, object())
+            try:
+                task = self.loop.create_task(child())
+            finally:
+                tasks._c_swap_current_task(self.loop, parent)
+            await task
+
+        self.run_coro(run())
+
+    def test_eager_step_preserves_exception(self):
+        # gh-157299: check that the exception is saved and cleared before
+        # discarding the awaited-by edge, and restored afterwards.
+        # A default task can still pass with the wrong order since its hash
+        # is in C. Overriding __hash__ makes cleanup call back into Python.
+        # If the exception is still pending, this raises SystemError.
+        class ParentTask(self.Task):
+            def __hash__(self):
+                return super().__hash__()
+
+        child_tasks = []
+        exc = SystemExit("eager step")
+
+        async def child():
+            task = asyncio.current_task()
+            child_tasks.append(task)
+            asyncio.future_add_to_awaited_by(task, self.loop.create_future())
+            raise exc
+
+        async def parent():
+            with self.assertRaises(SystemExit) as cm:
+                self.loop.create_task(child())
+            task, = child_tasks
+            self.assertIs(cm.exception, exc)
+            self.assertIs(task.exception(), exc)
+            self.assertNotIn(asyncio.current_task(), task._asyncio_awaited_by)
+
+        self.loop.run_until_complete(ParentTask(parent(), loop=self.loop))
+
     def test_issue105987(self):
         code = """if 1:
-        from _asyncio import _swap_current_task
+        from _asyncio import _swap_current_task, _set_running_loop
 
         class DummyTask:
             pass
@@ -281,6 +404,7 @@ class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase)
             pass
 
         l = DummyLoop()
+        _set_running_loop(l)
         _swap_current_task(l, DummyTask())
         t = _swap_current_task(l, None)
         """
@@ -299,6 +423,18 @@ class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase)
 
        self.run_coro(run())
 
+    def test_name(self):
+        name = None
+        async def coro():
+            nonlocal name
+            name = asyncio.current_task().get_name()
+
+        async def main():
+            task = self.loop.create_task(coro(), name="test name")
+            self.assertEqual(name, "test name")
+            await task
+
+        self.run_coro(coro())
 
 class AsyncTaskCounter:
     def __init__(self, loop, *, task_class, eager):
@@ -385,31 +521,102 @@ class BaseEagerTaskFactoryTests(BaseTaskCountingTests):
 
 
 class NonEagerTests(BaseNonEagerTaskFactoryTests, test_utils.TestCase):
-    Task = asyncio.Task
+    Task = asyncio.tasks._CTask
 
+    def setUp(self):
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._c_current_task
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        return super().tearDown()
 
 class EagerTests(BaseEagerTaskFactoryTests, test_utils.TestCase):
-    Task = asyncio.Task
+    Task = asyncio.tasks._CTask
+
+    def setUp(self):
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._c_current_task
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        return super().tearDown()
 
 
 class NonEagerPyTaskTests(BaseNonEagerTaskFactoryTests, test_utils.TestCase):
     Task = tasks._PyTask
 
+    def setUp(self):
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._py_current_task
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        return super().tearDown()
+
 
 class EagerPyTaskTests(BaseEagerTaskFactoryTests, test_utils.TestCase):
     Task = tasks._PyTask
 
+    def setUp(self):
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._py_current_task
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        return super().tearDown()
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
                      'requires the C _asyncio module')
 class NonEagerCTaskTests(BaseNonEagerTaskFactoryTests, test_utils.TestCase):
     Task = getattr(tasks, '_CTask', None)
 
+    def setUp(self):
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._c_current_task
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        return super().tearDown()
+
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
                      'requires the C _asyncio module')
 class EagerCTaskTests(BaseEagerTaskFactoryTests, test_utils.TestCase):
     Task = getattr(tasks, '_CTask', None)
+
+    def setUp(self):
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._c_current_task
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        return super().tearDown()
+
+
+class DefaultTaskFactoryEagerStart(test_utils.TestCase):
+    def test_eager_start_true_with_default_factory(self):
+        name = None
+
+        async def asyncfn():
+            nonlocal name
+            name = asyncio.current_task().get_name()
+
+        async def main():
+            t = asyncio.get_running_loop().create_task(
+                asyncfn(), eager_start=True, name="example"
+            )
+            self.assertTrue(t.done())
+            self.assertEqual(name, "example")
+            await t
+
+        asyncio.run(main(), loop_factory=asyncio.EventLoop)
 
 if __name__ == '__main__':
     unittest.main()

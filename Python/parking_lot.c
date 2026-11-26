@@ -10,6 +10,18 @@
 
 #include <stdbool.h>
 
+#if defined(_Py_USE_SEMAPHORES) && defined(CLOCK_MONOTONIC) && !defined(_Py_THREAD_SANITIZER)
+#  ifdef HAVE_SEM_CLOCKWAIT
+#    define _Py_SEM_CLOCKWAIT_AVAILABLE 1
+#  elif defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
+/* Older glibc headers do not declare sem_clockwait. A weak reference allows
+   such builds to use monotonic waits on newer runtimes. */
+extern int sem_clockwait(sem_t *, clockid_t, const struct timespec *)
+    __attribute__((weak));
+#    define _Py_SEM_CLOCKWAIT_AVAILABLE (sem_clockwait != NULL)
+#  endif
+#endif
+
 
 typedef struct {
     // The mutex protects the waiter queue and the num_waiters counter.
@@ -61,7 +73,9 @@ _PySemaphore_Init(_PySemaphore *sema)
         NULL    //  unnamed
     );
     if (!sema->platform_sem) {
-        Py_FatalError("parking_lot: CreateSemaphore failed");
+        _Py_FatalErrorFormat(__func__,
+            "parking_lot: CreateSemaphore failed (error: %u)",
+            GetLastError());
     }
 #elif defined(_Py_USE_SEMAPHORES)
     if (sem_init(&sema->platform_sem, /*pshared=*/0, /*value=*/0) < 0) {
@@ -91,8 +105,8 @@ _PySemaphore_Destroy(_PySemaphore *sema)
 #endif
 }
 
-static int
-_PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
+int
+_PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout)
 {
     int res;
 #if defined(MS_WINDOWS)
@@ -102,41 +116,74 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
         millis = INFINITE;
     }
     else {
-        millis = (DWORD) (timeout / 1000000);
+        PyTime_t div = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
+        // Prevent overflow with clamping the result
+        if ((PyTime_t)PY_DWORD_MAX < div) {
+            millis = PY_DWORD_MAX;
+        }
+        else {
+            millis = (DWORD) div;
+        }
     }
-    wait = WaitForSingleObjectEx(sema->platform_sem, millis, FALSE);
+
+    HANDLE handles[2] = { sema->platform_sem, NULL };
+    HANDLE sigint_event = NULL;
+    DWORD count = 1;
+    if (_Py_IsMainThread()) {
+        // gh-135099: Wait on the SIGINT event only in the main thread. Other
+        // threads would ignore the result anyways, and accessing
+        // `_PyOS_SigintEvent()` from non-main threads may race with
+        // interpreter shutdown, which closes the event handle. Note that
+        // non-main interpreters will ignore the result.
+        sigint_event = _PyOS_SigintEvent();
+        if (sigint_event != NULL) {
+            handles[1] = sigint_event;
+            count = 2;
+        }
+    }
+    wait = WaitForMultipleObjects(count, handles, FALSE, millis);
     if (wait == WAIT_OBJECT_0) {
         res = Py_PARK_OK;
+    }
+    else if (wait == WAIT_OBJECT_0 + 1) {
+        assert(sigint_event != NULL);
+        ResetEvent(sigint_event);
+        res = Py_PARK_INTR;
     }
     else if (wait == WAIT_TIMEOUT) {
         res = Py_PARK_TIMEOUT;
     }
     else {
-        res = Py_PARK_INTR;
+        _Py_FatalErrorFormat(__func__,
+            "unexpected error from semaphore: %u (error: %u, handle: %p)",
+            wait, GetLastError(), sema->platform_sem);
     }
 #elif defined(_Py_USE_SEMAPHORES)
     int err;
     if (timeout >= 0) {
         struct timespec ts;
 
-#if defined(CLOCK_MONOTONIC) && defined(HAVE_SEM_CLOCKWAIT) && !defined(_Py_THREAD_SANITIZER)
-        PyTime_t now;
-        // silently ignore error: cannot report error to the caller
-        (void)PyTime_MonotonicRaw(&now);
-        PyTime_t deadline = _PyTime_Add(now, timeout);
-        _PyTime_AsTimespec_clamp(deadline, &ts);
+#ifdef _Py_SEM_CLOCKWAIT_AVAILABLE
+        if (_Py_SEM_CLOCKWAIT_AVAILABLE) {
+            PyTime_t now;
+            // Silently ignore error: cannot report error to the caller.
+            (void)PyTime_MonotonicRaw(&now);
+            PyTime_t deadline = _PyTime_Add(now, timeout);
+            _PyTime_AsTimespec_clamp(deadline, &ts);
 
-        err = sem_clockwait(&sema->platform_sem, CLOCK_MONOTONIC, &ts);
-#else
-        PyTime_t now;
-        // silently ignore error: cannot report error to the caller
-        (void)PyTime_TimeRaw(&now);
-        PyTime_t deadline = _PyTime_Add(now, timeout);
-
-        _PyTime_AsTimespec_clamp(deadline, &ts);
-
-        err = sem_timedwait(&sema->platform_sem, &ts);
+            err = sem_clockwait(&sema->platform_sem, CLOCK_MONOTONIC, &ts);
+        }
+        else
 #endif
+        {
+            PyTime_t now;
+            // Silently ignore error: cannot report error to the caller.
+            (void)PyTime_TimeRaw(&now);
+            PyTime_t deadline = _PyTime_Add(now, timeout);
+            _PyTime_AsTimespec_clamp(deadline, &ts);
+
+            err = sem_timedwait(&sema->platform_sem, &ts);
+        }
     }
     else {
         err = sem_wait(&sema->platform_sem);
@@ -195,34 +242,14 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
     return res;
 }
 
-int
-_PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout, int detach)
-{
-    PyThreadState *tstate = NULL;
-    if (detach) {
-        tstate = _PyThreadState_GET();
-        if (tstate && _Py_atomic_load_int_relaxed(&tstate->state) ==
-                          _Py_THREAD_ATTACHED) {
-            // Only detach if we are attached
-            PyEval_ReleaseThread(tstate);
-        }
-        else {
-            tstate = NULL;
-        }
-    }
-    int res = _PySemaphore_PlatformWait(sema, timeout);
-    if (tstate) {
-        PyEval_AcquireThread(tstate);
-    }
-    return res;
-}
-
 void
 _PySemaphore_Wakeup(_PySemaphore *sema)
 {
 #if defined(MS_WINDOWS)
     if (!ReleaseSemaphore(sema->platform_sem, 1, NULL)) {
-        Py_FatalError("parking_lot: ReleaseSemaphore failed");
+        _Py_FatalErrorFormat(__func__,
+            "parking_lot: ReleaseSemaphore failed (error: %u, handle: %p)",
+            GetLastError(), sema->platform_sem);
     }
 #elif defined(_Py_USE_SEMAPHORES)
     int err = sem_post(&sema->platform_sem);
@@ -313,7 +340,19 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
     enqueue(bucket, addr, &wait);
     _PyRawMutex_Unlock(&bucket->mutex);
 
-    int res = _PySemaphore_Wait(&wait.sema, timeout_ns, detach);
+    PyThreadState *tstate = NULL;
+    if (detach) {
+        tstate = _PyThreadState_GET();
+        if (tstate && _PyThreadState_IsAttached(tstate)) {
+            // Only detach if we are attached
+            PyEval_ReleaseThread(tstate);
+        }
+        else {
+            tstate = NULL;
+        }
+    }
+
+    int res = _PySemaphore_Wait(&wait.sema, timeout_ns);
     if (res == Py_PARK_OK) {
         goto done;
     }
@@ -325,7 +364,7 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
         // Another thread has started to unpark us. Wait until we process the
         // wakeup signal.
         do {
-            res = _PySemaphore_Wait(&wait.sema, -1, detach);
+            res = _PySemaphore_Wait(&wait.sema, -1);
         } while (res != Py_PARK_OK);
         goto done;
     }
@@ -337,6 +376,9 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
 
 done:
     _PySemaphore_Destroy(&wait.sema);
+    if (tstate) {
+        PyEval_AcquireThread(tstate);
+    }
     return res;
 
 }

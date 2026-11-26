@@ -47,7 +47,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.1, compared to 3.0.
-Python 3.1 was released on June 27, 2009.
+Python 3.1 was released on June 27, 2009.
 
 
 PEP 372: Ordered Dictionaries
@@ -310,7 +310,7 @@ New, Improved, and Deprecated Modules
   CSV header, SQL field list, or user input::
 
     >>> query = input()
-    SELECT region, dept, count(*) FROM main GROUPBY region, dept
+    SELECT region, dept, count(*) FROM main GROUP BY region, dept
 
     >>> cursor.execute(query)
     >>> query_fields = [desc[0] for desc in cursor.description]

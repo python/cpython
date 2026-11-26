@@ -16,6 +16,7 @@ Python's built-in string type in :ref:`textseq`.
 .. toctree::
 
    string.rst
+   string.templatelib.rst
    re.rst
    difflib.rst
    textwrap.rst

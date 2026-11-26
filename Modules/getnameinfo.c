@@ -84,19 +84,9 @@ struct gni_sockinet {
 #define ENI_FAMILY      5
 #define ENI_SALEN       6
 
-/* forward declaration to make gcc happy */
-int getnameinfo(const struct sockaddr *, size_t, char *, size_t,
-                          char *, size_t, int);
-
 int
-getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
-    const struct sockaddr *sa;
-    size_t salen;
-    char *host;
-    size_t hostlen;
-    char *serv;
-    size_t servlen;
-    int flags;
+getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t hostlen,
+            char *serv, size_t servlen, int flags)
 {
     struct gni_afd *gni_afd;
     struct servent *sp;
@@ -140,13 +130,13 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
         /* what we should do? */
     } else if (flags & NI_NUMERICSERV) {
         sprintf(numserv, "%d", ntohs(port));
-        if (strlen(numserv) > servlen)
+        if (strlen(numserv) >= servlen)
             return ENI_MEMORY;
         strcpy(serv, numserv);
     } else {
         sp = getservbyport(port, (flags & NI_DGRAM) ? "udp" : "tcp");
         if (sp) {
-            if (strlen(sp->s_name) > servlen)
+            if (strlen(sp->s_name) >= servlen)
                 return ENI_MEMORY;
             strcpy(serv, sp->s_name);
         } else
@@ -176,7 +166,7 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
         if (inet_ntop(gni_afd->a_af, addr, numaddr, sizeof(numaddr))
             == NULL)
             return ENI_SYSTEM;
-        if (strlen(numaddr) > hostlen)
+        if (strlen(numaddr) >= hostlen)
             return ENI_MEMORY;
         strcpy(host, numaddr);
     } else {
@@ -191,7 +181,7 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
                 p = strchr(hp->h_name, '.');
                 if (p) *p = '\0';
             }
-            if (strlen(hp->h_name) > hostlen) {
+            if (strlen(hp->h_name) >= hostlen) {
 #ifdef ENABLE_IPV6
                 freehostent(hp);
 #endif
@@ -207,7 +197,7 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
             if (inet_ntop(gni_afd->a_af, addr, numaddr, sizeof(numaddr))
                 == NULL)
                 return ENI_NOHOSTNAME;
-            if (strlen(numaddr) > hostlen)
+            if (strlen(numaddr) >= hostlen)
                 return ENI_MEMORY;
             strcpy(host, numaddr);
         }

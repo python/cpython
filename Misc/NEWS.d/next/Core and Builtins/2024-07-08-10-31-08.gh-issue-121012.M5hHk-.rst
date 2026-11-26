@@ -1,2 +1,0 @@
-Tier 2 execution now ensures that list iterators remain exhausted, once they
-become exhausted.

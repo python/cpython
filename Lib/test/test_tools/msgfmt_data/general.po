@@ -1,0 +1,47 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2024-10-26 18:06+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "foo"
+msgstr ""
+
+msgid "bar"
+msgstr "baz"
+
+msgctxt "abc"
+msgid "foo"
+msgstr "bar"
+
+# comment
+msgctxt "xyz"
+msgid "foo"
+msgstr "bar"
+
+msgid "Multiline"
+"string"
+msgstr "Multiline"
+"translation"
+
+msgid "\"escapes\""
+msgstr "\"translated\""
+
+msgid "\n newlines \n"
+msgstr "\n translated \n"
+
+msgid "One email sent."
+msgid_plural "%d emails sent."
+msgstr[0] "One email sent."
+msgstr[1] "%d emails sent."
+
+msgctxt "abc"
+msgid "One email sent."
+msgid_plural "%d emails sent."
+msgstr[0] "One email sent."
+msgstr[1] "%d emails sent."

@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2010 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -58,7 +58,7 @@ def _has_surrogates(s):
 # How to deal with a string containing bytes before handing it to the
 # application through the 'normal' interface.
 def _sanitize(string):
-    # Turn any escaped bytes into unicode 'unknown' char.  If the escaped
+    # Turn any escaped bytes into the Unicode 'unknown' char.  If the escaped
     # bytes happen to be utf-8 they will instead get decoded, even if they
     # were invalid in the charset the source was supposed to be in.  This
     # seems like it is not a bad thing; a defect was still registered.
@@ -69,7 +69,7 @@ def _sanitize(string):
 
 # Helpers
 
-def formataddr(pair, charset='utf-8'):
+def formataddr(pair, charset='utf-8', *, strict=True):
     """The inverse of parseaddr(), this takes a 2-tuple of the form
     (realname, email_address) and returns the string value suitable
     for an RFC 2822 From, To or Cc header.
@@ -81,8 +81,15 @@ def formataddr(pair, charset='utf-8'):
     realname in case realname is not ASCII safe.  Can be an instance of str or
     a Charset-like object which has a header_encode method.  Default is
     'utf-8'.
+
+    If strict is True (the default), raise ValueError for inputs that
+    contain CR or LF, which are not allowed in an email address.
     """
     name, address = pair
+    if strict and ('\r' in address or '\n' in address
+                   or (name and ('\r' in name or '\n' in name))):
+        raise ValueError(
+            "invalid arguments; address parts cannot contain CR or LF")
     # The address MUST (per RFC) be ascii, so raise a UnicodeError if it isn't.
     address.encode('ascii')
     if name:
@@ -317,10 +324,13 @@ def parsedate_to_datetime(data):
     if parsed_date_tz is None:
         raise ValueError('Invalid date value or format "%s"' % str(data))
     *dtuple, tz = parsed_date_tz
-    if tz is None:
-        return datetime.datetime(*dtuple[:6])
-    return datetime.datetime(*dtuple[:6],
-            tzinfo=datetime.timezone(datetime.timedelta(seconds=tz)))
+    try:
+        if tz is None:
+            return datetime.datetime(*dtuple[:6])
+        return datetime.datetime(*dtuple[:6],
+                tzinfo=datetime.timezone(datetime.timedelta(seconds=tz)))
+    except OverflowError as exc:
+        raise ValueError('Invalid date value or format "%s"' % str(data)) from exc
 
 
 def parseaddr(addr, *, strict=True):
@@ -417,8 +427,14 @@ def decode_params(params):
         for name, continuations in rfc2231_params.items():
             value = []
             extended = False
-            # Sort by number
-            continuations.sort()
+            # Sort by number, treating None as 0 if there is no 0,
+            # and ignore it if there is already a 0.
+            has_zero = any(x[0] == 0 for x in continuations)
+            if has_zero:
+                continuations = [x for x in continuations if x[0] is not None]
+            else:
+                continuations = [(x[0] or 0, x[1], x[2]) for x in continuations]
+            continuations.sort(key=lambda x: x[0])
             # And now append all values in numerical order, converting
             # %-encodings for the encoded segments.  If any of the
             # continuation names ends in a *, then the entire string, after
@@ -444,7 +460,7 @@ def collapse_rfc2231_value(value, errors='replace',
                            fallback_charset='us-ascii'):
     if not isinstance(value, tuple) or len(value) != 3:
         return unquote(value)
-    # While value comes to us as a unicode string, we need it to be a bytes
+    # While value comes to us as a string, we need it to be a bytes
     # object.  We do not want bytes() normal utf-8 decoder, we want a straight
     # interpretation of the string as character bytes.
     charset, language, text = value
@@ -454,6 +470,10 @@ def collapse_rfc2231_value(value, errors='replace',
         charset = fallback_charset
     rawbytes = bytes(text, 'raw-unicode-escape')
     try:
+        # Explicitly look up the codec for warning generation, see gh-140030
+        # Can be removed in 3.17
+        import codecs
+        codecs.lookup(charset)
         return str(rawbytes, charset, errors)
     except LookupError:
         # charset is not a known codec.

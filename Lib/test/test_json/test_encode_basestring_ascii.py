@@ -3,18 +3,24 @@ from test.test_json import PyTest, CTest
 from test.support import bigaddrspacetest
 
 
+# str subclass which returns a different string on str(obj)
+class StrSubclass(str):
+    def __str__(self):
+        return "StrSubclass"
+
 CASES = [
     ('/\\"\ucafe\ubabe\uab98\ufcde\ubcda\uef4a\x08\x0c\n\r\t`1~!@#$%^&*()_+-=[]{}|;:\',./<>?', '"/\\\\\\"\\ucafe\\ubabe\\uab98\\ufcde\\ubcda\\uef4a\\b\\f\\n\\r\\t`1~!@#$%^&*()_+-=[]{}|;:\',./<>?"'),
     ('\u0123\u4567\u89ab\ucdef\uabcd\uef4a', '"\\u0123\\u4567\\u89ab\\ucdef\\uabcd\\uef4a"'),
     ('controls', '"controls"'),
     ('\x08\x0c\n\r\t', '"\\b\\f\\n\\r\\t"'),
+    ('\x00\x1f\x7f', '"\\u0000\\u001f\\u007f"'),
     ('{"object with 1 member":["array with 1 element"]}', '"{\\"object with 1 member\\":[\\"array with 1 element\\"]}"'),
     (' s p a c e d ', '" s p a c e d "'),
     ('\U0001d120', '"\\ud834\\udd20"'),
     ('\u03b1\u03a9', '"\\u03b1\\u03a9"'),
     ("`1~!@#$%^&*()_+-={':[,]}|;.</>?", '"`1~!@#$%^&*()_+-={\':[,]}|;.</>?"'),
-    ('\x08\x0c\n\r\t', '"\\b\\f\\n\\r\\t"'),
-    ('\u0123\u4567\u89ab\ucdef\uabcd\uef4a', '"\\u0123\\u4567\\u89ab\\ucdef\\uabcd\\uef4a"'),
+    # Don't call obj.__str__() on str subclasses
+    (StrSubclass('ascii'), '"ascii"'),
 ]
 
 class TestEncodeBasestringAscii:

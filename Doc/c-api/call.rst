@@ -81,17 +81,17 @@ This is a pointer to a function with the following signature:
 
 - *callable* is the object being called.
 - *args* is a C array consisting of the positional arguments followed by the
-   values of the keyword arguments.
-   This can be *NULL* if there are no arguments.
+  values of the keyword arguments.
+  This can be *NULL* if there are no arguments.
 - *nargsf* is the number of positional arguments plus possibly the
-   :c:macro:`PY_VECTORCALL_ARGUMENTS_OFFSET` flag.
-   To get the actual number of positional arguments from *nargsf*,
-   use :c:func:`PyVectorcall_NARGS`.
+  :c:macro:`PY_VECTORCALL_ARGUMENTS_OFFSET` flag.
+  To get the actual number of positional arguments from *nargsf*,
+  use :c:func:`PyVectorcall_NARGS`.
 - *kwnames* is a tuple containing the names of the keyword arguments;
-   in other words, the keys of the kwargs dict.
-   These names must be strings (instances of ``str`` or a subclass)
-   and they must be unique.
-   If there are no keyword arguments, then *kwnames* can instead be *NULL*.
+  in other words, the keys of the kwargs dict.
+  These names must be strings (instances of ``str`` or a subclass)
+  and they must be unique.
+  If there are no keyword arguments, then *kwnames* can instead be *NULL*.
 
 .. c:macro:: PY_VECTORCALL_ARGUMENTS_OFFSET
 
@@ -347,6 +347,8 @@ please see individual documentation for details.
 
    .. versionadded:: 3.9
 
+.. c:function:: PyObject* _PyObject_Vectorcall(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+   :no-typesetting:
 
 .. c:function:: PyObject* PyObject_Vectorcall(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 
@@ -358,7 +360,12 @@ please see individual documentation for details.
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
 
-   .. versionadded:: 3.9
+   .. versionadded:: 3.8 as ``_PyObject_Vectorcall``
+
+   .. versionchanged:: 3.9
+
+      Renamed to the current name, without the leading underscore.
+      The old provisional name is :term:`soft deprecated`.
 
 .. c:function:: PyObject* PyObject_VectorcallDict(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwdict)
 

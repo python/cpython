@@ -30,6 +30,16 @@ extern void* _PyMem_MiCalloc(void *, size_t, size_t);
 extern void _PyMem_MiFree(void *, void *);
 extern void* _PyMem_MiRealloc(void *, void *, size_t);
 #  define PYMEM_ALLOC {NULL, _PyMem_MiMalloc, _PyMem_MiCalloc, _PyMem_MiRealloc, _PyMem_MiFree}
+extern void* _PyMem_MiRawMalloc(void *, size_t);
+extern void* _PyMem_MiRawCalloc(void *, size_t, size_t);
+extern void _PyMem_MiRawFree(void *, void *);
+extern void* _PyMem_MiRawRealloc(void *, void *, size_t);
+#  undef PYRAW_ALLOC
+#  define PYRAW_ALLOC {NULL, _PyMem_MiRawMalloc, _PyMem_MiRawCalloc, _PyMem_MiRawRealloc, _PyMem_MiRawFree}
+#elif defined(_Py_ADDRESS_SANITIZER) || defined(_Py_MEMORY_SANITIZER)
+// Keep in sync with the default allocators in Objects/obmalloc.c.
+#  define PYOBJ_ALLOC PYRAW_ALLOC
+#  define PYMEM_ALLOC PYOBJ_ALLOC
 #elif defined(WITH_PYMALLOC)
 extern void* _PyObject_Malloc(void *, size_t);
 extern void* _PyObject_Calloc(void *, size_t, size_t);
