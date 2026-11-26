@@ -1,0 +1,6 @@
+Fix a crash in :mod:`tkinter` at the interactive prompt if the first Tcl
+interpreter was created in a thread which has since exited.  The event hook
+which runs Tcl events while waiting for input is also no longer removed when
+an interpreter is deleted in other thread while other interpreters still
+exist, and its state no longer has data races in the :term:`free-threaded
+build`.

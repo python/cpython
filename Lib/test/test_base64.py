@@ -16,7 +16,7 @@ class LazyImportTest(unittest.TestCase):
     def test_lazy_import(self):
         ensure_lazy_imports("base64", {"re", "getopt"})
 
-from test.support.hypothesis_helper import hypothesis
+from test.support.hypothesis_helper import hypothesis, mark_hypothesis
 
 
 class LegacyBase64TestCase(unittest.TestCase):
@@ -74,6 +74,7 @@ class LegacyBase64TestCase(unittest.TestCase):
 
     @hypothesis.given(payload=hypothesis.strategies.binary())
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz')
+    @mark_hypothesis
     def test_bytes_encode_decode_round_trip(self, payload):
         encoded = base64.encodebytes(payload)
         decoded = base64.decodebytes(encoded)
@@ -109,6 +110,7 @@ class LegacyBase64TestCase(unittest.TestCase):
 
     @hypothesis.given(payload=hypothesis.strategies.binary())
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz')
+    @mark_hypothesis
     def test_legacy_encode_decode_round_trip(self, payload):
         from io import BytesIO
         payload_file_r = BytesIO(payload)
@@ -503,6 +505,7 @@ class BaseXYTestCase(unittest.TestCase):
         validate=hypothesis.strategies.booleans())
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', b"_-", True)
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', b"_-", False)
+    @mark_hypothesis
     def test_b64_encode_decode_round_trip(self, payload, altchars, validate):
         encoded = base64.b64encode(payload, altchars=altchars)
         decoded = base64.b64decode(encoded, altchars=altchars,
@@ -511,6 +514,7 @@ class BaseXYTestCase(unittest.TestCase):
 
     @hypothesis.given(payload=hypothesis.strategies.binary())
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz')
+    @mark_hypothesis
     def test_standard_b64_encode_decode_round_trip(self, payload):
         encoded = base64.standard_b64encode(payload)
         decoded = base64.standard_b64decode(encoded)
@@ -518,6 +522,7 @@ class BaseXYTestCase(unittest.TestCase):
 
     @hypothesis.given(payload=hypothesis.strategies.binary())
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz')
+    @mark_hypothesis
     def test_urlsafe_b64_encode_decode_round_trip(self, payload):
         encoded = base64.urlsafe_b64encode(payload)
         decoded = base64.urlsafe_b64decode(encoded)
@@ -701,6 +706,7 @@ class BaseXYTestCase(unittest.TestCase):
             | hypothesis.strategies.binary(min_size=1, max_size=1)))
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', True, None)
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', False, None)
+    @mark_hypothesis
     def test_b32_encode_decode_round_trip(self, payload, casefold, map01):
         encoded = base64.b32encode(payload)
         decoded = base64.b32decode(encoded, casefold=casefold, map01=map01)
@@ -837,6 +843,7 @@ class BaseXYTestCase(unittest.TestCase):
         casefold=hypothesis.strategies.booleans())
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', True)
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', False)
+    @mark_hypothesis
     def test_b32_hexencode_decode_round_trip(self, payload, casefold):
         encoded = base64.b32hexencode(payload)
         decoded = base64.b32hexdecode(encoded, casefold=casefold)
@@ -899,6 +906,7 @@ class BaseXYTestCase(unittest.TestCase):
         casefold=hypothesis.strategies.booleans())
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', True)
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', False)
+    @mark_hypothesis
     def test_b16_encode_decode_round_trip(self, payload, casefold):
         endoded = base64.b16encode(payload)
         decoded = base64.b16decode(endoded, casefold=casefold)
@@ -1321,6 +1329,7 @@ class BaseXYTestCase(unittest.TestCase):
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', False, 20, True, True)
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', True, 0, False, True)
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', True, 20, True, False)
+    @mark_hypothesis
     def test_a85_encode_decode_round_trip(
         self, payload, foldspaces, wrapcol, pad, adobe
     ):
@@ -1349,6 +1358,7 @@ class BaseXYTestCase(unittest.TestCase):
         pad=hypothesis.strategies.booleans())
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', True)
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', False)
+    @mark_hypothesis
     def test_b85_encode_decode_round_trip(self, payload, pad):
         encoded = base64.b85encode(payload, pad=pad)
         if pad:

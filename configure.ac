@@ -61,7 +61,7 @@ AC_DEFUN([PY_CHECK_FUNC],
     [for $1],
     [py_var],
     [AC_COMPILE_IFELSE(
-      [AC_LANG_PROGRAM([$2], [void *x=$1])],
+      [AC_LANG_PROGRAM([$2], [(void)$1])],
       [AS_VAR_SET([py_var], [yes])],
       [AS_VAR_SET([py_var], [no])])]
   )
@@ -170,7 +170,11 @@ AC_ARG_WITH([build-python],
     dnl Build Python interpreter is used for regeneration and freezing.
     ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
     PYTHON_FOR_FREEZE="$with_build_python"
-    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) _PYTHON_SYSCONFIGDATA_PATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`) '$with_build_python
+    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) PYTHONPATH=$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) _PYTHON_SYSCONFIGDATA_PATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`) '$with_build_python
+    dnl _PYTHON_HOST_PLATFORM is only set when cross compiling.
+    AS_VAR_IF([cross_compiling], [yes],
+      [PYTHON_FOR_BUILD='_PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) '"$PYTHON_FOR_BUILD"]
+    )
     AC_MSG_RESULT([$with_build_python])
   ], [
     AS_VAR_IF([cross_compiling], [yes],
@@ -181,6 +185,13 @@ AC_ARG_WITH([build-python],
   ]
 )
 AC_SUBST([PYTHON_FOR_BUILD])
+
+# Module import checks must run with the target interpreter on native builds.
+AS_VAR_IF([cross_compiling], [yes],
+  [MODULE_CHECK_COMMAND='$(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --cross-compiling'],
+  [MODULE_CHECK_COMMAND='$(RUNSHARED) ./$(BUILDPYTHON) -E $(srcdir)/Tools/build/check_extension_modules.py --no-cross-compiling']
+)
+AC_SUBST([MODULE_CHECK_COMMAND])
 
 AC_MSG_CHECKING([for Python interpreter freezing])
 AC_MSG_RESULT([$PYTHON_FOR_FREEZE])
@@ -194,6 +205,9 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
     FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
     PYTHON_FOR_BUILD_DEPS=''
+    # The build Python is a separate interpreter. RUNSHARED would make it
+    # load the in-tree libpython, which may need a different libc.
+    RUNSHARED_FOR_BUILD=''
   ],
   [
     dnl internal build tools also depend on Programs/_freeze_module and _bootstrap_python.
@@ -202,6 +216,7 @@ AS_VAR_IF([cross_compiling], [yes],
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
     PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
+    RUNSHARED_FOR_BUILD='$(RUNSHARED)'
   ]
 )
 AC_SUBST([FREEZE_MODULE_BOOTSTRAP])
@@ -209,6 +224,7 @@ AC_SUBST([FREEZE_MODULE_BOOTSTRAP_DEPS])
 AC_SUBST([FREEZE_MODULE])
 AC_SUBST([FREEZE_MODULE_DEPS])
 AC_SUBST([PYTHON_FOR_BUILD_DEPS])
+AC_SUBST([RUNSHARED_FOR_BUILD])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
   [python$PACKAGE_VERSION python3.16 python3.15 python3.14 python3.13 python3.12 python3.11 python3.10 python3 python],
@@ -238,11 +254,6 @@ AH_TOP([
 #define Py_PYCONFIG_H
 ])
 AH_BOTTOM([
-/* Define the macros needed if on a UnixWare 7.x system. */
-#if defined(__USLC__) && defined(__SCO_VERSION__)
-#define STRICT_SYSV_CURSES /* Don't use ncurses extensions */
-#endif
-
 #endif /*Py_PYCONFIG_H*/
 ])
 
@@ -377,8 +388,7 @@ then
 	ac_sys_release=
     else
 	ac_sys_system=`uname -s`
-	if test "$ac_sys_system" = "AIX" \
-	-o "$ac_sys_system" = "UnixWare" -o "$ac_sys_system" = "OpenUNIX"; then
+	if test "$ac_sys_system" = "AIX"; then
 		ac_sys_release=`uname -v`
 	else
 		ac_sys_release=`uname -r`
@@ -1019,15 +1029,6 @@ case $ac_sys_system/$ac_sys_release in
   # A lower level is defined below.
   SunOS/*)
     define_xopen_source=no;;
-  # On UnixWare 7, u_long is never defined with _XOPEN_SOURCE,
-  # but used in /usr/include/netinet/tcp.h. Reported by Tim Rice.
-  # Reconfirmed for 7.1.4 by Martin v. Loewis.
-  OpenUNIX/8.0.0| UnixWare/7.1.@<:@0-4@:>@)
-    define_xopen_source=no;;
-  # On OpenServer 5, u_short is never defined with _XOPEN_SOURCE,
-  # but used in struct sockaddr.sa_family. Reported by Tim Rice.
-  SCO_SV/3.2)
-    define_xopen_source=no;;
   # On MacOS X 10.2, a bug in ncurses.h means that it craps out if
   # _XOPEN_EXTENDED_SOURCE is defined. Apparently, this is fixed in 10.3, which
   # identifies itself as Darwin/7.*
@@ -1153,12 +1154,12 @@ if test -z "$CFLAGS"; then
 fi
 
 dnl Emscripten SDK and WASI SDK default to wasm32.
-dnl On Emscripten use MEMORY64 setting to build target wasm64-emscripten.
+dnl On Emscripten use -m64 to build target wasm64-emscripten.
 dnl for wasm64.
 AS_CASE([$host],
   [wasm64-*-emscripten], [
-    AS_VAR_APPEND([CFLAGS], [" -sMEMORY64=1"])
-    AS_VAR_APPEND([LDFLAGS], [" -sMEMORY64=1"])
+    AS_VAR_APPEND([CFLAGS], [" -m64"])
+    AS_VAR_APPEND([LDFLAGS], [" -m64"])
   ],
 )
 
@@ -1769,6 +1770,18 @@ if test "x$enable_profiling" = xyes; then
   LDFLAGS="-pg $LDFLAGS"
 fi
 
+AC_MSG_CHECKING([for --enable-relocatable])
+AC_ARG_ENABLE([relocatable],
+  [AS_HELP_STRING([--enable-relocatable],
+                  [make the installation easier to relocate
+                   (work in progress; default is no)])],
+  [], [enable_relocatable=no])
+AS_CASE([$enable_relocatable],
+  [yes|no], [],
+  [AC_MSG_ERROR([--enable-relocatable must be yes or no])])
+AC_MSG_RESULT([$enable_relocatable])
+AC_SUBST([RELOCATABLE], [$enable_relocatable])
+
 AC_MSG_CHECKING([LDLIBRARY])
 
 # Apple framework builds need more magic. LDLIBRARY is the dynamic
@@ -2230,6 +2243,32 @@ if test "$Py_LTO" = 'true' ; then
           else
             LTOFLAGS="-flto=${Py_LTO_POLICY}"
           fi
+          LTOCFLAGS="$LTOFLAGS"
+          # GNU ld needs LLVMgold.so for Clang LTO.  If the configured linker
+          # cannot link LTO objects, try lld, which does not need that plugin.
+          WITH_SAVE_ENV([
+            LDFLAGS="$LDFLAGS $LDFLAGS_NODIST $LTOFLAGS"
+            AC_MSG_CHECKING([whether Clang LTO works with the configured linker])
+            AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])], [clang_lto_link=yes], [clang_lto_link=no])
+            AC_MSG_RESULT([$clang_lto_link])
+          ])
+          if test "$clang_lto_link" = no; then
+            WITH_SAVE_ENV([
+              LDFLAGS="$LDFLAGS -fuse-ld=lld"
+              AC_MSG_CHECKING([whether Clang LTO works with lld])
+              AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])], [clang_lto_link=yes], [clang_lto_link=no])
+              AC_MSG_RESULT([$clang_lto_link])
+            ])
+            if test "$clang_lto_link" = no; then
+              AC_MSG_ERROR([m4_normalize([
+                Clang LTO requires a working LTO-aware linker.
+                Install lld or the LLVMgold.so plugin, select a linker
+                with LDFLAGS, or disable LTO with --without-lto.
+              ])])
+            fi
+            LTOFLAGS="$LTOFLAGS -fuse-ld=lld"
+            LDFLAGS_NOLTO="$LDFLAGS_NOLTO -fuse-ld=lld"
+          fi
           ;;
       esac
       ;;
@@ -2622,11 +2661,6 @@ then
 	    OPT="-O3 -Wall"
 	    ;;
 	esac
-
-	case $ac_sys_system in
-	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
-	    ;;
-        esac
 	;;
 
     *)
@@ -2659,7 +2693,7 @@ AS_CASE([$ac_sys_system],
 
     AS_VAR_IF([enable_wasm_pthreads], [yes], [
       AS_VAR_APPEND([CFLAGS_NODIST], [" -pthread"])
-      AS_VAR_APPEND([LDFLAGS_NODIST], [" -sUSE_PTHREADS"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -pthread"])
       AS_VAR_APPEND([LINKFORSHARED], [" -sPROXY_TO_PTHREAD"])
     ])
     dnl not completely sure whether or not we want -sEXIT_RUNTIME, keeping it for now.
@@ -2994,10 +3028,6 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
     esac
 
     case $ac_sys_system in
-	SCO_SV*)
-	    BASECFLAGS="$BASECFLAGS -m486 -DSCO5"
-	    ;;
-
     Darwin*)
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
@@ -3150,15 +3180,6 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
 
         # end of Darwin* tests
         ;;
-    esac
-], [
-    case $ac_sys_system in
-    OpenUNIX*|UnixWare*)
-	BASECFLAGS="$BASECFLAGS -K pentium,host,inline,loop_unroll,alloca "
-	;;
-    SCO_SV*)
-	BASECFLAGS="$BASECFLAGS -belf -Ki486 -DSCO5"
-	;;
     esac
 ])
 
@@ -3541,13 +3562,6 @@ AC_DEFINE([_LARGEFILE_SOURCE], [1],
 AC_DEFINE([_FILE_OFFSET_BITS], [64],
 [This must be set to 64 on some systems to enable large file support.])
 fi
-
-# Add some code to confdefs.h so that the test for off_t works on SCO
-cat >> confdefs.h <<\EOF
-#if defined(SCO_DS)
-#undef _OFF_T
-#endif
-EOF
 
 # Type availability checks
 AC_TYPE_MODE_T
@@ -3967,17 +3981,6 @@ then
 	NetBSD*|DragonFly*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
-	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_gcc_compat" = "yes" ; then
-			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
-		else
-			LDSHARED='$(CC) -G'
-			LDCXXSHARED='$(CXX) -G'
-		fi;;
-	SCO_SV*)
-		LDSHARED='$(CC) -Wl,-G,-Bexport'
-		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
 	WASI*)
 		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
 			dnl not implemented yet
@@ -4025,16 +4028,6 @@ then
 		]);;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
-	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_gcc_compat" = "yes"
-		then CCSHARED="-fPIC"
-		else CCSHARED="-KPIC"
-		fi;;
-	SCO_SV*)
-		if test "$ac_cv_gcc_compat" = "yes"
-		then CCSHARED="-fPIC"
-		else CCSHARED="-Kpic -belf"
-		fi;;
 	VxWorks*)
 		CCSHARED="-fpic -D__SO_PICABILINUX__  -ftls-model=global-dynamic"
 	esac
@@ -4085,9 +4078,6 @@ then
 			fi
 		fi
 		;;
-	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
-	SCO_SV*) LINKFORSHARED="-Wl,-Bexport";;
-	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
@@ -4466,6 +4456,11 @@ esac
 # check for systems that require aligned memory access
 AC_CACHE_CHECK([aligned memory access is required], [ac_cv_aligned_required],
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#ifdef __has_attribute
+#  if __has_attribute(no_sanitize)
+__attribute__((no_sanitize("alignment")))
+#  endif
+#endif
 int main(void)
 {
     char s[16];
@@ -5785,15 +5780,15 @@ AC_CHECK_FUNCS([ \
   copy_file_range ctermid dladdr dup explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fpathconf fstatat ftruncate futimens futimes futimesat \
-  gai_strerror getdents64 getegid geteuid getgid getgrent getgrgid getgrgid_r \
+  gai_strerror getegid geteuid getgid getgrent getgrgid getgrgid_r \
   getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin getlogin_r \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid \
-  gettid getuid grantpt if_indextoname if_nameindex \
-  if_nametoindex initgroups kill killpg lchown linkat \
+  getuid grantpt if_nameindex \
+  initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause \
-  pidfd_open pidfd_getfd pidfd_send_signal pipe \
+  pipe \
   plock poll ppoll posix_fadvise posix_fallocate posix_openpt \
   pread preadv preadv2 process_vm_readv \
   pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
@@ -5816,7 +5811,13 @@ PY_CHECK_FUNC_PRIVATE([freadlink], [@%:@include <unistd.h>])
 PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
 # FreeBSD pthread_attr_get_np()
 PY_CHECK_FUNC_PRIVATE([pthread_attr_get_np], [@%:@include <pthread_np.h>])
-
+PY_CHECK_FUNC_PRIVATE([getdents64], [@%:@include <dirent.h>])
+PY_CHECK_FUNC_PRIVATE([gettid], [@%:@include <unistd.h>])
+PY_CHECK_FUNC_PRIVATE([if_indextoname], [@%:@include <net/if.h>])
+PY_CHECK_FUNC_PRIVATE([if_nametoindex], [@%:@include <net/if.h>])
+PY_CHECK_FUNC_PRIVATE([pidfd_open], [@%:@include <sys/pidfd.h>])
+PY_CHECK_FUNC_PRIVATE([pidfd_getfd], [@%:@include <sys/pidfd.h>])
+PY_CHECK_FUNC_PRIVATE([pidfd_send_signal], [@%:@include <sys/pidfd.h>])
 
 # os.statx uses Linux's statx function.  AIX also has a function named statx,
 # but it's unrelated.  Check only on Linux (including Android).
@@ -6359,8 +6360,7 @@ AS_VAR_IF([ac_cv_device_macros], [yes], [
 
 dnl no longer used, now always defined for backwards compatibility
 AC_DEFINE([SYS_SELECT_WITH_SYS_TIME], [1],
-  [Define if  you can safely include both <sys/select.h> and <sys/time.h>
-   (which you can't on SCO ODT 3.0).])
+  [Define if  you can safely include both <sys/select.h> and <sys/time.h>])
 
 # On OSF/1 V5.1, getaddrinfo is available, but a define
 # for [no]getaddrinfo in netdb.h.
@@ -7284,7 +7284,7 @@ AS_VAR_IF([with_readline], [no], [
       )
     ])
     AS_VAR_IF([ac_cv_readline_rl_change_environment], [yes], [
-      AC_DEFINE([HAVE_RL_CHANGE_ENVIRONMENT], [1], [Define if you have readline 6.3])
+      AC_DEFINE([_Py_HAVE_RL_CHANGE_ENVIRONMENT], [1], [Define if you have readline 6.3])
     ])
 
     # check for readline 4.2
@@ -7689,6 +7689,7 @@ dnl lacks, for example term_attrs() in the narrow ncurses library.
 AC_DEFUN([PY_CHECK_CURSES_FUNC],
 [ AS_VAR_PUSHDEF([py_var], [ac_cv_lib_curses_$1])
   AS_VAR_PUSHDEF([py_define], [HAVE_CURSES_]m4_toupper($1))
+  AS_VAR_PUSHDEF([py_define], m4_ifblank([$3], [[HAVE_CURSES_]m4_toupper($1)], [$3]))
   AC_CACHE_CHECK(
     [for curses function $1],
     [py_var],
@@ -7707,6 +7708,13 @@ AC_DEFUN([PY_CHECK_CURSES_FUNC],
     [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
   AS_VAR_POPDEF([py_var])
   AS_VAR_POPDEF([py_define])
+])
+
+dnl PY_CHECK_CURSES_FUNC_PRIVATE(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
+dnl Similar to PY_CHECK_CURSES_FUNC but define macro _Py_HAVE_CURSES_xxx,
+dnl instead of HAVE_CURSES_xxx
+AC_DEFUN([PY_CHECK_CURSES_FUNC_PRIVATE],
+[ PY_CHECK_CURSES_FUNC([$1], [$2], m4_ifblank([$3], [[_Py_HAVE_CURSES_]m4_toupper($1)], [$3]))
 ])
 
 dnl PY_CHECK_CURSES_VAR(VARIABLE)
@@ -7741,35 +7749,36 @@ PY_CHECK_CURSES_FUNC([immedok])
 PY_CHECK_CURSES_FUNC([syncok])
 PY_CHECK_CURSES_FUNC([wchgat])
 PY_CHECK_CURSES_FUNC([filter])
-PY_CHECK_CURSES_FUNC([nofilter])
 PY_CHECK_CURSES_FUNC([has_key])
-PY_CHECK_CURSES_FUNC([has_mouse])
-PY_CHECK_CURSES_FUNC([is_keypad])
-PY_CHECK_CURSES_FUNC([is_leaveok])
 PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
-PY_CHECK_CURSES_FUNC([new_prescr])
-PY_CHECK_CURSES_FUNC([use_screen])
-PY_CHECK_CURSES_FUNC([use_window])
-PY_CHECK_CURSES_FUNC([key_defined])
-PY_CHECK_CURSES_FUNC([term_attrs])
-PY_CHECK_CURSES_FUNC([define_key])
-PY_CHECK_CURSES_FUNC([keyok])
 PY_CHECK_CURSES_FUNC([set_escdelay])
 PY_CHECK_CURSES_FUNC([set_tabsize])
 dnl The X/Open attr_t and soft-label attribute functions are absent on old
 dnl SVr4 curses (e.g. illumos).
-PY_CHECK_CURSES_FUNC([wattr_get])
-PY_CHECK_CURSES_FUNC([wattr_set])
-PY_CHECK_CURSES_FUNC([wattr_on])
-PY_CHECK_CURSES_FUNC([wattr_off])
-PY_CHECK_CURSES_FUNC([wcolor_set])
-PY_CHECK_CURSES_FUNC([slk_attr_on])
-PY_CHECK_CURSES_FUNC([slk_attr_off])
-PY_CHECK_CURSES_FUNC([slk_attr_set])
-PY_CHECK_CURSES_FUNC([slk_color])
 PY_CHECK_CURSES_VAR([ESCDELAY])
 PY_CHECK_CURSES_VAR([TABSIZE])
+
+PY_CHECK_CURSES_FUNC_PRIVATE([define_key])
+PY_CHECK_CURSES_FUNC_PRIVATE([has_mouse])
+PY_CHECK_CURSES_FUNC_PRIVATE([is_keypad])
+PY_CHECK_CURSES_FUNC_PRIVATE([is_leaveok])
+PY_CHECK_CURSES_FUNC_PRIVATE([key_defined])
+PY_CHECK_CURSES_FUNC_PRIVATE([keyok])
+PY_CHECK_CURSES_FUNC_PRIVATE([new_prescr])
+PY_CHECK_CURSES_FUNC_PRIVATE([nofilter])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_attr_off])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_attr_on])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_attr_set])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_color])
+PY_CHECK_CURSES_FUNC_PRIVATE([term_attrs])
+PY_CHECK_CURSES_FUNC_PRIVATE([use_screen])
+PY_CHECK_CURSES_FUNC_PRIVATE([use_window])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_get])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_off])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_on])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_set])
+PY_CHECK_CURSES_FUNC_PRIVATE([wcolor_set])
 
 dnl Probe for the X/Open getmouse(MEVENT *) signature specifically: PDCurses
 dnl declares an incompatible getmouse(void) unless built for the ncurses mouse API.
@@ -7785,8 +7794,9 @@ AS_VAR_IF([ac_cv_lib_curses_getmouse], [yes],
 
 dnl scr_dump gates scr_dump/scr_restore/scr_init; scr_set is separate, since
 dnl old SVr4 curses (e.g. illumos) has the former but not scr_set.
-PY_CHECK_CURSES_FUNC([scr_dump])
-PY_CHECK_CURSES_FUNC([scr_set])
+PY_CHECK_CURSES_FUNC_PRIVATE([scr_dump])
+PY_CHECK_CURSES_FUNC_PRIVATE([scr_set])
+
 CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
 ])dnl save env

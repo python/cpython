@@ -409,7 +409,7 @@ module_from_slots_and_spec(
     createfunc_t create = NULL;
     PyObject *nameobj;
     PyObject *m = NULL;
-    uint64_t multiple_interpreters = (uint64_t)Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED;
+    uint64_t multiple_interpreters = (uint64_t)(uintptr_t)Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED;
     bool requires_gil = true;
     const char *name;
     int ret;
@@ -471,7 +471,7 @@ module_from_slots_and_spec(
             case Py_mod_gil:
                 {
                     uint64_t val = it.current.sl_uint64;
-                    requires_gil = (val != (uint64_t)Py_MOD_GIL_NOT_USED);
+                    requires_gil = (val != (uint64_t)(uintptr_t)Py_MOD_GIL_NOT_USED);
                 }
                 break;
             case Py_mod_abi:

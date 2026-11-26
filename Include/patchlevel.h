@@ -24,10 +24,10 @@
 #define PY_MINOR_VERSION        16
 #define PY_MICRO_VERSION        0
 #define PY_RELEASE_LEVEL        PY_RELEASE_LEVEL_ALPHA
-#define PY_RELEASE_SERIAL       1
+#define PY_RELEASE_SERIAL       2
 
 /* Version as a string */
-#define PY_VERSION              "3.16.0a1+dev"
+#define PY_VERSION              "3.16.0a2+dev"
 /*--end constants--*/
 
 
@@ -37,6 +37,7 @@
     (((Z) & 0xff) << 8) |                               \
     (((LEVEL) & 0xf) << 4) |                            \
     (((SERIAL) & 0xf) << 0))
+#define _Py_PACK_VERSION(X, Y) _Py_PACK_FULL_VERSION(X, Y, 0, 0, 0)
 
 /* Version as a single 4-byte hex number, e.g. 0x010502B2 == 1.5.2b2.
    Use this for numeric comparisons, e.g. #if PY_VERSION_HEX >= ... */

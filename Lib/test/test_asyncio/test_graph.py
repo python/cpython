@@ -430,6 +430,77 @@ class CallStackTestBase:
             ['T<probe>', ['a _cancel_and_wait', 'a wait_for', 'a probe'], []],
         ])
 
+    async def test_stack_async_gen_asend(self):
+        # gh-160837: an async_generator_asend must not truncate the stack
+        fut = asyncio.Future()
+        stack_for_consumer = None
+
+        async def deep():
+            await fut
+
+        async def gen():
+            await deep()
+            yield 1
+
+        async def consumer():
+            async for _ in gen():
+                pass
+
+        async def main():
+            nonlocal stack_for_consumer
+
+            async with asyncio.TaskGroup() as g:
+                t = g.create_task(consumer(), name='consumer')
+                for _ in range(5):
+                    await asyncio.sleep(0)
+
+                stack_for_consumer = capture_test_stack(fut=t)
+                fut.set_result(None)
+
+        await main()
+
+        self.assertEqual(stack_for_consumer[0][:2], [
+            'T<consumer>',
+            ['a deep', 'ag gen', 'a consumer'],
+        ])
+
+    async def test_stack_async_gen_aclose(self):
+        # gh-160837: an async_generator_athrow must not truncate the stack
+        fut = asyncio.Future()
+        stack_for_consumer = None
+
+        async def deep():
+            await fut
+
+        async def gen():
+            try:
+                yield 1
+            finally:
+                await deep()
+
+        async def consumer():
+            agen = gen()
+            await anext(agen)
+            await agen.aclose()
+
+        async def main():
+            nonlocal stack_for_consumer
+
+            async with asyncio.TaskGroup() as g:
+                t = g.create_task(consumer(), name='consumer')
+                for _ in range(5):
+                    await asyncio.sleep(0)
+
+                stack_for_consumer = capture_test_stack(fut=t)
+                fut.set_result(None)
+
+        await main()
+
+        self.assertEqual(stack_for_consumer[0][:2], [
+            'T<consumer>',
+            ['a deep', 'ag gen', 'a consumer'],
+        ])
+
     async def test_stack_gather(self):
 
         stack_for_deep = None
@@ -455,9 +526,31 @@ class CallStackTestBase:
             'T<anon>',
             ['s capture_test_stack', 'a deep', 'a c1'],
             [
-                ['T<anon>', ['a main', 'a test_stack_gather'], []]
+                ['F', [], [
+                    ['T<anon>', ['a main', 'a test_stack_gather'], []],
+                ]],
             ]
         ])
+
+    async def test_gather_awaited_by_different_task(self):
+        # gh-162061
+        async def consume(fut):
+            await fut
+
+        release = asyncio.Event()
+        child = asyncio.create_task(release.wait())
+        gathered = asyncio.gather(child)
+        consumer = asyncio.create_task(consume(gathered), eager_start=True)
+        graph = asyncio.capture_call_graph(child, limit=0)
+        release.set()
+        await consumer
+        self.assertFalse(asyncio.capture_call_graph(child, limit=0).awaited_by)
+
+        waiter, = graph.awaited_by
+        self.assertIs(waiter.future, gathered)
+        parent, = waiter.awaited_by
+        self.assertIs(parent.future, consumer)
+        self.assertFalse(parent.awaited_by)
 
     async def test_stack_gather_survivor(self):
         # gh-157213: a child that outlives gather() must not be shown as awaited
@@ -504,9 +597,78 @@ class CallStackTestBase:
             'T<anon>',
             ['s capture_test_stack', 'a deep', 'a c1'],
             [
-                ['T<anon>', ['a main', 'a test_stack_shield'], []]
+                ['F', [], [
+                    ['T<anon>', ['a main', 'a test_stack_shield'], []],
+                ]],
             ]
         ])
+
+    async def test_shield_awaited_by_different_task(self):
+        async def consume(fut):
+            await fut
+
+        release = asyncio.Event()
+        child = asyncio.create_task(release.wait())
+        shielded = asyncio.shield(child)
+        consumer = asyncio.create_task(consume(shielded), eager_start=True)
+        graph = asyncio.capture_call_graph(child, limit=0)
+        release.set()
+        await consumer
+        self.assertFalse(asyncio.capture_call_graph(child, limit=0).awaited_by)
+
+        waiter, = graph.awaited_by
+        self.assertIs(waiter.future, shielded)
+        parent, = waiter.awaited_by
+        self.assertIs(parent.future, consumer)
+        self.assertFalse(parent.awaited_by)
+
+    async def test_shield_indirect_consumers(self):
+        async def wait(fut):
+            await asyncio.wait([fut])
+
+        async def gather(fut):
+            await asyncio.gather(fut)
+
+        async def add_done_callback(fut):
+            done = asyncio.get_running_loop().create_future()
+            fut.add_done_callback(done.set_result)
+            await done
+
+        for consume in (wait, gather, add_done_callback):
+            with self.subTest(method=consume.__name__):
+                release = asyncio.Event()
+                child = asyncio.create_task(release.wait())
+                shielded = asyncio.shield(child)
+                consumer = asyncio.create_task(
+                    consume(shielded), eager_start=True)
+                graph = asyncio.capture_call_graph(child, limit=0)
+                release.set()
+                await consumer
+
+                waiter, = graph.awaited_by
+                self.assertIs(waiter.future, shielded)
+                while waiter.awaited_by:
+                    waiter, = waiter.awaited_by
+                expected = shielded if consume is add_done_callback else consumer
+                self.assertIs(waiter.future, expected)
+
+    async def test_shield_discards_awaited_by_on_cancel(self):
+        async def consume(fut):
+            await fut
+
+        release = asyncio.Event()
+        child = asyncio.create_task(release.wait())
+        shielded = asyncio.shield(child)
+        consumer = asyncio.create_task(consume(shielded), eager_start=True)
+        consumer.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await consumer
+
+        self.assertFalse(child.done())
+        graph = asyncio.capture_call_graph(child, limit=0)
+        release.set()
+        await child
+        self.assertFalse(graph.awaited_by)
 
     async def test_stack_timeout(self):
 
@@ -531,7 +693,9 @@ class CallStackTestBase:
             'T<anon>',
             ['s capture_test_stack', 'a inner', 'a c1'],
             [
-                ['T<anon>', ['a main', 'a test_stack_timeout'], []]
+                ['F', [], [
+                    ['T<anon>', ['a main', 'a test_stack_timeout'], []],
+                ]],
             ]
         ])
 
@@ -714,6 +878,11 @@ class CallStackTestBase:
 
         self.assertTrue(stack_for_fut[1].startswith('* Future(id='))
 
+    async def test_call_graph_depth_beyond_task(self):
+        # gh-161124
+        graph = asyncio.capture_call_graph(depth=2)
+        self.assertEqual(graph.call_stack, ())
+
     async def test_capture_call_graph_positive_limit(self):
         captured = None
 
@@ -893,6 +1062,23 @@ class CallStackTestBase:
         await main()
         self.assertEqual(stack[:3], ['gen', 'middle', 'main'])
 
+    def set_eager_task_factory(self):
+        loop = asyncio.get_running_loop()
+        loop.set_task_factory(asyncio.create_eager_task_factory(asyncio.Task))
+        self.addCleanup(loop.set_task_factory, None)
+
+    async def test_stack_eager_task(self):
+        self.set_eager_task_factory()
+
+        async def child():
+            nonlocal stack
+            stack = capture_test_stack()
+
+        stack = None
+        await asyncio.gather(child())
+
+        self.assertEqual(stack[0][2], [['T<anon>', ['a test_stack_eager_task'], []]])
+
 
 @unittest.skipIf(
     not hasattr(asyncio.futures, "_c_future_add_to_awaited_by"),
@@ -954,6 +1140,17 @@ class TestCallStackPy(CallStackTestBase, unittest.IsolatedAsyncioTestCase):
 
         self._Future = asyncio.Future
         asyncio.Future = futures.Future = futures._PyFuture
+
+        # The real _GatheringFuture subclasses the C Future, which the
+        # pure-Python awaited-by helpers ignore.
+        class _PyGatheringFuture(futures._PyFuture):
+            def __init__(self, children, *, loop):
+                super().__init__(loop=loop)
+                self._children = children
+                self._cancel_requested = False
+            cancel = tasks._GatheringFuture.cancel
+        self.enterContext(mock.patch.object(tasks, '_GatheringFuture',
+                                            _PyGatheringFuture))
 
         self._Task = asyncio.Task
         asyncio.Task = tasks.Task = tasks._PyTask

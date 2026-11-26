@@ -1,0 +1,1 @@
+Fix the type of the ``msg`` attribute of :exc:`xml.etree.ElementTree.ParseError` in the pure Python implementation: it is now a string, as in the C implementation.

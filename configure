@@ -962,6 +962,7 @@ LINK_PYTHON_DEPS
 LIBRARY_DEPS
 HOSTRUNNER
 NODE
+RELOCATABLE
 STATIC_LIBPYTHON
 GNULD
 EXPORTSFROM
@@ -1035,12 +1036,14 @@ CONFIG_ARGS
 SOVERSION
 VERSION
 PYTHON_FOR_REGEN
+RUNSHARED_FOR_BUILD
 PYTHON_FOR_BUILD_DEPS
 FREEZE_MODULE_DEPS
 FREEZE_MODULE
 FREEZE_MODULE_BOOTSTRAP_DEPS
 FREEZE_MODULE_BOOTSTRAP
 PYTHON_FOR_FREEZE
+MODULE_CHECK_COMMAND
 PYTHON_FOR_BUILD
 host_os
 host_vendor
@@ -1113,6 +1116,7 @@ enable_shared
 with_static_libpython
 enable_static_libpython_for_interpreter
 enable_profiling
+enable_relocatable
 enable_gil
 with_pydebug
 with_trace_refs
@@ -1865,6 +1869,8 @@ Optional Features:
                           library)
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
+  --enable-relocatable    make the installation easier to relocate (work in
+                          progress; default is no)
   --disable-gil           enable support for running without the GIL (default
                           is no)
   --enable-pystats        enable internal statistics gathering (default is no)
@@ -3829,7 +3835,12 @@ fi
     fi
         ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
     PYTHON_FOR_FREEZE="$with_build_python"
-    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) _PYTHON_SYSCONFIGDATA_PATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`) '$with_build_python
+    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) PYTHONPATH=$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) _PYTHON_SYSCONFIGDATA_PATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`) '$with_build_python
+        if test "x$cross_compiling" = xyes
+then :
+  PYTHON_FOR_BUILD='_PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) '"$PYTHON_FOR_BUILD"
+
+fi
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_build_python" >&5
 printf "%s\n" "$with_build_python" >&6; }
 
@@ -3849,6 +3860,17 @@ fi
 
 
 
+# Module import checks must run with the target interpreter on native builds.
+if test "x$cross_compiling" = xyes
+then :
+  MODULE_CHECK_COMMAND='$(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --cross-compiling'
+else case e in #(
+  e) MODULE_CHECK_COMMAND='$(RUNSHARED) ./$(BUILDPYTHON) -E $(srcdir)/Tools/build/check_extension_modules.py --no-cross-compiling'
+ ;;
+esac
+fi
+
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for Python interpreter freezing" >&5
 printf %s "checking for Python interpreter freezing... " >&6; }
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $PYTHON_FOR_FREEZE" >&5
@@ -3863,6 +3885,9 @@ then :
     FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
     FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
     PYTHON_FOR_BUILD_DEPS=''
+    # The build Python is a separate interpreter. RUNSHARED would make it
+    # load the in-tree libpython, which may need a different libc.
+    RUNSHARED_FOR_BUILD=''
 
 else case e in #(
   e)
@@ -3871,10 +3896,12 @@ else case e in #(
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
     PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
+    RUNSHARED_FOR_BUILD='$(RUNSHARED)'
 
  ;;
 esac
 fi
+
 
 
 
@@ -4226,8 +4253,7 @@ then
 	ac_sys_release=
     else
 	ac_sys_system=`uname -s`
-	if test "$ac_sys_system" = "AIX" \
-	-o "$ac_sys_system" = "UnixWare" -o "$ac_sys_system" = "OpenUNIX"; then
+	if test "$ac_sys_system" = "AIX"; then
 		ac_sys_release=`uname -v`
 	else
 		ac_sys_release=`uname -r`
@@ -4913,15 +4939,6 @@ printf "%s\n" "#define _BSD_SOURCE 1" >>confdefs.h
   # A lower level is defined below.
   SunOS/*)
     define_xopen_source=no;;
-  # On UnixWare 7, u_long is never defined with _XOPEN_SOURCE,
-  # but used in /usr/include/netinet/tcp.h. Reported by Tim Rice.
-  # Reconfirmed for 7.1.4 by Martin v. Loewis.
-  OpenUNIX/8.0.0| UnixWare/7.1.[0-4])
-    define_xopen_source=no;;
-  # On OpenServer 5, u_short is never defined with _XOPEN_SOURCE,
-  # but used in struct sockaddr.sa_family. Reported by Tim Rice.
-  SCO_SV/3.2)
-    define_xopen_source=no;;
   # On MacOS X 10.2, a bug in ncurses.h means that it craps out if
   # _XOPEN_EXTENDED_SOURCE is defined. Apparently, this is fixed in 10.3, which
   # identifies itself as Darwin/7.*
@@ -5055,8 +5072,8 @@ fi
 case $host in #(
   wasm64-*-emscripten) :
 
-    as_fn_append CFLAGS " -sMEMORY64=1"
-    as_fn_append LDFLAGS " -sMEMORY64=1"
+    as_fn_append CFLAGS " -m64"
+    as_fn_append LDFLAGS " -m64"
    ;; #(
   *) :
      ;;
@@ -8138,6 +8155,28 @@ if test "x$enable_profiling" = xyes; then
   LDFLAGS="-pg $LDFLAGS"
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-relocatable" >&5
+printf %s "checking for --enable-relocatable... " >&6; }
+# Check whether --enable-relocatable was given.
+if test ${enable_relocatable+y}
+then :
+  enableval=$enable_relocatable;
+else case e in #(
+  e) enable_relocatable=no ;;
+esac
+fi
+
+case $enable_relocatable in #(
+  yes|no) :
+     ;; #(
+  *) :
+    as_fn_error $? "--enable-relocatable must be yes or no" "$LINENO" 5 ;;
+esac
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_relocatable" >&5
+printf "%s\n" "$enable_relocatable" >&6; }
+RELOCATABLE=$enable_relocatable
+
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking LDLIBRARY" >&5
 printf %s "checking LDLIBRARY... " >&6; }
 
@@ -9318,6 +9357,92 @@ fi
           else
             LTOFLAGS="-flto=${Py_LTO_POLICY}"
           fi
+          LTOCFLAGS="$LTOFLAGS"
+          # GNU ld needs LLVMgold.so for Clang LTO.  If the configured linker
+          # cannot link LTO objects, try lld, which does not need that plugin.
+          save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+            LDFLAGS="$LDFLAGS $LDFLAGS_NODIST $LTOFLAGS"
+            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether Clang LTO works with the configured linker" >&5
+printf %s "checking whether Clang LTO works with the configured linker... " >&6; }
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  clang_lto_link=yes
+else case e in #(
+  e) clang_lto_link=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $clang_lto_link" >&5
+printf "%s\n" "$clang_lto_link" >&6; }
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+          if test "$clang_lto_link" = no; then
+            save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+              LDFLAGS="$LDFLAGS -fuse-ld=lld"
+              { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether Clang LTO works with lld" >&5
+printf %s "checking whether Clang LTO works with lld... " >&6; }
+              cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  clang_lto_link=yes
+else case e in #(
+  e) clang_lto_link=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+              { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $clang_lto_link" >&5
+printf "%s\n" "$clang_lto_link" >&6; }
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+            if test "$clang_lto_link" = no; then
+              as_fn_error $? "Clang LTO requires a working LTO-aware linker. Install lld or the LLVMgold.so plugin, select a linker with LDFLAGS, or disable LTO with --without-lto." "$LINENO" 5
+            fi
+            LTOFLAGS="$LTOFLAGS -fuse-ld=lld"
+            LDFLAGS_NOLTO="$LDFLAGS_NOLTO -fuse-ld=lld"
+          fi
           ;;
       esac
       ;;
@@ -10185,11 +10310,6 @@ then
 	    OPT="-O3 -Wall"
 	    ;;
 	esac
-
-	case $ac_sys_system in
-	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
-	    ;;
-        esac
 	;;
 
     *)
@@ -10229,7 +10349,7 @@ fi
 then :
 
       as_fn_append CFLAGS_NODIST " -pthread"
-      as_fn_append LDFLAGS_NODIST " -sUSE_PTHREADS"
+      as_fn_append LDFLAGS_NODIST " -pthread"
       as_fn_append LINKFORSHARED " -sPROXY_TO_PTHREAD"
 
 fi
@@ -11531,10 +11651,6 @@ fi
     esac
 
     case $ac_sys_system in
-	SCO_SV*)
-	    BASECFLAGS="$BASECFLAGS -m486 -DSCO5"
-	    ;;
-
     Darwin*)
         # -Wno-long-double, -no-cpp-precomp, and -mno-fused-madd
         # used to be here, but non-Apple gcc doesn't accept them.
@@ -11750,18 +11866,6 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
         ;;
     esac
 
-else case e in #(
-  e)
-    case $ac_sys_system in
-    OpenUNIX*|UnixWare*)
-	BASECFLAGS="$BASECFLAGS -K pentium,host,inline,loop_unroll,alloca "
-	;;
-    SCO_SV*)
-	BASECFLAGS="$BASECFLAGS -belf -Ki486 -DSCO5"
-	;;
-    esac
- ;;
-esac
 fi
 
 # Check for --enable-experimental-jit:
@@ -13222,13 +13326,6 @@ printf "%s\n" "#define _LARGEFILE_SOURCE 1" >>confdefs.h
 printf "%s\n" "#define _FILE_OFFSET_BITS 64" >>confdefs.h
 
 fi
-
-# Add some code to confdefs.h so that the test for off_t works on SCO
-cat >> confdefs.h <<\EOF
-#if defined(SCO_DS)
-#undef _OFF_T
-#endif
-EOF
 
 # Type availability checks
 ac_fn_c_check_type "$LINENO" "mode_t" "ac_cv_type_mode_t" "$ac_includes_default"
@@ -14770,17 +14867,6 @@ then
 	NetBSD*|DragonFly*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
-	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_gcc_compat" = "yes" ; then
-			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
-		else
-			LDSHARED='$(CC) -G'
-			LDCXXSHARED='$(CXX) -G'
-		fi;;
-	SCO_SV*)
-		LDSHARED='$(CC) -Wl,-G,-Bexport'
-		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
 	WASI*)
 		if test "x$enable_wasm_dynamic_linking" = xyes
 then :
@@ -14835,16 +14921,6 @@ then :
 fi;;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	Haiku*) CCSHARED="-fPIC";;
-	OpenUNIX*|UnixWare*)
-		if test "$ac_cv_gcc_compat" = "yes"
-		then CCSHARED="-fPIC"
-		else CCSHARED="-KPIC"
-		fi;;
-	SCO_SV*)
-		if test "$ac_cv_gcc_compat" = "yes"
-		then CCSHARED="-fPIC"
-		else CCSHARED="-Kpic -belf"
-		fi;;
 	VxWorks*)
 		CCSHARED="-fpic -D__SO_PICABILINUX__  -ftls-model=global-dynamic"
 	esac
@@ -14897,9 +14973,6 @@ printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 			fi
 		fi
 		;;
-	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
-	SCO_SV*) LINKFORSHARED="-Wl,-Bexport";;
-	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*)
 		if [ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]
 		then
@@ -16191,6 +16264,11 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+#ifdef __has_attribute
+#  if __has_attribute(no_sanitize)
+__attribute__((no_sanitize("alignment")))
+#  endif
+#endif
 int main(void)
 {
     char s[16];
@@ -16880,7 +16958,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=ffi_prep_cif_var
+(void)ffi_prep_cif_var
   ;
   return 0;
 }
@@ -16921,7 +16999,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=ffi_prep_closure_loc
+(void)ffi_prep_closure_loc
   ;
   return 0;
 }
@@ -16962,7 +17040,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=ffi_closure_alloc
+(void)ffi_closure_alloc
   ;
   return 0;
 }
@@ -20975,12 +21053,6 @@ then :
   printf "%s\n" "#define HAVE_GAI_STRERROR 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "getdents64" "ac_cv_func_getdents64"
-if test "x$ac_cv_func_getdents64" = xyes
-then :
-  printf "%s\n" "#define HAVE_GETDENTS64 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "getegid" "ac_cv_func_getegid"
 if test "x$ac_cv_func_getegid" = xyes
 then :
@@ -21143,12 +21215,6 @@ then :
   printf "%s\n" "#define HAVE_GETSID 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "gettid" "ac_cv_func_gettid"
-if test "x$ac_cv_func_gettid" = xyes
-then :
-  printf "%s\n" "#define HAVE_GETTID 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "getuid" "ac_cv_func_getuid"
 if test "x$ac_cv_func_getuid" = xyes
 then :
@@ -21161,22 +21227,10 @@ then :
   printf "%s\n" "#define HAVE_GRANTPT 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "if_indextoname" "ac_cv_func_if_indextoname"
-if test "x$ac_cv_func_if_indextoname" = xyes
-then :
-  printf "%s\n" "#define HAVE_IF_INDEXTONAME 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "if_nameindex" "ac_cv_func_if_nameindex"
 if test "x$ac_cv_func_if_nameindex" = xyes
 then :
   printf "%s\n" "#define HAVE_IF_NAMEINDEX 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "if_nametoindex" "ac_cv_func_if_nametoindex"
-if test "x$ac_cv_func_if_nametoindex" = xyes
-then :
-  printf "%s\n" "#define HAVE_IF_NAMETOINDEX 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "initgroups" "ac_cv_func_initgroups"
@@ -21321,24 +21375,6 @@ ac_fn_c_check_func "$LINENO" "pause" "ac_cv_func_pause"
 if test "x$ac_cv_func_pause" = xyes
 then :
   printf "%s\n" "#define HAVE_PAUSE 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "pidfd_open" "ac_cv_func_pidfd_open"
-if test "x$ac_cv_func_pidfd_open" = xyes
-then :
-  printf "%s\n" "#define HAVE_PIDFD_OPEN 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "pidfd_getfd" "ac_cv_func_pidfd_getfd"
-if test "x$ac_cv_func_pidfd_getfd" = xyes
-then :
-  printf "%s\n" "#define HAVE_PIDFD_GETFD 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "pidfd_send_signal" "ac_cv_func_pidfd_send_signal"
-if test "x$ac_cv_func_pidfd_send_signal" = xyes
-then :
-  printf "%s\n" "#define HAVE_PIDFD_SEND_SIGNAL 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "pipe" "ac_cv_func_pipe"
@@ -21951,7 +21987,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=freadlink
+(void)freadlink
   ;
   return 0;
 }
@@ -21993,7 +22029,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=strerror_r
+(void)strerror_r
   ;
   return 0;
 }
@@ -22036,7 +22072,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=pthread_attr_get_np
+(void)pthread_attr_get_np
   ;
   return 0;
 }
@@ -22061,6 +22097,299 @@ printf "%s\n" "#define _Py_HAVE_PTHREAD_ATTR_GET_NP 1" >>confdefs.h
 
 fi
 
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for getdents64" >&5
+printf %s "checking for getdents64... " >&6; }
+if test ${ac_cv_func_getdents64+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <dirent.h>
+int
+main (void)
+{
+(void)getdents64
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_getdents64=yes
+else case e in #(
+  e) ac_cv_func_getdents64=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_getdents64" >&5
+printf "%s\n" "$ac_cv_func_getdents64" >&6; }
+  if test "x$ac_cv_func_getdents64" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_GETDENTS64 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gettid" >&5
+printf %s "checking for gettid... " >&6; }
+if test ${ac_cv_func_gettid+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <unistd.h>
+int
+main (void)
+{
+(void)gettid
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_gettid=yes
+else case e in #(
+  e) ac_cv_func_gettid=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_gettid" >&5
+printf "%s\n" "$ac_cv_func_gettid" >&6; }
+  if test "x$ac_cv_func_gettid" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_GETTID 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for if_indextoname" >&5
+printf %s "checking for if_indextoname... " >&6; }
+if test ${ac_cv_func_if_indextoname+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <net/if.h>
+int
+main (void)
+{
+(void)if_indextoname
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_if_indextoname=yes
+else case e in #(
+  e) ac_cv_func_if_indextoname=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_if_indextoname" >&5
+printf "%s\n" "$ac_cv_func_if_indextoname" >&6; }
+  if test "x$ac_cv_func_if_indextoname" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_IF_INDEXTONAME 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for if_nametoindex" >&5
+printf %s "checking for if_nametoindex... " >&6; }
+if test ${ac_cv_func_if_nametoindex+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <net/if.h>
+int
+main (void)
+{
+(void)if_nametoindex
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_if_nametoindex=yes
+else case e in #(
+  e) ac_cv_func_if_nametoindex=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_if_nametoindex" >&5
+printf "%s\n" "$ac_cv_func_if_nametoindex" >&6; }
+  if test "x$ac_cv_func_if_nametoindex" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_IF_NAMETOINDEX 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for pidfd_open" >&5
+printf %s "checking for pidfd_open... " >&6; }
+if test ${ac_cv_func_pidfd_open+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/pidfd.h>
+int
+main (void)
+{
+(void)pidfd_open
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_pidfd_open=yes
+else case e in #(
+  e) ac_cv_func_pidfd_open=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_pidfd_open" >&5
+printf "%s\n" "$ac_cv_func_pidfd_open" >&6; }
+  if test "x$ac_cv_func_pidfd_open" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_PIDFD_OPEN 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for pidfd_getfd" >&5
+printf %s "checking for pidfd_getfd... " >&6; }
+if test ${ac_cv_func_pidfd_getfd+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/pidfd.h>
+int
+main (void)
+{
+(void)pidfd_getfd
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_pidfd_getfd=yes
+else case e in #(
+  e) ac_cv_func_pidfd_getfd=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_pidfd_getfd" >&5
+printf "%s\n" "$ac_cv_func_pidfd_getfd" >&6; }
+  if test "x$ac_cv_func_pidfd_getfd" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_PIDFD_GETFD 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for pidfd_send_signal" >&5
+printf %s "checking for pidfd_send_signal... " >&6; }
+if test ${ac_cv_func_pidfd_send_signal+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/pidfd.h>
+int
+main (void)
+{
+(void)pidfd_send_signal
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_pidfd_send_signal=yes
+else case e in #(
+  e) ac_cv_func_pidfd_send_signal=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_pidfd_send_signal" >&5
+printf "%s\n" "$ac_cv_func_pidfd_send_signal" >&6; }
+  if test "x$ac_cv_func_pidfd_send_signal" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_PIDFD_SEND_SIGNAL 1" >>confdefs.h
+
+fi
 
 
 
@@ -22236,7 +22565,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=chroot
+(void)chroot
   ;
   return 0;
 }
@@ -22277,7 +22606,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=link
+(void)link
   ;
   return 0;
 }
@@ -22318,7 +22647,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=symlink
+(void)symlink
   ;
   return 0;
 }
@@ -22359,7 +22688,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=fchdir
+(void)fchdir
   ;
   return 0;
 }
@@ -22400,7 +22729,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=fsync
+(void)fsync
   ;
   return 0;
 }
@@ -22441,7 +22770,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=fdatasync
+(void)fdatasync
   ;
   return 0;
 }
@@ -22505,7 +22834,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=epoll_create
+(void)epoll_create
   ;
   return 0;
 }
@@ -22546,7 +22875,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=epoll_create1
+(void)epoll_create1
   ;
   return 0;
 }
@@ -22592,7 +22921,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=kqueue
+(void)kqueue
   ;
   return 0;
 }
@@ -22636,7 +22965,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=prlimit
+(void)prlimit
   ;
   return 0;
 }
@@ -22678,7 +23007,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=_dyld_shared_cache_contains_path
+(void)_dyld_shared_cache_contains_path
   ;
   return 0;
 }
@@ -22727,7 +23056,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=memfd_create
+(void)memfd_create
   ;
   return 0;
 }
@@ -22773,7 +23102,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=eventfd
+(void)eventfd
   ;
   return 0;
 }
@@ -22819,7 +23148,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=timerfd_create
+(void)timerfd_create
   ;
   return 0;
 }
@@ -22867,7 +23196,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=ctermid_r
+(void)ctermid_r
   ;
   return 0;
 }
@@ -23006,7 +23335,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getpagesize
+(void)getpagesize
   ;
   return 0;
 }
@@ -24893,7 +25222,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=hstrerror
+(void)hstrerror
   ;
   return 0;
 }
@@ -24934,7 +25263,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getservbyname
+(void)getservbyname
   ;
   return 0;
 }
@@ -24975,7 +25304,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getservbyport
+(void)getservbyport
   ;
   return 0;
 }
@@ -25016,7 +25345,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=gethostbyname
+(void)gethostbyname
   ;
   return 0;
 }
@@ -25057,7 +25386,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=gethostbyaddr
+(void)gethostbyaddr
   ;
   return 0;
 }
@@ -25098,7 +25427,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getprotobyname
+(void)getprotobyname
   ;
   return 0;
 }
@@ -25147,7 +25476,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=inet_aton
+(void)inet_aton
   ;
   return 0;
 }
@@ -25193,7 +25522,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=inet_ntoa
+(void)inet_ntoa
   ;
   return 0;
 }
@@ -25239,7 +25568,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=inet_pton
+(void)inet_pton
   ;
   return 0;
 }
@@ -25285,7 +25614,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getpeername
+(void)getpeername
   ;
   return 0;
 }
@@ -25331,7 +25660,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=getsockname
+(void)getsockname
   ;
   return 0;
 }
@@ -25377,7 +25706,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=accept
+(void)accept
   ;
   return 0;
 }
@@ -25423,7 +25752,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=bind
+(void)bind
   ;
   return 0;
 }
@@ -25469,7 +25798,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=connect
+(void)connect
   ;
   return 0;
 }
@@ -25515,7 +25844,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=listen
+(void)listen
   ;
   return 0;
 }
@@ -25561,7 +25890,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=recvfrom
+(void)recvfrom
   ;
   return 0;
 }
@@ -25607,7 +25936,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=sendto
+(void)sendto
   ;
   return 0;
 }
@@ -25653,7 +25982,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=setsockopt
+(void)setsockopt
   ;
   return 0;
 }
@@ -25699,7 +26028,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=socket
+(void)socket
   ;
   return 0;
 }
@@ -25747,7 +26076,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=setgroups
+(void)setgroups
   ;
   return 0;
 }
@@ -27274,7 +27603,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=socketpair
+(void)socketpair
   ;
   return 0;
 }
@@ -27899,7 +28228,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=acospi
+(void)acospi
   ;
   return 0;
 }
@@ -27941,7 +28270,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=asinpi
+(void)asinpi
   ;
   return 0;
 }
@@ -27983,7 +28312,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=atanpi
+(void)atanpi
   ;
   return 0;
 }
@@ -28025,7 +28354,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=atan2pi
+(void)atan2pi
   ;
   return 0;
 }
@@ -28067,7 +28396,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=cospi
+(void)cospi
   ;
   return 0;
 }
@@ -28109,7 +28438,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=sinpi
+(void)sinpi
   ;
   return 0;
 }
@@ -28151,7 +28480,7 @@ else case e in #(
 int
 main (void)
 {
-void *x=tanpi
+(void)tanpi
   ;
   return 0;
 }
@@ -29818,7 +30147,7 @@ printf "%s\n" "$ac_cv_readline_rl_change_environment" >&6; }
 then :
 
 
-printf "%s\n" "#define HAVE_RL_CHANGE_ENVIRONMENT 1" >>confdefs.h
+printf "%s\n" "#define _Py_HAVE_RL_CHANGE_ENVIRONMENT 1" >>confdefs.h
 
 
 fi
@@ -31991,6 +32320,9 @@ fi
 
 
 
+
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function is_pad" >&5
 printf %s "checking for curses function is_pad... " >&6; }
 if test ${ac_cv_lib_curses_is_pad+y}
@@ -32047,6 +32379,7 @@ then :
 printf "%s\n" "#define HAVE_CURSES_IS_PAD 1" >>confdefs.h
 
 fi
+
 
 
 
@@ -32113,6 +32446,7 @@ fi
 
 
 
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function resize_term" >&5
 printf %s "checking for curses function resize_term... " >&6; }
 if test ${ac_cv_lib_curses_resize_term+y}
@@ -32169,6 +32503,7 @@ then :
 printf "%s\n" "#define HAVE_CURSES_RESIZE_TERM 1" >>confdefs.h
 
 fi
+
 
 
 
@@ -32235,6 +32570,7 @@ fi
 
 
 
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function immedok" >&5
 printf %s "checking for curses function immedok... " >&6; }
 if test ${ac_cv_lib_curses_immedok+y}
@@ -32291,6 +32627,7 @@ then :
 printf "%s\n" "#define HAVE_CURSES_IMMEDOK 1" >>confdefs.h
 
 fi
+
 
 
 
@@ -32357,6 +32694,7 @@ fi
 
 
 
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wchgat" >&5
 printf %s "checking for curses function wchgat... " >&6; }
 if test ${ac_cv_lib_curses_wchgat+y}
@@ -32413,6 +32751,7 @@ then :
 printf "%s\n" "#define HAVE_CURSES_WCHGAT 1" >>confdefs.h
 
 fi
+
 
 
 
@@ -32479,66 +32818,6 @@ fi
 
 
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function nofilter" >&5
-printf %s "checking for curses function nofilter... " >&6; }
-if test ${ac_cv_lib_curses_nofilter+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef nofilter
-        void * volatile x = (void *)nofilter; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_nofilter=yes
-else case e in #(
-  e) ac_cv_lib_curses_nofilter=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_nofilter" >&5
-printf "%s\n" "$ac_cv_lib_curses_nofilter" >&6; }
-  if test "x$ac_cv_lib_curses_nofilter" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_NOFILTER 1" >>confdefs.h
-
-fi
-
-
-
-
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function has_key" >&5
 printf %s "checking for curses function has_key... " >&6; }
@@ -32597,188 +32876,6 @@ printf "%s\n" "#define HAVE_CURSES_HAS_KEY 1" >>confdefs.h
 
 fi
 
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function has_mouse" >&5
-printf %s "checking for curses function has_mouse... " >&6; }
-if test ${ac_cv_lib_curses_has_mouse+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef has_mouse
-        void * volatile x = (void *)has_mouse; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_has_mouse=yes
-else case e in #(
-  e) ac_cv_lib_curses_has_mouse=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_has_mouse" >&5
-printf "%s\n" "$ac_cv_lib_curses_has_mouse" >&6; }
-  if test "x$ac_cv_lib_curses_has_mouse" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_HAS_MOUSE 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function is_keypad" >&5
-printf %s "checking for curses function is_keypad... " >&6; }
-if test ${ac_cv_lib_curses_is_keypad+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef is_keypad
-        void * volatile x = (void *)is_keypad; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_is_keypad=yes
-else case e in #(
-  e) ac_cv_lib_curses_is_keypad=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_is_keypad" >&5
-printf "%s\n" "$ac_cv_lib_curses_is_keypad" >&6; }
-  if test "x$ac_cv_lib_curses_is_keypad" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_IS_KEYPAD 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function is_leaveok" >&5
-printf %s "checking for curses function is_leaveok... " >&6; }
-if test ${ac_cv_lib_curses_is_leaveok+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef is_leaveok
-        void * volatile x = (void *)is_leaveok; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_is_leaveok=yes
-else case e in #(
-  e) ac_cv_lib_curses_is_leaveok=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_is_leaveok" >&5
-printf "%s\n" "$ac_cv_lib_curses_is_leaveok" >&6; }
-  if test "x$ac_cv_lib_curses_is_leaveok" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_IS_LEAVEOK 1" >>confdefs.h
-
-fi
 
 
 
@@ -32845,6 +32942,7 @@ fi
 
 
 
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function use_env" >&5
 printf %s "checking for curses function use_env... " >&6; }
 if test ${ac_cv_lib_curses_use_env+y}
@@ -32902,432 +33000,6 @@ printf "%s\n" "#define HAVE_CURSES_USE_ENV 1" >>confdefs.h
 
 fi
 
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function new_prescr" >&5
-printf %s "checking for curses function new_prescr... " >&6; }
-if test ${ac_cv_lib_curses_new_prescr+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef new_prescr
-        void * volatile x = (void *)new_prescr; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_new_prescr=yes
-else case e in #(
-  e) ac_cv_lib_curses_new_prescr=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_new_prescr" >&5
-printf "%s\n" "$ac_cv_lib_curses_new_prescr" >&6; }
-  if test "x$ac_cv_lib_curses_new_prescr" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_NEW_PRESCR 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function use_screen" >&5
-printf %s "checking for curses function use_screen... " >&6; }
-if test ${ac_cv_lib_curses_use_screen+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef use_screen
-        void * volatile x = (void *)use_screen; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_use_screen=yes
-else case e in #(
-  e) ac_cv_lib_curses_use_screen=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_use_screen" >&5
-printf "%s\n" "$ac_cv_lib_curses_use_screen" >&6; }
-  if test "x$ac_cv_lib_curses_use_screen" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_USE_SCREEN 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function use_window" >&5
-printf %s "checking for curses function use_window... " >&6; }
-if test ${ac_cv_lib_curses_use_window+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef use_window
-        void * volatile x = (void *)use_window; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_use_window=yes
-else case e in #(
-  e) ac_cv_lib_curses_use_window=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_use_window" >&5
-printf "%s\n" "$ac_cv_lib_curses_use_window" >&6; }
-  if test "x$ac_cv_lib_curses_use_window" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_USE_WINDOW 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function key_defined" >&5
-printf %s "checking for curses function key_defined... " >&6; }
-if test ${ac_cv_lib_curses_key_defined+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef key_defined
-        void * volatile x = (void *)key_defined; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_key_defined=yes
-else case e in #(
-  e) ac_cv_lib_curses_key_defined=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_key_defined" >&5
-printf "%s\n" "$ac_cv_lib_curses_key_defined" >&6; }
-  if test "x$ac_cv_lib_curses_key_defined" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_KEY_DEFINED 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function term_attrs" >&5
-printf %s "checking for curses function term_attrs... " >&6; }
-if test ${ac_cv_lib_curses_term_attrs+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef term_attrs
-        void * volatile x = (void *)term_attrs; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_term_attrs=yes
-else case e in #(
-  e) ac_cv_lib_curses_term_attrs=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_term_attrs" >&5
-printf "%s\n" "$ac_cv_lib_curses_term_attrs" >&6; }
-  if test "x$ac_cv_lib_curses_term_attrs" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_TERM_ATTRS 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function define_key" >&5
-printf %s "checking for curses function define_key... " >&6; }
-if test ${ac_cv_lib_curses_define_key+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef define_key
-        void * volatile x = (void *)define_key; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_define_key=yes
-else case e in #(
-  e) ac_cv_lib_curses_define_key=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_define_key" >&5
-printf "%s\n" "$ac_cv_lib_curses_define_key" >&6; }
-  if test "x$ac_cv_lib_curses_define_key" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_DEFINE_KEY 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function keyok" >&5
-printf %s "checking for curses function keyok... " >&6; }
-if test ${ac_cv_lib_curses_keyok+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef keyok
-        void * volatile x = (void *)keyok; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_keyok=yes
-else case e in #(
-  e) ac_cv_lib_curses_keyok=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_keyok" >&5
-printf "%s\n" "$ac_cv_lib_curses_keyok" >&6; }
-  if test "x$ac_cv_lib_curses_keyok" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_KEYOK 1" >>confdefs.h
-
-fi
 
 
 
@@ -33394,6 +33066,7 @@ fi
 
 
 
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function set_tabsize" >&5
 printf %s "checking for curses function set_tabsize... " >&6; }
 if test ${ac_cv_lib_curses_set_tabsize+y}
@@ -33448,555 +33121,6 @@ printf "%s\n" "$ac_cv_lib_curses_set_tabsize" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_CURSES_SET_TABSIZE 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wattr_get" >&5
-printf %s "checking for curses function wattr_get... " >&6; }
-if test ${ac_cv_lib_curses_wattr_get+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef wattr_get
-        void * volatile x = (void *)wattr_get; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_wattr_get=yes
-else case e in #(
-  e) ac_cv_lib_curses_wattr_get=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wattr_get" >&5
-printf "%s\n" "$ac_cv_lib_curses_wattr_get" >&6; }
-  if test "x$ac_cv_lib_curses_wattr_get" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_WATTR_GET 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wattr_set" >&5
-printf %s "checking for curses function wattr_set... " >&6; }
-if test ${ac_cv_lib_curses_wattr_set+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef wattr_set
-        void * volatile x = (void *)wattr_set; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_wattr_set=yes
-else case e in #(
-  e) ac_cv_lib_curses_wattr_set=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wattr_set" >&5
-printf "%s\n" "$ac_cv_lib_curses_wattr_set" >&6; }
-  if test "x$ac_cv_lib_curses_wattr_set" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_WATTR_SET 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wattr_on" >&5
-printf %s "checking for curses function wattr_on... " >&6; }
-if test ${ac_cv_lib_curses_wattr_on+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef wattr_on
-        void * volatile x = (void *)wattr_on; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_wattr_on=yes
-else case e in #(
-  e) ac_cv_lib_curses_wattr_on=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wattr_on" >&5
-printf "%s\n" "$ac_cv_lib_curses_wattr_on" >&6; }
-  if test "x$ac_cv_lib_curses_wattr_on" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_WATTR_ON 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wattr_off" >&5
-printf %s "checking for curses function wattr_off... " >&6; }
-if test ${ac_cv_lib_curses_wattr_off+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef wattr_off
-        void * volatile x = (void *)wattr_off; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_wattr_off=yes
-else case e in #(
-  e) ac_cv_lib_curses_wattr_off=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wattr_off" >&5
-printf "%s\n" "$ac_cv_lib_curses_wattr_off" >&6; }
-  if test "x$ac_cv_lib_curses_wattr_off" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_WATTR_OFF 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wcolor_set" >&5
-printf %s "checking for curses function wcolor_set... " >&6; }
-if test ${ac_cv_lib_curses_wcolor_set+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef wcolor_set
-        void * volatile x = (void *)wcolor_set; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_wcolor_set=yes
-else case e in #(
-  e) ac_cv_lib_curses_wcolor_set=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wcolor_set" >&5
-printf "%s\n" "$ac_cv_lib_curses_wcolor_set" >&6; }
-  if test "x$ac_cv_lib_curses_wcolor_set" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_WCOLOR_SET 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function slk_attr_on" >&5
-printf %s "checking for curses function slk_attr_on... " >&6; }
-if test ${ac_cv_lib_curses_slk_attr_on+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef slk_attr_on
-        void * volatile x = (void *)slk_attr_on; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_slk_attr_on=yes
-else case e in #(
-  e) ac_cv_lib_curses_slk_attr_on=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_slk_attr_on" >&5
-printf "%s\n" "$ac_cv_lib_curses_slk_attr_on" >&6; }
-  if test "x$ac_cv_lib_curses_slk_attr_on" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_SLK_ATTR_ON 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function slk_attr_off" >&5
-printf %s "checking for curses function slk_attr_off... " >&6; }
-if test ${ac_cv_lib_curses_slk_attr_off+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef slk_attr_off
-        void * volatile x = (void *)slk_attr_off; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_slk_attr_off=yes
-else case e in #(
-  e) ac_cv_lib_curses_slk_attr_off=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_slk_attr_off" >&5
-printf "%s\n" "$ac_cv_lib_curses_slk_attr_off" >&6; }
-  if test "x$ac_cv_lib_curses_slk_attr_off" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_SLK_ATTR_OFF 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function slk_attr_set" >&5
-printf %s "checking for curses function slk_attr_set... " >&6; }
-if test ${ac_cv_lib_curses_slk_attr_set+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef slk_attr_set
-        void * volatile x = (void *)slk_attr_set; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_slk_attr_set=yes
-else case e in #(
-  e) ac_cv_lib_curses_slk_attr_set=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_slk_attr_set" >&5
-printf "%s\n" "$ac_cv_lib_curses_slk_attr_set" >&6; }
-  if test "x$ac_cv_lib_curses_slk_attr_set" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_SLK_ATTR_SET 1" >>confdefs.h
-
-fi
-
-
-
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function slk_color" >&5
-printf %s "checking for curses function slk_color... " >&6; }
-if test ${ac_cv_lib_curses_slk_color+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
-
-int
-main (void)
-{
-
-        #ifndef slk_color
-        void * volatile x = (void *)slk_color; (void)x;
-        #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_curses_slk_color=yes
-else case e in #(
-  e) ac_cv_lib_curses_slk_color=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_slk_color" >&5
-printf "%s\n" "$ac_cv_lib_curses_slk_color" >&6; }
-  if test "x$ac_cv_lib_curses_slk_color" = xyes
-then :
-
-printf "%s\n" "#define HAVE_CURSES_SLK_COLOR 1" >>confdefs.h
 
 fi
 
@@ -34119,6 +33243,1267 @@ fi
 
 
 
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function define_key" >&5
+printf %s "checking for curses function define_key... " >&6; }
+if test ${ac_cv_lib_curses_define_key+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef define_key
+        void * volatile x = (void *)define_key; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_define_key=yes
+else case e in #(
+  e) ac_cv_lib_curses_define_key=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_define_key" >&5
+printf "%s\n" "$ac_cv_lib_curses_define_key" >&6; }
+  if test "x$ac_cv_lib_curses_define_key" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_DEFINE_KEY 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function has_mouse" >&5
+printf %s "checking for curses function has_mouse... " >&6; }
+if test ${ac_cv_lib_curses_has_mouse+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef has_mouse
+        void * volatile x = (void *)has_mouse; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_has_mouse=yes
+else case e in #(
+  e) ac_cv_lib_curses_has_mouse=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_has_mouse" >&5
+printf "%s\n" "$ac_cv_lib_curses_has_mouse" >&6; }
+  if test "x$ac_cv_lib_curses_has_mouse" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_HAS_MOUSE 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function is_keypad" >&5
+printf %s "checking for curses function is_keypad... " >&6; }
+if test ${ac_cv_lib_curses_is_keypad+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef is_keypad
+        void * volatile x = (void *)is_keypad; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_is_keypad=yes
+else case e in #(
+  e) ac_cv_lib_curses_is_keypad=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_is_keypad" >&5
+printf "%s\n" "$ac_cv_lib_curses_is_keypad" >&6; }
+  if test "x$ac_cv_lib_curses_is_keypad" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_IS_KEYPAD 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function is_leaveok" >&5
+printf %s "checking for curses function is_leaveok... " >&6; }
+if test ${ac_cv_lib_curses_is_leaveok+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef is_leaveok
+        void * volatile x = (void *)is_leaveok; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_is_leaveok=yes
+else case e in #(
+  e) ac_cv_lib_curses_is_leaveok=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_is_leaveok" >&5
+printf "%s\n" "$ac_cv_lib_curses_is_leaveok" >&6; }
+  if test "x$ac_cv_lib_curses_is_leaveok" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_IS_LEAVEOK 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function key_defined" >&5
+printf %s "checking for curses function key_defined... " >&6; }
+if test ${ac_cv_lib_curses_key_defined+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef key_defined
+        void * volatile x = (void *)key_defined; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_key_defined=yes
+else case e in #(
+  e) ac_cv_lib_curses_key_defined=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_key_defined" >&5
+printf "%s\n" "$ac_cv_lib_curses_key_defined" >&6; }
+  if test "x$ac_cv_lib_curses_key_defined" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_KEY_DEFINED 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function keyok" >&5
+printf %s "checking for curses function keyok... " >&6; }
+if test ${ac_cv_lib_curses_keyok+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef keyok
+        void * volatile x = (void *)keyok; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_keyok=yes
+else case e in #(
+  e) ac_cv_lib_curses_keyok=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_keyok" >&5
+printf "%s\n" "$ac_cv_lib_curses_keyok" >&6; }
+  if test "x$ac_cv_lib_curses_keyok" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_KEYOK 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function new_prescr" >&5
+printf %s "checking for curses function new_prescr... " >&6; }
+if test ${ac_cv_lib_curses_new_prescr+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef new_prescr
+        void * volatile x = (void *)new_prescr; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_new_prescr=yes
+else case e in #(
+  e) ac_cv_lib_curses_new_prescr=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_new_prescr" >&5
+printf "%s\n" "$ac_cv_lib_curses_new_prescr" >&6; }
+  if test "x$ac_cv_lib_curses_new_prescr" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_NEW_PRESCR 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function nofilter" >&5
+printf %s "checking for curses function nofilter... " >&6; }
+if test ${ac_cv_lib_curses_nofilter+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef nofilter
+        void * volatile x = (void *)nofilter; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_nofilter=yes
+else case e in #(
+  e) ac_cv_lib_curses_nofilter=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_nofilter" >&5
+printf "%s\n" "$ac_cv_lib_curses_nofilter" >&6; }
+  if test "x$ac_cv_lib_curses_nofilter" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_NOFILTER 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function slk_attr_off" >&5
+printf %s "checking for curses function slk_attr_off... " >&6; }
+if test ${ac_cv_lib_curses_slk_attr_off+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef slk_attr_off
+        void * volatile x = (void *)slk_attr_off; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_slk_attr_off=yes
+else case e in #(
+  e) ac_cv_lib_curses_slk_attr_off=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_slk_attr_off" >&5
+printf "%s\n" "$ac_cv_lib_curses_slk_attr_off" >&6; }
+  if test "x$ac_cv_lib_curses_slk_attr_off" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_SLK_ATTR_OFF 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function slk_attr_on" >&5
+printf %s "checking for curses function slk_attr_on... " >&6; }
+if test ${ac_cv_lib_curses_slk_attr_on+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef slk_attr_on
+        void * volatile x = (void *)slk_attr_on; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_slk_attr_on=yes
+else case e in #(
+  e) ac_cv_lib_curses_slk_attr_on=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_slk_attr_on" >&5
+printf "%s\n" "$ac_cv_lib_curses_slk_attr_on" >&6; }
+  if test "x$ac_cv_lib_curses_slk_attr_on" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_SLK_ATTR_ON 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function slk_attr_set" >&5
+printf %s "checking for curses function slk_attr_set... " >&6; }
+if test ${ac_cv_lib_curses_slk_attr_set+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef slk_attr_set
+        void * volatile x = (void *)slk_attr_set; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_slk_attr_set=yes
+else case e in #(
+  e) ac_cv_lib_curses_slk_attr_set=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_slk_attr_set" >&5
+printf "%s\n" "$ac_cv_lib_curses_slk_attr_set" >&6; }
+  if test "x$ac_cv_lib_curses_slk_attr_set" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_SLK_ATTR_SET 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function slk_color" >&5
+printf %s "checking for curses function slk_color... " >&6; }
+if test ${ac_cv_lib_curses_slk_color+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef slk_color
+        void * volatile x = (void *)slk_color; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_slk_color=yes
+else case e in #(
+  e) ac_cv_lib_curses_slk_color=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_slk_color" >&5
+printf "%s\n" "$ac_cv_lib_curses_slk_color" >&6; }
+  if test "x$ac_cv_lib_curses_slk_color" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_SLK_COLOR 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function term_attrs" >&5
+printf %s "checking for curses function term_attrs... " >&6; }
+if test ${ac_cv_lib_curses_term_attrs+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef term_attrs
+        void * volatile x = (void *)term_attrs; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_term_attrs=yes
+else case e in #(
+  e) ac_cv_lib_curses_term_attrs=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_term_attrs" >&5
+printf "%s\n" "$ac_cv_lib_curses_term_attrs" >&6; }
+  if test "x$ac_cv_lib_curses_term_attrs" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_TERM_ATTRS 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function use_screen" >&5
+printf %s "checking for curses function use_screen... " >&6; }
+if test ${ac_cv_lib_curses_use_screen+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef use_screen
+        void * volatile x = (void *)use_screen; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_use_screen=yes
+else case e in #(
+  e) ac_cv_lib_curses_use_screen=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_use_screen" >&5
+printf "%s\n" "$ac_cv_lib_curses_use_screen" >&6; }
+  if test "x$ac_cv_lib_curses_use_screen" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_USE_SCREEN 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function use_window" >&5
+printf %s "checking for curses function use_window... " >&6; }
+if test ${ac_cv_lib_curses_use_window+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef use_window
+        void * volatile x = (void *)use_window; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_use_window=yes
+else case e in #(
+  e) ac_cv_lib_curses_use_window=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_use_window" >&5
+printf "%s\n" "$ac_cv_lib_curses_use_window" >&6; }
+  if test "x$ac_cv_lib_curses_use_window" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_USE_WINDOW 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wattr_get" >&5
+printf %s "checking for curses function wattr_get... " >&6; }
+if test ${ac_cv_lib_curses_wattr_get+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef wattr_get
+        void * volatile x = (void *)wattr_get; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_wattr_get=yes
+else case e in #(
+  e) ac_cv_lib_curses_wattr_get=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wattr_get" >&5
+printf "%s\n" "$ac_cv_lib_curses_wattr_get" >&6; }
+  if test "x$ac_cv_lib_curses_wattr_get" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_WATTR_GET 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wattr_off" >&5
+printf %s "checking for curses function wattr_off... " >&6; }
+if test ${ac_cv_lib_curses_wattr_off+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef wattr_off
+        void * volatile x = (void *)wattr_off; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_wattr_off=yes
+else case e in #(
+  e) ac_cv_lib_curses_wattr_off=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wattr_off" >&5
+printf "%s\n" "$ac_cv_lib_curses_wattr_off" >&6; }
+  if test "x$ac_cv_lib_curses_wattr_off" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_WATTR_OFF 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wattr_on" >&5
+printf %s "checking for curses function wattr_on... " >&6; }
+if test ${ac_cv_lib_curses_wattr_on+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef wattr_on
+        void * volatile x = (void *)wattr_on; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_wattr_on=yes
+else case e in #(
+  e) ac_cv_lib_curses_wattr_on=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wattr_on" >&5
+printf "%s\n" "$ac_cv_lib_curses_wattr_on" >&6; }
+  if test "x$ac_cv_lib_curses_wattr_on" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_WATTR_ON 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wattr_set" >&5
+printf %s "checking for curses function wattr_set... " >&6; }
+if test ${ac_cv_lib_curses_wattr_set+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef wattr_set
+        void * volatile x = (void *)wattr_set; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_wattr_set=yes
+else case e in #(
+  e) ac_cv_lib_curses_wattr_set=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wattr_set" >&5
+printf "%s\n" "$ac_cv_lib_curses_wattr_set" >&6; }
+  if test "x$ac_cv_lib_curses_wattr_set" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_WATTR_SET 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wcolor_set" >&5
+printf %s "checking for curses function wcolor_set... " >&6; }
+if test ${ac_cv_lib_curses_wcolor_set+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define NCURSES_OPAQUE 0
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
+#endif
+
+int
+main (void)
+{
+
+        #ifndef wcolor_set
+        void * volatile x = (void *)wcolor_set; (void)x;
+        #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curses_wcolor_set=yes
+else case e in #(
+  e) ac_cv_lib_curses_wcolor_set=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wcolor_set" >&5
+printf "%s\n" "$ac_cv_lib_curses_wcolor_set" >&6; }
+  if test "x$ac_cv_lib_curses_wcolor_set" = xyes
+then :
+
+printf "%s\n" "#define _Py_HAVE_CURSES_WCOLOR_SET 1" >>confdefs.h
+
+fi
+
+
+
+
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ncurses-style curses function getmouse" >&5
 printf %s "checking for ncurses-style curses function getmouse... " >&6; }
 if test ${ac_cv_lib_curses_getmouse+y}
@@ -34169,6 +34554,7 @@ then :
 printf "%s\n" "#define HAVE_CURSES_GETMOUSE 1" >>confdefs.h
 
 fi
+
 
 
 
@@ -34225,9 +34611,11 @@ printf "%s\n" "$ac_cv_lib_curses_scr_dump" >&6; }
   if test "x$ac_cv_lib_curses_scr_dump" = xyes
 then :
 
-printf "%s\n" "#define HAVE_CURSES_SCR_DUMP 1" >>confdefs.h
+printf "%s\n" "#define _Py_HAVE_CURSES_SCR_DUMP 1" >>confdefs.h
 
 fi
+
+
 
 
 
@@ -34286,9 +34674,11 @@ printf "%s\n" "$ac_cv_lib_curses_scr_set" >&6; }
   if test "x$ac_cv_lib_curses_scr_set" = xyes
 then :
 
-printf "%s\n" "#define HAVE_CURSES_SCR_SET 1" >>confdefs.h
+printf "%s\n" "#define _Py_HAVE_CURSES_SCR_SET 1" >>confdefs.h
 
 fi
+
+
 
 
 
