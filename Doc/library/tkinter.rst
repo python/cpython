@@ -6902,8 +6902,10 @@ so closing the channel does not close the original object, and vice versa.
 But Tcl may read ahead from the duplicate,
 so do all I/O through the channel once it is created.
 The duplicate shares the blocking mode with the original,
-so the original file, pipe or socket is switched to non-blocking mode
-and stays in it after the channel is closed.
+so the original socket, and on POSIX also the original file or pipe,
+is switched to non-blocking mode and stays in it after the channel is closed.
+Closing the channel shuts down reading from a socket,
+so the original socket can still send but no longer receive data.
 
 
 .. method:: Widget.tk.createchannel(file, mode='r', /)
