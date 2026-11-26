@@ -717,7 +717,7 @@ class WindowsConsoleGetEventTests(TestCase):
         self.console._read_input_bulk = MagicMock(side_effect=bulk_reads)
 
         reader = default_prepare_reader(self.console, paste_mode=False)
-        with patch.object(wc, "SetConsoleMode", return_value=1):
+        with patch.object(wc._winapi, "SetConsoleMode"):
             self.assertEqual(reader.readline(), "a")
             self.assertEqual(reader.readline(), "b")
         self.assertEqual(self.console._read_input_bulk.call_count, 1)
