@@ -14,3 +14,16 @@ When acting on this repository, apply the policy's core principles:
 - Follow existing coding style and patterns.
 - Write tests that exercise the change.
 - Keep backwards compatibility with prior releases in mind.
+
+## Opening issues
+
+Do not auto-generate issues with AI tools.
+
+Search GitHub for duplicate issues before opening a new issue. Do not open
+duplicates.
+
+```bash
+gh search issues --repo python/cpython "<symptom keywords>"
+gh search issues --repo python/cpython "<function, module or option name>"
+gh issue list --repo python/cpython --state all --label "<topic label>" --search "<short area keywords>"
+```

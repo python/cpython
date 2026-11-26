@@ -101,6 +101,7 @@ Client socket example with custom context and IPv4::
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
         with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+            ssock.connect((hostname, 443))
             print(ssock.version())
 
 
@@ -1964,7 +1965,7 @@ to speed up repeated connections from the same clients.
    Set the allowed ciphers for sockets created with this context when
    connecting using TLS 1.2 and earlier.  The *ciphers* argument should
    be a string in the `OpenSSL cipher list format
-   <https://docs.openssl.org/master/man1/ciphers/>`_.
+   <https://docs.openssl.org/master/man1/openssl-ciphers/#cipher-list-format>`_.
    To set allowed TLS 1.3 ciphers, use :meth:`SSLContext.set_ciphersuites`.
 
    If no cipher can be selected (because compile-time options or other
@@ -2099,10 +2100,10 @@ to speed up repeated connections from the same clients.
 
       NPN has been superseded by ALPN
 
-.. method:: SSLContext.set_outer_alpn_protocols(protocols)
+.. method:: SSLContext.set_outer_alpn_protocols(alpn_protocols)
 
    Specify which protocols the socket should advertise during the TLS
-   handshake in the outer ClientHello when ECH is used. The *protocols*
+   handshake in the outer ClientHello when ECH is used. The *alpn_protocols*
    argument accepts the same values as for
    :meth:`~SSLContext.set_alpn_protocols`.
 
@@ -2236,13 +2237,12 @@ to speed up repeated connections from the same clients.
    The parameter ``server_side`` is a boolean which identifies whether
    server-side or client-side behavior is desired from this socket.
 
-   For client-side sockets, the context construction is lazy; if the
-   underlying socket isn't connected yet, the context construction will be
-   performed after :meth:`connect` is called on the socket.  For
-   server-side sockets, if the socket has no remote peer, it is assumed
+   For client-side sockets, if *sock* is not yet connected, the underlying
+   SSL object is created when :meth:`~socket.socket.connect` is called.
+   For server-side sockets, if the socket has no remote peer, it is assumed
    to be a listening socket, and the server-side SSL wrapping is
    automatically performed on client connections accepted via the
-   :meth:`accept` method. The method may raise :exc:`SSLError`.
+   :meth:`~socket.socket.accept` method. The method may raise :exc:`SSLError`.
 
    On client connections, the optional parameter *server_hostname* specifies
    the hostname of the service which we are connecting to.  This allows a

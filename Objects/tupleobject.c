@@ -50,11 +50,6 @@ tuple_alloc(Py_ssize_t size)
             return op;
         }
     }
-    /* Check for overflow */
-    if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
-                sizeof(PyObject *))) / sizeof(PyObject *)) {
-        return (PyTupleObject *)PyErr_NoMemory();
-    }
     PyTupleObject *result = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
     if (result != NULL) {
         _PyTuple_RESET_HASH_CACHE(result);
@@ -1079,14 +1074,6 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         *pv = PyTuple_New(newsize);
         return *pv == NULL ? -1 : 0;
     }
-    /* Check for overflow */
-    if ((size_t)newsize > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyTupleObject) -
-                sizeof(PyObject *))) / sizeof(PyObject *)) {
-        *pv = NULL;
-        Py_DECREF(v);
-        PyErr_NoMemory();
-        return -1;
-    }
 
     if (_PyObject_GC_IS_TRACKED(v)) {
         _PyObject_GC_UNTRACK(v);
@@ -1315,12 +1302,13 @@ maybe_freelist_push(PyTupleObject *op)
 void
 _PyTuple_DebugMallocStats(FILE *out)
 {
+    PyTypeObject *type = &PyTuple_Type;
     for (int i = 0; i < PyTuple_MAXSAVESIZE; i++) {
         int len = i + 1;
         char buf[128];
         PyOS_snprintf(buf, sizeof(buf),
                       "free %d-sized PyTupleObject", len);
-        _PyDebugAllocatorStats(out, buf, _Py_FREELIST_SIZE(tuples[i]),
-                               _PyType_PreHeaderSize(&PyTuple_Type) + _PyObject_VAR_SIZE(&PyTuple_Type, len));
+        size_t size = _PyType_PreHeaderSize(type) + _PyObject_VAR_SIZE(type, len);
+        _PyDebugAllocatorStats(out, buf, _Py_FREELIST_SIZE(tuples[i]), size);
     }
 }

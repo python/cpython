@@ -76,14 +76,14 @@ struct PyModuleDef_Slot {
 #endif /* New in 3.5 */
 
 /* for Py_mod_multiple_interpreters: */
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030c0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 12)
 #  define Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED ((void *)0)
 #  define Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED ((void *)1)
 #  define Py_MOD_PER_INTERPRETER_GIL_SUPPORTED ((void *)2)
 #endif
 
 /* for Py_mod_gil: */
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 13)
 #  define Py_MOD_GIL_USED ((void *)0)
 #  define Py_MOD_GIL_NOT_USED ((void *)1)
 #endif
