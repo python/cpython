@@ -5,7 +5,7 @@ import binascii
 import array
 import re
 from test.support import bigmemtest, _1G, _4G
-from test.support.hypothesis_helper import hypothesis
+from test.support.hypothesis_helper import hypothesis, mark_hypothesis
 
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"
@@ -265,6 +265,7 @@ class BinASCIITest(unittest.TestCase):
         binary=hypothesis.strategies.binary(max_size=45),
         backtick=hypothesis.strategies.booleans(),
     )
+    @mark_hypothesiso
     def test_b2a_roundtrip(self, binary, backtick):
         converted = binascii.b2a_uu(self.type2test(binary), backtick=backtick)
         restored = binascii.a2b_uu(self.type2test(converted))
@@ -308,6 +309,7 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(binascii.unhexlify(self.type2test(t)), u)
 
     @hypothesis.given(binary=hypothesis.strategies.binary())
+    @mark_hypothesis
     def test_hex_roundtrip(self, binary):
         converted = binascii.hexlify(self.type2test(binary))
         restored = binascii.unhexlify(self.type2test(converted))
@@ -433,6 +435,7 @@ class BinASCIITest(unittest.TestCase):
         istext=hypothesis.strategies.booleans(),
         header=hypothesis.strategies.booleans(),
     )
+    @mark_hypothesis
     def test_b2a_qp_a2b_qp_round_trip(self, binary, quotetabs, istext, header):
         converted = binascii.b2a_qp(
             self.type2test(binary),
@@ -504,6 +507,7 @@ class BinASCIITest(unittest.TestCase):
         binary=hypothesis.strategies.binary(),
         newline=hypothesis.strategies.booleans(),
     )
+    @mark_hypothesis
     def test_base64_roundtrip(self, binary, newline):
         converted = binascii.b2a_base64(self.type2test(binary), newline=newline)
         restored = binascii.a2b_base64(self.type2test(converted))
