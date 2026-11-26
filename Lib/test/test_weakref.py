@@ -238,25 +238,6 @@ class ReferencesTestCase(TestBase):
         c = C()
         self.assertRaises(TypeError, weakref.ref, c, callback=None)
 
-    def test_dead_ref(self):
-        r = weakref.ref()
-        self.assertIs(type(r), weakref.ref)
-        self.assertIsNone(r())
-        self.assertIsNone(r.__callback__)
-        self.assertIn('; dead>', repr(r))
-        self.assertRaises(TypeError, hash, r)
-        r2 = weakref.ref()
-        self.assertIsNot(r2, r)
-        self.assertNotEqual(r2, r)
-        self.assertEqual(r, r)
-        self.assertRaises(TypeError, weakref.ref, None)
-
-        class R(weakref.ref):
-            pass
-        r = R()
-        self.assertIs(type(r), R)
-        self.assertIsNone(r())
-
     def test_proxy_ref(self):
         o = C()
         o.bar = 1

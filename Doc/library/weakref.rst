@@ -93,7 +93,7 @@ disabled unless a ``'__weakref__'`` string is also present in the sequence of
 strings in the ``__slots__`` declaration.
 See :ref:`__slots__ documentation <slots>` for details.
 
-.. class:: ref([object[, callback]])
+.. class:: ref(object[, callback])
 
    Return a weak reference to *object*.  The original object can be retrieved by
    calling the reference object if the referent is still alive; if the referent is
@@ -102,9 +102,6 @@ See :ref:`__slots__ documentation <slots>` for details.
    weakref object is still alive, the callback will be called when the object is
    about to be finalized; the weak reference object will be passed as the only
    parameter to the callback; the referent will no longer be available.
-
-   If *object* is omitted, return a new dead reference:
-   calling it returns ``None``.
 
    It is allowable for many weak references to be constructed for the same object.
    Callbacks registered for each weak reference will be called from the most
@@ -154,10 +151,6 @@ See :ref:`__slots__ documentation <slots>` for details.
 
    .. versionchanged:: 3.16
       Weak references can now be pickled.
-      Unpickling a dead weak reference requires Python 3.16 or newer.
-
-   .. versionchanged:: next
-      *object* is now optional.
 
 
 .. function:: proxy(object[, callback])

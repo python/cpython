@@ -1,2 +1,0 @@
-:class:`weakref.ref` can now be called without arguments
-to create a dead reference.

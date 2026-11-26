@@ -1040,14 +1040,6 @@ uuid
   (Contributed by Yury Selivanov in :gh:`139123`.)
 
 
-weakref
--------
-
-* :class:`weakref.ref` can now be called without arguments
-  to create a dead reference.
-  (Contributed by Serhiy Storchaka in :gh:`74876`.)
-
-
 xml
 ---
 
