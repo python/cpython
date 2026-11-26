@@ -3,6 +3,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_bytesobject.h"   // _PyByteArray_CopyTo()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_codecs.h"        // _PyCodec_LookupTextEncoding()
 #include "pycore_import.h"        // _PyImport_SetModule()
@@ -992,23 +993,26 @@ readinst(char *buf, int buf_size, PyObject *meth)
 {
     PyObject *str;
     Py_ssize_t len;
-    const char *ptr;
 
     str = PyObject_CallFunction(meth, "i", buf_size);
     if (str == NULL)
-        goto error;
+        return -1;
 
-    if (PyBytes_Check(str))
-        ptr = PyBytes_AS_STRING(str);
-    else if (PyByteArray_Check(str))
-        ptr = PyByteArray_AS_STRING(str);
+    if (PyBytes_Check(str)) {
+        len = PyBytes_GET_SIZE(str);
+        if (len <= buf_size) {
+            memcpy(buf, PyBytes_AS_STRING(str), len);
+        }
+    }
+    else if (PyByteArray_Check(str)) {
+        len = _PyByteArray_CopyTo(str, buf, buf_size);
+    }
     else {
         PyErr_Format(PyExc_TypeError,
                      "read() did not return a bytes object (type=%.400s)",
                      Py_TYPE(str)->tp_name);
         goto error;
     }
-    len = Py_SIZE(str);
     if (len > buf_size) {
         PyErr_Format(PyExc_ValueError,
                      "read() returned too much data: "
@@ -1016,7 +1020,6 @@ readinst(char *buf, int buf_size, PyObject *meth)
                      buf_size, len);
         goto error;
     }
-    memcpy(buf, ptr, len);
     Py_DECREF(str);
     /* len <= buf_size <= INT_MAX */
     return (int)len;

@@ -2388,58 +2388,31 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args,
         Py_ssize_t j = code->repeat;
         while (j--) {
             PyObject *v = args[i++];
-            if (strcmp(e->format, "s") == 0) {
+            int is_pascal = strcmp(e->format, "p") == 0;
+            if (is_pascal || strcmp(e->format, "s") == 0) {
+                Py_ssize_t maxlen = is_pascal ? Py_MAX(code->size - 1, 0)
+                                              : code->size;
+                // Don't advance past the buffer for a zero-width field.
+                char *dest = res + (is_pascal && code->size > 0);
                 Py_ssize_t n;
-                int isstring;
-                const void *p;
-                isstring = PyBytes_Check(v);
-                if (!isstring && !PyByteArray_Check(v)) {
-                    PyErr_SetString(state->StructError,
-                                    "argument for 's' must be a bytes object");
-                    return -1;
+                if (PyBytes_Check(v)) {
+                    n = Py_MIN(PyBytes_GET_SIZE(v), maxlen);
+                    if (n > 0) {
+                        memmove(dest, PyBytes_AS_STRING(v), n);
+                    }
                 }
-                if (isstring) {
-                    n = PyBytes_GET_SIZE(v);
-                    p = PyBytes_AS_STRING(v);
+                else if (PyByteArray_Check(v)) {
+                    n = _PyByteArray_CopyTo(v, dest, maxlen);
+                    n = Py_MIN(n, maxlen);
                 }
                 else {
-                    n = PyByteArray_GET_SIZE(v);
-                    p = PyByteArray_AS_STRING(v);
-                }
-                if (n > code->size)
-                    n = code->size;
-                if (n > 0)
-                    memmove(res, p, n);
-            } else if (strcmp(e->format, "p") == 0) {
-                Py_ssize_t n;
-                int isstring;
-                const void *p;
-                isstring = PyBytes_Check(v);
-                if (!isstring && !PyByteArray_Check(v)) {
-                    PyErr_SetString(state->StructError,
-                                    "argument for 'p' must be a bytes object");
+                    PyErr_Format(state->StructError,
+                                 "argument for '%c' must be a bytes object",
+                                 is_pascal ? 'p' : 's');
                     return -1;
                 }
-                if (isstring) {
-                    n = PyBytes_GET_SIZE(v);
-                    p = PyBytes_AS_STRING(v);
-                }
-                else {
-                    n = PyByteArray_GET_SIZE(v);
-                    p = PyByteArray_AS_STRING(v);
-                }
-                if (code->size == 0) {
-                    n = 0;
-                }
-                else if (n > (code->size - 1)) {
-                    n = code->size - 1;
-                }
-                if (n > 0)
-                    memmove(res + 1, p, n);
-                if (n > 255)
-                    n = 255;
-                if (n > 0) {
-                    *res = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
+                if (is_pascal && n > 0) {
+                    *res = (unsigned char)Py_MIN(n, 255);
                 }
             } else {
                 if (e->pack(state, res, v, e) < 0) {

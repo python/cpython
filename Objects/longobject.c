@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_popcount32()
+#include "pycore_bytesobject.h"   // _PyBytes_FromByteArray()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_call.h"          // _PyObject_MakeTpCall
 #include "pycore_freelist.h"      // _Py_FREELIST_FREE, _Py_FREELIST_POP
@@ -3180,6 +3181,21 @@ _PyLong_FromBytes(const char *s, Py_ssize_t len, int base)
 }
 
 PyObject *
+_PyLong_FromByteArrayString(PyObject *op, int base)
+{
+    /* Long decimal inputs can invoke Python code in _pylong, so don't
+       retain a pointer into the bytearray while parsing. */
+    PyObject *bytes = _PyBytes_FromByteArray(op);
+    if (bytes == NULL) {
+        return NULL;
+    }
+    PyObject *result = _PyLong_FromBytes(PyBytes_AS_STRING(bytes),
+                                         PyBytes_GET_SIZE(bytes), base);
+    Py_DECREF(bytes);
+    return result;
+}
+
+PyObject *
 PyLong_FromUnicodeObject(PyObject *u, int base)
 {
     PyObject *result, *asciidig;
@@ -6028,13 +6044,12 @@ long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase)
 
     if (PyUnicode_Check(x))
         return PyLong_FromUnicodeObject(x, (int)base);
-    else if (PyByteArray_Check(x) || PyBytes_Check(x)) {
-        const char *string;
-        if (PyByteArray_Check(x))
-            string = PyByteArray_AS_STRING(x);
-        else
-            string = PyBytes_AS_STRING(x);
-        return _PyLong_FromBytes(string, Py_SIZE(x), (int)base);
+    else if (PyBytes_Check(x)) {
+        return _PyLong_FromBytes(PyBytes_AS_STRING(x), PyBytes_GET_SIZE(x),
+                                 (int)base);
+    }
+    else if (PyByteArray_Check(x)) {
+        return _PyLong_FromByteArrayString(x, (int)base);
     }
     else {
         PyErr_SetString(PyExc_TypeError,

@@ -1,3 +1,4 @@
+import struct
 import unittest
 from threading import Thread, Barrier, Event
 from test.support import threading_helper
@@ -53,6 +54,33 @@ class BytesThreading(unittest.TestCase):
                 bytearray().join(lst)
 
         threading_helper.run_concurrently([writer] + [reader] * 4)
+
+    def test_read_bytearray_during_resize(self):
+        # Each read must see one complete slice assignment, even if the
+        # writer replaces the backing storage.
+        short = b'1'
+        long = b'2' * 512  # Below the minimum configurable int digit limit.
+        data = bytearray(short)
+        pack_string = struct.Struct('1024s').pack
+        pack_pascal = struct.Struct('1024p').pack
+        strings = (pack_string(short), pack_string(long))
+        pascals = (pack_pascal(short), pack_pascal(long))
+        numbers = (int(short), int(long))
+
+        def writer():
+            for _ in range(2000):
+                data[:] = long
+                data[:] = short
+
+        def reader():
+            for _ in range(2000):
+                self.assertIn(b'%b' % data, (short, long))
+                self.assertIn(pack_string(data), strings)
+                self.assertIn(pack_pascal(data), pascals)
+                self.assertIn(int(data), numbers)
+                self.assertIn(int(data, 10), numbers)
+
+        threading_helper.run_concurrently([writer, reader, reader])
 
 
 if __name__ == "__main__":

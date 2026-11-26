@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_bytesobject.h"   // _PyByteArray_GetByte()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(stringlib_expandtabs__doc__,
@@ -127,14 +128,13 @@ stringlib_ljust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         fillchar = PyBytes_AS_STRING(args[1])[0];
     }
     else if (PyByteArray_Check(args[1])) {
-        if (PyByteArray_GET_SIZE(args[1]) != 1) {
+        Py_ssize_t fillchar_size = _PyByteArray_GetByte(args[1], &fillchar);
+        if (fillchar_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "ljust(): argument 2 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[1]));
+                "not a bytearray object of length %zd", fillchar_size);
             goto exit;
         }
-        fillchar = PyByteArray_AS_STRING(args[1])[0];
     }
     else {
         _PyArg_BadArgument("ljust", "argument 2", "a byte string of length 1", args[1]);
@@ -197,14 +197,13 @@ stringlib_rjust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         fillchar = PyBytes_AS_STRING(args[1])[0];
     }
     else if (PyByteArray_Check(args[1])) {
-        if (PyByteArray_GET_SIZE(args[1]) != 1) {
+        Py_ssize_t fillchar_size = _PyByteArray_GetByte(args[1], &fillchar);
+        if (fillchar_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "rjust(): argument 2 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[1]));
+                "not a bytearray object of length %zd", fillchar_size);
             goto exit;
         }
-        fillchar = PyByteArray_AS_STRING(args[1])[0];
     }
     else {
         _PyArg_BadArgument("rjust", "argument 2", "a byte string of length 1", args[1]);
@@ -267,14 +266,13 @@ stringlib_center(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         fillchar = PyBytes_AS_STRING(args[1])[0];
     }
     else if (PyByteArray_Check(args[1])) {
-        if (PyByteArray_GET_SIZE(args[1]) != 1) {
+        Py_ssize_t fillchar_size = _PyByteArray_GetByte(args[1], &fillchar);
+        if (fillchar_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "center(): argument 2 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[1]));
+                "not a bytearray object of length %zd", fillchar_size);
             goto exit;
         }
-        fillchar = PyByteArray_AS_STRING(args[1])[0];
     }
     else {
         _PyArg_BadArgument("center", "argument 2", "a byte string of length 1", args[1]);
@@ -324,4 +322,4 @@ stringlib_zfill(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8363b4b6cdaad556 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=375d37acfbf2392a input=a9049054013a1b77]*/

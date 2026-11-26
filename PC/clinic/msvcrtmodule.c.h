@@ -2,6 +2,7 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_bytesobject.h"   // _PyByteArray_GetByte()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(msvcrt_heapmin__doc__,
@@ -366,14 +367,13 @@ msvcrt_putch(PyObject *module, PyObject *arg)
         char_value = PyBytes_AS_STRING(arg)[0];
     }
     else if (PyByteArray_Check(arg)) {
-        if (PyByteArray_GET_SIZE(arg) != 1) {
+        Py_ssize_t char_value_size = _PyByteArray_GetByte(arg, &char_value);
+        if (char_value_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "putch(): argument must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(arg));
+                "not a bytearray object of length %zd", char_value_size);
             goto exit;
         }
-        char_value = PyByteArray_AS_STRING(arg)[0];
     }
     else {
         _PyArg_BadArgument("putch", "argument", "a byte string of length 1", arg);
@@ -458,14 +458,13 @@ msvcrt_ungetch(PyObject *module, PyObject *arg)
         char_value = PyBytes_AS_STRING(arg)[0];
     }
     else if (PyByteArray_Check(arg)) {
-        if (PyByteArray_GET_SIZE(arg) != 1) {
+        Py_ssize_t char_value_size = _PyByteArray_GetByte(arg, &char_value);
+        if (char_value_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "ungetch(): argument must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(arg));
+                "not a bytearray object of length %zd", char_value_size);
             goto exit;
         }
-        char_value = PyByteArray_AS_STRING(arg)[0];
     }
     else {
         _PyArg_BadArgument("ungetch", "argument", "a byte string of length 1", arg);
@@ -743,4 +742,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=58c1771c8b9a209b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=11a7085437a57e12 input=a9049054013a1b77]*/

@@ -584,14 +584,14 @@ byte_converter(PyObject *arg, Py_ssize_t argidx, PyObject *key, char *p)
         return 1;
     }
     else if (PyByteArray_Check(arg)) {
-        if (PyByteArray_GET_SIZE(arg) != 1) {
+        Py_ssize_t size = _PyByteArray_GetByte(arg, p);
+        if (size != 1) {
             FORMAT_ERROR(PyExc_TypeError,
                          "%%c requires an integer in range(256) or "
                          "a single byte, not a bytearray object of length %zd",
-                         PyByteArray_GET_SIZE(arg));
+                         size);
             return 0;
         }
-        *p = PyByteArray_AS_STRING(arg)[0];
         return 1;
     }
     else if (PyIndex_Check(arg)) {
@@ -619,7 +619,7 @@ byte_converter(PyObject *arg, Py_ssize_t argidx, PyObject *key, char *p)
 static PyObject *_PyBytes_FromBuffer(PyObject *x);
 
 static PyObject *
-format_obj(PyObject *v, Py_ssize_t argidx, PyObject *key,
+format_obj(PyObject *v, Py_ssize_t argidx, PyObject *key, int prec,
            const char **pbuf, Py_ssize_t *plen)
 {
     PyObject *func, *result;
@@ -630,9 +630,22 @@ format_obj(PyObject *v, Py_ssize_t argidx, PyObject *key,
         return Py_NewRef(v);
     }
     if (PyByteArray_Check(v)) {
-        *pbuf = PyByteArray_AS_STRING(v);
-        *plen = PyByteArray_GET_SIZE(v);
-        return Py_NewRef(v);
+        /* Slow path, used when padding is needed.  Copy since the caller
+           uses the data after the lock is released.  Lock rather than
+           export the buffer so a concurrent resize does not fail. */
+        Py_BEGIN_CRITICAL_SECTION(v);
+        Py_ssize_t size = PyByteArray_GET_SIZE(v);
+        if (prec >= 0 && size > prec) {
+            size = prec;
+        }
+        result = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(v), size);
+        Py_END_CRITICAL_SECTION();
+        if (result == NULL) {
+            return NULL;
+        }
+        *pbuf = PyBytes_AS_STRING(result);
+        *plen = PyBytes_GET_SIZE(result);
+        return result;
     }
     /* does it support __bytes__? */
     func = _PyObject_LookupSpecial(v, &_Py_ID(__bytes__));
@@ -968,7 +981,30 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             case 's':
                 // %s is only for 2/3 code; 3 only code should use %b
             case 'b':
-                temp = format_obj(v, argidx, key, &pbuf, &len);
+                if (PyByteArray_Check(v) && width == -1) {
+                    /* Fast path: copy into the writer while holding the
+                       lock, so a concurrent resize cannot free the data. */
+                    Py_BEGIN_CRITICAL_SECTION(v);
+                    len = PyByteArray_GET_SIZE(v);
+                    if (prec >= 0 && len > prec) {
+                        len = prec;
+                    }
+                    Py_ssize_t prealloc = fmt - start;
+                    if (len > prealloc) {
+                        res = PyBytesWriter_GrowAndUpdatePointer(
+                            writer, len - prealloc, res);
+                    }
+                    if (res != NULL) {
+                        memcpy(res, PyByteArray_AS_STRING(v), len);
+                        res += len;
+                    }
+                    Py_END_CRITICAL_SECTION();
+                    if (res == NULL) {
+                        goto error;
+                    }
+                    continue;
+                }
+                temp = format_obj(v, argidx, key, prec, &pbuf, &len);
                 if (temp == NULL)
                     goto error;
                 if (prec >= 0 && len > prec)

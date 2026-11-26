@@ -561,14 +561,13 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         a = PyBytes_AS_STRING(args[0])[0];
     }
     else if (PyByteArray_Check(args[0])) {
-        if (PyByteArray_GET_SIZE(args[0]) != 1) {
+        Py_ssize_t a_size = _PyByteArray_GetByte(args[0], &a);
+        if (a_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "test_char_converter(): argument 1 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[0]));
+                "not a bytearray object of length %zd", a_size);
             goto exit;
         }
-        a = PyByteArray_AS_STRING(args[0])[0];
     }
     else {
         _PyArg_BadArgument("test_char_converter", "argument 1", "a byte string of length 1", args[0]);
@@ -588,14 +587,13 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         b = PyBytes_AS_STRING(args[1])[0];
     }
     else if (PyByteArray_Check(args[1])) {
-        if (PyByteArray_GET_SIZE(args[1]) != 1) {
+        Py_ssize_t b_size = _PyByteArray_GetByte(args[1], &b);
+        if (b_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "test_char_converter(): argument 2 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[1]));
+                "not a bytearray object of length %zd", b_size);
             goto exit;
         }
-        b = PyByteArray_AS_STRING(args[1])[0];
     }
     else {
         _PyArg_BadArgument("test_char_converter", "argument 2", "a byte string of length 1", args[1]);
@@ -615,14 +613,13 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         c = PyBytes_AS_STRING(args[2])[0];
     }
     else if (PyByteArray_Check(args[2])) {
-        if (PyByteArray_GET_SIZE(args[2]) != 1) {
+        Py_ssize_t c_size = _PyByteArray_GetByte(args[2], &c);
+        if (c_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "test_char_converter(): argument 3 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[2]));
+                "not a bytearray object of length %zd", c_size);
             goto exit;
         }
-        c = PyByteArray_AS_STRING(args[2])[0];
     }
     else {
         _PyArg_BadArgument("test_char_converter", "argument 3", "a byte string of length 1", args[2]);
@@ -642,14 +639,13 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         d = PyBytes_AS_STRING(args[3])[0];
     }
     else if (PyByteArray_Check(args[3])) {
-        if (PyByteArray_GET_SIZE(args[3]) != 1) {
+        Py_ssize_t d_size = _PyByteArray_GetByte(args[3], &d);
+        if (d_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "test_char_converter(): argument 4 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[3]));
+                "not a bytearray object of length %zd", d_size);
             goto exit;
         }
-        d = PyByteArray_AS_STRING(args[3])[0];
     }
     else {
         _PyArg_BadArgument("test_char_converter", "argument 4", "a byte string of length 1", args[3]);
@@ -669,14 +665,13 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         e = PyBytes_AS_STRING(args[4])[0];
     }
     else if (PyByteArray_Check(args[4])) {
-        if (PyByteArray_GET_SIZE(args[4]) != 1) {
+        Py_ssize_t e_size = _PyByteArray_GetByte(args[4], &e);
+        if (e_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "test_char_converter(): argument 5 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[4]));
+                "not a bytearray object of length %zd", e_size);
             goto exit;
         }
-        e = PyByteArray_AS_STRING(args[4])[0];
     }
     else {
         _PyArg_BadArgument("test_char_converter", "argument 5", "a byte string of length 1", args[4]);
@@ -696,14 +691,13 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         f = PyBytes_AS_STRING(args[5])[0];
     }
     else if (PyByteArray_Check(args[5])) {
-        if (PyByteArray_GET_SIZE(args[5]) != 1) {
+        Py_ssize_t f_size = _PyByteArray_GetByte(args[5], &f);
+        if (f_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "test_char_converter(): argument 6 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[5]));
+                "not a bytearray object of length %zd", f_size);
             goto exit;
         }
-        f = PyByteArray_AS_STRING(args[5])[0];
     }
     else {
         _PyArg_BadArgument("test_char_converter", "argument 6", "a byte string of length 1", args[5]);
@@ -723,14 +717,13 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         g = PyBytes_AS_STRING(args[6])[0];
     }
     else if (PyByteArray_Check(args[6])) {
-        if (PyByteArray_GET_SIZE(args[6]) != 1) {
+        Py_ssize_t g_size = _PyByteArray_GetByte(args[6], &g);
+        if (g_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "test_char_converter(): argument 7 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[6]));
+                "not a bytearray object of length %zd", g_size);
             goto exit;
         }
-        g = PyByteArray_AS_STRING(args[6])[0];
     }
     else {
         _PyArg_BadArgument("test_char_converter", "argument 7", "a byte string of length 1", args[6]);
@@ -750,14 +743,13 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         h = PyBytes_AS_STRING(args[7])[0];
     }
     else if (PyByteArray_Check(args[7])) {
-        if (PyByteArray_GET_SIZE(args[7]) != 1) {
+        Py_ssize_t h_size = _PyByteArray_GetByte(args[7], &h);
+        if (h_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "test_char_converter(): argument 8 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[7]));
+                "not a bytearray object of length %zd", h_size);
             goto exit;
         }
-        h = PyByteArray_AS_STRING(args[7])[0];
     }
     else {
         _PyArg_BadArgument("test_char_converter", "argument 8", "a byte string of length 1", args[7]);
@@ -777,14 +769,13 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         i = PyBytes_AS_STRING(args[8])[0];
     }
     else if (PyByteArray_Check(args[8])) {
-        if (PyByteArray_GET_SIZE(args[8]) != 1) {
+        Py_ssize_t i_size = _PyByteArray_GetByte(args[8], &i);
+        if (i_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "test_char_converter(): argument 9 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[8]));
+                "not a bytearray object of length %zd", i_size);
             goto exit;
         }
-        i = PyByteArray_AS_STRING(args[8])[0];
     }
     else {
         _PyArg_BadArgument("test_char_converter", "argument 9", "a byte string of length 1", args[8]);
@@ -804,14 +795,13 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         j = PyBytes_AS_STRING(args[9])[0];
     }
     else if (PyByteArray_Check(args[9])) {
-        if (PyByteArray_GET_SIZE(args[9]) != 1) {
+        Py_ssize_t j_size = _PyByteArray_GetByte(args[9], &j);
+        if (j_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "test_char_converter(): argument 10 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[9]));
+                "not a bytearray object of length %zd", j_size);
             goto exit;
         }
-        j = PyByteArray_AS_STRING(args[9])[0];
     }
     else {
         _PyArg_BadArgument("test_char_converter", "argument 10", "a byte string of length 1", args[9]);
@@ -831,14 +821,13 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         k = PyBytes_AS_STRING(args[10])[0];
     }
     else if (PyByteArray_Check(args[10])) {
-        if (PyByteArray_GET_SIZE(args[10]) != 1) {
+        Py_ssize_t k_size = _PyByteArray_GetByte(args[10], &k);
+        if (k_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "test_char_converter(): argument 11 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[10]));
+                "not a bytearray object of length %zd", k_size);
             goto exit;
         }
-        k = PyByteArray_AS_STRING(args[10])[0];
     }
     else {
         _PyArg_BadArgument("test_char_converter", "argument 11", "a byte string of length 1", args[10]);
@@ -858,14 +847,13 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         l = PyBytes_AS_STRING(args[11])[0];
     }
     else if (PyByteArray_Check(args[11])) {
-        if (PyByteArray_GET_SIZE(args[11]) != 1) {
+        Py_ssize_t l_size = _PyByteArray_GetByte(args[11], &l);
+        if (l_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "test_char_converter(): argument 12 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[11]));
+                "not a bytearray object of length %zd", l_size);
             goto exit;
         }
-        l = PyByteArray_AS_STRING(args[11])[0];
     }
     else {
         _PyArg_BadArgument("test_char_converter", "argument 12", "a byte string of length 1", args[11]);
@@ -885,14 +873,13 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         m = PyBytes_AS_STRING(args[12])[0];
     }
     else if (PyByteArray_Check(args[12])) {
-        if (PyByteArray_GET_SIZE(args[12]) != 1) {
+        Py_ssize_t m_size = _PyByteArray_GetByte(args[12], &m);
+        if (m_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "test_char_converter(): argument 13 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[12]));
+                "not a bytearray object of length %zd", m_size);
             goto exit;
         }
-        m = PyByteArray_AS_STRING(args[12])[0];
     }
     else {
         _PyArg_BadArgument("test_char_converter", "argument 13", "a byte string of length 1", args[12]);
@@ -912,14 +899,13 @@ test_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         n = PyBytes_AS_STRING(args[13])[0];
     }
     else if (PyByteArray_Check(args[13])) {
-        if (PyByteArray_GET_SIZE(args[13]) != 1) {
+        Py_ssize_t n_size = _PyByteArray_GetByte(args[13], &n);
+        if (n_size != 1) {
             PyErr_Format(PyExc_TypeError,
                 "test_char_converter(): argument 14 must be a byte string of length 1, "
-                "not a bytearray object of length %zd",
-                PyByteArray_GET_SIZE(args[13]));
+                "not a bytearray object of length %zd", n_size);
             goto exit;
         }
-        n = PyByteArray_AS_STRING(args[13])[0];
     }
     else {
         _PyArg_BadArgument("test_char_converter", "argument 14", "a byte string of length 1", args[13]);
@@ -936,7 +922,7 @@ static PyObject *
 test_char_converter_impl(PyObject *module, char a, char b, char c, char d,
                          char e, char f, char g, char h, char i, char j,
                          char k, char l, char m, char n)
-/*[clinic end generated code: output=6503d15448e1d4c4 input=e42330417a44feac]*/
+/*[clinic end generated code: output=804e25f65fb146d8 input=e42330417a44feac]*/
 
 
 /*[clinic input]

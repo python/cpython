@@ -6,6 +6,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_bitutils.h"      // _Py_bswap16()
+#include "pycore_bytesobject.h"   // _PyBytes_FromByteArray()
 #include "pycore_dtoa.h"          // _Py_dg_dtoa()
 #include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
 #include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
@@ -200,8 +201,13 @@ PyFloat_FromString(PyObject *v)
         len = PyBytes_GET_SIZE(v);
     }
     else if (PyByteArray_Check(v)) {
-        s = PyByteArray_AS_STRING(v);
-        len = PyByteArray_GET_SIZE(v);
+        /* Parsing errors may call the bytearray's __repr__. */
+        s_buffer = _PyBytes_FromByteArray(v);
+        if (s_buffer == NULL) {
+            return NULL;
+        }
+        s = PyBytes_AS_STRING(s_buffer);
+        len = PyBytes_GET_SIZE(s_buffer);
     }
     else if (PyObject_GetBuffer(v, &view, PyBUF_SIMPLE) == 0) {
         s = (const char *)view.buf;

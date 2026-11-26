@@ -19,6 +19,50 @@ extern PyObject* _PyBytes_FormatEx(
  * reference rather than modifying its first argument in place. */
 extern PyObject* _PyBytes_Concat(PyObject *a, PyObject *b);
 
+/* Copy a bytearray while holding its lock. */
+static inline PyObject *
+_PyBytes_FromByteArray(PyObject *op)
+{
+    PyObject *bytes;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    bytes = PyBytes_FromStringAndSize(PyByteArray_AS_STRING(op),
+                                      PyByteArray_GET_SIZE(op));
+    Py_END_CRITICAL_SECTION();
+    return bytes;
+}
+
+/* If the bytearray has exactly one byte, store it in *p.  Return the size
+ * of the bytearray. */
+static inline Py_ssize_t
+_PyByteArray_GetByte(PyObject *op, char *p)
+{
+    Py_ssize_t size;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    size = PyByteArray_GET_SIZE(op);
+    if (size == 1) {
+        *p = PyByteArray_AS_STRING(op)[0];
+    }
+    Py_END_CRITICAL_SECTION();
+    return size;
+}
+
+/* Copy at most maxlen bytes of the bytearray into dest, which may overlap
+ * the bytearray's own storage.  Return the size of the bytearray, which can
+ * be larger than maxlen. */
+static inline Py_ssize_t
+_PyByteArray_CopyTo(PyObject *op, char *dest, Py_ssize_t maxlen)
+{
+    Py_ssize_t size;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    size = PyByteArray_GET_SIZE(op);
+    Py_ssize_t n = Py_MIN(size, maxlen);
+    if (n > 0) {
+        memmove(dest, PyByteArray_AS_STRING(op), n);
+    }
+    Py_END_CRITICAL_SECTION();
+    return size;
+}
+
 extern PyObject* _PyBytes_FromHex(
     PyObject *string,
     int use_bytearray);

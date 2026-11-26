@@ -9,6 +9,7 @@
 #endif
 
 #include "pycore_bitutils.h"      // _Py_bswap32()
+#include "pycore_bytesobject.h"   // _PyByteArray_GetByte()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 
 #include <ffi.h>
@@ -1057,14 +1058,14 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
         _RET(value);
     }
     if (PyByteArray_Check(value)) {
-        if (PyByteArray_GET_SIZE(value) != 1) {
+        Py_ssize_t len = _PyByteArray_GetByte(value, (char *)ptr);
+        if (len != 1) {
             PyErr_Format(PyExc_TypeError,
                         "one character bytes, bytearray, or an integer "
                         "in range(256) expected, not bytearray of length %zd",
-                        PyByteArray_GET_SIZE(value));
+                        len);
             return NULL;
         }
-        *(char *)ptr = PyByteArray_AS_STRING(value)[0];
         _RET(value);
     }
     if (PyLong_Check(value)) {

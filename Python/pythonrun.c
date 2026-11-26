@@ -12,6 +12,7 @@
 
 #include "pycore_ast.h"           // PyAST_mod2obj()
 #include "pycore_audit.h"         // _PySys_Audit()
+#include "pycore_bytesobject.h"   // _PyBytes_FromByteArray()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_fileutils.h"     // _PyFile_Flush
@@ -1667,8 +1668,12 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
         size = PyBytes_GET_SIZE(cmd);
     }
     else if (PyByteArray_Check(cmd)) {
-        str = PyByteArray_AS_STRING(cmd);
-        size = PyByteArray_GET_SIZE(cmd);
+        *cmd_copy = _PyBytes_FromByteArray(cmd);
+        if (*cmd_copy == NULL) {
+            return NULL;
+        }
+        str = PyBytes_AS_STRING(*cmd_copy);
+        size = PyBytes_GET_SIZE(*cmd_copy);
     }
     else if (PyObject_GetBuffer(cmd, &view, PyBUF_SIMPLE) == 0) {
         /* Copy to NUL-terminated buffer. */
