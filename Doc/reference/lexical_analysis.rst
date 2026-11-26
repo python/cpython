@@ -1003,8 +1003,10 @@ Raw string literals
 
 Both string and bytes literals may optionally be prefixed with a letter '``r``'
 or '``R``'; such constructs are called :dfn:`raw string literals`
-and :dfn:`raw bytes literals` respectively and treat backslashes as
-literal characters.
+and :dfn:`raw bytes literals` respectively.  In these literals, backslashes are
+not processed as escape sequences and appear unchanged in the string's value,
+except that a backslash before the quote character that opened the literal
+prevents that quote from ending the literal; the backslash itself is retained.
 As a result, in raw string literals, :ref:`escape sequences <escape-sequences>`
 are not treated specially:
 
@@ -1013,14 +1015,15 @@ are not treated specially:
    >>> r'\d{4}-\d{2}-\d{2}'
    '\\d{4}-\\d{2}-\\d{2}'
 
-Even in a raw literal, quotes can be escaped with a backslash, but the
-backslash remains in the result; for example, ``r"\""`` is a valid string
-literal consisting of two characters: a backslash and a double quote; ``r"\"``
-is not a valid string literal (even a raw string cannot end in an odd number of
-backslashes).  Specifically, *a raw literal cannot end in a single backslash*
-(since the backslash would escape the following quote character).  Note also
-that a single backslash followed by a newline is interpreted as those two
-characters as part of the literal, *not* as a line continuation.
+Even in a raw literal, a backslash before the quote character that opened the
+literal prevents that quote from ending the literal, but the backslash remains
+in the result; for example, ``r"\""`` is a valid string literal consisting of
+two characters: a backslash and a double quote; ``r"\"`` is not a valid string
+literal (even a raw string cannot end in an odd number of backslashes).
+Specifically, *a raw literal cannot end in a single backslash* (since the
+backslash would prevent the following quote character from ending the literal).
+Note also that a single backslash followed by a newline is interpreted as those
+two characters as part of the literal, *not* as a line continuation.
 
 
 .. index::
