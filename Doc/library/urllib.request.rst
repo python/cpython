@@ -68,6 +68,16 @@ The :mod:`!urllib.request` module defines the following functions:
 
    Raises :exc:`~urllib.error.URLError` on protocol errors.
 
+   Exceptions raised while reading or parsing an HTTP response are not
+   wrapped in :exc:`~urllib.error.URLError` and propagate unchanged.
+   These include subclasses of :exc:`http.client.HTTPException`, such as
+   :exc:`~http.client.BadStatusLine` for a malformed status line, and
+   subclasses of :exc:`OSError`, such as :exc:`TimeoutError` if the server
+   does not respond within *timeout* seconds, or
+   :exc:`~http.client.RemoteDisconnected` if the server closes the
+   connection without sending a response.  :exc:`ValueError` is raised if
+   *url* is not a valid URL.
+
    Note that ``None`` may be returned if no handler handles the request (though
    the default installed global :class:`OpenerDirector` uses
    :class:`UnknownHandler` to ensure this never happens).
@@ -368,6 +378,11 @@ The following classes are provided:
       ``HTTP_PROXY`` will be ignored if a variable ``REQUEST_METHOD`` is set;
       see the documentation on :func:`~urllib.request.getproxies`.
 
+   Because *proxies* holds at most one proxy for each protocol, it cannot
+   use a proxy auto-config (PAC) file, which selects a proxy for each
+   URL.  See :ref:`this example <urllib-request-pac>` for one way to use a
+   PAC file.
+
 
 .. class:: HTTPPasswordMgr()
 
@@ -407,7 +422,7 @@ The following classes are provided:
    received the request is re-sent with the authentication credentials.  If
    authentication succeeds, ``update_authenticated`` is called to set
    ``is_authenticated`` ``True`` for the URI, so that subsequent requests to
-   the URI or any of its super-URIs will automatically include the
+   the URI itself or any path below it will automatically include the
    authentication credentials.
 
    .. versionadded:: 3.5
@@ -429,6 +444,10 @@ The following classes are provided:
    something that is compatible with :class:`HTTPPasswordMgr`; refer to section
    :ref:`http-password-mgr` for information on the interface that must be
    supported.
+
+   .. versionchanged:: next
+      Also handles a proxy that requires authentication for the CONNECT
+      request used to tunnel ``https`` URLs.
 
 
 .. class:: AbstractDigestAuthHandler(password_mgr=None)
@@ -466,6 +485,10 @@ The following classes are provided:
    something that is compatible with :class:`HTTPPasswordMgr`; refer to section
    :ref:`http-password-mgr` for information on the interface that must be
    supported.
+
+   .. versionchanged:: next
+      Also handles a proxy that requires authentication for the CONNECT
+      request used to tunnel ``https`` URLs.
 
 
 .. class:: HTTPHandler()
@@ -832,7 +855,7 @@ The following attribute and methods should only be used by classes derived from
 
    1. a :class:`Request` object,
    #. a file-like object with the HTTP error body,
-   #. the three-digit code of the error, as a string,
+   #. the three-digit code of the error, as an integer,
    #. the user-visible explanation of the code, as a string, and
    #. the headers of the error, as a mapping object.
 
@@ -986,9 +1009,14 @@ These methods are available on :class:`HTTPPasswordMgr` and
 .. method:: HTTPPasswordMgr.add_password(realm, uri, user, passwd)
 
    *uri* can be either a single URI, or a sequence of URIs. *realm*, *user* and
-   *passwd* must be strings. This causes ``(user, passwd)`` to be used as
-   authentication tokens when authentication for *realm* and a super-URI of any of
-   the given URIs is given.
+   *passwd* must be strings. The credentials for *realm* apply to any registered
+   URI and to paths below it. If a URI includes a scheme,
+   its credentials only match authentication URIs with the same scheme or no
+   scheme. A URI without a scheme matches authentication URIs with any scheme.
+
+   .. versionchanged:: 3.16
+      Authentication credentials for URIs with a scheme are now scoped by
+      that scheme.
 
 
 .. method:: HTTPPasswordMgr.find_user_password(realm, authuri)
@@ -1050,6 +1078,10 @@ AbstractBasicAuthHandler Objects
    authenticate for, *req* should be the (failed) :class:`Request` object, and
    *headers* should be the error headers.
 
+   *headers* must be a mapping-like object with case-insensitive lookup
+   that implements the ``get_all()`` method,
+   such as :class:`email.message.Message` or :class:`wsgiref.headers.Headers`.
+
    *host* is either an authority (e.g. ``"python.org"``) or a URL containing an
    authority component (e.g. ``"https://python.org/"``). In either case, the
    authority must not contain a userinfo component (so, ``"python.org"`` and
@@ -1077,6 +1109,14 @@ ProxyBasicAuthHandler Objects
 
    Retry the request with authentication information, if available.
 
+   For an ``https`` URL, the request goes through a tunnel that the proxy
+   sets up in reply to a CONNECT request.  A 407 response can then come
+   either from the proxy, rejecting the CONNECT, or from the origin server,
+   through the tunnel.  Both are handled the same way: the request is retried
+   with the credentials for the proxy, and those credentials are sent only in
+   the CONNECT request, never to the origin server.  If the origin server
+   keeps answering 407, :exc:`~urllib.error.HTTPError` is raised.
+
 
 .. _abstract-digest-auth-handler:
 
@@ -1090,6 +1130,9 @@ AbstractDigestAuthHandler Objects
    is included in the request, *host* should be the host to authenticate to, *req*
    should be the (failed) :class:`Request` object, and *headers* should be the
    error headers.
+
+   *headers* must be a mapping-like object with case-insensitive lookup,
+   such as :class:`email.message.Message` or :class:`wsgiref.headers.Headers`.
 
 
 .. _http-digest-auth-handler:
@@ -1112,6 +1155,14 @@ ProxyDigestAuthHandler Objects
 .. method:: ProxyDigestAuthHandler.http_error_407(req, fp, code,  msg, hdrs)
 
    Retry the request with authentication information, if available.
+
+   For an ``https`` URL, the request goes through a tunnel that the proxy
+   sets up in reply to a CONNECT request.  A 407 response can then come
+   either from the proxy, rejecting the CONNECT, or from the origin server,
+   through the tunnel.  Both are handled the same way: the request is retried
+   with the credentials for the proxy, and those credentials are sent only in
+   the CONNECT request, never to the origin server.  If the origin server
+   keeps answering 407, :exc:`~urllib.error.HTTPError` is raised.
 
 
 .. _http-handler-objects:
@@ -1177,8 +1228,9 @@ FTPHandler Objects
 
 .. method:: FTPHandler.ftp_open(req)
 
-   Open the FTP file indicated by *req*. The login is always done with empty
-   username and password.
+   Open the FTP file indicated by *req*. The username and password are taken
+   from the URL, with missing values defaulting to empty strings. See
+   :meth:`ftplib.FTP.login` for the login defaults.
 
 
 .. _cacheftp-handler-objects:
@@ -1220,9 +1272,9 @@ HTTPErrorProcessor Objects
 
    Process HTTP error responses.
 
-   For 200 error codes, the response object is returned immediately.
+   For 2xx status codes, the response object is returned immediately.
 
-   For non-200 error codes, this simply passes the job on to the
+   For other status codes, this simply passes the job on to the
    :meth:`!http_error_\<type\>` handler methods, via :meth:`OpenerDirector.error`.
    Eventually, :class:`HTTPDefaultErrorHandler` will raise an
    :exc:`~urllib.error.HTTPError` if no other handler handles the error.
@@ -1256,11 +1308,11 @@ it::
    ...         data = gzip.decompress(data)
    ...     print(data[:300].decode('utf-8', errors='replace'))
 
-Note that urlopen returns a bytes object.  This is because there is no way
-for urlopen to automatically determine the encoding of the byte stream
-it receives from the HTTP server. In general, a program will decode
-the returned bytes object to string once it determines or guesses
-the appropriate encoding.
+Note that calling ``read()`` on the response returned by :func:`urlopen` returns
+a :class:`bytes` object.  This is because there is no way for :func:`urlopen` to
+automatically determine the encoding of the byte stream it receives from the
+HTTP server. In general, a program will decode the returned bytes object to a
+string once it determines or guesses the appropriate encoding.
 
 The following HTML spec document, https://html.spec.whatwg.org/#charset, lists
 the various ways in which an HTML or an XML document could have specified its
@@ -1359,6 +1411,51 @@ programmatically supplied proxy URLs, and adds proxy authorization support with
    with opener.open('http://www.example.com/login.html') as f:
       print(f.read().decode('utf-8'))
 
+.. _urllib-request-pac:
+
+Proxy auto-config (PAC) files select a proxy for each URL, so they cannot be
+described by the *proxies* mapping that :class:`ProxyHandler` expects.  The
+:pypi:`pypac` package finds and evaluates PAC files; its ``ProxyResolver``
+can be used to write a handler that consults the PAC file once per request::
+
+   import urllib.error
+   import urllib.request
+   from pypac import get_pac
+   from pypac.resolver import ProxyResolver
+
+   class PACProxyHandler(urllib.request.ProxyHandler):
+
+       def __init__(self, resolver):
+           self.resolver = resolver
+           # An empty mapping suppresses the <protocol>_open methods that
+           # ProxyHandler would make from a static proxies mapping.
+           super().__init__({})
+
+       def _pac_open(self, req, protocol):
+           proxy = self.resolver.get_proxy(req.full_url)
+           if proxy is None:
+               raise urllib.error.URLError('no proxy available')
+           if proxy == 'DIRECT':
+               return None  # continue with the remaining handlers
+           if proxy.startswith('socks'):
+               raise urllib.error.URLError('SOCKS proxies are not supported')
+           return self.proxy_open(req, proxy, protocol)
+
+       def http_open(self, req):
+           return self._pac_open(req, 'http')
+
+       def https_open(self, req):
+           return self._pac_open(req, 'https')
+
+   opener = urllib.request.build_opener(PACProxyHandler(ProxyResolver(get_pac())))
+   with opener.open('http://www.example.com/') as f:
+       print(f.read().decode('utf-8'))
+
+Note that a PAC file may also select a SOCKS proxy, which :mod:`urllib.request`
+cannot use, and that the :envvar:`no_proxy` environment variable and the
+operating system's proxy bypass list still apply to requests the PAC file
+assigned to a proxy.
+
 Adding HTTP headers:
 
 Use the *headers* argument to the :class:`Request` constructor, or::
@@ -1414,7 +1511,7 @@ The following example uses an explicitly specified HTTP proxy, overriding
 environment settings::
 
    >>> import urllib.request
-   >>> proxies = {'http': 'http://proxy.example.com:8080/'}
+   >>> proxies = {'https': 'http://proxy.example.com:8080/'}
    >>> opener = urllib.request.build_opener(urllib.request.ProxyHandler(proxies))
    >>> with opener.open("https://www.python.org") as f:
    ...     f.read().decode('utf-8')
@@ -1563,7 +1660,8 @@ The typical response object is a :class:`urllib.response.addinfourl` instance:
 
    .. attribute:: headers
 
-      Returns the headers of the response in the form of an :class:`~email.message.EmailMessage` instance.
+      Returns the headers of the response in the form of an
+      :class:`~email.message.Message` instance.
 
    .. attribute:: status
 

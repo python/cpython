@@ -17,8 +17,6 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from __future__ import annotations
-
 import os
 import _colorize
 
@@ -29,15 +27,13 @@ import linecache
 from dataclasses import dataclass
 import re
 import sys
-from typing import TYPE_CHECKING
 
 from .render import RenderedScreen
 from .trace import trace
 
-if TYPE_CHECKING:
-    from typing import Callable, IO
-
-    from .types import CursorXY
+lazy from collections.abc import Callable
+lazy from typing import IO
+lazy from .types import CursorXY
 
 
 @dataclass
@@ -261,7 +257,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
                 )
             self.showsyntaxerror(filename, source=source)
             return False
-        except (OverflowError, ValueError):
+        except Exception:
             self.showsyntaxerror(filename, source=source)
             return False
         if tree.body:
@@ -282,7 +278,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
                     )
                 self.showsyntaxerror(filename, source=source)
                 return False
-            except (OverflowError, ValueError):
+            except Exception:
                 self.showsyntaxerror(filename, source=source)
                 return False
 

@@ -1,1 +1,0 @@
-Fix library name in python3.pc on Android.

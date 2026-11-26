@@ -865,14 +865,14 @@ Zf_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
         return NULL;
     }
 #ifdef WORDS_BIGENDIAN
-    if (PyFloat_Pack4(c.real, ptr, 1)
-        || PyFloat_Pack4(c.imag, ptr + sizeof(float), 1))
+    if (PyFloat_Pack4((float)c.real, ptr, 1)
+        || PyFloat_Pack4((float)c.imag, ptr + sizeof(float), 1))
     {
         return NULL;
     }
 #else
-    if (PyFloat_Pack4(c.real, ptr, 0)
-        || PyFloat_Pack4(c.imag, ptr + sizeof(float), 0))
+    if (PyFloat_Pack4((float)c.real, ptr, 0)
+        || PyFloat_Pack4((float)c.imag, ptr + sizeof(float), 0))
     {
         return NULL;
     }

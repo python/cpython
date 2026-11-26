@@ -1,0 +1,2 @@
+Fix ``x *= seq`` raising :exc:`TypeError` when ``x`` is an instance of an
+:class:`int` subclass or of a class defining :meth:`~object.__index__`.

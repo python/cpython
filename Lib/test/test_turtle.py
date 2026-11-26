@@ -7,6 +7,7 @@ import unittest.mock
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support.script_helper import assert_python_ok
 
 
 turtle = import_helper.import_module('turtle')
@@ -693,6 +694,34 @@ class TestTurtle(unittest.TestCase):
         self.assertRaises(turtle.TurtleGraphicsError, self.turtle.dot, 0, (0, 257, 0))
         self.assertRaises(turtle.TurtleGraphicsError, self.turtle.dot, 0, 0, 257, 0)
 
+    def test_circle_undo(self):
+        self.turtle.circle(50, 90)
+        self.turtle.undo()
+        self.assertEqual(self.turtle.pos(), (0, 0))
+        self.assertEqual(self.turtle.undobufferentries(), 0)
+
+    def test_undo_sequence_resets_after_exception(self):
+        with unittest.mock.patch.object(self.turtle, "_write",
+                                        side_effect=ValueError):
+            self.assertRaises(ValueError, self.turtle.write, "spam")
+        self.assertFalse(self.turtle.undobuffer.cumulate)
+
+    def test_nested_undo_sequence(self):
+        with self.turtle._undo_sequence():
+            self.turtle.teleport(10, 20)
+            self.turtle.forward(10)
+        self.assertEqual(self.turtle.undobufferentries(), 1)
+        self.turtle.undo()
+        self.assertEqual(self.turtle.pos(), (0, 0))
+
+    def test_stamp_without_undobuffer(self):
+        shape = turtle.Shape("polygon", ((0, 0), (5, 9), (-5, 9)))
+        self.turtle.screen._shapes = {self.turtle.shape(): shape}
+        self.turtle.setundobuffer(None)
+        stamp = self.turtle.stamp()
+        self.turtle.clearstamp(stamp)
+        self.assertEqual(self.turtle.stampItems, [])
+
 class TestModuleLevel(unittest.TestCase):
     def test_all_signatures(self):
         import inspect
@@ -711,6 +740,34 @@ class TestModuleLevel(unittest.TestCase):
                 obj = getattr(turtle, name)
                 sig = inspect.signature(obj)
                 self.assertEqual(str(sig), known_signatures[name])
+
+
+class TurtleDocstringTranslationTest(unittest.TestCase):
+
+    def _make_translation(self, dirname, filename, docstring):
+        with open(os.path.join(dirname, filename), 'w') as f:
+            f.write('docsdict = {"Turtle.forward": %r}\n' % docstring)
+
+    def _get_forward_docstring(self, dirname, lang):
+        rc, out, err = assert_python_ok(
+            '-c', 'import turtle; print(turtle.forward.__doc__)',
+            PYTHONPATH=dirname, PYTHON_TURTLE_LANG=lang)
+        return out.decode()
+
+    def test_translation(self):
+        with os_helper.temp_dir() as dirname:
+            self._make_translation(dirname, 'turtle_docstringdict_ga.py',
+                                  'chun tosaigh')
+
+            out = self._get_forward_docstring(dirname, 'ga')
+            self.assertIn('chun tosaigh', out)
+
+    def test_unknown_language(self):
+        with os_helper.temp_dir() as dirname:
+            out = self._get_forward_docstring(dirname, 'ga')
+
+            self.assertIn('Cannot find docsdict for ga', out)
+            self.assertIn('Move the turtle forward', out)
 
 
 if __name__ == '__main__':

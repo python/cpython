@@ -5,6 +5,7 @@ import time
 import threading
 import unittest
 
+from test import support
 from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 from test.test_asyncio import functional as func_tests
@@ -186,6 +187,37 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         loop.call_soon(srv.close)
         loop.call_soon(wr.close)
         await srv.wait_closed()
+
+    async def test_close_before_transport_created(self):
+        # gh-109564: Closing the server after a connection was accepted,
+        # but before its transport was created, must drop the connection
+        # quietly.
+        connected = False
+
+        class Proto(asyncio.Protocol):
+            def connection_made(self, transport):
+                nonlocal connected
+                connected = True
+
+        def factory():
+            srv.close()
+            return Proto()
+
+        errors = []
+        loop = asyncio.get_running_loop()
+        loop.set_exception_handler(lambda loop, ctx: errors.append(ctx))
+        srv = await loop.create_server(factory, socket_helper.HOSTv4, 0)
+        self.addCleanup(srv.close)
+
+        addr = srv.sockets[0].getsockname()
+        (rd, wr) = await asyncio.open_connection(addr[0], addr[1])
+        self.addCleanup(wr.close)
+        async with asyncio.timeout(support.SHORT_TIMEOUT):
+            self.assertEqual(await rd.read(), b'')
+            await srv.wait_closed()
+
+        self.assertFalse(connected)
+        self.assertEqual(errors, [])
 
     async def test_close_clients(self):
         async def serve(rd, wr):

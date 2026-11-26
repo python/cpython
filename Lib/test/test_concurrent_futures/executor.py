@@ -1,6 +1,8 @@
+import gc
 import itertools
 import threading
 import time
+import traceback
 import weakref
 from concurrent import futures
 from operator import add
@@ -27,6 +29,12 @@ def make_dummy_object(_):
 # Used in test_swallows_falsey_exceptions
 def raiser(exception, msg='std'):
     raise exception(msg)
+
+
+def timeout_on_one(x):
+    if x == 1:
+        raise TimeoutError
+    return x
 
 
 class FalseyBoolException(Exception):
@@ -74,7 +82,44 @@ class ExecutorTest:
         i = self.executor.map(divmod, [5, 5, 5, 5], [2, 3, 0, 5])
         self.assertEqual(next(i), (2, 1))
         self.assertEqual(next(i), (1, 2))
-        self.assertRaises(ZeroDivisionError, next, i)
+
+        exception = None
+        try:
+            i.__next__()
+        except Exception as e:
+            exception = e
+        self.assertTrue(
+            isinstance(exception, ZeroDivisionError),
+            msg="should raise a ZeroDivisionError",
+        )
+
+        # Wait for the completing thread to release its transient reference
+        # to the exception; do not keep the referrers list alive in the loop.
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+            if not gc.get_referrers(exception):
+                break
+
+        self.assertFalse(
+            gc.get_referrers(exception),
+            msg="the exception should not have any referrers",
+        )
+
+        self.assertFalse(
+            [
+                (var, val)
+                # go through the frames of the exception's traceback
+                for frame, _ in traceback.walk_tb(exception.__traceback__)
+                # skipping the current frame
+                if frame is not exception.__traceback__.tb_frame
+                # go through the locals captured in that frame
+                for var, val in frame.f_locals.items()
+                # check if one of them is an exception
+                if isinstance(val, Exception)
+                # check if it is captured in its own traceback
+                and frame is val.__traceback__.tb_frame
+            ],
+            msg=f"the exception's traceback should not contain an exception captured in its own traceback",
+        )
         self.assertEqual(next(i), (1, 0))
         self.assertRaises(StopIteration, next, i)
         self.assertRaises(StopIteration, next, i)
@@ -86,6 +131,20 @@ class ExecutorTest:
         self.assertEqual(next(i), (1, 0))
         self.assertRaises(StopIteration, next, i)
         self.assertRaises(StopIteration, next, i)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_map_timeout_from_callable(self):
+        # A TimeoutError from the callable is not the map() timeout, whether
+        # or not a map() timeout is set.
+        for timeout in (None, support.SHORT_TIMEOUT):
+            with self.subTest(timeout=timeout):
+                i = self.executor.map(timeout_on_one, [0, 1, 2, 3],
+                                      timeout=timeout)
+                self.assertEqual(next(i), 0)
+                self.assertRaises(TimeoutError, next, i)
+                self.assertEqual(next(i), 2)
+                self.assertEqual(next(i), 3)
+                self.assertRaises(StopIteration, next, i)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_resource('walltime')
@@ -192,7 +251,7 @@ class ExecutorTest:
         self.assertEqual(
             next(ints),
             buffersize,
-            msg="should have fetched only `buffersize` elements from `ints`.",
+            msg="should have fetched only `buffersize` elements from `ints`",
         )
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()

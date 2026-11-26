@@ -214,6 +214,10 @@ pymain_sys_path_add_path0(PyObject *path0)
         return -1;
     }
 
+    if (PyDict_SetItemString(sysdict, "_path0", path0) < 0) {
+        return -1;
+    }
+
     if (PyList_Insert(sys_path, 0, path0)) {
         return -1;
     }
@@ -286,6 +290,7 @@ pymain_run_command(wchar_t *command)
     }
 
     if (PySys_Audit("cpython.run_command", "O", unicode) < 0) {
+        Py_DECREF(unicode);
         return pymain_exit_err_print();
     }
 
@@ -749,12 +754,20 @@ error:
 static void
 pymain_run_python(int *exitcode)
 {
-    int set_running_main = 0;
-
-    PyObject *main_importer_path = NULL;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     /* pymain_repl() and pymain_run_stdin() modify the config */
     PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
+
+    // Process command line options which want to exit Python
+    int cmdline_exitcode = _PyConfig_ProcessDeferredCmdlineOption(config);
+    if (cmdline_exitcode >= 0) {
+        *exitcode = cmdline_exitcode;
+        return;
+    }
+
+    int set_running_main = 0;
+
+    PyObject *main_importer_path = NULL;
 
     /* ensure path config is written into global variables */
     PyStatus status = _PyPathConfig_UpdateGlobal(config);
@@ -910,10 +923,7 @@ static int
 pymain_main(_PyArgv *args)
 {
     PyStatus status = pymain_init(args);
-    if (_PyStatus_IS_EXIT(status)) {
-        pymain_free();
-        return status.exitcode;
-    }
+    assert(!_PyStatus_IS_EXIT(status));
     if (_PyStatus_EXCEPTION(status)) {
         pymain_exit_error(status);
     }

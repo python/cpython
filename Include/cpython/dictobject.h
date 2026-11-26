@@ -86,9 +86,9 @@ Py_DEPRECATED(3.14) PyAPI_FUNC(PyObject *) _PyDict_Pop(
     V(DEALLOCATED)
 
 typedef enum {
-    #define PY_DEF_EVENT(EVENT) PyDict_EVENT_##EVENT,
-    PY_FOREACH_DICT_EVENT(PY_DEF_EVENT)
-    #undef PY_DEF_EVENT
+    #define _Py_DEF_EVENT(EVENT) PyDict_EVENT_##EVENT,
+    PY_FOREACH_DICT_EVENT(_Py_DEF_EVENT)
+    #undef _Py_DEF_EVENT
 } PyDict_WatchEvent;
 
 // Callback to be invoked when a watched dict is cleared, dealloced, or modified.
@@ -106,3 +106,7 @@ PyAPI_FUNC(int) PyDict_Unwatch(int watcher_id, PyObject* dict);
 
 // Create a frozendict. Create an empty dictionary if iterable is NULL.
 PyAPI_FUNC(PyObject*) PyFrozenDict_New(PyObject *iterable);
+
+// Create a frozendict from existing dict.
+// Transfers existing keys and values.
+PyAPI_FUNC(PyObject*) PyDict_AsFrozenDictAndClear(PyObject *dict);
