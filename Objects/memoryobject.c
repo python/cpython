@@ -1131,6 +1131,7 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char order)
 
 
 /*[clinic input]
+@vectorcall
 @classmethod
 memoryview.__new__
 
@@ -1141,7 +1142,7 @@ Create a new memoryview object which references the given object.
 
 static PyObject *
 memoryview_impl(PyTypeObject *type, PyObject *object)
-/*[clinic end generated code: output=7de78e184ed66db8 input=f04429eb0bdf8c6e]*/
+/*[clinic end generated code: output=7de78e184ed66db8 input=8e10a66aebe8e657]*/
 {
     return PyMemoryView_FromObject(object);
 }
@@ -4136,4 +4137,5 @@ PyTypeObject PyMemoryView_Type = {
     0,                                        /* tp_init */
     0,                                        /* tp_alloc */
     memoryview,                               /* tp_new */
+    .tp_vectorcall = memoryview_vectorcall,
 };
