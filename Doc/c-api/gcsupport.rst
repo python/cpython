@@ -253,6 +253,13 @@ The :c:member:`~PyTypeObject.tp_traverse` handler must have the following type:
    returned immediately.
    Otherwise, return zero.
 
+   The garbage collector can call :c:member:`~PyTypeObject.tp_traverse` more
+   than once for the same object during a collection.  If the object's
+   references do not change, each traversal must visit the same references.
+   In particular, do not skip a reference because a lock is busy.
+   If one traversal visits a reference and a later traversal skips it, the
+   collector can clear an object that is still reachable.
+
    A typical :c:member:`!tp_traverse` function calls the :c:func:`Py_VISIT`
    convenience macro on each of the instance's members that are Python
    objects that the instance owns.
@@ -317,14 +324,6 @@ The :c:member:`~PyTypeObject.tp_traverse` handler must have the following type:
 
    For a list of safe functions, see a
    :ref:`separate section <duringgc-functions>` below.
-
-   If an error occurs during traversal, ignore it and return 0.
-   If ``tp_traverse`` fails to visit some strong references, garbage reference
-   cycles involving the skipped references will not be reliably broken,
-   but correctness won't be affected.
-   For example, if traversal requires a lock that cannot be acquired promptly,
-   skip the traversal.
-   The garbage collector will visit your object again in a future pass.
 
    .. note::
 
