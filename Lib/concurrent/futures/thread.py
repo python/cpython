@@ -244,11 +244,8 @@ class ThreadPoolExecutor(_base.Executor):
             self._broken = ('A thread initializer failed, the thread pool '
                             'is not usable anymore')
             # Drain work queue and mark pending futures failed
-            while True:
-                try:
-                    work_item = self._work_queue.get_nowait()
-                except queue.Empty:
-                    break
+            for work_item in iter(self._work_queue.get_nowait,
+                                  stop_exception=queue.Empty):
                 if work_item is not None:
                     work_item.future.set_exception(self.BROKEN(self._broken))
 
@@ -258,11 +255,8 @@ class ThreadPoolExecutor(_base.Executor):
             if cancel_futures:
                 # Drain all work items from the queue, and then cancel their
                 # associated futures.
-                while True:
-                    try:
-                        work_item = self._work_queue.get_nowait()
-                    except queue.Empty:
-                        break
+                for work_item in iter(self._work_queue.get_nowait,
+                                      stop_exception=queue.Empty):
                     if work_item is not None:
                         work_item.future.cancel()
 
