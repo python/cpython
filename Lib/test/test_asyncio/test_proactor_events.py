@@ -13,7 +13,6 @@ from asyncio.proactor_events import _ProactorWritePipeTransport
 from asyncio.proactor_events import _ProactorDuplexPipeTransport
 from asyncio.proactor_events import _ProactorDatagramTransport
 from test.support import os_helper
-from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 
 
@@ -335,6 +334,20 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         tr._call_connection_lost(None)
         self.assertTrue(self.protocol.connection_lost.called)
         self.assertTrue(self.sock.close.called)
+
+    def test_call_connection_lost_shutdown_reset(self):
+        # gh-160429: a ConnectionResetError from shutdown() must not skip
+        # closing the socket and detaching the transport from its server.
+        server = mock.Mock()
+        tr = _ProactorSocketTransport(self.loop, self.sock, self.protocol,
+                                      server=server)
+        self.sock.shutdown.side_effect = ConnectionResetError
+        tr._call_connection_lost(None)
+        self.protocol.connection_lost.assert_called_once_with(None)
+        self.sock.close.assert_called_once_with()
+        server._detach.assert_called_once_with(tr)
+        self.assertIsNone(tr._sock)
+        self.assertTrue(tr._called_connection_lost)
 
     def test_write_eof(self):
         tr = self.socket_transport()
@@ -691,7 +704,9 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
 
     def test_sendto_str(self):
         transport = self.datagram_transport()
-        self.assertRaises(TypeError, transport.sendto, 'str', ())
+        self.assertRaisesRegex(
+            TypeError, "^data argument must be a bytes-like object, not 'str'$",
+            transport.sendto, 'str', ())
 
     def test_sendto_connected_addr(self):
         transport = self.datagram_transport(address=('0.0.0.0', 1))
@@ -866,6 +881,26 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.assertTrue(self.sock.close.called)
         self.assertTrue(m_log.error.called)
 
+    def test_create_server_connection_reset(self):
+        # gh-93821: a peer resetting its connection before it is accepted
+        # must not close the listening socket.
+        pf = mock.Mock()
+        call_soon = self.loop.call_soon = mock.Mock()
+        self.loop.call_exception_handler = mock.Mock()
+
+        self.loop._start_serving(pf, self.sock)
+        loop = call_soon.call_args[0][0]
+
+        for exc in ConnectionResetError, ConnectionAbortedError:
+            with self.subTest(exc=exc):
+                call_soon.reset_mock()
+                fut = mock.Mock()
+                fut.result.side_effect = exc()
+                loop(fut)
+                self.assertFalse(self.sock.close.called)
+                self.assertFalse(self.loop.call_exception_handler.called)
+                call_soon.assert_called_once_with(loop)
+
     def test_create_server_cancel(self):
         pf = mock.Mock()
         call_soon = self.loop.call_soon = mock.Mock()
@@ -1035,9 +1070,8 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
     def prepare(self):
         sock = self.make_socket()
         proto = self.MyProto(self.loop)
-        port = socket_helper.find_unused_port()
         srv_sock = self.make_socket(cleanup=False)
-        srv_sock.bind(('127.0.0.1', port))
+        srv_sock.bind(('127.0.0.1', 0))
         server = self.run_loop(self.loop.create_server(
             lambda: proto, sock=srv_sock))
         self.run_loop(self.loop.sock_connect(sock, srv_sock.getsockname()))

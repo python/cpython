@@ -48,10 +48,10 @@ Node classes
    module and re-exported in :mod:`!ast`.
 
    There is one class defined for each left-hand side symbol in the abstract
-   grammar (for example, :class:`ast.stmt` or :class:`ast.expr`).  In addition,
+   grammar (for example, :class:`!ast.stmt` or :class:`!ast.expr`).  In addition,
    there is one class defined for each constructor on the right-hand side; these
    classes inherit from the classes for the left-hand side trees.  For example,
-   :class:`ast.BinOp` inherits from :class:`ast.expr`.  For production rules
+   :class:`ast.BinOp` inherits from :class:`!ast.expr`.  For production rules
    with alternatives (aka "sums"), the left-hand side class is abstract: only
    instances of specific constructor nodes are ever created.
 
@@ -65,7 +65,7 @@ Node classes
 
       Each instance of a concrete class has one attribute for each child node,
       of the type as defined in the grammar.  For example, :class:`ast.BinOp`
-      instances have an attribute :attr:`left` of type :class:`ast.expr`.
+      instances have an attribute :attr:`!left` of type :class:`!ast.expr`.
 
       If these attributes are marked as optional in the grammar (using a
       question mark), the value might be ``None``.  If the attributes can have
@@ -104,10 +104,11 @@ Node classes
       one can get the source segment of a one-line expression node using
       ``source_line[node.col_offset : node.end_col_offset]``.
 
-   The constructor of a class :class:`ast.T` parses its arguments as follows:
+   The constructors of AST node classes parse their arguments as follows:
 
    * If there are positional arguments, there must be as many as there are items
-     in :attr:`T._fields`; they will be assigned as attributes of these names.
+     in :attr:`!_fields`; they will be assigned to attributes with
+     the corresponding names.
    * If there are keyword arguments, they will set the attributes of the same
      names to the given values.
 
@@ -2223,8 +2224,8 @@ Async and await
 
 .. note::
    When a string is parsed by :func:`ast.parse`, operator nodes (subclasses
-   of :class:`ast.operator`, :class:`ast.unaryop`, :class:`ast.cmpop`,
-   :class:`ast.boolop` and :class:`ast.expr_context`) on the returned tree
+   of :class:`!ast.operator`, :class:`!ast.unaryop`, :class:`!ast.cmpop`,
+   :class:`!ast.boolop` and :class:`!ast.expr_context`) on the returned tree
    will be singletons. Changes to one will be reflected in all other
    occurrences of the same value (for example, :class:`ast.Add`).
 

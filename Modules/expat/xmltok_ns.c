@@ -11,7 +11,7 @@
    Copyright (c) 2002      Greg Stein <gstein@users.sourceforge.net>
    Copyright (c) 2002      Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2002-2006 Karl Waclawek <karl@waclawek.net>
-   Copyright (c) 2017-2021 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2017-2026 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2025      Alfonso Gregory <gfunni234@gmail.com>
    Licensed under the MIT license:
 
@@ -57,6 +57,16 @@ NS(XmlGetUtf16InternalEncoding)(void) {
 #  endif
 }
 
+const ENCODING *
+NS(XmlGetUtf16LittleEndianEncoding)(void) {
+  return &ns(little2_encoding).enc;
+}
+
+const ENCODING *
+NS(XmlGetUtf16BigEndianEncoding)(void) {
+  return &ns(big2_encoding).enc;
+}
+
 static const ENCODING *const NS(encodings)[] = {
     &ns(latin1_encoding).enc, &ns(ascii_encoding).enc,
     &ns(utf8_encoding).enc,   &ns(big2_encoding).enc,
@@ -64,14 +74,14 @@ static const ENCODING *const NS(encodings)[] = {
     &ns(utf8_encoding).enc /* NO_ENC */
 };
 
-static int PTRCALL
+static int
 NS(initScanProlog)(const ENCODING *enc, const char *ptr, const char *end,
                    const char **nextTokPtr) {
   return initScan(NS(encodings), (const INIT_ENCODING *)enc, XML_PROLOG_STATE,
                   ptr, end, nextTokPtr);
 }
 
-static int PTRCALL
+static int
 NS(initScanContent)(const ENCODING *enc, const char *ptr, const char *end,
                     const char **nextTokPtr) {
   return initScan(NS(encodings), (const INIT_ENCODING *)enc, XML_CONTENT_STATE,

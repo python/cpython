@@ -162,7 +162,7 @@ once; it should yield an :term:`iterable` object. An :term:`iterator` is
 created for that iterable. The first item provided by the iterator is then
 assigned to the target list using the standard rules for assignments
 (see :ref:`assignment`), and the suite is executed. This repeats for each
-item provided by the iterator. When the iterator is exhausted,
+item provided by the iterator. When the iterator is :term:`exhausted`,
 the suite in the :keyword:`!else` clause,
 if present, is executed, and the loop terminates.
 
@@ -1849,9 +1849,9 @@ The following example indicates the full set of allowed type parameter declarati
 
    def overly_generic[
       SimpleTypeVar,
-      TypeVarWithDefault = int,
       TypeVarWithBound: int,
       TypeVarWithConstraints: (str, bytes),
+      TypeVarWithDefault = int,
       *SimpleTypeVarTuple = (int, float),
       **SimpleParamSpec = (str, bytearray),
    ](
@@ -1952,7 +1952,7 @@ and decorators are evaluated outside that scope. This is illustrated
 by this example::
 
    @decorator
-   class Bag(Base[T], arg=T): ...
+   class Bag[T](Base[T], arg=T): ...
 
 This is equivalent to::
 

@@ -51,13 +51,14 @@ RingBuf_Init(RingBuf *buf)
 {
     buf->put_idx = 0;
     buf->get_idx = 0;
-    buf->items_cap = INITIAL_RING_BUF_CAPACITY;
+    buf->items_cap = 0;
     buf->num_items = 0;
-    buf->items = PyMem_Calloc(buf->items_cap, sizeof(PyObject *));
+    buf->items = PyMem_Calloc(INITIAL_RING_BUF_CAPACITY, sizeof(PyObject *));
     if (buf->items == NULL) {
         PyErr_NoMemory();
         return -1;
     }
+    buf->items_cap = INITIAL_RING_BUF_CAPACITY;
     return 0;
 }
 
@@ -238,6 +239,7 @@ simplequeue_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 /*[clinic input]
+@vectorcall
 @classmethod
 _queue.SimpleQueue.__new__ as simplequeue_new
 
@@ -246,7 +248,7 @@ Simple, unbounded, reentrant FIFO queue.
 
 static PyObject *
 simplequeue_new_impl(PyTypeObject *type)
-/*[clinic end generated code: output=ba97740608ba31cd input=a0674a1643e3e2fb]*/
+/*[clinic end generated code: output=ba97740608ba31cd input=9113a69fd48c8e74]*/
 {
     simplequeueobject *self;
 
@@ -567,6 +569,7 @@ static PyType_Slot simplequeue_slots[] = {
     {Py_tp_members, simplequeue_members},
     {Py_tp_methods, simplequeue_methods},
     {Py_tp_new, simplequeue_new},
+    {Py_tp_vectorcall, simplequeue_vectorcall},
     {0, NULL},
 };
 

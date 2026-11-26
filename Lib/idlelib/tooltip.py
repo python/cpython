@@ -30,14 +30,15 @@ class TooltipBase:
         self.tipwindow = tw = Toplevel(self.anchor_widget)
         # show no border on the top level window
         tw.wm_overrideredirect(1)
-        try:
-            # This command is only needed and available on Tk >= 8.4.0 for OSX.
-            # Without it, call tips intrude on the typing process by grabbing
-            # the focus.
-            tw.tk.call("::tk::unsupported::MacWindowStyle", "style", tw._w,
-                       "help", "noActivates")
-        except TclError:
-            pass
+        if tw._windowingsystem == 'aqua':
+            # Without this, call tips intrude on the typing process by
+            # grabbing the focus.
+            if tw.info_patchlevel() >= (9, 1):
+                tw.update_idletasks()
+                tw.wm_attributes(stylemask='docmodal')
+            else:
+                tw.tk.call('::tk::unsupported::MacWindowStyle', 'style',
+                           tw._w, 'help', 'noActivates')
 
         self.position_window()
         self.showcontents()

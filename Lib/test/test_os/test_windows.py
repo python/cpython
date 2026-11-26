@@ -454,31 +454,71 @@ class Win32JunctionTests(unittest.TestCase):
         self.assertFalse(os.path.exists(self.junction))
 
 
+class Win32ChmodTests(unittest.TestCase):
+    # gh-140774: os.chmod(follow_symlinks=True) and os.fchmod() go through
+    # SetFileInformationByHandle(), which interprets FileAttributes == 0 as
+    # "leave the attributes unchanged".  Clearing the read-only flag of a
+    # file with no other attribute set must substitute FILE_ATTRIBUTE_NORMAL
+    # for 0 to take effect.
+
+    def setUp(self):
+        self.fname = os.path.abspath(os_helper.TESTFN)
+        self.addCleanup(os_helper.unlink, self.fname)
+        self.addCleanup(self._make_writable)
+        create_file(self.fname)
+
+    def _make_writable(self):
+        try:
+            os.chmod(self.fname, stat.S_IWRITE | stat.S_IREAD,
+                     follow_symlinks=False)
+        except OSError:
+            pass
+
+    def _set_readonly_only_attribute(self):
+        # Make FILE_ATTRIBUTE_READONLY the only attribute of the file
+        # (in particular, clear FILE_ATTRIBUTE_ARCHIVE).
+        ctypes = import_helper.import_module('ctypes')
+        wintypes = import_helper.import_module('ctypes.wintypes')
+        kernel32 = ctypes.WinDLL('Kernel32.dll', use_last_error=True)
+        SetFileAttributesW = kernel32.SetFileAttributesW
+        SetFileAttributesW.argtypes = (wintypes.LPCWSTR, wintypes.DWORD)
+        SetFileAttributesW.restype = wintypes.BOOL
+
+        if not SetFileAttributesW(self.fname, stat.FILE_ATTRIBUTE_READONLY):
+            raise ctypes.WinError(ctypes.get_last_error())
+        attributes = os.stat(self.fname).st_file_attributes
+        if attributes != stat.FILE_ATTRIBUTE_READONLY:
+            self.skipTest('file system reports extra file attributes '
+                          f'{attributes:#x}')
+
+    def _assert_writable(self):
+        self.assertEqual(os.stat(self.fname).st_file_attributes
+                         & stat.FILE_ATTRIBUTE_READONLY, 0)
+
+    def test_chmod_clears_readonly_without_other_attributes(self):
+        self._set_readonly_only_attribute()
+        os.chmod(self.fname, stat.S_IWRITE | stat.S_IREAD,
+                 follow_symlinks=True)
+        self._assert_writable()
+
+    def test_fchmod_clears_readonly_without_other_attributes(self):
+        fd = os.open(self.fname, os.O_RDWR)
+        try:
+            self._set_readonly_only_attribute()
+            os.fchmod(fd, stat.S_IWRITE | stat.S_IREAD)
+            self._assert_writable()
+
+            self._set_readonly_only_attribute()
+            os.chmod(fd, stat.S_IWRITE | stat.S_IREAD)
+            self._assert_writable()
+        finally:
+            os.close(fd)
+
+
 class Win32NtTests(unittest.TestCase):
     def test_getfinalpathname_handles(self):
         nt = import_helper.import_module('nt')
-        ctypes = import_helper.import_module('ctypes')
-        # Ruff false positive -- it thinks we're redefining `ctypes` here
-        import ctypes.wintypes  # noqa: F811
-
-        kernel = ctypes.WinDLL('Kernel32.dll', use_last_error=True)
-        @ctypes.util.wrap_dll_function(kernel)
-        def GetCurrentProcess() -> ctypes.wintypes.HANDLE:
-            pass
-
-        @ctypes.util.wrap_dll_function(kernel)
-        def GetProcessHandleCount(khProcess: ctypes.wintypes.HANDLE,
-                                  pdwHandleCount: ctypes.wintypes.LPDWORD) -> ctypes.wintypes.BOOL:
-            pass
-
-        # This is a pseudo-handle that doesn't need to be closed
-        hproc = GetCurrentProcess()
-
-        handle_count = ctypes.wintypes.DWORD()
-        ok = GetProcessHandleCount(hproc, ctypes.byref(handle_count))
-        self.assertEqual(1, ok)
-
-        before_count = handle_count.value
+        before_count = os_helper.handle_count()
 
         # The first two test the error path, __file__ tests the success path
         filenames = [
@@ -500,11 +540,7 @@ class Win32NtTests(unittest.TestCase):
                 except Exception:
                     pass
 
-        ok = kernel.GetProcessHandleCount(hproc, ctypes.byref(handle_count))
-        self.assertEqual(1, ok)
-
-        handle_delta = handle_count.value - before_count
-
+        handle_delta = os_helper.handle_count() - before_count
         self.assertEqual(0, handle_delta)
 
     @support.requires_subprocess()

@@ -41,6 +41,8 @@ def get_frames(nframe, lineno_delta):
 def allocate_bytes(size):
     nframe = tracemalloc.get_traceback_limit()
     bytes_len = (size - EMPTY_STRING_SIZE)
+    if bytes_len < 0:
+        raise ValueError(f"{size} bytes is too small")
     frames = get_frames(nframe, 1)
     data = b'x' * bytes_len
     return data, tracemalloc.Traceback(frames, min(len(frames), nframe))
@@ -158,7 +160,7 @@ class TestTracemallocEnabled(unittest.TestCase):
         self.assertEqual(traceback, obj_traceback)
 
     def test_set_traceback_limit(self):
-        obj_size = 10
+        obj_size = 123
 
         tracemalloc.stop()
         self.assertRaises(ValueError, tracemalloc.start, -1)

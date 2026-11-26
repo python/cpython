@@ -1,5 +1,9 @@
+import os
+import sys
 import unittest
+import urllib.parse
 
+from test.support import os_helper
 from test.support import warnings_helper
 
 
@@ -34,7 +38,6 @@ class NTURL2PathTest(unittest.TestCase):
         self.assertEqual(fn('C:\\a\\b.c\\'), '///C:/a/b.c/')
         self.assertEqual(fn('C:\\a\\\\b.c'), '///C:/a//b.c')
         self.assertEqual(fn('C:\\a\\b%#c'), '///C:/a/b%25%23c')
-        self.assertEqual(fn('C:\\a\\b\xe9'), '///C:/a/b%C3%A9')
         self.assertEqual(fn('C:\\foo\\bar\\spam.foo'), "///C:/foo/bar/spam.foo")
         # NTFS alternate data streams
         self.assertEqual(fn('C:\\foo:bar'), '///C:/foo%3Abar')
@@ -45,7 +48,7 @@ class NTURL2PathTest(unittest.TestCase):
         self.assertEqual(fn("\\\\\\folder\\test\\"), '///folder/test/')
         self.assertEqual(fn('\\\\some\\share\\'), '//some/share/')
         self.assertEqual(fn('\\\\some\\share\\a\\b.c'), '//some/share/a/b.c')
-        self.assertEqual(fn('\\\\some\\share\\a\\b%#c\xe9'), '//some/share/a/b%25%23c%C3%A9')
+        self.assertEqual(fn('\\\\some\\share\\a\\b%#c'), '//some/share/a/b%25%23c')
         # Alternate path separator
         self.assertEqual(fn('C:/a/b.c'), '///C:/a/b.c')
         self.assertEqual(fn('//some/share/a/b.c'), '//some/share/a/b.c')
@@ -57,6 +60,29 @@ class NTURL2PathTest(unittest.TestCase):
                 '///C:/foo/bar/spam.foo']
         for url in urls:
             self.assertEqual(fn(nturl2path.url2pathname(url)), url)
+
+    @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
+    def test_pathname2url_nonascii(self):
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        char = os_helper.FS_NONASCII
+        quoted = urllib.parse.quote(char, encoding=encoding, errors=errors)
+        self.assertEqual(nturl2path.pathname2url(f'C:\\a\\b{char}'),
+                         '///C:/a/b' + quoted)
+        self.assertEqual(nturl2path.pathname2url(f'\\\\some\\share\\a\\b{char}'),
+                         '//some/share/a/b' + quoted)
+
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
+                         'need os_helper.TESTFN_UNDECODABLE')
+    def test_pathname2url_surrogates(self):
+        # gh-156713: the filesystem encoding and error handler are used,
+        # so that paths containing surrogate characters can be converted.
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        path = os.fsdecode(os_helper.TESTFN_UNDECODABLE)
+        url = urllib.parse.quote(path, encoding=encoding, errors=errors)
+        self.assertEqual(nturl2path.pathname2url('C:\\' + path),
+                         '///C:/' + url)
 
     def test_url2pathname(self):
         fn = nturl2path.url2pathname
@@ -101,6 +127,19 @@ class NTURL2PathTest(unittest.TestCase):
                  r'C:\foo\bar\spam.foo']
         for path in paths:
             self.assertEqual(fn(nturl2path.pathname2url(path)), path)
+
+
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
+                         'need os_helper.TESTFN_UNDECODABLE')
+    def test_url2pathname_surrogates(self):
+        # gh-156713: the filesystem encoding and error handler are used, so
+        # that URLs containing percent-encoded surrogates can be converted.
+        encoding = sys.getfilesystemencoding()
+        errors = sys.getfilesystemencodeerrors()
+        path = os.fsdecode(os_helper.TESTFN_UNDECODABLE)
+        url = urllib.parse.quote(path, encoding=encoding, errors=errors)
+        self.assertEqual(nturl2path.url2pathname('///C:/' + url),
+                         'C:\\' + path)
 
 
 if __name__ == '__main__':

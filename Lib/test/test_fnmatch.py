@@ -1,6 +1,7 @@
 """Test cases for the fnmatch module."""
 
 import os
+import pathlib
 import string
 import unittest
 import warnings
@@ -324,9 +325,22 @@ class FilterTestCase(unittest.TestCase):
         self.assertEqual(filter([b'Python', b'Ruby', b'Perl', b'Tcl'], b'P*'),
                          [b'Python', b'Perl'])
 
+    def test_filter_pathlike(self):
+        names = [pathlib.Path("Python"), pathlib.Path("Ruby")]
+        self.assertEqual(filter(names, "P*"), [names[0]])
+
     def test_mix_bytes_str(self):
         self.assertRaises(TypeError, filter, ['test'], b'*')
         self.assertRaises(TypeError, filter, [b'test'], '*')
+
+    def test_mix_bytes_str_pathlike(self):
+        path = pathlib.Path("test")
+        self.assertRaises(TypeError, filter, [path], b'*')
+        self.assertRaises(TypeError, filter, [path, b'test'], '*')
+        self.assertRaises(TypeError, filter, [b'test', path], '*')
+        self.assertRaises(TypeError, filter, [path, 'test'], b'*')
+        self.assertRaises(TypeError, filter, ['test', path], b'*')
+        self.assertEqual(filter([path, 'other'], 'te*'), [path])
 
     def test_case(self):
         self.assertEqual(filter(['Test.py', 'Test.rb', 'Test.PL'], '*.p*'),
@@ -349,9 +363,22 @@ class FilterFalseTestCase(unittest.TestCase):
         actual = filterfalse([b'Python', b'Ruby', b'Perl', b'Tcl'], b'P*')
         self.assertListEqual(actual, [b'Ruby', b'Tcl'])
 
+    def test_filterfalse_pathlike(self):
+        names = [pathlib.Path("Python"), pathlib.Path("Ruby")]
+        self.assertEqual(filterfalse(names, "P*"), [names[1]])
+
     def test_mix_bytes_str(self):
         self.assertRaises(TypeError, filterfalse, ['test'], b'*')
         self.assertRaises(TypeError, filterfalse, [b'test'], '*')
+
+    def test_mix_bytes_str_pathlike(self):
+        path = pathlib.Path("test")
+        self.assertRaises(TypeError, filterfalse, [path], b'*')
+        self.assertRaises(TypeError, filterfalse, [path, b'test'], '*')
+        self.assertRaises(TypeError, filterfalse, [b'test', path], '*')
+        self.assertRaises(TypeError, filterfalse, [path, 'test'], b'*')
+        self.assertRaises(TypeError, filterfalse, ['test', path], b'*')
+        self.assertEqual(filterfalse([path, 'other'], 'te*'), ['other'])
 
     def test_case(self):
         self.assertEqual(filterfalse(['Test.py', 'Test.rb', 'Test.PL'], '*.p*'),

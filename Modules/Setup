@@ -202,7 +202,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_gdbm _gdbmmodule.c -lgdbm
 #_lzma _lzmamodule.c -llzma
 #_uuid _uuidmodule.c -luuid
-#_zstd _zstd/_zstdmodule.c -lzstd -I$(srcdir)/Modules/_zstd
+#_zstd _zstd/_zstdmodule.c _zstd/zstddict.c _zstd/compressor.c _zstd/decompressor.c -lzstd -I$(srcdir)/Modules/_zstd
 #zlib  zlibmodule.c -lz
 
 # The readline module also supports libeditline (-leditline).

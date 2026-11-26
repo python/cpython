@@ -189,7 +189,7 @@ prescription:
   the tail of any of the other lists, then add it to the linearization
   of C and remove it from the lists in the merge, otherwise look at the
   head of the next list and take it, if it is a good head.  Then repeat
-  the operation until all the class are removed or it is impossible to
+  the operation until all the classes are removed or it is impossible to
   find good heads.  In this case, it is impossible to construct the
   merge, Python 2.3 will refuse to create the class C and will raise an
   exception.*
@@ -348,7 +348,7 @@ straightforward to compute the linearizations of O, X, Y, A and B:
 
  .. code-block:: text
 
-  L[O] = 0
+  L[O] = O
   L[X] = X O
   L[Y] = Y O
   L[A] = A X Y O

@@ -261,7 +261,7 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: ipv6_mapped
 
-      :class:`IPv4Address` object representing the IPv4-mapped IPv6 address. See :RFC:`4291`.
+      :class:`IPv6Address` object representing the IPv4-mapped IPv6 address. See :RFC:`4291`.
 
       .. versionadded:: 3.13
 
@@ -519,10 +519,10 @@ dictionaries.
       The interpretation is similar to an integer *address*.
 
    4. A two-tuple of an address description and a netmask, where the address
-      description is either a string, a 32-bits integer, a 4-bytes packed
-      integer, or an existing :class:`IPv4Address` object; and the netmask is either
-      an integer representing the prefix length (e.g. ``24``) or a string
-      representing the prefix mask (e.g. ``255.255.255.0``).
+      description is either a string, a 32-bit integer, a 4-byte packed
+      integer, or an existing :class:`IPv4Address` object; and the netmask is
+      either an integer representing the prefix length (e.g. ``24``) or a
+      string representing the prefix mask (e.g. ``255.255.255.0``).
 
    An :exc:`AddressValueError` is raised if *address* is not a valid IPv4
    address.  A :exc:`NetmaskValueError` is raised if the mask is not valid for
@@ -739,8 +739,38 @@ dictionaries.
          Traceback (most recent call last):
             File "<stdin>", line 1, in <module>
                raise ValueError(
-         ValueError: next prefix must be between 1 and 32
+         ValueError: prefix must be between 1 and 32
          >>> IPv4Network('255.255.255.0/24').next_network()
+         Traceback (most recent call last):
+            File "<stdin>", line 1, in <module>
+               raise ValueError(
+         ValueError: out of address space, cannot make another /24 network
+
+      .. versionadded:: 3.16
+
+   .. method:: prev_network(prev_prefix=None)
+
+      Finds the previous closest network of prefix size *prev_prefix*.  If
+      *prev_prefix=None*, then the current network prefix will be used.
+      Returns a single network object.
+
+      Raises :exc:`ValueError` if *prev_prefix* is out of range or no further
+      network of the requested size exists.
+
+         >>> IPv4Network('192.0.2.0/24').prev_network()
+         IPv4Network('192.0.1.0/24')
+         >>> IPv4Network('192.0.2.0/24').prev_network(prev_prefix=25)
+         IPv4Network('192.0.1.128/25')
+         >>> IPv4Network('192.0.2.0/24').prev_network(prev_prefix=23)
+         IPv4Network('192.0.0.0/23')
+         >>> IPv4Network('192.0.80.0/22').prev_network(prev_prefix=18)
+         IPv4Network('192.0.0.0/18')
+         >>> IPv4Network('192.0.80.0/22').prev_network(prev_prefix=50)
+         Traceback (most recent call last):
+            File "<stdin>", line 1, in <module>
+               raise ValueError(
+         ValueError: prefix must be between 1 and 32
+         >>> IPv4Network('0.0.0.0/24').prev_network()
          Traceback (most recent call last):
             File "<stdin>", line 1, in <module>
                raise ValueError(
@@ -769,9 +799,9 @@ dictionaries.
       The interpretation is similar to an integer *address*.
 
    4. A two-tuple of an address description and a netmask, where the address
-      description is either a string, a 128-bits integer, a 16-bytes packed
-      integer, or an existing :class:`IPv6Address` object; and the netmask is an
-      integer representing the prefix length.
+      description is either a string, a 128-bit integer, a 16-byte packed
+      integer, or an existing :class:`IPv6Address` object; and the netmask is
+      an integer representing the prefix length.
 
    An :exc:`AddressValueError` is raised if *address* is not a valid IPv6
    address.  A :exc:`NetmaskValueError` is raised if the mask is not valid for
@@ -820,6 +850,7 @@ dictionaries.
    .. method:: subnet_of(other)
    .. method:: supernet_of(other)
    .. method:: next_network(next_prefix=None)
+   .. method:: prev_network(prev_prefix=None)
    .. method:: compare_networks(other)
 
       Refer to the corresponding attribute documentation in

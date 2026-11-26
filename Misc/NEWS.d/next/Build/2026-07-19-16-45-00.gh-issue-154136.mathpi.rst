@@ -1,3 +1,0 @@
-Fix building the :mod:`math` module on FreeBSD.
-Define ``_ISOC23_SOURCE`` to make the C23 library declarations
-(such as ``sinpi()`` in ``math.h``) visible.

@@ -1312,8 +1312,12 @@ class CoroutineTest(unittest.TestCase):
             def __aiter__(self):
                 return self
 
-        with contextlib.closing(anext(A(), "a").__await__()) as anext_awaitable:
-            self.assertRaises(TypeError, anext_awaitable.close, 1)
+        with warnings.catch_warnings():
+            # Closing the unstarted anext() coroutine leaves the inner
+            # __anext__() coroutine never awaited.
+            warnings.simplefilter("ignore", RuntimeWarning)
+            with contextlib.closing(anext(A(), "a").__await__()) as anext_awaitable:
+                self.assertRaises(TypeError, anext_awaitable.close, 1)
 
     def test_with_1(self):
         class Manager:

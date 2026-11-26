@@ -1,2 +1,0 @@
-Avoid double-quoting string values from ``pyconfig.h`` in ``sysconfigdata``
-variables.

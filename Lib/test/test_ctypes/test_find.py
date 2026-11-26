@@ -1,4 +1,5 @@
 import os.path
+import subprocess
 import sys
 import test.support
 import unittest
@@ -78,9 +79,24 @@ class Test_OpenGL_libs(unittest.TestCase):
 @unittest.skipUnless(sys.platform.startswith('linux'),
                      'Test only valid for Linux')
 class FindLibraryLinux(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        try:
+            p = subprocess.run(['ld', '--version'],
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.DEVNULL,
+                               text=True)
+        except OSError:
+            pass
+        else:
+            if p.stdout.startswith('mold '):
+                # The mold linker is known to be incompatible with
+                # the soft-deprecated ctypes.util.find_library
+                # (which uses `ld -t`).
+                raise unittest.SkipTest('Fails when ld is mold')
+
     @thread_unsafe('uses setenv')
     def test_find_on_libpath(self):
-        import subprocess
         import tempfile
 
         try:

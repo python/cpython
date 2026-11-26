@@ -147,12 +147,26 @@ module documentation.  This section lists the differences between the API and
    otherwise it is set to ``"no"``.
    Not stating the argument will omit the declaration from the document.
 
+   :exc:`ValueError` is raised if the content of the node cannot be
+   represented in XML, for example if a comment contains ``"--"`` or
+   a CDATA section contains ``"]]>"``.
+   The characters are not checked:
+   the text, the attribute values and the content of comments,
+   processing instructions and CDATA sections are written as is.
+   If they can contain characters which are not allowed in XML,
+   check them with :func:`xml.is_valid_text` before serialization.
+
    .. versionchanged:: 3.8
       The :meth:`writexml` method now preserves the attribute order specified
       by the user.
 
    .. versionchanged:: 3.9
       The *standalone* parameter was added.
+
+   .. versionchanged:: 3.16
+      Namespace declarations missing for the serialized element
+      and its attributes are now written.
+      It now works for :class:`!DocumentFragment` nodes.
 
 .. method:: Node.toxml(encoding=None, standalone=None)
 
@@ -175,6 +189,9 @@ module documentation.  This section lists the differences between the API and
    .. versionchanged:: 3.9
       The *standalone* parameter was added.
 
+   .. versionchanged:: 3.16
+      It now works for :class:`!DocumentFragment` nodes.
+
 .. method:: Node.toprettyxml(indent="\t", newl="\n", encoding=None, \
                              standalone=None)
 
@@ -187,12 +204,23 @@ module documentation.  This section lists the differences between the API and
 
    The *standalone* argument behaves exactly as in :meth:`writexml`.
 
+   No indentation is added inside an element
+   which is marked with ``xml:space="preserve"``,
+   which is declared in the DTD as not having element content,
+   or, in absence of such declaration, which contains text,
+   because this would change its content.
+
    .. versionchanged:: 3.8
       The :meth:`toprettyxml` method now preserves the attribute order specified
       by the user.
 
    .. versionchanged:: 3.9
       The *standalone* parameter was added.
+
+   .. versionchanged:: 3.16
+      Whitespace is no longer added inside an element with mixed content
+      or marked with ``xml:space="preserve"``.
+      It now works for :class:`!DocumentFragment` nodes.
 
 .. _dom-example:
 
@@ -263,16 +291,20 @@ rules apply:
 
 * :attr:`~xml.dom.Document.strictErrorChecking` is always ``False``.
 
-  .. versionchanged:: next
+  .. versionchanged:: 3.16
      Previously, :attr:`~xml.dom.Attr.specified` was always ``False``.
 
 * The constraints of the DOM are now enforced,
   and the corresponding exceptions are raised.
 
-  .. versionchanged:: next
+  .. versionchanged:: 3.16
      Previously, many invalid operations silently succeeded
      and produced an invalid document,
      but removing an absent attribute raised :exc:`~xml.dom.NotFoundErr`.
+
+  .. versionchanged:: 3.16
+     Namespaces are now validated in the factory methods and when setting
+     :attr:`~xml.dom.Node.prefix` of an attribute.
 
 The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 
@@ -281,7 +313,7 @@ The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 This reflects information in the XML document that is not of general
 utility to most DOM users.
 
-.. versionchanged:: next
+.. versionchanged:: 3.16
    :class:`~xml.dom.EntityReference` is now implemented.
    Note that the parser expands entity references,
    so they only occur in a document if created explicitly.
