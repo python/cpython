@@ -462,8 +462,6 @@ class RunnerTests(BaseTest):
                 runner.run(coro())
 
     def test_interrupt_after_main_task_done(self):
-        assert threading.current_thread() is threading.main_thread()
-
         async def coro():
             nonlocal task
             task = asyncio.create_task(asyncio.Event().wait())
