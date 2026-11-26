@@ -1605,26 +1605,26 @@ typedef struct {
 @classmethod
 itertools.islice.__new__ as islice_new
     iterable: object
-    a1: object
-    a2: object(c_default="NULL") = None
-    a3: object(c_default="NULL") = None
+    start: object
+    stop: object(c_default="NULL") = None
+    step: object(c_default="NULL") = None
     /
 [clinic start generated code]*/
 
 static PyObject *
-islice_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *a1,
-                PyObject *a2, PyObject *a3)
-/*[clinic end generated code: output=7fa28024c01231db input=aac6a09144cead64]*/
+islice_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start,
+                PyObject *stop, PyObject *step)
+/*[clinic end generated code: output=9291712502695467 input=33c4713c4aa2d211]*/
 {
     PyObject *it;
-    Py_ssize_t start=0, stop=-1, step=1;
-    Py_ssize_t numargs = (a2 == NULL) ? 2 : ((a3 == NULL) ? 3 : 4);
+    Py_ssize_t start_val=0, stop_val=-1, step_val=1;
+    Py_ssize_t numargs = (stop == NULL) ? 2 : ((step == NULL) ? 3 : 4);
     isliceobject *lz;
 
     if (numargs == 2) {
-        if (a1 != Py_None) {
-            stop = PyNumber_AsSsize_t(a1, PyExc_OverflowError);
-            if (stop == -1) {
+        if (start != Py_None) {
+            stop_val = PyNumber_AsSsize_t(start, PyExc_OverflowError);
+            if (stop_val == -1) {
                 if (PyErr_Occurred())
                     PyErr_Clear();
                 PyErr_SetString(PyExc_ValueError,
@@ -1634,13 +1634,13 @@ islice_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *a1,
             }
         }
     } else {
-        if (a1 != Py_None)
-            start = PyNumber_AsSsize_t(a1, PyExc_OverflowError);
-        if (start == -1 && PyErr_Occurred())
+        if (start != Py_None)
+            start_val = PyNumber_AsSsize_t(start, PyExc_OverflowError);
+        if (start_val == -1 && PyErr_Occurred())
             PyErr_Clear();
-        if (a2 != Py_None) {
-            stop = PyNumber_AsSsize_t(a2, PyExc_OverflowError);
-            if (stop == -1) {
+        if (stop != Py_None) {
+            stop_val = PyNumber_AsSsize_t(stop, PyExc_OverflowError);
+            if (stop_val == -1) {
                 if (PyErr_Occurred())
                     PyErr_Clear();
                 PyErr_SetString(PyExc_ValueError,
@@ -1650,20 +1650,20 @@ islice_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *a1,
             }
         }
     }
-    if (start<0 || stop<-1) {
+    if (start_val<0 || stop_val<-1) {
         PyErr_SetString(PyExc_ValueError,
            "Indices for islice() must be None or "
            "an integer: 0 <= x <= sys.maxsize.");
         return NULL;
     }
 
-    if (a3 != NULL) {
-        if (a3 != Py_None)
-            step = PyNumber_AsSsize_t(a3, PyExc_OverflowError);
-        if (step == -1 && PyErr_Occurred())
+    if (step != NULL) {
+        if (step != Py_None)
+            step_val = PyNumber_AsSsize_t(step, PyExc_OverflowError);
+        if (step_val == -1 && PyErr_Occurred())
             PyErr_Clear();
     }
-    if (step<1) {
+    if (step_val<1) {
         PyErr_SetString(PyExc_ValueError,
            "Step for islice() must be a positive integer or None.");
         return NULL;
@@ -1681,9 +1681,9 @@ islice_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *a1,
         return NULL;
     }
     lz->it = it;
-    lz->next = start;
-    lz->stop = stop;
-    lz->step = step;
+    lz->next = start_val;
+    lz->stop = stop_val;
+    lz->step = step_val;
     lz->cnt = 0L;
 
     return (PyObject *)lz;

@@ -456,8 +456,8 @@ exit:
 }
 
 static PyObject *
-islice_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *a1,
-                PyObject *a2, PyObject *a3);
+islice_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start,
+                PyObject *stop, PyObject *step);
 
 static PyObject *
 islice_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -465,9 +465,9 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     PyTypeObject *base_tp = clinic_state()->islice_type;
     PyObject *iterable;
-    PyObject *a1;
-    PyObject *a2 = NULL;
-    PyObject *a3 = NULL;
+    PyObject *start;
+    PyObject *stop = NULL;
+    PyObject *step = NULL;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("islice", kwargs)) {
@@ -477,17 +477,17 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     iterable = PyTuple_GET_ITEM(args, 0);
-    a1 = PyTuple_GET_ITEM(args, 1);
+    start = PyTuple_GET_ITEM(args, 1);
     if (PyTuple_GET_SIZE(args) < 3) {
         goto skip_optional;
     }
-    a2 = PyTuple_GET_ITEM(args, 2);
+    stop = PyTuple_GET_ITEM(args, 2);
     if (PyTuple_GET_SIZE(args) < 4) {
         goto skip_optional;
     }
-    a3 = PyTuple_GET_ITEM(args, 3);
+    step = PyTuple_GET_ITEM(args, 3);
 skip_optional:
-    return_value = islice_new_impl(type, iterable, a1, a2, a3);
+    return_value = islice_new_impl(type, iterable, start, stop, step);
 
 exit:
     return return_value;
@@ -500,9 +500,9 @@ islice_vectorcall(PyObject *type, PyObject *const *args,
     PyObject *return_value = NULL;
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     PyObject *iterable;
-    PyObject *a1;
-    PyObject *a2 = NULL;
-    PyObject *a3 = NULL;
+    PyObject *start;
+    PyObject *stop = NULL;
+    PyObject *step = NULL;
 
     assert(_PyType_CAST(type)->tp_new == islice_new);
     /* Make sure the type object is immutable: the generated
@@ -515,17 +515,17 @@ islice_vectorcall(PyObject *type, PyObject *const *args,
         goto exit;
     }
     iterable = args[0];
-    a1 = args[1];
+    start = args[1];
     if (nargs < 3) {
         goto skip_optional;
     }
-    a2 = args[2];
+    stop = args[2];
     if (nargs < 4) {
         goto skip_optional;
     }
-    a3 = args[3];
+    step = args[3];
 skip_optional:
-    return_value = islice_new_impl(_PyType_CAST(type), iterable, a1, a2, a3);
+    return_value = islice_new_impl(_PyType_CAST(type), iterable, start, stop, step);
 
 exit:
     return return_value;
@@ -1258,4 +1258,4 @@ zip_longest_next(PyObject *self)
 
     return return_value;
 }
-/*[clinic end generated code: output=3fe656572d05dc6d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8f661cf1fe7ea792 input=a9049054013a1b77]*/
