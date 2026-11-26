@@ -1,0 +1,3 @@
+Resolve lazy submodules of ordinary packages independently with custom
+:func:`__import__` hooks and private builtins. Select pending declarations
+from the appropriate builtins namespace.
