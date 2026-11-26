@@ -1303,7 +1303,8 @@ class Path(PurePath):
         if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
         ensure_distinct_paths(self, target)
-        target._copy_from(self, **kwargs)
+        # Use fresh paths to avoid stale cached file information.
+        target.joinpath()._copy_from(self.joinpath(), **kwargs)
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, **kwargs):
