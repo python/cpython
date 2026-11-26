@@ -1873,6 +1873,17 @@ class TestCurses(unittest.TestCase):
             self.assertIsInstance(cud_2, bytes)
             curses.putp(cud_2)
 
+        # The few capabilities that take strings take them as bytes.
+        ms = curses.tigetstr('Ms')
+        if ms is not None and b'%p2%s' in ms:
+            self.assertIn(b'aGk=', curses.tparm(ms, b'c', b'aGk='))
+            self.assertRaises(TypeError, curses.tparm, ms, 1, 2)
+            self.assertRaises(ValueError, curses.tparm, ms, b'c', b'a\0')
+            # An omitted string is empty.
+            self.assertNotIn(b'%', curses.tparm(ms, b'c'))
+        self.assertRaises(TypeError, curses.tparm, b'%p1%d', b'x')
+        self.assertRaises(TypeError, curses.tparm, b'%p1%d', *range(10))
+
         curses.putp(b'abc\n')
 
     def test_misc_module_funcs(self):

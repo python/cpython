@@ -1,0 +1,4 @@
+Fix crashes in the callable iterator returned by :func:`iter` with a
+sentinel, when :meth:`!__setstate__` is called while the iterator is in use,
+or when the iterator is shared between threads in the :term:`free-threaded
+build`.

@@ -399,7 +399,7 @@ class WindowsConsoleTests(TestCase):
         _, con = self.handle_events(events)
         con._WindowsConsole__vt_support = True
         con._WindowsConsole__original_input_mode = 0
-        with patch.object(wc, "SetConsoleMode", return_value=1):
+        with patch.object(wc._winapi, "SetConsoleMode"):
             con.restore()
         con.out.write.assert_any_call(ANSIColors.RESET.encode(con.encoding))
 

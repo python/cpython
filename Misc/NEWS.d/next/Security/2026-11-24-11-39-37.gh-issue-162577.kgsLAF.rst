@@ -1,0 +1,2 @@
+Update ``zstd`` to v1.6.0 in Android, iOS, and Windows builds to address
+:cve:`2026-124851`.

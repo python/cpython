@@ -239,6 +239,7 @@ simplequeue_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 /*[clinic input]
+@vectorcall
 @classmethod
 _queue.SimpleQueue.__new__ as simplequeue_new
 
@@ -247,7 +248,7 @@ Simple, unbounded, reentrant FIFO queue.
 
 static PyObject *
 simplequeue_new_impl(PyTypeObject *type)
-/*[clinic end generated code: output=ba97740608ba31cd input=a0674a1643e3e2fb]*/
+/*[clinic end generated code: output=ba97740608ba31cd input=9113a69fd48c8e74]*/
 {
     simplequeueobject *self;
 
@@ -568,6 +569,7 @@ static PyType_Slot simplequeue_slots[] = {
     {Py_tp_members, simplequeue_members},
     {Py_tp_methods, simplequeue_methods},
     {Py_tp_new, simplequeue_new},
+    {Py_tp_vectorcall, simplequeue_vectorcall},
     {0, NULL},
 };
 

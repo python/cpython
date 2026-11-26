@@ -1,8 +1,10 @@
 import functools
 import unittest
 from math import isnan, nextafter
-from test.support import requires_IEEE_754
+from test.support import requires_IEEE_754, mark_module
 from test.support.hypothesis_helper import hypothesis
+
+mark_module('hypothesis')
 
 floats = hypothesis.strategies.floats
 integers = hypothesis.strategies.integers

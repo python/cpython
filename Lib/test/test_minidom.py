@@ -1952,6 +1952,28 @@ class MinidomTest(unittest.TestCase):
         self.checkRenameNodeSharedConstraints(doc, attr)
         doc.unlink()
 
+    def testRenameAttributeToPrefixedName(self):
+        doc = parseString("<doc a='v' b='w'/>")
+        elem = doc.documentElement
+        attr = elem.getAttributeNode("a")
+        attr = doc.renameNode(attr, "http://xml.python.org/ns", "p:c")
+        self.assertEqual(attr.name, "p:c")
+        self.assertEqual(attr.prefix, "p")
+        self.assertEqual(attr.localName, "c")
+        self.assertEqual(attr.namespaceURI, "http://xml.python.org/ns")
+        self.assertIsNone(elem.getAttributeNode("a"))
+        self.assertIs(elem.getAttributeNodeNS("http://xml.python.org/ns", "c"),
+                      attr)
+
+        # A rejected rename leaves the attribute on its element.
+        attr = elem.getAttributeNode("b")
+        self.assertRaises(xml.dom.NamespaceErr, doc.renameNode, attr,
+                          "http://xml.python.org/ns", "xml:lang")
+        self.assertEqual(attr.name, "b")
+        self.assertIsNone(attr.namespaceURI)
+        self.assertIs(elem.getAttributeNode("b"), attr)
+        doc.unlink()
+
     def testRenameElement(self):
         doc = parseString("<doc/>")
         elem = doc.documentElement
@@ -1993,6 +2015,18 @@ class MinidomTest(unittest.TestCase):
                 and elem.ownerDocument.isSameNode(doc))
 
         self.checkRenameNodeSharedConstraints(doc, elem)
+        doc.unlink()
+
+    def testRenameElementToPrefixedName(self):
+        doc = parseString("<doc/>")
+        elem = doc.documentElement
+        elem = doc.renameNode(elem, "http://xml.python.org/ns", "p:c")
+        self.assertEqual(elem.tagName, "p:c")
+        self.assertEqual(elem.nodeName, "p:c")
+        self.assertEqual(elem.prefix, "p")
+        self.assertEqual(elem.localName, "c")
+        self.assertEqual(elem.namespaceURI, "http://xml.python.org/ns")
+        self.assertIs(doc.documentElement, elem)
         doc.unlink()
 
     def testRenameOther(self):
@@ -2300,10 +2334,71 @@ class MinidomTest(unittest.TestCase):
         doc2 = copy.deepcopy(doc)
         self.assert_recursive_equal(doc, doc2)
 
-    def testSerializeCommentNodeWithDoubleHyphen(self):
-        doc = create_doc_without_doctype()
-        doc.appendChild(doc.createComment("foo--bar"))
-        self.assertRaises(ValueError, doc.toxml)
+    def testWriteXMLDoctypeIdentifiers(self):
+        impl = getDOMImplementation()
+        def serialize(publicId, systemId):
+            doctype = impl.createDocumentType("r", publicId, systemId)
+            return impl.createDocument(None, "r", doctype).toxml()[22:]
+        self.assertEqual(serialize(None, None), '<!DOCTYPE r><r/>')
+        self.assertEqual(serialize(None, "s"), "<!DOCTYPE r  SYSTEM 's'><r/>")
+        self.assertEqual(serialize("p", "s"),
+                         "<!DOCTYPE r  PUBLIC 'p'  's'><r/>")
+        # the quote which is not in the literal is used
+        self.assertEqual(serialize("it's", "sys'tem"),
+                         '<!DOCTYPE r  PUBLIC "it\'s"  "sys\'tem"><r/>')
+        # a system literal cannot contain both quotes
+        with self.assertRaisesRegex(ValueError, "both quotes"):
+            serialize(None, 'a"b\'c')
+        # a public identifier can only contain PubidChars
+        for publicId in ['pub"lic', 'p>', 'p<', 'p&', 'p[', '\xe9']:
+            with self.subTest(publicId=publicId):
+                with self.assertRaisesRegex(ValueError,
+                                            "invalid public identifier"):
+                    serialize(publicId, "s")
+        # a public identifier is meaningless without a system identifier
+        with self.assertRaisesRegex(ValueError, "requires a system"):
+            serialize("p", None)
+
+    def testSerializeComment(self):
+        impl = getDOMImplementation()
+        def serialize(data):
+            doc = impl.createDocument(None, "r", None)
+            doc.documentElement.appendChild(doc.createComment(data))
+            return doc.toxml()[22:]
+        self.assertEqual(serialize("foo"), "<r><!--foo--></r>")
+        self.assertEqual(serialize(""), "<r><!----></r>")
+        self.assertEqual(serialize("-foo"), "<r><!---foo--></r>")
+        with self.assertRaisesRegex(ValueError, "'--' is not allowed"):
+            serialize("foo--bar")
+        # a trailing hyphen would be fused with the closing "-->"
+        with self.assertRaisesRegex(ValueError, "cannot end with"):
+            serialize("foo-")
+
+    def testSerializeProcessingInstruction(self):
+        impl = getDOMImplementation()
+        def serialize(target, data):
+            doc = impl.createDocument(None, "r", None)
+            pi = doc.createProcessingInstruction(target, data)
+            doc.documentElement.appendChild(pi)
+            return doc.toxml()[22:]
+        self.assertEqual(serialize("p", "a"), "<r><?p a?></r>")
+        self.assertEqual(serialize("p", ""), "<r><?p ?></r>")
+        self.assertEqual(serialize("xml-stylesheet", 'href="a"'),
+                         '<r><?xml-stylesheet href="a"?></r>')
+        # "?>" would close the processing instruction
+        with self.assertRaisesRegex(ValueError, "'\\?>' is not allowed"):
+            serialize("p", "a?>b")
+        # the target "xml" is reserved
+        for target in ["xml", "XML", "XmL"]:
+            with self.subTest(target=target):
+                with self.assertRaisesRegex(ValueError, "reserved"):
+                    serialize(target, "a")
+        # the target is a name
+        doc = impl.createDocument(None, "r", None)
+        pi = doc.createProcessingInstruction("p", "a")
+        doc.documentElement.appendChild(pi)
+        pi.target = "a b"
+        self.assertRaises(xml.dom.InvalidCharacterErr, doc.toxml)
 
 
     def testEmptyXMLNSValue(self):
