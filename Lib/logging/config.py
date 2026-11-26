@@ -934,8 +934,9 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
     Start up a socket server on the specified port, and listen for new
     configurations.
 
-    These will be sent as a file suitable for processing by fileConfig().
-    Returns a Thread object on which you can call start() to start the server,
+    These will be sent as a file suitable for processing by dictConfig() or
+    fileConfig(). Returns a Thread object on which you can call start() to
+    start the server,
     and which you can join() when appropriate. To stop the server, call
     stopListening().
 
@@ -953,8 +954,8 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
         """
         Handler for a logging configuration request.
 
-        It expects a completely new logging configuration and uses fileConfig
-        to install it.
+        It expects a completely new logging configuration and uses dictConfig
+        or fileConfig to install it.
         """
         def handle(self):
             """
@@ -962,7 +963,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
 
             Each request is expected to be a 4-byte length, packed using
             struct.pack(">L", n), followed by the config file.
-            Uses fileConfig() to do the grunt work.
+            Uses dictConfig() or fileConfig() to do the grunt work.
             """
             try:
                 conn = self.connection

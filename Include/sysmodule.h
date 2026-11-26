@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030f0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
 PyAPI_FUNC(PyObject *) PySys_GetAttr(PyObject *);
 PyAPI_FUNC(PyObject *) PySys_GetAttrString(const char *);
 PyAPI_FUNC(int) PySys_GetOptionalAttr(PyObject *, PyObject **);
@@ -12,9 +12,6 @@ PyAPI_FUNC(int) PySys_GetOptionalAttrString(const char *, PyObject **);
 #endif
 PyAPI_FUNC(PyObject *) PySys_GetObject(const char *);
 PyAPI_FUNC(int) PySys_SetObject(const char *, PyObject *);
-
-Py_DEPRECATED(3.11) PyAPI_FUNC(void) PySys_SetArgv(int, wchar_t **);
-Py_DEPRECATED(3.11) PyAPI_FUNC(void) PySys_SetArgvEx(int, wchar_t **, int);
 
 PyAPI_FUNC(void) PySys_WriteStdout(const char *format, ...)
                  Py_GCC_ATTRIBUTE((format(printf, 1, 2)));

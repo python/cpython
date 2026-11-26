@@ -18,8 +18,8 @@
 // behaviour. So only define if building as C, not C++ (if __cplusplus is
 // not defined), and only for C11-17.
 #if !defined(static_assert) && (defined(__GNUC__) || defined(__clang__)) \
-     && !defined(__cplusplus) && defined(__STDC_VERSION__) \
-     && __STDC_VERSION__ >= 201112L && __STDC_VERSION__ <= 201710L
+     && defined(_Py_STDC_VERSION) \
+     && _Py_STDC_VERSION >= 201112L && _Py_STDC_VERSION <= 201710L
 #  define static_assert _Static_assert
 #endif
 
@@ -75,9 +75,9 @@
 #        endif
 #    elif defined(_MSC_VER)
 #        define _Py_ALIGNED_DEF(N, T) __declspec(align(N)) T
-#    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#    elif defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 202311L
 #        define _Py_ALIGNED_DEF(N, T) alignas(N) alignas(T) T
-#    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#    elif defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 201112L
 #        define _Py_ALIGNED_DEF(N, T)  _Alignas(N) _Alignas(T) T
 #    elif (defined(__GNUC__) || defined(__clang__))
 #        define _Py_ALIGNED_DEF(N, T) __attribute__((aligned(N))) T
@@ -100,22 +100,47 @@
 // predefined value of _Py_ANONYMOUS if it exists.
 #ifndef _Py_ANONYMOUS
 #   if (defined(__GNUC__) || defined(__clang__)) \
-          && !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+          && !(defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 201112L)
 #       define _Py_ANONYMOUS __extension__
 #   else
 #       define _Py_ANONYMOUS
 #   endif
 #endif
 
+#if ((defined(__GNUC__) || defined(__clang__)) \
+     && defined(_Py_TYPEOF) && !defined(__cplusplus))
+   // Implement Py_MIN(), Py_MAX() and Py_ABS() using _Py_TYPEOF() and
+   // statement expression to only evaluate each argument only once.
+   // It cannot be used in C++: ISO C++ forbids braced-groups within
+   // expressions. Statement expression is a GNU extension. Use __extension__
+   // to avoid compiler warning in pedantic mode.
 
-/* Minimum value between x and y */
-#define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
+   /* Minimum value between x and y */
+#  define Py_MIN(x, y) \
+       __extension__ \
+       ({ _Py_TYPEOF (x) _PyMIN_x = (x); \
+          _Py_TYPEOF (y) _PyMIN_y = (y); \
+          _PyMIN_x < _PyMIN_y ? _PyMIN_x : _PyMIN_y; })
+   /* Maximum value between x and y */
+#  define Py_MAX(x, y) \
+       __extension__ \
+       ({ _Py_TYPEOF (x) _PyMAX_x = (x); \
+          _Py_TYPEOF (y) _PyMAX_y = (y); \
+          _PyMAX_x > _PyMAX_y ? _PyMAX_x : _PyMAX_y; })
+   /* Absolute value of the number x */
+#  define Py_ABS(x) \
+       __extension__ \
+       ({ _Py_TYPEOF (x) _PyABS_x = (x); \
+          _PyABS_x < 0 ? -_PyABS_x : _PyABS_x; })
+#else
+   /* Minimum value between x and y */
+#  define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
+   /* Maximum value between x and y */
+#  define Py_MAX(x, y) (((x) > (y)) ? (x) : (y))
+   /* Absolute value of the number x */
+#  define Py_ABS(x) ((x) < 0 ? -(x) : (x))
+#endif
 
-/* Maximum value between x and y */
-#define Py_MAX(x, y) (((x) > (y)) ? (x) : (y))
-
-/* Absolute value of the number x */
-#define Py_ABS(x) ((x) < 0 ? -(x) : (x))
 /* Safer implementation that avoids an undefined behavior for the minimal
    value of the signed integer type if its absolute value is larger than
    the maximal value of the signed integer type (in the two's complement
@@ -137,7 +162,7 @@
 /* Argument must be a char or an int in [-128, 127] or [0, 255]. */
 #define Py_CHARMASK(c) ((unsigned char)((c) & 0xff))
 
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L \
+#if (defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 201112L \
      && !defined(__cplusplus) && !defined(_MSC_VER))
 #  define Py_BUILD_ASSERT_EXPR(cond) \
     ((void)sizeof(struct { int dummy; _Static_assert(cond, #cond); }), \
@@ -160,7 +185,7 @@
     (sizeof(char [1 - 2*!(cond)]) - 1)
 #endif
 
-#if ((defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L) \
+#if ((defined(_Py_STDC_VERSION) && _Py_STDC_VERSION >= 201112L) \
      || (defined(__cplusplus) && __cplusplus >= 201103L))
    // Use static_assert() on C11 and newer
 #  define Py_BUILD_ASSERT(cond) \
@@ -174,23 +199,27 @@
         } while(0)
 #endif
 
-/* Get the number of elements in a visible array
-
-   This does not work on pointers, or arrays declared as [], or function
-   parameters. With correct compiler support, such usage will cause a build
-   error (see Py_BUILD_ASSERT_EXPR).
-
-   Written by Rusty Russell, public domain, http://ccodearchive.net/
-
-   Requires at GCC 3.1+ */
-#if (defined(__GNUC__) && !defined(__STRICT_ANSI__) && \
-    (((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)) || (__GNUC__ >= 4)))
-/* Two gcc extensions.
-   &a[0] degrades to a pointer: a different type from an array */
+// Get the number of elements in a visible array.
+//
+// This does not work on pointers, or arrays declared as [], or function
+// parameters. With correct compiler support, such usage will cause a build
+// error (see Py_BUILD_ASSERT_EXPR).
+//
+// Written by Rusty Russell, public domain, http://ccodearchive.net/
+//
+// Require GCC 4 (it works on GCC 3.1).
+//
+// Two GCC extensions: &a[0] degrades to a pointer, a different type from an
+// array.
+//
+// gh-158810: Do not use __builtin_types_compatible_p() in strict C ANSI mode
+// and on C++.
+#if (defined(__GNUC__) && __GNUC__ >= 4 && defined(_Py_TYPEOF) \
+        && !defined(__STRICT_ANSI__) && !defined(__cplusplus))
 #define Py_ARRAY_LENGTH(array) \
     (sizeof(array) / sizeof((array)[0]) \
-     + Py_BUILD_ASSERT_EXPR(!__builtin_types_compatible_p(typeof(array), \
-                                                          typeof(&(array)[0]))))
+     + Py_BUILD_ASSERT_EXPR(!__builtin_types_compatible_p(_Py_TYPEOF(array), \
+                                                          _Py_TYPEOF(&(array)[0]))))
 #else
 #define Py_ARRAY_LENGTH(array) \
     (sizeof(array) / sizeof((array)[0]))
@@ -282,7 +311,6 @@
 #define _Py_IS_TYPE_SIGNED(type) ((type)(-1) <= 0)
 
 // Version helpers. These are primarily macros, but have exported equivalents.
-#define _Py_PACK_VERSION(X, Y) _Py_PACK_FULL_VERSION(X, Y, 0, 0, 0)
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
 PyAPI_FUNC(uint32_t) Py_PACK_FULL_VERSION(int x, int y, int z, int level, int serial);
 PyAPI_FUNC(uint32_t) Py_PACK_VERSION(int x, int y);

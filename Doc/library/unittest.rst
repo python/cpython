@@ -180,6 +180,9 @@ You can run tests with more detail (higher verbosity) by passing in the -v flag:
 
    python -m unittest -v test_module
 
+Repeat it for even more detail: ``-vv`` reports also the individual examples
+of a :mod:`doctest`.
+
 When executed without arguments :ref:`unittest-test-discovery` is started::
 
    python -m unittest
@@ -291,7 +294,11 @@ The ``discover`` sub-command has the following options:
 
 .. option:: -v, --verbose
 
-   Verbose output
+   Verbose output.  May be repeated: ``-vv`` reports also the individual
+   examples of a :mod:`doctest`.
+
+   .. versionchanged:: 3.16
+      The option can be repeated.
 
 .. option:: -s, --start-directory directory
 
@@ -994,7 +1001,7 @@ Test cases
    | <TestCase.assertLogs>`                                  | with minimum *level*                 |            |
    +---------------------------------------------------------+--------------------------------------+------------+
    | :meth:`assertNoLogs(logger, level)                      | The ``with`` block does not log on   | 3.10       |
-   | <TestCase.assertNoLogs>`                                |  *logger* with minimum *level*       |            |
+   | <TestCase.assertNoLogs>`                                | *logger* with minimum *level*        |            |
    +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)
@@ -1071,7 +1078,7 @@ Test cases
       :meth:`assertWarns`.  The test passes if *warning* is triggered and
       fails if it isn't.  Any exception is an error.
       To catch any of a group of warnings, a tuple containing the warning
-      classes may be passed as *warnings*.
+      classes may be passed as *warning*.
 
       If only the *warning* and possibly the *msg* arguments are given,
       return a context manager so that the code under test can be written
@@ -1135,8 +1142,8 @@ Test cases
       The context managers can be nested to test that multiple different
       warnings are emitted::
 
-         with (self.assertWarns(SomeWarning, regex1),
-               self.assertWarns(OtherWarning, regex2)):
+         with (self.assertWarnsRegex(SomeWarning, regex1),
+               self.assertWarnsRegex(OtherWarning, regex2)):
              do_something()
 
       .. versionadded:: 3.2
@@ -2148,6 +2155,15 @@ Loading and running tests
       If set to true then local variables will be shown in tracebacks.
 
       .. versionadded:: 3.5
+
+   .. attribute:: verbosity
+
+      The level of details which the test runner reports: ``0`` -- quiet,
+      ``1`` -- progress dots, ``2`` -- test names, ``3`` -- also the
+      individual examples of a :mod:`doctest`.  A test runner is expected to
+      set it to its own verbosity.
+
+      .. versionadded:: 3.16
 
    .. method:: wasSuccessful()
 

@@ -1969,6 +1969,25 @@ class GeneralModuleTests(unittest.TestCase):
                     with sock.makefile(mode, encoding=encoding) as fp:
                         self.assertEqual(fp.mode, mode)
 
+    def test_makefile_line_buffering(self):
+        with socket.socket() as sock:
+            for mode in 'r', 'w':
+                with self.subTest(mode=mode):
+                    with sock.makefile(mode, buffering=1,
+                                       encoding="utf-8") as fp:
+                        self.assertTrue(fp.line_buffering)
+
+    def test_makefile_line_buffering_binary(self):
+        # Line buffering is not supported in binary mode, as in open().
+        with socket.socket() as sock:
+            for mode in 'rb', 'wb':
+                with self.subTest(mode=mode):
+                    with self.assertWarnsRegex(
+                            RuntimeWarning,
+                            "line buffering .* isn't supported in binary "
+                            "mode"):
+                        sock.makefile(mode, buffering=1).close()
+
     def test_makefile_invalid_mode(self):
         for mode in 'rt', 'x', '+', 'a':
             with self.subTest(mode=mode):
@@ -2084,6 +2103,39 @@ class GeneralModuleTests(unittest.TestCase):
         sockaddr = ('ff02::1de:c0:face:8D', 1234, 0, ifindex)  # Note capital letter `D`.
         nameinfo = socket.getnameinfo(sockaddr, socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
         self.assertEqual(nameinfo, ('ff02::1de:c0:face:8d%' + str(ifindex), '1234'))
+
+    def test_getaddrinfo_null_bytes(self):
+        # getaddrinfo() must reject embedded null bytes instead of silently
+        # truncating the host or port at the C boundary.  The checks run
+        # before any name resolution, so no network access is needed.
+        hosts = [
+            # embedded
+            'local\0host', b'local\0host',
+            # trailing
+            'localhost\0', b'localhost\0',
+            # leading (truncates to '')
+            '\0localhost', b'\0localhost',
+            '\0', b'\0',
+            # non-ASCII, goes through IDNA
+            'b\xfccher\0.example',
+        ]
+        for host in hosts:
+            with self.subTest(host=host):
+                with self.assertRaisesRegex(ValueError, 'host'):
+                    socket.getaddrinfo(host, 80)
+
+        ports = [
+            '8\x000',
+            b'8\x000',
+            'http\0',
+            b'http\0',
+            '\0',
+            b'\0'
+        ]
+        for port in ports:
+            with self.subTest(port=port):
+                with self.assertRaisesRegex(ValueError, 'port'):
+                    socket.getaddrinfo("localhost", port)
 
     def test_str_for_enums(self):
         # Make sure that the AF_* and SOCK_* constants have enum-like string
@@ -3175,6 +3227,26 @@ class BasicTCPTest(SocketConnectedTest):
 
     def _testFromFd(self):
         self.serv_conn.send(MSG)
+
+    def testFromFdError(self):
+        # Make sure that the fromfd() duplicated socket is closed on error.
+        fd = self.cli_conn.fileno()
+        # Wait for the client thread to close its socket, otherwise
+        # fd_count() can race with clientTearDown().
+        self.done.wait()
+        fd_count_before = os_helper.fd_count()
+
+        with self.assertRaises(TypeError):
+            socket.fromfd(fd, "not-a-valid-family", socket.SOCK_STREAM)
+        with self.assertRaises(TypeError):
+            socket.fromfd(fd, socket.AF_INET, "not-a-valid-type")
+        with self.assertRaises(OverflowError):
+            socket.fromfd(fd, socket.AF_INET, 1 << 100)
+
+        self.assertEqual(os_helper.fd_count(), fd_count_before)
+
+    def _testFromFdError(self):
+        pass
 
     def testDup(self):
         # Testing dup()
@@ -5761,10 +5833,20 @@ class FileObjectClassTestCase(SocketConnectedTest):
         # Performing file readline test
         line = self.read_file.readline()
         self.assertEqual(line, self.read_msg)
+        # Readline mode
+        if self.bufsize == 1 and self.read_mode == "r":
+            self.assertTrue(self.read_file.line_buffering)
 
     def _testReadline(self):
         self.write_file.write(self.write_msg)
-        self.write_file.flush()
+        # Readline mode: no need to flush
+        if self.bufsize == 1 and self.write_mode == "w":
+            self.assertTrue(self.write_file.line_buffering)
+        else:
+            self.write_file.flush()
+        # Prevent garbage collection from flushing
+        # until the server has finished
+        self.assertTrue(self.serv_finished.wait(5.0))
 
     def testCloseAfterMakefile(self):
         # The file returned by makefile should keep the socket open.
@@ -5922,11 +6004,6 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
             self.serv_skipped = "failed to saturate the socket buffer"
 
 
-class LineBufferedFileObjectClassTestCase(FileObjectClassTestCase):
-
-    bufsize = 1 # Default-buffered for reading; line-buffered for writing
-
-
 class SmallBufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
     bufsize = 2 # Exercise the buffering code
@@ -5955,6 +6032,16 @@ class UnicodeWriteFileObjectClassTestCase(FileObjectClassTestCase):
 class UnicodeReadWriteFileObjectClassTestCase(FileObjectClassTestCase):
     """Tests for socket.makefile() in text mode (rather than binary)"""
 
+    read_mode = 'r'
+    read_msg = MSG.decode('utf-8')
+    write_mode = 'w'
+    write_msg = MSG.decode('utf-8')
+    newline = ''
+
+
+class UnicodeLineBufferedFileObjectClassTestCase(FileObjectClassTestCase):
+
+    bufsize = 1  # Default-buffered for reading; line-buffered for writing
     read_mode = 'r'
     read_msg = MSG.decode('utf-8')
     write_mode = 'w'

@@ -1,5 +1,4 @@
 # Author: Steven J. Bethard <steven.bethard@gmail.com>.
-# New maintainer as of 29 August 2019:  Raymond Hettinger <raymond.hettinger@gmail.com>
 
 """Command-line parsing library
 
@@ -67,6 +66,7 @@ still considered an implementation detail.)
 __all__ = [
     'ArgumentParser',
     'ArgumentError',
+    'ArgumentGroup',
     'ArgumentTypeError',
     'BooleanOptionalAction',
     'FileType',
@@ -75,6 +75,7 @@ __all__ = [
     'RawDescriptionHelpFormatter',
     'RawTextHelpFormatter',
     'MetavarTypeHelpFormatter',
+    'MutuallyExclusiveGroup',
     'Namespace',
     'Action',
     'ONE_OR_MORE',
@@ -713,7 +714,7 @@ class HelpFormatter(object):
         return result
 
     def _expand_help(self, action):
-        help_string = self._get_help_string(action)
+        help_string = str(self._get_help_string(action))
         if '%' not in help_string:
             return self._apply_text_markup(help_string)
         params = dict(vars(action), prog=self._prog)
@@ -1545,6 +1546,12 @@ class Namespace(_AttributeHolder):
     def __contains__(self, key):
         return key in self.__dict__
 
+    def __replace__(self, /, **changes):
+        new = self.__class__()
+        new.__dict__.update(self.__dict__)
+        new.__dict__.update(changes)
+        return new
+
 
 class _ActionsContainer(object):
 
@@ -1693,12 +1700,12 @@ class _ActionsContainer(object):
         return self._add_action(action)
 
     def add_argument_group(self, *args, **kwargs):
-        group = _ArgumentGroup(self, *args, **kwargs)
+        group = ArgumentGroup(self, *args, **kwargs)
         self._action_groups.append(group)
         return group
 
     def add_mutually_exclusive_group(self, **kwargs):
-        group = _MutuallyExclusiveGroup(self, **kwargs)
+        group = MutuallyExclusiveGroup(self, **kwargs)
         self._mutually_exclusive_groups.append(group)
         return group
 
@@ -1886,7 +1893,7 @@ class _ActionsContainer(object):
                 raise ValueError('badly formed help string') from exc
 
 
-class _ArgumentGroup(_ActionsContainer):
+class ArgumentGroup(_ActionsContainer):
 
     def __init__(self, container, title=None, description=None, **kwargs):
         if 'prefix_chars' in kwargs:
@@ -1901,7 +1908,7 @@ class _ArgumentGroup(_ActionsContainer):
         update('conflict_handler', container.conflict_handler)
         update('prefix_chars', container.prefix_chars)
         update('argument_default', container.argument_default)
-        super_init = super(_ArgumentGroup, self).__init__
+        super_init = super(ArgumentGroup, self).__init__
         super_init(description=description, **kwargs)
 
         # group attributes
@@ -1918,21 +1925,21 @@ class _ArgumentGroup(_ActionsContainer):
         self._mutually_exclusive_groups = container._mutually_exclusive_groups
 
     def _add_action(self, action):
-        action = super(_ArgumentGroup, self)._add_action(action)
+        action = super(ArgumentGroup, self)._add_action(action)
         self._group_actions.append(action)
         return action
 
     def _remove_action(self, action):
-        super(_ArgumentGroup, self)._remove_action(action)
+        super(ArgumentGroup, self)._remove_action(action)
         self._group_actions.remove(action)
 
     def add_argument_group(self, *args, **kwargs):
         raise ValueError('argument groups cannot be nested')
 
-class _MutuallyExclusiveGroup(_ArgumentGroup):
+class MutuallyExclusiveGroup(ArgumentGroup):
 
     def __init__(self, container, required=False):
-        super(_MutuallyExclusiveGroup, self).__init__(container)
+        super(MutuallyExclusiveGroup, self).__init__(container)
         self.required = required
         self._container = container
 
@@ -1951,6 +1958,10 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
     def add_mutually_exclusive_group(self, **kwargs):
         raise ValueError('mutually exclusive groups cannot be nested')
 
+# Kept for code that imports the pre-3.16 private names.
+_ArgumentGroup = ArgumentGroup
+_MutuallyExclusiveGroup = MutuallyExclusiveGroup
+
 def _prog_name(prog=None):
     if prog is not None:
         return prog
@@ -1963,6 +1974,9 @@ def _prog_name(prog=None):
         modspec = None
     if modspec is None:
         # simple script
+        return _os.path.basename(arg0)
+    if modspec.name != '__main__' and arg0 != modspec.origin:
+        # named module executed as main without altering sys.argv[0]
         return _os.path.basename(arg0)
     py = _os.path.basename(_sys.executable)
     if modspec.name != '__main__':
@@ -2490,8 +2504,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     names = [_get_action_name(action)
                              for action in group._group_actions
                              if action.help is not SUPPRESS]
-                    msg = _('one of the arguments %s is required')
-                    raise ArgumentError(None, msg % ' '.join(names))
+                    msg = _('one of the following arguments is required: %s')
+                    raise ArgumentError(None, msg % ', '.join(names))
 
         # return the updated namespace and the extra arguments
         return namespace, extras
@@ -2908,11 +2922,14 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self._print_message(help_text, file)
 
     def _print_message(self, message, file=None):
-        if message:
-            file = file or _sys.stderr
+        if not message:
+            return
+        if file is None:
+            file = _sys.stderr
+        if file is not None:
             try:
                 file.write(message)
-            except (AttributeError, OSError):
+            except OSError:
                 pass
 
     def _get_theme(self, file=None):

@@ -17,8 +17,6 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from __future__ import annotations
-
 import io
 import os
 import sys
@@ -38,7 +36,6 @@ from ctypes.wintypes import (
     SHORT,
 )
 from ctypes import Structure, POINTER, Union
-from typing import TYPE_CHECKING
 
 from _colorize import ANSIColors
 
@@ -56,10 +53,10 @@ from .trace import trace, trace_text
 from .windows_eventqueue import EventQueue
 
 try:
-    from ctypes import get_last_error, WinDLL, windll, WinError  # type: ignore[attr-defined]
+    from ctypes import get_last_error, WinDLL, WinError  # type: ignore[attr-defined]
 except:
     # Keep MyPy happy off Windows
-    from ctypes import CDLL as WinDLL, cdll as windll
+    from ctypes import CDLL as WinDLL
 
     def get_last_error() -> int:
         return 42
@@ -69,15 +66,17 @@ except:
             self.err = err
             self.descr = descr
 
-# declare nt optional to allow None assignment on other platforms
+# declare optional to allow None assignment on other platforms
+_winapi: types.ModuleType | None
 nt: types.ModuleType | None
 try:
+    import _winapi
     import nt
 except ImportError:
+    _winapi = None
     nt = None
 
-if TYPE_CHECKING:
-    from typing import IO
+lazy from typing import IO
 
 # Virtual-Key Codes: https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 VK_MAP: dict[int, str] = {
@@ -125,7 +124,6 @@ ALT_ACTIVE = 0x01 | 0x02
 CTRL_ACTIVE = 0x04 | 0x08
 
 WAIT_TIMEOUT = 0x102
-WAIT_FAILED = 0xFFFFFFFF
 
 # from winbase.h
 INFINITE = 0xFFFFFFFF
@@ -167,19 +165,16 @@ class WindowsConsole(Console):
             trace('console supports virtual terminal')
 
         # Save original console modes so we can recover on cleanup.
-        original_input_mode = DWORD()
-        if not GetConsoleMode(InHandle, original_input_mode):
-            raise WinError(get_last_error())
-        trace(f'saved original input mode 0x{original_input_mode.value:x}')
-        self.__original_input_mode = original_input_mode.value
+        assert _winapi is not None  # to make mypy happy
+        self.__original_input_mode = _winapi.GetConsoleMode(InHandle)
+        trace(f'saved original input mode 0x{self.__original_input_mode:x}')
 
-        if not SetConsoleMode(
+        _winapi.SetConsoleMode(
             OutHandle,
             ENABLE_WRAP_AT_EOL_OUTPUT
             | ENABLE_PROCESSED_OUTPUT
             | ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-        ):
-            raise WinError(get_last_error())
+        )
 
         self.width = 80
         self.height = 25
@@ -476,8 +471,8 @@ class WindowsConsole(Console):
         self.sync_rendered_screen(RenderedScreen.empty(), self.posxy)
 
         if self.__vt_support:
-            if not SetConsoleMode(InHandle, self.__original_input_mode | ENABLE_VIRTUAL_TERMINAL_INPUT):
-                raise WinError(get_last_error())
+            assert _winapi is not None  # to make mypy happy
+            _winapi.SetConsoleMode(InHandle, self.__original_input_mode | ENABLE_VIRTUAL_TERMINAL_INPUT)
             self._enable_bracketed_paste()
 
     def restore(self) -> None:
@@ -486,8 +481,8 @@ class WindowsConsole(Console):
             self.__write(ANSIColors.RESET)
             # Recover to original mode before running REPL
             self._disable_bracketed_paste()
-            if not SetConsoleMode(InHandle, self.__original_input_mode):
-                raise WinError(get_last_error())
+            assert _winapi is not None  # to make mypy happy
+            _winapi.SetConsoleMode(InHandle, self.__original_input_mode)
 
     def _move_relative(self, x: int, y: int) -> None:
         """Moves relative to the current posxy"""
@@ -668,8 +663,8 @@ class WindowsConsole(Console):
 
     def forgetinput(self) -> None:
         """Forget all pending, but not yet processed input."""
-        if not FlushConsoleInputBuffer(InHandle):
-            raise WinError(get_last_error())
+        assert _winapi is not None  # to make mypy happy
+        _winapi.FlushConsoleInputBuffer(InHandle)
 
     def getpending(self) -> Event:
         """Return the characters that have been typed but not yet
@@ -706,10 +701,9 @@ class WindowsConsole(Console):
             timeout = INFINITE
         else:
             timeout = int(timeout)
-        ret = WaitForSingleObject(InHandle, timeout)
-        if ret == WAIT_FAILED:
-            raise WinError(get_last_error())
-        elif ret == WAIT_TIMEOUT:
+        assert _winapi is not None  # to make mypy happy
+        ret = _winapi.WaitForSingleObject(InHandle, timeout)
+        if ret == WAIT_TIMEOUT:
             return False
         return True
 
@@ -802,15 +796,9 @@ ENABLE_PROCESSED_OUTPUT = 0x01
 ENABLE_WRAP_AT_EOL_OUTPUT = 0x02
 ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x04
 
-STD_INPUT_HANDLE = -10
-STD_OUTPUT_HANDLE = -11
-
 if sys.platform == "win32":
+    assert _winapi is not None  # to make mypy happy
     _KERNEL32 = WinDLL("kernel32", use_last_error=True)
-
-    GetStdHandle = windll.kernel32.GetStdHandle
-    GetStdHandle.argtypes = [DWORD]
-    GetStdHandle.restype = HANDLE
 
     GetConsoleScreenBufferInfo = _KERNEL32.GetConsoleScreenBufferInfo
     GetConsoleScreenBufferInfo.argtypes = [
@@ -829,41 +817,19 @@ if sys.platform == "win32":
     ]
     ScrollConsoleScreenBuffer.restype = BOOL
 
-    GetConsoleMode = _KERNEL32.GetConsoleMode
-    GetConsoleMode.argtypes = [HANDLE, POINTER(DWORD)]
-    GetConsoleMode.restype = BOOL
-
-    SetConsoleMode = _KERNEL32.SetConsoleMode
-    SetConsoleMode.argtypes = [HANDLE, DWORD]
-    SetConsoleMode.restype = BOOL
-
     ReadConsoleInput = _KERNEL32.ReadConsoleInputW
     ReadConsoleInput.argtypes = [HANDLE, POINTER(INPUT_RECORD), DWORD, POINTER(DWORD)]
     ReadConsoleInput.restype = BOOL
 
-
-    FlushConsoleInputBuffer = _KERNEL32.FlushConsoleInputBuffer
-    FlushConsoleInputBuffer.argtypes = [HANDLE]
-    FlushConsoleInputBuffer.restype = BOOL
-
-    WaitForSingleObject = _KERNEL32.WaitForSingleObject
-    WaitForSingleObject.argtypes = [HANDLE, DWORD]
-    WaitForSingleObject.restype = DWORD
-
-    OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
-    InHandle = GetStdHandle(STD_INPUT_HANDLE)
+    OutHandle = _winapi.GetStdHandle(_winapi.STD_OUTPUT_HANDLE)
+    InHandle = _winapi.GetStdHandle(_winapi.STD_INPUT_HANDLE)
 else:
 
     def _win_only(*args, **kwargs):
         raise NotImplementedError("Windows only")
 
-    GetStdHandle = _win_only
     GetConsoleScreenBufferInfo = _win_only
     ScrollConsoleScreenBuffer = _win_only
-    GetConsoleMode = _win_only
-    SetConsoleMode = _win_only
     ReadConsoleInput = _win_only
-    FlushConsoleInputBuffer = _win_only
-    WaitForSingleObject = _win_only
     OutHandle = 0
     InHandle = 0

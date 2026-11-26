@@ -180,6 +180,7 @@ class Namespace(argparse.Namespace):
         self.header = False
         self.failfast = False
         self.match_tests: TestFilter = []
+        self.match_labels: TestFilter = []
         self.pgo = False
         self.pgo_extended = False
         self.tsan = False
@@ -194,6 +195,7 @@ class Namespace(argparse.Namespace):
         self._add_python_opts = True
         self.xmlpath = None
         self.single_process = False
+        self.single_process_per_case = False
 
         super().__init__(**kwargs)
 
@@ -299,6 +301,14 @@ def _create_parser():
     group.add_argument('-i', '--ignore', metavar='PAT',
                        dest='match_tests', action=FilterAction, const=False,
                        help='ignore test cases and methods with glob pattern `PAT`')
+    group.add_argument('--label', metavar='NAME[=VALUE]',
+                       dest='match_labels', action=FilterAction, const=True,
+                       help='match test cases and methods with label `NAME` '
+                            '(optionally only if its value is `VALUE`)')
+    group.add_argument('--no-label', metavar='NAME[=VALUE]',
+                       dest='match_labels', action=FilterAction, const=False,
+                       help='ignore test cases and methods with label `NAME` '
+                            '(optionally only if its value is `VALUE`)')
     group.add_argument('--matchfile', metavar='FILENAME',
                        dest='match_tests',
                        action=FromFileFilterAction, const=True,
@@ -368,6 +378,11 @@ def _create_parser():
     group.add_argument('--list-cases', action='store_true',
                        help='only write the name of test cases that will be run, '
                             'don\'t execute them')
+    group.add_argument('--single-process-per-case', action='store_true',
+                       help='run each test case in its own process. '
+                            '(slow; for debugging order dependencies '
+                            "and environment leaks). Test cases from "
+                            'the same module run sequentially.')
     group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
                        help='enable Profile Guided Optimization (PGO) training')
     group.add_argument('--pgo-extended', action='store_true',
@@ -491,6 +506,17 @@ def _parse_args(args, **kwargs):
     # --singleprocess overrides -jN option
     if ns.single_process:
         ns.use_mp = None
+
+    if ns.single_process_per_case:
+        if ns.rerun:
+            parser.error("--single-process-per-case and --rerun "
+                         "options don't go together")
+        if ns.pgo:
+            parser.error("--single-process-per-case and --pgo "
+                         "options don't go together")
+        if ns.single_process:
+            parser.error("--single-process-per-case and --single-process "
+                         "options don't go together")
 
     # When both --slow-ci and --fast-ci options are present,
     # --slow-ci has the priority

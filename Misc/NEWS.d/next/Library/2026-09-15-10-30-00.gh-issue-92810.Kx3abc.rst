@@ -1,0 +1,4 @@
+Speed up :func:`isinstance` and :func:`issubclass` checks against
+:class:`abc.ABCMeta` classes, fix quadratic time and memory usage for large
+class hierarchies, and improve their scaling across threads in the
+free-threaded build. Patch by Kumar Aditya.

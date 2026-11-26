@@ -2,8 +2,8 @@ import collections
 import types
 import unittest
 from test.support import (skip_emscripten_stack_overflow,
-                          skip_wasi_stack_overflow, skip_if_huge_c_stack,
-                          exceeds_recursion_limit)
+                          skip_wasi_stack_overflow, run_with_limited_c_stack,
+                          exceeds_recursion_limit, nomemtest)
 
 class TestExceptionGroupTypeHierarchy(unittest.TestCase):
     def test_exception_group_types(self):
@@ -129,6 +129,15 @@ class InstanceCreation(unittest.TestCase):
         self.assertIs(
             type(MyBEG("eg", [ValueError(12), KeyboardInterrupt(42)])),
             MyBEG)
+
+    @nomemtest
+    def test_no_memory(self):
+        import _testcapi
+        # A tuple of exceptions is not copied, so the first allocation
+        # is the one of the exception group itself.
+        excs = (ValueError(1),)
+        with self.assertRaises(MemoryError):
+            _testcapi.call_with_nomemory(0, 0, ExceptionGroup, "eg", excs)
 
 
 class StrAndReprTests(unittest.TestCase):
@@ -549,7 +558,7 @@ class DeepRecursionInSplitAndSubgroup(unittest.TestCase):
             e = ExceptionGroup('eg', [e])
         return e
 
-    @skip_if_huge_c_stack()
+    @run_with_limited_c_stack()
     @skip_emscripten_stack_overflow()
     @skip_wasi_stack_overflow()
     def test_deep_split(self):
@@ -557,7 +566,7 @@ class DeepRecursionInSplitAndSubgroup(unittest.TestCase):
         with self.assertRaises(RecursionError):
             e.split(TypeError)
 
-    @skip_if_huge_c_stack()
+    @run_with_limited_c_stack()
     @skip_emscripten_stack_overflow()
     @skip_wasi_stack_overflow()
     def test_deep_subgroup(self):

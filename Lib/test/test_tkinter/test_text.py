@@ -774,10 +774,16 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertRaises(TclError, text.count, '1.0', 'end', 'spam')
         self.assertRaises(TclError, text.count, '1.0', 'end', '-lines')
 
-        self.assertIsInstance(text.count('1.3', '1.5', 'ypixels', return_ints=True), int)
-        self.assertIsInstance(text.count('1.3', '1.5', 'ypixels'), tuple)
-        self.assertIsInstance(text.count('1.3', '1.5', 'update', 'ypixels', return_ints=True), int)
-        self.assertIsInstance(text.count('1.3', '1.5', 'update', 'ypixels'), int)
+        # The ypixels counts depend on the widget geometry.
+        text.update()
+
+        # Indices on the same display line have zero vertical distance.
+        self.assertEqual(text.count('1.3', '1.5', 'ypixels', return_ints=True), 0)
+        self.assertIsNone(text.count('1.3', '1.5', 'ypixels'))
+        self.assertIsInstance(text.count('1.3', '2.5', 'ypixels', return_ints=True), int)
+        self.assertIsInstance(text.count('1.3', '2.5', 'ypixels'), tuple)
+        self.assertIsInstance(text.count('1.3', '2.5', 'update', 'ypixels', return_ints=True), int)
+        self.assertIsInstance(text.count('1.3', '2.5', 'update', 'ypixels'), int)
         self.assertEqual(text.count('1.3', '1.3', 'update', 'ypixels', return_ints=True), 0)
         self.assertEqual(text.count('1.3', '1.3', 'update', 'ypixels'), None)
         self.assertEqual(text.count('1.3', '1.5', 'update', 'indices', return_ints=True), 2)
