@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
@@ -180,17 +180,9 @@ array_array_pop(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        i = ival;
+    i = _PyNumber_IndexAsSsize_t(args[0]);
+    if (i == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional:
     return_value = array_array_pop_impl((arrayobject *)self, i);
@@ -252,17 +244,9 @@ array_array_insert(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        i = ival;
+    i = _PyNumber_IndexAsSsize_t(args[0]);
+    if (i == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     v = args[1];
     return_value = array_array_insert_impl((arrayobject *)self, i, v);
@@ -381,22 +365,14 @@ array_array_fromfile(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
         goto exit;
     }
     f = args[0];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        n = ival;
-        if (n < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "n cannot be negative");
-            goto exit;
-        }
+    n = _PyNumber_IndexAsSsize_t(args[1]);
+    if (n == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (n < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "n cannot be negative");
+        goto exit;
     }
     return_value = array_array_fromfile_impl((arrayobject *)self, cls, f, n);
 
@@ -722,4 +698,4 @@ array_arrayiterator___setstate__(PyObject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=172a9af0316afc14 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f02e655f2f345382 input=a9049054013a1b77]*/

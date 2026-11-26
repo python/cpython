@@ -5,7 +5,7 @@ preserve
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 #include "pycore_runtime.h"       // _Py_SINGLETON()
@@ -778,17 +778,9 @@ bytearray_resize(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t size;
 
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(arg);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        size = ival;
+    size = _PyNumber_IndexAsSsize_t(arg);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_resize_impl((PyByteArrayObject *)self, size);
@@ -1029,17 +1021,9 @@ bytearray_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        count = ival;
+    count = _PyNumber_IndexAsSsize_t(args[2]);
+    if (count == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -1130,17 +1114,9 @@ bytearray_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        maxsplit = ival;
+    maxsplit = _PyNumber_IndexAsSsize_t(args[1]);
+    if (maxsplit == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -1290,17 +1266,9 @@ bytearray_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        maxsplit = ival;
+    maxsplit = _PyNumber_IndexAsSsize_t(args[1]);
+    if (maxsplit == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -1362,17 +1330,9 @@ bytearray_insert(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        index = ival;
+    index = _PyNumber_IndexAsSsize_t(args[0]);
+    if (index == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (!_getbytevalue(args[1], &item)) {
         goto exit;
@@ -1474,17 +1434,9 @@ bytearray_pop(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        index = ival;
+    index = _PyNumber_IndexAsSsize_t(args[0]);
+    if (index == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -1938,17 +1890,9 @@ bytearray_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        bytes_per_sep = ival;
+    bytes_per_sep = _PyNumber_IndexAsSsize_t(args[1]);
+    if (bytes_per_sep == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -2037,4 +1981,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=b8e659fe4b2f770e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=983dab0d45700f6c input=a9049054013a1b77]*/

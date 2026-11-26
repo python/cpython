@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
@@ -121,22 +121,14 @@ CDataType_from_buffer(PyObject *type, PyTypeObject *cls, PyObject *const *args, 
     if (nargs < 2) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        offset = ival;
-        if (offset < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "offset cannot be negative");
-            goto exit;
-        }
+    offset = _PyNumber_IndexAsSsize_t(args[1]);
+    if (offset == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (offset < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "offset cannot be negative");
+        goto exit;
     }
 skip_optional:
     return_value = CDataType_from_buffer_impl(type, cls, obj, offset);
@@ -179,22 +171,14 @@ CDataType_from_buffer_copy(PyObject *type, PyTypeObject *cls, PyObject *const *a
     if (nargs < 2) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        offset = ival;
-        if (offset < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "offset cannot be negative");
-            goto exit;
-        }
+    offset = _PyNumber_IndexAsSsize_t(args[1]);
+    if (offset == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (offset < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "offset cannot be negative");
+        goto exit;
     }
 skip_optional:
     return_value = CDataType_from_buffer_copy_impl(type, cls, &buffer, offset);
@@ -938,4 +922,4 @@ Pointer_bool(PyObject *self)
 
 #define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, (setter)_ctypes_Simple_value_set, NULL},
 
-/*[clinic end generated code: output=5d9dd4bbae13cfca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fbed245eac716dfb input=a9049054013a1b77]*/

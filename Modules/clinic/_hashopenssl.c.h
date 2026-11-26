@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
@@ -140,22 +140,14 @@ _hashlib_HASHXOF_digest(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     if (!args) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        length = ival;
-        if (length < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "length cannot be negative");
-            goto exit;
-        }
+    length = _PyNumber_IndexAsSsize_t(args[0]);
+    if (length == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "length cannot be negative");
+        goto exit;
     }
     return_value = _hashlib_HASHXOF_digest_impl((HASHobject *)self, length);
 
@@ -218,22 +210,14 @@ _hashlib_HASHXOF_hexdigest(PyObject *self, PyObject *const *args, Py_ssize_t nar
     if (!args) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        length = ival;
-        if (length < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "length cannot be negative");
-            goto exit;
-        }
+    length = _PyNumber_IndexAsSsize_t(args[0]);
+    if (length == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "length cannot be negative");
+        goto exit;
     }
     return_value = _hashlib_HASHXOF_hexdigest_impl((HASHobject *)self, length);
 
@@ -1977,4 +1961,4 @@ exit:
 #ifndef _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
     #define _HASHLIB_OPENSSL_SHAKE_256_METHODDEF
 #endif /* !defined(_HASHLIB_OPENSSL_SHAKE_256_METHODDEF) */
-/*[clinic end generated code: output=608e8ac9483c9173 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=39fc661240264f2c input=a9049054013a1b77]*/

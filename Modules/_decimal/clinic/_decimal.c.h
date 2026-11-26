@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_decimal_Context_Etiny__doc__,
@@ -70,17 +70,9 @@ _decimal_Context__unsafe_setprec(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t x;
 
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(arg);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        x = ival;
+    x = _PyNumber_IndexAsSsize_t(arg);
+    if (x == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     return_value = _decimal_Context__unsafe_setprec_impl(self, x);
 
@@ -109,17 +101,9 @@ _decimal_Context__unsafe_setemin(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t x;
 
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(arg);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        x = ival;
+    x = _PyNumber_IndexAsSsize_t(arg);
+    if (x == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     return_value = _decimal_Context__unsafe_setemin_impl(self, x);
 
@@ -148,17 +132,9 @@ _decimal_Context__unsafe_setemax(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t x;
 
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(arg);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        x = ival;
+    x = _PyNumber_IndexAsSsize_t(arg);
+    if (x == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     return_value = _decimal_Context__unsafe_setemax_impl(self, x);
 
@@ -349,17 +325,9 @@ _decimal_IEEEContext(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t bits;
 
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(arg);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        bits = ival;
+    bits = _PyNumber_IndexAsSsize_t(arg);
+    if (bits == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     return_value = _decimal_IEEEContext_impl(module, bits);
 
@@ -6330,4 +6298,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=f9ddc00f5a7335c4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0cfed229bcfa29e7 input=a9049054013a1b77]*/

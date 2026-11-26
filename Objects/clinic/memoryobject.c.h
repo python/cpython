@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
@@ -502,17 +502,9 @@ memoryview_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        bytes_per_sep = ival;
+    bytes_per_sep = _PyNumber_IndexAsSsize_t(args[1]);
+    if (bytes_per_sep == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = memoryview_hex_impl((PyMemoryViewObject *)self, sep, bytes_per_sep);
@@ -588,4 +580,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=cdca13a132752f15 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7e4568eeb9f13257 input=a9049054013a1b77]*/

@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static PyObject *
@@ -70,41 +70,17 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     name = fastargs[0];
     proto = fastargs[1];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(fastargs[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        byte_size = ival;
+    byte_size = _PyNumber_IndexAsSsize_t(fastargs[2]);
+    if (byte_size == -1 && PyErr_Occurred()) {
+        goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(fastargs[3]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        byte_offset = ival;
+    byte_offset = _PyNumber_IndexAsSsize_t(fastargs[3]);
+    if (byte_offset == -1 && PyErr_Occurred()) {
+        goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(fastargs[4]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        index = ival;
+    index = _PyNumber_IndexAsSsize_t(fastargs[4]);
+    if (index == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     _internal_use = PyObject_IsTrue(fastargs[5]);
     if (_internal_use < 0) {
@@ -126,4 +102,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7eb1621e22ea2e05 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4122d1912de8ec17 input=a9049054013a1b77]*/

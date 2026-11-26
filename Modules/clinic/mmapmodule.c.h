@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
@@ -330,17 +330,9 @@ mmap_mmap_resize(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t new_size;
 
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(arg);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        new_size = ival;
+    new_size = _PyNumber_IndexAsSsize_t(arg);
+    if (new_size == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = mmap_mmap_resize_impl((mmap_object *)self, new_size);
@@ -433,33 +425,17 @@ mmap_mmap_flush(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
         goto skip_optional_posonly;
     }
     noptargs--;
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        offset = ival;
+    offset = _PyNumber_IndexAsSsize_t(args[0]);
+    if (offset == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 2) {
         goto skip_optional_posonly;
     }
     noptargs--;
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        size = ival;
+    size = _PyNumber_IndexAsSsize_t(args[1]);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_posonly:
     if (!noptargs) {
@@ -499,17 +475,9 @@ mmap_mmap_seek(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        dist = ival;
+    dist = _PyNumber_IndexAsSsize_t(args[0]);
+    if (dist == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 2) {
         goto skip_optional;
@@ -600,41 +568,17 @@ mmap_mmap_move(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("move", nargs, 3, 3)) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        dest = ival;
+    dest = _PyNumber_IndexAsSsize_t(args[0]);
+    if (dest == -1 && PyErr_Occurred()) {
+        goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        src = ival;
+    src = _PyNumber_IndexAsSsize_t(args[1]);
+    if (src == -1 && PyErr_Occurred()) {
+        goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        cnt = ival;
+    cnt = _PyNumber_IndexAsSsize_t(args[2]);
+    if (cnt == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = mmap_mmap_move_impl((mmap_object *)self, dest, src, cnt);
@@ -784,29 +728,13 @@ mmap_mmap__protect(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
             }
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        start = ival;
+    start = _PyNumber_IndexAsSsize_t(args[1]);
+    if (start == -1 && PyErr_Occurred()) {
+        goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        length = ival;
+    length = _PyNumber_IndexAsSsize_t(args[2]);
+    if (length == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = mmap_mmap__protect_impl((mmap_object *)self, flNewProtect, start, length);
@@ -850,17 +778,9 @@ mmap_mmap_madvise(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        start = ival;
+    start = _PyNumber_IndexAsSsize_t(args[1]);
+    if (start == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 3) {
         goto skip_optional;
@@ -967,4 +887,4 @@ mmap_ass_subscript(PyObject *self, PyObject *item, PyObject *value)
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=90a906cde591ab92 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cc1d65746cfc1580 input=a9049054013a1b77]*/

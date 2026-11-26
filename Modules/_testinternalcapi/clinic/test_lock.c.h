@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_testinternalcapi_benchmark_locks__doc__,
@@ -40,17 +40,9 @@ _testinternalcapi_benchmark_locks(PyObject *module, PyObject *const *args, Py_ss
     if (!_PyArg_CheckPositional("benchmark_locks", nargs, 1, 8)) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        num_threads = ival;
+    num_threads = _PyNumber_IndexAsSsize_t(args[0]);
+    if (num_threads == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 2) {
         goto skip_optional;
@@ -83,32 +75,16 @@ _testinternalcapi_benchmark_locks(PyObject *module, PyObject *const *args, Py_ss
     if (nargs < 6) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[5]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        total_iters = ival;
+    total_iters = _PyNumber_IndexAsSsize_t(args[5]);
+    if (total_iters == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 7) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[6]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        num_locks = ival;
+    num_locks = _PyNumber_IndexAsSsize_t(args[6]);
+    if (num_locks == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 8) {
         goto skip_optional;
@@ -123,4 +99,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6cfed9fc081313ef input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ccc23e43bcf33f61 input=a9049054013a1b77]*/

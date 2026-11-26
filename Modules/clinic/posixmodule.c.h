@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_fileutils.h"     // _Py_Off_t_Converter()
 #include "pycore_long.h"          // _PyLong_UnsignedInt_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
@@ -5706,17 +5706,9 @@ os_kill(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (pid == (pid_t)(-1) && PyErr_Occurred()) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        signal = ival;
+    signal = _PyNumber_IndexAsSsize_t(args[1]);
+    if (signal == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     return_value = os_kill_impl(module, pid, signal);
 
@@ -7851,17 +7843,9 @@ os_read(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        length = ival;
+    length = _PyNumber_IndexAsSsize_t(args[1]);
+    if (length == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     return_value = os_read_impl(module, fd, length);
 
@@ -8007,17 +7991,9 @@ os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        length = ival;
+    length = _PyNumber_IndexAsSsize_t(args[1]);
+    if (length == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
@@ -8326,22 +8302,14 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!_Py_Off_t_Converter(args[2], &offset)) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[3]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        count = ival;
-        if (count < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "count cannot be negative");
-            goto exit;
-        }
+    count = _PyNumber_IndexAsSsize_t(args[3]);
+    if (count == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (count < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "count cannot be negative");
+        goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
@@ -8437,22 +8405,14 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         goto exit;
     }
     offobj = args[2];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[3]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        count = ival;
-        if (count < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "count cannot be negative");
-            goto exit;
-        }
+    count = _PyNumber_IndexAsSsize_t(args[3]);
+    if (count == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (count < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "count cannot be negative");
+        goto exit;
     }
     return_value = os_sendfile_impl(module, out_fd, in_fd, offobj, count);
 
@@ -8930,22 +8890,14 @@ os_copy_file_range(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     if (dst == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        count = ival;
-        if (count < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "count cannot be negative");
-            goto exit;
-        }
+    count = _PyNumber_IndexAsSsize_t(args[2]);
+    if (count == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (count < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "count cannot be negative");
+        goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
@@ -9053,22 +9005,14 @@ os_splice(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     if (dst == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        count = ival;
-        if (count < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "count cannot be negative");
-            goto exit;
-        }
+    count = _PyNumber_IndexAsSsize_t(args[2]);
+    if (count == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (count < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "count cannot be negative");
+        goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
@@ -11519,22 +11463,14 @@ os_urandom(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t size;
 
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(arg);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        size = ival;
-        if (size < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "size cannot be negative");
-            goto exit;
-        }
+    size = _PyNumber_IndexAsSsize_t(arg);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "size cannot be negative");
+        goto exit;
     }
     return_value = os_urandom_impl(module, size);
 
@@ -12655,17 +12591,9 @@ os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     if (!args) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        size = ival;
+    size = _PyNumber_IndexAsSsize_t(args[0]);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
@@ -13763,4 +13691,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=077c57e5f93bd790 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b44461fd2db79d32 input=a9049054013a1b77]*/

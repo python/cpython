@@ -1652,32 +1652,16 @@ test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
     if (nargs < 1) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        a = ival;
+    a = _PyNumber_IndexAsSsize_t(args[0]);
+    if (a == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 2) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        b = ival;
+    b = _PyNumber_IndexAsSsize_t(args[1]);
+    if (b == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 3) {
         goto skip_optional;
@@ -1688,22 +1672,14 @@ test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
     if (nargs < 4) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[3]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        d = ival;
-        if (d < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "d cannot be negative");
-            goto exit;
-        }
+    d = _PyNumber_IndexAsSsize_t(args[3]);
+    if (d == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (d < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "d cannot be negative");
+        goto exit;
     }
     if (nargs < 5) {
         goto skip_optional;
@@ -1714,17 +1690,9 @@ test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
     if (nargs < 6) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[5]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        f = ival;
+    f = _PyNumber_IndexAsSsize_t(args[5]);
+    if (f == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 7) {
         goto skip_optional;
@@ -1743,7 +1711,7 @@ static PyObject *
 test_Py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
                                Py_ssize_t c, Py_ssize_t d, Py_ssize_t e,
                                Py_ssize_t f, Py_ssize_t g)
-/*[clinic end generated code: output=4ae0a56a1447fba9 input=a25bac8ecf2890aa]*/
+/*[clinic end generated code: output=e4286b4ef87a92ab input=a25bac8ecf2890aa]*/
 
 
 /*[clinic input]

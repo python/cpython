@@ -519,17 +519,9 @@ _io__RawIOBase_read(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        n = ival;
+    n = _PyNumber_IndexAsSsize_t(args[0]);
+    if (n == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional:
     return_value = _io__RawIOBase_read_impl(self, n);
@@ -573,4 +565,4 @@ PyDoc_STRVAR(_io__RawIOBase_write__doc__,
     {"write", (PyCFunction)_io__RawIOBase_write, METH_O, _io__RawIOBase_write__doc__},
 #define _IO__IOBASE_CLOSED_GETSETDEF {"closed", (getter)_io__IOBase_closed_get, (setter)NULL, _io__IOBase_closed__doc__},
 
-/*[clinic end generated code: output=fd729b0ef2ad52b8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c6e8fb15c12488c6 input=a9049054013a1b77]*/

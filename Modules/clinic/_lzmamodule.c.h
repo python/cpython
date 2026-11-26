@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_lzma_LZMACompressor_compress__doc__,
@@ -142,17 +142,9 @@ _lzma_LZMADecompressor_decompress(PyObject *self, PyObject *const *args, Py_ssiz
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        max_length = ival;
+    max_length = _PyNumber_IndexAsSsize_t(args[1]);
+    if (max_length == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = _lzma_LZMADecompressor_decompress_impl((Decompressor *)self, &data, max_length);
@@ -334,4 +326,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ffc6d673d858048c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f0cfa06ed4dc2718 input=a9049054013a1b77]*/

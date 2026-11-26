@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_long.h"          // _PyLong_Size_t_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
@@ -1221,17 +1221,9 @@ binascii_b2a_hex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        bytes_per_sep = ival;
+    bytes_per_sep = _PyNumber_IndexAsSsize_t(args[2]);
+    if (bytes_per_sep == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = binascii_b2a_hex_impl(module, &data, sep, bytes_per_sep);
@@ -1321,17 +1313,9 @@ binascii_hexlify(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        bytes_per_sep = ival;
+    bytes_per_sep = _PyNumber_IndexAsSsize_t(args[2]);
+    if (bytes_per_sep == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = binascii_hexlify_impl(module, &data, sep, bytes_per_sep);
@@ -1703,4 +1687,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ec23792754b04657 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=88565cb28608f74f input=a9049054013a1b77]*/

@@ -867,17 +867,9 @@ _io_TextIOWrapper_readline(PyObject *self, PyObject *const *args, Py_ssize_t nar
     if (nargs < 1) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        size = ival;
+    size = _PyNumber_IndexAsSsize_t(args[0]);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -1276,17 +1268,9 @@ _io_TextIOWrapper__CHUNK_SIZE_set(PyObject *self, PyObject *arg, void *Py_UNUSED
                      Py_TYPE(self)->tp_name);
         return -1;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(arg);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        value = ival;
+    value = _PyNumber_IndexAsSsize_t(arg);
+    if (value == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_TextIOWrapper__CHUNK_SIZE_set_impl((textio *)self, value);
@@ -1330,4 +1314,4 @@ _io_TextIOWrapper_buffer_get(PyObject *self, void *Py_UNUSED(context))
 
 #define _IO_TEXTIOWRAPPER_BUFFER_GETSETDEF {"buffer", (getter)_io_TextIOWrapper_buffer_get, (setter)NULL, NULL},
 
-/*[clinic end generated code: output=d96cd0f7c06f36f5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=490dea749ae81315 input=a9049054013a1b77]*/

@@ -60,6 +60,8 @@ PyAPI_FUNC(int) _Py_convert_optional_to_non_negative_ssize_t(PyObject *, void *)
 // Export for 'math' shared extension.
 PyAPI_FUNC(PyObject*) _PyNumber_Index(PyObject *o);
 
+PyAPI_FUNC(Py_ssize_t) _PyNumber_IndexAsSsize_t(PyObject *o);
+
 typedef struct {
     PyObject *object;
     PySendResult kind;

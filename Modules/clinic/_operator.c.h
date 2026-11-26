@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_operator_truth__doc__,
@@ -1445,17 +1445,9 @@ _operator_length_hint(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        default_value = ival;
+    default_value = _PyNumber_IndexAsSsize_t(args[1]);
+    if (default_value == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional:
     _return_value = _operator_length_hint_impl(module, obj, default_value);
@@ -1507,4 +1499,4 @@ _operator__compare_digest(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=972e2543c4fcf1ba input=a9049054013a1b77]*/
+/*[clinic end generated code: output=29f6c3456e0ce9ea input=a9049054013a1b77]*/

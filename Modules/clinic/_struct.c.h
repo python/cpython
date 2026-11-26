@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(Struct__doc__,
@@ -230,17 +230,9 @@ Struct_unpack_from(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        offset = ival;
+    offset = _PyNumber_IndexAsSsize_t(args[1]);
+    if (offset == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = Struct_unpack_from_impl((PyStructObject *)self, &buffer, offset);
@@ -347,17 +339,9 @@ Struct_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("pack_into", "argument 1", "read-write bytes-like object", args[0]);
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        offset = ival;
+    offset = _PyNumber_IndexAsSsize_t(args[1]);
+    if (offset == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     values = args + 2;
     values_length = nargs - 2;
@@ -522,17 +506,9 @@ pack_into(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("pack_into", "argument 2", "read-write bytes-like object", args[1]);
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        offset = ival;
+    offset = _PyNumber_IndexAsSsize_t(args[2]);
+    if (offset == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     values = args + 3;
     values_length = nargs - 3;
@@ -661,17 +637,9 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        offset = ival;
+    offset = _PyNumber_IndexAsSsize_t(args[2]);
+    if (offset == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = unpack_from_impl(module, s_object, &buffer, offset);
@@ -726,4 +694,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=021b89d2d3c3c225 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=86b41e3c503d3a8b input=a9049054013a1b77]*/

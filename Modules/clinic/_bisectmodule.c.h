@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_bisect_bisect_right__doc__,
@@ -82,22 +82,14 @@ _bisect_bisect_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto skip_optional_pos;
     }
     if (args[2]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[2]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            lo = ival;
-            if (lo < 0) {
-                PyErr_SetString(PyExc_ValueError,
-                                "lo cannot be negative");
-                goto exit;
-            }
+        lo = _PyNumber_IndexAsSsize_t(args[2]);
+        if (lo == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (lo < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "lo cannot be negative");
+            goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -197,22 +189,14 @@ _bisect_insort_right(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         goto skip_optional_pos;
     }
     if (args[2]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[2]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            lo = ival;
-            if (lo < 0) {
-                PyErr_SetString(PyExc_ValueError,
-                                "lo cannot be negative");
-                goto exit;
-            }
+        lo = _PyNumber_IndexAsSsize_t(args[2]);
+        if (lo == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (lo < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "lo cannot be negative");
+            goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -311,22 +295,14 @@ _bisect_bisect_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         goto skip_optional_pos;
     }
     if (args[2]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[2]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            lo = ival;
-            if (lo < 0) {
-                PyErr_SetString(PyExc_ValueError,
-                                "lo cannot be negative");
-                goto exit;
-            }
+        lo = _PyNumber_IndexAsSsize_t(args[2]);
+        if (lo == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (lo < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "lo cannot be negative");
+            goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -426,22 +402,14 @@ _bisect_insort_left(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         goto skip_optional_pos;
     }
     if (args[2]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[2]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            lo = ival;
-            if (lo < 0) {
-                PyErr_SetString(PyExc_ValueError,
-                                "lo cannot be negative");
-                goto exit;
-            }
+        lo = _PyNumber_IndexAsSsize_t(args[2]);
+        if (lo == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (lo < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "lo cannot be negative");
+            goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -466,4 +434,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=62345f14c5c01639 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f536007e380782a2 input=a9049054013a1b77]*/

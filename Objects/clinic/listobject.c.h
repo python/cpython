@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
@@ -92,17 +92,9 @@ list_insert(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        index = ival;
+    index = _PyNumber_IndexAsSsize_t(args[0]);
+    if (index == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     object = args[1];
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -233,17 +225,9 @@ list_pop(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        index = ival;
+    index = _PyNumber_IndexAsSsize_t(args[0]);
+    if (index == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -528,4 +512,4 @@ list___reversed__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl((PyListObject *)self);
 }
-/*[clinic end generated code: output=9eab9551fc4cea1c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3971f91f7d5bb703 input=a9049054013a1b77]*/
