@@ -56,6 +56,7 @@ the information :func:`init` sets up.
    .. deprecated-removed:: 3.16 3.21
       Passing a file path (or path-like object) instead of a URL.
       Use :func:`guess_file_type` instead.
+      Soft deprecated since version 3.13.
 
 
 .. function:: guess_file_type(path, *, strict=True)
@@ -267,6 +268,7 @@ than one MIME-type database; it provides an interface similar to the one of the
       .. deprecated-removed:: 3.16 3.21
          Passing a file path (or path-like object) instead of a URL.
          Use :func:`guess_file_type` instead.
+         Soft deprecated since version 3.13.
 
    .. method:: MimeTypes.guess_file_type(path, *, strict=True)
 
