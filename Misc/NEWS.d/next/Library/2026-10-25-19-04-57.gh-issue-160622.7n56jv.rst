@@ -1,4 +1,4 @@
-:meth:`socket.socket.recv` and :meth:`socket.socket.recvfrom` no longer
-raise :exc:`ValueError` and lose the datagram when called with
-``MSG_TRUNC`` and the datagram is longer than *bufsize*. Only the bytes
-actually received are returned now.
+Fix :meth:`socket.socket.recv` and :meth:`socket.socket.recvfrom` for the
+:data:`!socket.MSG_TRUNC` flag: only receive up to *bufsize* bytes even if the
+C function :c:func:`!recv` or :c:func:`!recvfrom` returns more bytes (the real
+datagram size).
