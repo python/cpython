@@ -712,11 +712,11 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
     @unittest.skipIf(os.name != 'posix', 'pkg-config files are only installed on POSIX')
     @unittest.skipIf(is_wasi or is_android or is_apple_mobile,
                      'no pkg-config files on this platform')
+    @unittest.skipIf(get_config_var('RELOCATABLE') != 'yes',
+                     'requires --enable-relocatable')
+    @unittest.skipIf(is_python_build(),
+                     'pkg-config files are only installed by make install')
     def test_pkgconfig_prefix(self):
-        if get_config_var('RELOCATABLE') != 'yes':
-            self.skipTest('requires --enable-relocatable')
-        if is_python_build():
-            self.skipTest('pkg-config files are only installed by make install')
         libpc = os.path.join(os.path.dirname(sys._stdlib_dir), 'pkgconfig')
         ldversion = get_config_var('LDVERSION')
         for name in (f'python-{ldversion}.pc', f'python-{ldversion}-embed.pc'):
