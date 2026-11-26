@@ -1,0 +1,2 @@
+Fix thread safety of :attr:`frame.f_locals` and :c:func:`PyFrame_GetVar` on
+frames executing on another thread in the free-threaded build.

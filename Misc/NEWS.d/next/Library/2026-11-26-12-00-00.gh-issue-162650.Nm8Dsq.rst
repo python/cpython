@@ -1,0 +1,3 @@
+Fix :mod:`tkinter` calls from other threads failing with :exc:`RuntimeError`
+after a nested :meth:`!mainloop` exited, for example after
+:meth:`!SimpleDialog.go` returned.

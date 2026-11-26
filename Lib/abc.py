@@ -105,7 +105,7 @@ class abstractproperty(property):
 try:
     from _abc import (get_cache_token, _abc_init, _abc_register,
                       _abc_instancecheck, _abc_subclasscheck, _get_dump,
-                      _reset_registry, _reset_caches)
+                      _reset_registry, _reset_caches, _set_subclasscheck)
 except ImportError:
     from _py_abc import ABCMeta, get_cache_token
     ABCMeta.__module__ = 'abc'
@@ -162,6 +162,10 @@ else:
         def _abc_caches_clear(cls):
             """Clear the caches (for debugging or testing)."""
             _reset_caches(cls)
+
+    # Classes using the default __subclasscheck__ are checked
+    # directly by the C implementation.
+    _set_subclasscheck(ABCMeta.__subclasscheck__)
 
 
 def update_abstractmethods(cls):

@@ -395,10 +395,6 @@ Modules/xxmodule.c	-	ErrorObject	-
 
 ## state
 Modules/_datetimemodule.c	-	_datetime_global_state	-
-Modules/_tkinter.c	-	tcl_lock	-
-Modules/_tkinter.c	-	excInCmd	-
-Modules/_tkinter.c	-	valInCmd	-
-Modules/_tkinter.c	-	trbInCmd	-
 Modules/socketmodule.c 	- 	netdb_lock 	-
 
 
@@ -429,15 +425,14 @@ Modules/readline.c	-	libedit_history_start	-
 Modules/_ctypes/malloc_closure.c	-	free_list	-
 Modules/_curses_panel.c	-	lop	-
 Modules/_ssl/debughelpers.c	_PySSL_keylog_callback	lock	-
-Modules/_tkinter.c	-	quitMainLoop	-
-Modules/_tkinter.c	-	errorInCmd	-
 Modules/_tkinter.c	-	Tkinter_busywaitinterval	-
 Modules/_tkinter.c	-	call_mutex	-
 Modules/_tkinter.c	-	var_mutex	-
 Modules/_tkinter.c	-	command_mutex	-
 Modules/_tkinter.c	-	HeadFHCD	-
 Modules/_tkinter.c	-	stdin_ready	-
-Modules/_tkinter.c	-	event_tstate	-
+Modules/_tkinter.c	-	event_hook_users	-
+Modules/_tkinter.c	-	event_hook_mutex	-
 Modules/readline.c	-	completer_word_break_characters	-
 Modules/readline.c	-	_history_length	-
 Modules/readline.c	-	should_auto_add_history	-
