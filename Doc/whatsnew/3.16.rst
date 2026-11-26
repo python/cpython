@@ -62,7 +62,7 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.16.
    Brevity is key.
 
-* :pep:`824`: :ref:`None-coalesce operator <whatnew316-none-coalesce-operator>`.
+* :pep:`824`: :ref:`None-coalesce operator <whatsnew316-none-coalesce-operator>`.
 * :ref:`Set operations and Unicode properties in regular expressions
   <whatsnew316-re-set-operations-and-unicode-properties>`.
 * :ref:`Encrypted Client Hello support in ssl <whatsnew316-ssl-ech>`.
@@ -77,13 +77,13 @@ Summary -- Release highlights
 New features
 ============
 
-.. _whatnew316-none-coalesce-operator:
+.. _whatsnew316-none-coalesce-operator:
 
 :pep:`824`: ``None``-coalesce operator
 --------------------------------------
 
 A new boolean operator :keyword:`??` is added. For the expression ``x ?? y``
-it first evaluates *x*; if *x* is ``not None``, its value is returned;
+it first evaluates *x*; if *x* is not ``None``, its value is returned;
 otherwise, *y* is evaluated and the resulting value is returned.
 
 (Contributed by Marc Mueller in :gh:`162540`)

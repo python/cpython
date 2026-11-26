@@ -2349,7 +2349,7 @@ returned; otherwise, *y* is evaluated and the resulting value is returned.
 
 .. index:: pair: operator; ??
 
-The expression ``x ?? y`` first evaluates *x*; if *x* is ``not None``, its
+The expression ``x ?? y`` first evaluates *x*; if *x* is not ``None``, its
 value is returned; otherwise, *y* is evaluated and the resulting value is
 returned.
 
@@ -2362,7 +2362,7 @@ returns a boolean value regardless of the type of its argument
 (for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
 
 .. versionadded:: 3.16
-   Added the ``None``-coalese operator :keyword:`??`.
+   Added the ``None``-coalesce operator :keyword:`??`.
 
 
 .. index::
