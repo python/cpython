@@ -6027,6 +6027,26 @@ class TestSignatureBind(unittest.TestCase):
         ):
             self.call(without_var_kwargs, c_po=33, d_po=44)
 
+    def test_signature_bind_omitted_positional_only(self):
+        def f(x=0, y=1, /, **options):
+            return x, y, options
+
+        bound = inspect.signature(f).bind(y=2)
+        bound.apply_defaults()
+        self.assertEqual(f(*bound.args, **bound.kwargs), f(y=2))
+
+        def g(x=0, y=1, /):
+            pass
+
+        with self.assertRaises(TypeError):
+            inspect.signature(g).bind(y=2)
+
+        def h(x, /, **options):
+            pass
+
+        bound = inspect.signature(h).bind_partial(x=2)
+        self.assertEqual(bound.arguments, {'options': {'x': 2}})
+
     def test_signature_bind_with_self_arg(self):
         # Issue #17071: one of the parameters is named "self
         def test(a, self, b):
