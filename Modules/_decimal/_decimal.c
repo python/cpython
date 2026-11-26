@@ -2148,16 +2148,10 @@ _decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
         return NULL;
     }
 
-    int ret = context_setattrs(
-        local_copy, prec, rounding,
-        Emin, Emax, capitals,
-        clamp, flags, traps
-    );
-    if (ret < 0) {
-        Py_DECREF(local_copy);
-        return NULL;
-    }
-
+    /* The manager owns local_copy and keeps the global context alive:
+     * context_setattrs() below can run arbitrary Python code (e.g. __bool__()
+     * of a traps or flags value), which may replace the current context and
+     * drop the last reference to it. */
     PyDecContextManagerObject *self;
     self = PyObject_GC_New(PyDecContextManagerObject,
                            state->PyDecContextManager_Type);
@@ -2169,6 +2163,13 @@ _decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
     self->local = local_copy;
     self->global = Py_NewRef(global);
     PyObject_GC_Track(self);
+
+    if (context_setattrs(self->local, prec, rounding,
+                         Emin, Emax, capitals,
+                         clamp, flags, traps) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
 
     return (PyObject *)self;
 }

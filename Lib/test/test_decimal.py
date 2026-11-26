@@ -5982,6 +5982,42 @@ class CWhitebox(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, err_msg):
             sd.copy()
 
+    def test_c_localcontext_reentrancy(self):
+        # See gh-162657 for details.  Determining the truth value of a traps
+        # or flags value can run arbitrary Python code, which may replace the
+        # current context.  The context manager must keep the previous context
+        # alive and restore it on exit.
+        Context = C.Context
+        Inexact = C.Inexact
+        getcontext = C.getcontext
+        localcontext = C.localcontext
+        setcontext = C.setcontext
+
+        # Allocated in __bool__() below.  They reuse the memory of the dropped
+        # context, so that a dangling reference to it becomes observable even
+        # without ASan.
+        new_contexts = []
+
+        class Trap:
+            def __bool__(self):
+                setcontext(Context(prec=1))
+                new_contexts.extend(Context(prec=1) for _ in range(4))
+                return True
+
+        saved_context = getcontext()
+        try:
+            for name in ('traps', 'flags'):
+                with self.subTest(name=name):
+                    # The current context is now only referenced by _decimal.
+                    setcontext(Context(prec=2))
+                    signals = dict(getattr(getcontext(), name))
+                    signals[Inexact] = Trap()
+                    with localcontext(**{name: signals}) as ctx:
+                        self.assertEqual(ctx.prec, 2)
+                    self.assertEqual(getcontext().prec, 2)
+        finally:
+            setcontext(saved_context)
+
     def test_format_fallback_capitals(self):
         # Fallback to _pydecimal formatting (triggered by `#` format which
         # is unsupported by mpdecimal) should honor the current context.
