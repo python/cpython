@@ -1714,6 +1714,8 @@ These can be used as types in annotations. They all support subscription using
       tup: tuple[*Ts]         # Syntax error on Python <= 3.10!
       tup: tuple[Unpack[Ts]]  # Semantically equivalent, and backwards-compatible
 
+   .. versionadded:: 3.11
+
    ``Unpack`` can also be used along with :class:`typing.TypedDict` for typing
    ``**kwargs`` in a function signature::
 
@@ -1729,7 +1731,7 @@ These can be used as types in annotations. They all support subscription using
 
    See :pep:`692` for more details on using ``Unpack`` for ``**kwargs`` typing.
 
-   .. versionadded:: 3.11
+   .. versionadded:: 3.12
 
 Building generic types and type aliases
 """""""""""""""""""""""""""""""""""""""
