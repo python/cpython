@@ -3239,16 +3239,16 @@ _tkinter_tkapp_dooneevent_impl(TkappObject *self, int flags)
     return PyLong_FromLong(rv);
 }
 
-/*[clinic input]
-_tkinter.tkapp.quit
-[clinic start generated code]*/
-
 static int
 QuitEventProc(Tcl_Event *evPtr, int flags)
 {
     /* Nothing to do: the event only wakes up the event loop. */
     return 1;
 }
+
+/*[clinic input]
+_tkinter.tkapp.quit
+[clinic start generated code]*/
 
 static PyObject *
 _tkinter_tkapp_quit_impl(TkappObject *self)
