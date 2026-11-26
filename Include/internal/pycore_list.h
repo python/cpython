@@ -86,22 +86,22 @@ PyAPI_FUNC(PyObject *)_PyList_AsTupleAndClear(PyListObject *v);
 #endif
 
 extern int _PyListBuilder_Resize(
-    PyListBuilder *writer,
+    PyListBuilder *builder,
     Py_ssize_t new_size);
 extern void _PyListBuilder_ResetSize(
-    PyListBuilder *writer,
+    PyListBuilder *builder,
     Py_ssize_t size);
 
 
 // The caller must resize the list so it's big enough to set this item.
-// A writer list item must be set exactly once.
+// A builder list item must be set exactly once.
 static inline void
-_PyListBuilder_SET_ITEM_STEAL(PyListBuilder *writer, Py_ssize_t index,
+_PyListBuilder_SET_ITEM_STEAL(PyListBuilder *builder, Py_ssize_t index,
                               PyObject *item)
 {
     assert(item != NULL);
 
-    PyListObject *list = (PyListObject*)writer;
+    PyListObject *list = (PyListObject*)builder;
     assert(0 <= index && index < Py_SIZE(list));
 #if _PyListBuilder_INIT_ITEMS
     assert(list->ob_item[index] == NULL);
