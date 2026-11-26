@@ -703,7 +703,7 @@ socketpair.__doc__ = """socketpair([family[, type[, proto]]]) -> (socket object,
 Create a pair of socket objects from the sockets returned by the platform
 socketpair() function.
 The arguments are the same as for socket() except the default family is AF_UNIX
-if defined on the platform; otherwise, the default is AF_INET.
+if defined on the platform and not Windows; otherwise, the default is AF_INET.
 """
 
 _blocking_errnos = { EAGAIN, EWOULDBLOCK }

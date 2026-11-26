@@ -857,7 +857,8 @@ directly; see :ref:`socket-objects` for its parameters and full description.
    Build a pair of connected socket objects using the given address family, socket
    type, and protocol number.  Address family, socket type, and protocol number are
    as for the :func:`~socket.socket` function. The default family is :const:`AF_UNIX`
-   if defined on the platform; otherwise, the default is :const:`AF_INET`.
+   if defined on the platform, except on Windows; otherwise, the default is
+   :const:`AF_INET`.
 
    The newly created sockets are :ref:`non-inheritable <fd_inheritance>`.
 
