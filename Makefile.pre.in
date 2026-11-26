@@ -333,6 +333,7 @@ HOSTRUNNER= @HOSTRUNNER@
 PYTHON_FOR_REGEN?=@PYTHON_FOR_REGEN@
 UPDATE_FILE=$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/update_file.py
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
+MODULE_CHECK_COMMAND=@MODULE_CHECK_COMMAND@
 # Single-platform builds depend on $(BUILDPYTHON). Cross builds use an
 # external "build Python" and have an empty PYTHON_FOR_BUILD_DEPS.
 PYTHON_FOR_BUILD_DEPS=@PYTHON_FOR_BUILD_DEPS@
@@ -1606,11 +1607,11 @@ sharedmods: $(SHAREDMODS) pybuilddir.txt
 .PHONY: checksharedmods
 checksharedmods: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
 	@if [ -n "@MISSING_STDLIB_CONFIG@" ]; then \
-		$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --generate-missing-stdlib-info --with-missing-stdlib-config="@MISSING_STDLIB_CONFIG@"; \
+		$(MODULE_CHECK_COMMAND) --generate-missing-stdlib-info --with-missing-stdlib-config="@MISSING_STDLIB_CONFIG@"; \
 	else \
-		$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --generate-missing-stdlib-info; \
+		$(MODULE_CHECK_COMMAND) --generate-missing-stdlib-info; \
 	fi
-	@$(RUNSHARED_FOR_BUILD) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py
+	@$(MODULE_CHECK_COMMAND)
 
 .PHONY: rundsymutil
 rundsymutil: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
@@ -2486,7 +2487,7 @@ sharedinstall: all
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
 .PHONY: altbininstall
-altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
+altbininstall: all @FRAMEWORKPYTHONW@
 	@for i in $(BINDIR) $(LIBDIR); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -3546,7 +3547,7 @@ MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h $(srcdir)/Modules/_openssl_mem.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
-MODULE__REMOTE_DEBUGGING_DEPS=$(srcdir)/Modules/_remote_debugging/_remote_debugging.h $(srcdir)/Modules/_remote_debugging/gc_stats.h
+MODULE__REMOTE_DEBUGGING_DEPS=$(srcdir)/Modules/_remote_debugging/_remote_debugging.h $(srcdir)/Modules/_remote_debugging/binary_io.h $(srcdir)/Modules/_remote_debugging/gc_stats.h
 
 # HACL*-based cryptographic primitives
 MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_MD5_HEADERS) $(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)

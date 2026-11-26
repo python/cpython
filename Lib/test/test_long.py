@@ -1734,6 +1734,32 @@ class LongTest(unittest.TestCase):
         # GH-117195 -- This shouldn't crash
         object.__sizeof__(1)
 
+    def test_long_add_overallocate(self):
+        # see gh-100687
+        x = (MASK//2) * (MASK+1)
+        x2 = (MASK//2 + 1) * (MASK+1)
+        self.assertEqual(x + x2, MASK * (MASK + 1))
+
+    def test_karatsuba_single_digit_parts(self):
+        # gh-100687: k_mul() adds the halves of its operands with x_add(),
+        # and those halves can be single digits.
+        a = 1 + (1 << (SHIFT * 70))
+        b = 1 << (SHIFT * 139)
+        self.assertEqual(a * b, (1 << (SHIFT * 139)) + (1 << (SHIFT * 209)))
+        self.assertEqual(b * a, a * b)
+
+    def test_karatsuba_zero_parts(self):
+        # gh-100687: k_lopsided_mul() passes slices of the larger operand
+        # to k_mul(), and such a slice can consist of zero digits only.
+        n = KARATSUBA_CUTOFF + 30
+        a = (1 << (SHIFT * n)) - 1
+        b = 1 << (SHIFT * n * 3)
+        self.assertEqual(a * b, a << (SHIFT * n * 3))
+        self.assertEqual(b * a, a * b)
+        # Only the high half of a slice is zero.
+        b += 1 << (SHIFT * (n + 1))
+        self.assertEqual(a * b, (a << (SHIFT * n * 3)) + (a << (SHIFT * (n + 1))))
+
     def test_hash(self):
         # gh-136599
         self.assertEqual(hash(-1), -2)

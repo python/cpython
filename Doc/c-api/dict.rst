@@ -526,6 +526,8 @@ Dictionary objects
    as an argument, prefer :c:func:`PyFrozenDict_New` to leave the source
    intact.
 
+   Does not work for dicts with embedded values.
+
    .. impl-detail::
 
       Works with O(1) complexity.

@@ -116,8 +116,9 @@ its last advance:
   is larger than `QSBR_FREE_MEM_LIMIT` (1 MiB), when the accumulated deferred
   memory exceeds that limit, or when the count exceeds `QSBR_DEFERRED_LIMIT`
   (127, sized so a chunk of work items is processed before it overflows).
-  Crossing any of these thresholds also sets a per-thread `should_process`
-  flag, signalling that the deferred-free list should be drained.
+  Crossing any of these thresholds also sets the thread's
+  `_PY_EVAL_PROCESS_DELAYED_BIT` eval breaker bit, signalling that the
+  deferred-free list should be drained.
 
 * For mimalloc pages held by QSBR, the thread tracks `deferred_page_memory`
   and advances `wr_seq` when either the individual page or the accumulated
@@ -125,11 +126,12 @@ its last advance:
   promptly here matters because a held page cannot be reused for a different
   size class or by a different thread.
 
-Processing of the deferred-free list normally happens from the eval breaker
-(rather than from inside `_PyMem_FreeDelayed`), which gives the global
-`rd_seq` a better chance to have advanced far enough that items can actually
-be freed. `_PyMem_ProcessDelayed` is still called from the free path as a
-safety valve when a work-item chunk fills up.
+Processing of the deferred-free list happens from the eval breaker rather
+than from inside `_PyMem_FreeDelayed`. This gives the global `rd_seq` a better
+chance to have advanced far enough that items can actually be freed. It is
+also required for correctness: items queued by `_PyObject_XDecRefDelayed` may
+run arbitrary code when they are released, and the callers of
+`_PyMem_FreeDelayed` may be in the middle of mutating a dict, list or type.
 
 This optimization improves runtime speed but may increase peak memory usage
 by slightly delaying when memory can be reclaimed; the size-based thresholds

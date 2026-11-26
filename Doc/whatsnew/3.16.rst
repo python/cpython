@@ -893,6 +893,15 @@ tkinter
   native print dialog.  It requires Tk 8.7/9.0 or newer.
   (Contributed by Serhiy Storchaka in :gh:`153256`.)
 
+* Added :mod:`tkinter` support for the Tk 9.1 accessibility API: the
+  :attr:`~tkinter.Misc.accessible` property of widgets returns an
+  :class:`~tkinter.Accessible` object whose attributes are exposed to
+  assistive technologies such as screen readers and whose methods register
+  custom widgets with the platform accessibility API, and the
+  :meth:`~tkinter.Misc.tk_check_screenreader` method reports whether a
+  screen reader is running.
+  (Contributed by Serhiy Storchaka in :gh:`145578`.)
+
 * Added new window-management methods :meth:`~tkinter.Misc.winfo_isdark`
   (dark mode detection), :meth:`~tkinter.Wm.wm_iconbadge` (application icon
   badge) and :meth:`~tkinter.Wm.wm_stackorder` (toplevel stacking order).
@@ -971,6 +980,14 @@ tkinter
   ``parsedVarName`` objects to :class:`str`, and ``pixel`` screen distances
   with no unit suffix to :class:`int` or :class:`float`.
   (Contributed by Serhiy Storchaka in :gh:`153513`.)
+
+* Added symbolic constants for Tk option values which were missing in
+  :mod:`!tkinter.constants`: values for the *labelanchor*, *compound*,
+  *bordermode*, *direction*, *stretch*, *tabstyle*, *insertunfocussed*,
+  *mode*, *selecttype*, *show*, *state*, *validate* and *type* options,
+  the names of the themed widget states, and ``PIXELS`` for scrolling
+  the :class:`~tkinter.Text` widget.
+  (Contributed by Serhiy Storchaka in :gh:`159301`.)
 
 
 turtle
@@ -1537,6 +1554,12 @@ Build changes
 * iOS builds can now be configured as free-threaded or debug builds.
 
   (Contributed by Russell Keith-Magee in :gh:`159385`.)
+
+* :mod:`tkinter` now requires Tcl/Tk built with thread support.
+  This only affects Tcl/Tk 8, since Tcl/Tk 9 is always built with
+  thread support.
+
+  (Contributed by Michiel de Hoon in :gh:`140494`.)
 
 
 .. _whatsnew316-apple-platforms:

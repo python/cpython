@@ -1965,7 +1965,7 @@ to speed up repeated connections from the same clients.
    Set the allowed ciphers for sockets created with this context when
    connecting using TLS 1.2 and earlier.  The *ciphers* argument should
    be a string in the `OpenSSL cipher list format
-   <https://docs.openssl.org/master/man1/ciphers/>`_.
+   <https://docs.openssl.org/master/man1/openssl-ciphers/#cipher-list-format>`_.
    To set allowed TLS 1.3 ciphers, use :meth:`SSLContext.set_ciphersuites`.
 
    If no cipher can be selected (because compile-time options or other
@@ -2100,10 +2100,10 @@ to speed up repeated connections from the same clients.
 
       NPN has been superseded by ALPN
 
-.. method:: SSLContext.set_outer_alpn_protocols(protocols)
+.. method:: SSLContext.set_outer_alpn_protocols(alpn_protocols)
 
    Specify which protocols the socket should advertise during the TLS
-   handshake in the outer ClientHello when ECH is used. The *protocols*
+   handshake in the outer ClientHello when ECH is used. The *alpn_protocols*
    argument accepts the same values as for
    :meth:`~SSLContext.set_alpn_protocols`.
 

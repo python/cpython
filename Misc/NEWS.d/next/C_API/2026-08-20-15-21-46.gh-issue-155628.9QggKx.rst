@@ -1,0 +1,6 @@
+Add the internal ``_Py_atomic_add_*_relaxed`` and
+``_Py_atomic_compare_exchange_*_relaxed`` functions. CPython uses relaxed
+addition to assign module indices. Free-threaded builds also use the new
+operations to update the garbage collector's allocation count, track
+:func:`functools.lru_cache` hits and misses, and generate default
+:mod:`asyncio` task names.

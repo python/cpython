@@ -6,7 +6,9 @@ import pathlib
 import shutil
 import sys
 import textwrap
+import zipfile
 from importlib import resources
+from importlib.metadata import FastPath
 
 from test.support import import_helper
 from test.support import os_helper
@@ -365,11 +367,21 @@ class ZipFixtures:
         assert file.name.startswith('example'), file.name
         sys.path.insert(0, str(file))
         self.resources.callback(sys.path.pop, 0)
+        self.resources.callback(self._close_cached_zip, str(file))
+
+    @staticmethod
+    def _close_cached_zip(root):
+        # TODO gh-162342: Remove once FastPath no longer leaks the zip file.
+        zip_path = getattr(FastPath(root).joinpath, '__self__', None)
+        if isinstance(zip_path, zipfile.Path):
+            zip_path.root.close()
 
     def setUp(self):
         # Add self.zip_name to the front of sys.path.
         self.resources = contextlib.ExitStack()
         self.addCleanup(self.resources.close)
+        # Registered first so it runs last, after every zip has been closed.
+        self.resources.callback(FastPath.__new__.cache_clear)
 
 
 def parameterize(*args_set):
