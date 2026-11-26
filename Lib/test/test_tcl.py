@@ -1048,6 +1048,26 @@ class ChannelTest(unittest.TestCase):
                                       mask, print)
             self.assertRaises(TypeError, channel.write, 'spam')
 
+    @unittest.skipIf(sys.platform == 'win32', 'requires POSIX')
+    def test_blocking(self):
+        # The original file shares the blocking mode with the duplicate.
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        self.assertTrue(os.get_blocking(r))
+        with self.tk.createchannel(r):
+            self.assertFalse(os.get_blocking(r))
+        self.assertFalse(os.get_blocking(r))
+
+    @support.cpython_only
+    def test_dealloc_with_exception(self):
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        # The channel is deallocated while the exception is set.
+        with self.assertRaises(ZeroDivisionError):
+            [self.tk.createchannel(r), 1/0]
+
 
 class BigmemTclTest(unittest.TestCase):
 

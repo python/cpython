@@ -3515,11 +3515,10 @@ Tkch_Dealloc(PyObject *op)
        Tcl can only be called from the interpreter's thread; in another
        thread the channel is left open in the interpreter. */
     if (self->channel != NULL && self->app != NULL
-        && check_tcl_appartment(self->app) == 0)
+        && self->app->thread_id == Tcl_GetCurrentThread())
     {
         (void)Tkch_Close(self);
     }
-    PyErr_Clear();
     (void)Tkch_Clear(op);
     Py_CLEAR(self->app);
     Py_CLEAR(self->name);

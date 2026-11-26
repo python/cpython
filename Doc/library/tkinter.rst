@@ -6900,8 +6900,10 @@ Example code::
 The channel uses a duplicate of the file descriptor, the handle or the socket,
 so closing the channel does not close the original object, and vice versa.
 But Tcl may read ahead from the duplicate,
-and on Windows it makes a socket non-blocking,
 so do all I/O through the channel once it is created.
+The duplicate shares the blocking mode with the original,
+so the original file, pipe or socket is switched to non-blocking mode
+and stays in it after the channel is closed.
 
 
 .. method:: Widget.tk.createchannel(file, mode='r', /)
@@ -6911,6 +6913,7 @@ so do all I/O through the channel once it is created.
    an object with a :meth:`~io.IOBase.fileno` method,
    or an integer file descriptor.
    *mode* is ``'r'``, ``'w'`` or ``'rw'``.
+   Only stream sockets, such as TCP or UNIX sockets, are supported.
    On Windows, pass the socket object, not the result of its
    :meth:`~socket.socket.fileno` method.
 
