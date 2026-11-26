@@ -133,7 +133,12 @@ _config_dict_copy_str(PyObject *dict, const char *name,
         config_dict_invalid_type(name);
         return -1;
     }
-    strncpy(buf, PyUnicode_AsUTF8(item), bufsize-1);
+    const char *str = PyUnicode_AsUTF8(item);
+    if (str == NULL) {
+        Py_DECREF(item);
+        return -1;
+    }
+    strncpy(buf, str, bufsize-1);
     buf[bufsize-1] = '\0';
     Py_DECREF(item);
     return 0;

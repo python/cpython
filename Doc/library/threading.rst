@@ -821,7 +821,7 @@ locks.  In the locked state, some thread owns the lock; in the unlocked state,
 no thread owns it.
 
 Threads call a lock's :meth:`~RLock.acquire` method to lock it,
-and its :meth:`~Lock.release` method to unlock it.
+and its :meth:`~RLock.release` method to unlock it.
 
 .. note::
 
@@ -832,7 +832,7 @@ and its :meth:`~Lock.release` method to unlock it.
 
 RLock's :meth:`~RLock.acquire`/:meth:`~RLock.release` call pairs may be nested,
 unlike Lock's :meth:`~Lock.acquire`/:meth:`~Lock.release`. Only the final
-:meth:`~RLock.release` (the :meth:`~Lock.release` of the outermost pair) resets
+:meth:`~RLock.release` (the :meth:`~RLock.release` of the outermost pair) resets
 the lock to an unlocked state and allows another thread blocked in
 :meth:`~RLock.acquire` to proceed.
 

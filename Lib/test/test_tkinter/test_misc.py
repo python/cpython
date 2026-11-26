@@ -3,23 +3,73 @@ import functools
 import os
 import gc
 import platform
+import signal
 import sys
 import textwrap
+import threading
 import time
 import unittest
 import weakref
+import _tkinter
 import tkinter
 from tkinter import TclError, ttk
 import enum
 from test import support
+from test.support import import_helper
 from test.support import os_helper
+from test.support import threading_helper
+from test.support.isolation import runInSubprocess
 from test.support.script_helper import assert_python_ok
 from test.test_tkinter.support import setUpModule  # noqa: F401
 from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
                                        requires_tk, get_tk_patchlevel,
-                                       tcl_version, tk_version)
+                                       tcl_version, tk_version,
+                                       wait_until_mapped)
 
 support.requires('gui')
+
+def check_version_info(test, vi):
+    # The following is almost a copy of tests for sys.version_info.
+    test.assertIsInstance(vi[:], tuple)
+    test.assertEqual(len(vi), 5)
+    test.assertIsInstance(vi[0], int)
+    test.assertIsInstance(vi[1], int)
+    test.assertIsInstance(vi[2], int)
+    test.assertIn(vi[3], ("alpha", "beta", "candidate", "final"))
+    test.assertIsInstance(vi[4], int)
+    test.assertIsInstance(vi.major, int)
+    test.assertIsInstance(vi.minor, int)
+    test.assertIsInstance(vi.micro, int)
+    test.assertIn(vi.releaselevel, ("alpha", "beta", "final"))
+    test.assertIsInstance(vi.serial, int)
+    test.assertEqual(vi[0], vi.major)
+    test.assertEqual(vi[1], vi.minor)
+    test.assertEqual(vi[2], vi.micro)
+    test.assertEqual(vi[3], vi.releaselevel)
+    test.assertEqual(vi[4], vi.serial)
+    test.assertTrue(vi > (1,0,0))
+    if vi.releaselevel == 'final':
+        test.assertEqual(vi.serial, 0)
+    else:
+        test.assertEqual(vi.micro, 0)
+    test.assertStartsWith(str(vi), f'{vi.major}.{vi.minor}')
+
+
+class VersionTest(unittest.TestCase):
+
+    def test_version_info(self):
+        for vi, version, patchlevel in (
+            (tkinter.TCL_VERSION_INFO, _tkinter.TCL_VERSION, _tkinter.TCL_PATCH_LEVEL),
+            (tkinter.TK_VERSION_INFO, _tkinter.TK_VERSION, _tkinter.TK_PATCH_LEVEL),
+        ):
+            with self.subTest(patchlevel=patchlevel):
+                check_version_info(self, vi)
+                self.assertEqual(str(vi), patchlevel)
+                self.assertEqual(f'{vi.major}.{vi.minor}', version)
+        self.assertEqual(tkinter.TclVersion,
+                         float(f'{tkinter.TCL_VERSION_INFO.major}.'
+                               f'{tkinter.TCL_VERSION_INFO.minor}'))
+
 
 class MiscTest(AbstractTkTest, unittest.TestCase):
 
@@ -508,15 +558,20 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.root.update_idletasks()
         f.focus_force()
         self.root.update()
-        self.assertIs(self.root.focus_get(), f)
-        self.assertIs(self.root.focus_displayof(), f)
+        # The window manager can take the focus away, and then focus_get()
+        # and focus_displayof() return None.
+        if self.root.focus_displayof() is not None:
+            self.assertIs(self.root.focus_get(), f)
+            self.assertIs(self.root.focus_displayof(), f)
         self.assertIs(f.focus_lastfor(), f)
         b = tkinter.Button(f)
         b.pack()
         self.root.update()
         b.focus_set()
         self.root.update()
-        self.assertIs(self.root.focus_get(), b)
+        if self.root.focus_displayof() is not None:
+            self.assertIs(self.root.focus_get(), b)
+        self.assertIs(f.focus_lastfor(), b)
 
     def test_focus_methods_unresolvable(self):
         # The focus may be on a widget that tkinter did not create and so
@@ -659,6 +714,109 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertHasAttr(tkinter.Text, 'tk_print')
         self.assertNotHasAttr(tkinter.Frame, 'tk_print')
         self.assertNotHasAttr(tkinter.Misc, 'tk_print')
+
+    @requires_tk(9, 1)
+    def test_accessible(self):
+        # Without an active screen reader every "tk accessible" call is
+        # a no-op returning 0, so only test that the calls do not raise
+        # and check the values when a screen reader is active.
+        try:
+            sr = self.root.tk_check_screenreader()
+        except tkinter.TclError:
+            # Tk 9.1a0 or Tk compiled without accessibility support
+            # (e.g. without ATK on X11).
+            self.skipTest('the "tk accessible" command is not supported')
+        self.assertIsInstance(sr, bool)
+        f = tkinter.Frame(self.root)
+        acc = f.accessible
+        self.assertIsInstance(acc, tkinter.Accessible)
+        self.assertIs(f.accessible, acc)
+        # The role has to be set first, it creates the table in which
+        # other attributes are stored.
+        acc.role = 'Label'
+        result = acc.role
+        if sr:
+            self.assertEqual(result, 'Label')
+            # Reading an attribute that has not been set raises TclError.
+            with self.assertRaises(tkinter.TclError):
+                acc.help
+        for attr in ('name', 'description', 'value', 'state',
+                     'action', 'help'):
+            with self.subTest(attr=attr):
+                setattr(acc, attr, 'spam')
+                result = getattr(acc, attr)
+                if sr:
+                    self.assertEqual(result, 'spam')
+        acc.add_object()
+        acc.emit_selection_change()
+        if self.root._windowingsystem != 'aqua':
+            acc.emit_focus_change()
+
+    @unittest.skipUnless(sys.platform == 'win32', 'requires Windows')
+    def test_callback_from_foreign_event_loop(self):
+        # gh-84256: Tk can call an event handler when Tcl was not entered
+        # by tkinter, for example when a window message is dispatched
+        # from a foreign event loop while the GIL is released.
+        ctypes = import_helper.import_module('ctypes')
+        from ctypes import wintypes
+        user32 = ctypes.WinDLL('user32')
+        user32.SendMessageW.argtypes = [wintypes.HWND, wintypes.UINT,
+                                        wintypes.WPARAM, wintypes.LPARAM]
+        user32.SetWindowPos.argtypes = [wintypes.HWND, wintypes.HWND,
+                                        ctypes.c_int, ctypes.c_int,
+                                        ctypes.c_int, ctypes.c_int,
+                                        wintypes.UINT]
+        WM_ENTERSIZEMOVE = 0x0231
+        WM_EXITSIZEMOVE = 0x0232
+        SWP_NOMOVE = 0x0002
+        SWP_NOZORDER = 0x0004
+        SWP_NOACTIVATE = 0x0010
+
+        top = tkinter.Toplevel(self.root)
+        top.geometry('200x150')
+        if not wait_until_mapped(top):
+            self.skipTest('the window is not mapped')
+        sizes = []
+        def callback(event):
+            # Call Tcl from the handler.
+            sizes.append((event.width, event.height, top.winfo_width()))
+        top.bind('<Configure>', callback)
+        hwnd = int(top.wm_frame(), 16)
+        # Emulate resizing the window with the mouse: Tk handles the
+        # resulting window messages in its window procedure, outside
+        # of the Tcl event loop run by tkinter.
+        user32.SendMessageW(hwnd, WM_ENTERSIZEMOVE, 0, 0)
+        try:
+            user32.SetWindowPos(hwnd, None, 0, 0, 250, 180,
+                                SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE)
+        finally:
+            user32.SendMessageW(hwnd, WM_EXITSIZEMOVE, 0, 0)
+        self.assertTrue(sizes)
+
+    def test_nested_mainloop(self):
+        # gh-162650: Calls from other thread are still dispatched after
+        # a nested mainloop() exits.
+        root = self.root
+        results = []
+        def call():
+            try:
+                results.append(root.tk.call('expr', '6*7'))
+            except RuntimeError as e:
+                results.append(e)
+        def start():
+            root.after(0, root.quit)
+            root.mainloop()  # nested
+            thread = threading.Thread(target=call)
+            thread.start()
+            def wait():
+                if thread.is_alive():
+                    root.after(10, wait)
+                else:
+                    root.quit()
+            wait()
+        root.after(0, start)
+        root.mainloop()
+        self.assertEqual(results, [42])
 
     def test_wait_variable(self):
         var = tkinter.StringVar(self.root)
@@ -822,30 +980,10 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         vi = self.root.info_patchlevel()
         f = tkinter.Frame(self.root)
         self.assertEqual(f.info_patchlevel(), vi)
-        # The following is almost a copy of tests for sys.version_info.
-        self.assertIsInstance(vi[:], tuple)
-        self.assertEqual(len(vi), 5)
-        self.assertIsInstance(vi[0], int)
-        self.assertIsInstance(vi[1], int)
-        self.assertIsInstance(vi[2], int)
-        self.assertIn(vi[3], ("alpha", "beta", "candidate", "final"))
-        self.assertIsInstance(vi[4], int)
-        self.assertIsInstance(vi.major, int)
-        self.assertIsInstance(vi.minor, int)
-        self.assertIsInstance(vi.micro, int)
-        self.assertIn(vi.releaselevel, ("alpha", "beta", "final"))
-        self.assertIsInstance(vi.serial, int)
-        self.assertEqual(vi[0], vi.major)
-        self.assertEqual(vi[1], vi.minor)
-        self.assertEqual(vi[2], vi.micro)
-        self.assertEqual(vi[3], vi.releaselevel)
-        self.assertEqual(vi[4], vi.serial)
-        self.assertTrue(vi > (1,0,0))
-        if vi.releaselevel == 'final':
-            self.assertEqual(vi.serial, 0)
-        else:
-            self.assertEqual(vi.micro, 0)
-        self.assertStartsWith(str(vi), f'{vi.major}.{vi.minor}')
+        check_version_info(self, vi)
+        # The Tcl library loaded at runtime should be compatible with
+        # the one used for building the module.
+        self.assertEqual(vi[:2], tkinter.TCL_VERSION_INFO[:2])
 
     def test_embedded_null(self):
         widget = tkinter.Entry(self.root)
@@ -866,6 +1004,91 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             iter(widget)
         with self.assertRaisesRegex(TypeError, 'is not a container or iterable'):
             widget in widget
+
+
+@unittest.skipIf(sys.platform == 'darwin',
+                 'Tk only works in the main thread on macOS')
+@threading_helper.requires_working_threading()
+class MainloopThreadsTest(unittest.TestCase):
+    # gh-162647: The mainloop() of Tcl interpreters in different threads
+    # should not affect each other.
+
+    def setUp(self):
+        # Tk objects created in other threads must not become the default
+        # root.
+        self.addCleanup(setattr, tkinter, '_support_default_root',
+                        tkinter._support_default_root)
+        tkinter._support_default_root = False
+        self.roots = {}
+        self.results = []
+
+    def mainloop_thread(self, name, ticking=False):
+        # Return a thread which runs mainloop() of a new Tk.
+        def run():
+            root = tkinter.Tk()
+            root.withdraw()
+            if ticking:
+                def tick():
+                    root.after(20, tick)
+                tick()
+            self.roots[name] = root
+            try:
+                root.mainloop()
+                self.results.append((name, None))
+            except BaseException as e:
+                self.results.append((name, e))
+            finally:
+                # The interpreter should be deleted in its thread.
+                del self.roots[name]
+                root.destroy()
+                del root
+                _tkinter._finalize_thread()
+        return threading.Thread(target=run)
+
+    def wait_mainloop(self, name):
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            if name in self.roots:
+                break
+        # A call from other thread waits until mainloop() runs.
+        self.roots[name].tk.call('info', 'patchlevel')
+
+    def quit_all(self):
+        for root in list(self.roots.values()):
+            root.quit()
+
+    def test_quit(self):
+        threads = [self.mainloop_thread('a'),
+                   self.mainloop_thread('b', ticking=True)]
+        with threading_helper.start_threads(threads, unlock=self.quit_all):
+            self.wait_mainloop('a')
+            self.wait_mainloop('b')
+            # quit() stops the mainloop() of its interpreter even if it
+            # waits for events, and does not stop other mainloop().
+            self.roots['a'].quit()
+            threads[0].join(support.SHORT_TIMEOUT)
+            self.assertEqual(self.results, [('a', None)])
+        self.assertEqual(self.results, [('a', None), ('b', None)])
+
+    def test_callback_error(self):
+        threads = [self.mainloop_thread('b', ticking=True)]
+        with threading_helper.start_threads(threads, unlock=self.quit_all):
+            self.wait_mainloop('b')
+            root = tkinter.Tk()
+            self.addCleanup(root.destroy)
+            root.withdraw()
+            def callback():
+                raise ZeroDivisionError
+            root.tk.createcommand('callback', callback)
+            root.tk.call('after', 0, 'callback')
+            root.update()
+            # Let the mainloop() in other thread run for a while.
+            time.sleep(0.2)
+        # The error was not raised in other thread...
+        self.assertEqual(self.results, [('b', None)])
+        # ...but by the next mainloop() in this thread.
+        root.after(100, root.quit)
+        with self.assertRaises(ZeroDivisionError):
+            root.mainloop()
 
 
 class TkTest(AbstractTkTest, unittest.TestCase):
@@ -1128,6 +1351,8 @@ class WmTest(AbstractTkTest, unittest.TestCase):
         w.wm_attributes(alpha=1.0)
         self.assertEqual(w.wm_attributes('alpha'),
                          1.0 if self.wantobjects else '1.0')
+        with self.assertRaisesRegex(TypeError, r'^wm_attributes\(\) options'):
+            w.wm_attributes('alpha', alpha=0.5)
 
     def test_wm_iconbitmap(self):
         t = tkinter.Toplevel(self.root)
@@ -1319,9 +1544,15 @@ class WmTest(AbstractTkTest, unittest.TestCase):
     def test_wm_stackorder(self):
         t1 = tkinter.Toplevel(self.root)
         t2 = tkinter.Toplevel(self.root)
+        if self.root._windowingsystem == 'x11':
+            # Bypass the window manager, which may ignore lift() or reorder
+            # the windows while they are being mapped.
+            t1.overrideredirect(True)
+            t2.overrideredirect(True)
         t1.deiconify()
         t2.deiconify()
-        self.root.update()
+        wait_until_mapped(t1)
+        wait_until_mapped(t2)
         t1.lift(t2)  # Raise t1 above t2.
         self.root.update()
         order = self.root.wm_stackorder()
@@ -1361,7 +1592,9 @@ class EventTest(AbstractTkTest, unittest.TestCase):
 
         f.focus_force()
         self.root.update()
-        self.assertEqual(len(events), 1, events)
+        # The window manager can take the focus away and give it back,
+        # which makes Tk generate additional focus events.
+        self.assertGreaterEqual(len(events), 1, events)
         e = events[0]
         self.assertIs(e.type, tkinter.EventType.FocusIn)
         self.assertIs(e.widget, f)
@@ -2133,6 +2366,18 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
 def _info_commands(widget, pattern=None):
     return widget.tk.splitlist(widget.tk.call('info', 'commands', pattern))
+
+
+class SignalTest(unittest.TestCase):
+
+    @runInSubprocess()
+    def test_sigint_handler(self):
+        # gh-157672: Tk on macOS replaced the SIGINT handler with its own,
+        # which exits the process.
+        root = tkinter.Tk()
+        self.addCleanup(root.destroy)
+        with self.assertRaises(KeyboardInterrupt):
+            signal.raise_signal(signal.SIGINT)
 
 
 class TclObjTypeTest(AbstractTkTest, unittest.TestCase):

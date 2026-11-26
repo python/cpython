@@ -35,12 +35,12 @@
 //
 // The <ctype.h> and <unistd.h> headers are not included by limited C API
 // version 3.13 and newer.
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
 #  include <errno.h>              // errno
 #  include <stdio.h>              // FILE*
 #  include <stdlib.h>             // getenv()
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030d0000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 13)
 #  include <ctype.h>              // tolower()
 #  ifndef MS_WINDOWS
 #    include <unistd.h>           // close()
