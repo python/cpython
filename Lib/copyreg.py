@@ -35,6 +35,9 @@ class Proxy:
 
     __slots__ = ('obj',)
 
+    def __init_subclass__(cls, /, **kwargs):
+        raise TypeError("type 'Proxy' is not an acceptable base type")
+
     def __init__(self, obj):
         self.obj = obj
 
