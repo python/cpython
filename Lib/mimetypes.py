@@ -24,6 +24,12 @@ read_mime_types(file) -- parse one file, return a dictionary or None
 """
 
 import sys
+import os
+import posixpath
+lazy import urllib.parse
+lazy import warnings
+lazy from argparse import ArgumentParser
+
 
 try:
     from _winapi import _mimetypes_read_windows_registry
@@ -132,9 +138,6 @@ class MimeTypes:
         Optional 'strict' argument when False adds a bunch of commonly found,
         but non-standard types.
         """
-        # Lazy import to improve module import time
-        import os
-        import urllib.parse
 
         url = os.fspath(url)
         p = urllib.parse.urlparse(url)
@@ -142,7 +145,6 @@ class MimeTypes:
             scheme = p.scheme
             url = p.path
         else:
-            import warnings
             warnings.warn(
                 "Passing a file path to guess_type() is deprecated and will be "
                 "removed in a future version. Use guess_file_type() instead.",
@@ -170,9 +172,6 @@ class MimeTypes:
                 type = 'text/plain'
             return type, None           # never compressed, so encoding is None
 
-        # Lazy import to improve module import time
-        import posixpath
-
         return self._guess_file_type(url, strict, posixpath.splitext)
 
     def guess_file_type(self, path, *, strict=True):
@@ -180,9 +179,6 @@ class MimeTypes:
 
         Similar to guess_type(), but takes file path instead of URL.
         """
-        # Lazy import to improve module import time
-        import os
-
         path = os.fsdecode(path)
         path = os.path.splitdrive(path)[1]
         return self._guess_file_type(path, strict, os.path.splitext)
@@ -441,9 +437,6 @@ def init(files=None):
             files = knownfiles + list(files)
     else:
         db = _db
-
-    # Lazy import to improve module import time
-    import os
 
     for file in files:
         if os.path.isfile(file):
@@ -732,8 +725,6 @@ _default_mime_types()
 
 
 def _parse_args(args):
-    from argparse import ArgumentParser
-
     parser = ArgumentParser(
         description='map filename extensions to MIME types',
     )
@@ -766,7 +757,6 @@ def _main(args=None):
                 results.append(f"error: unknown type {gtype}")
         return results
     else:
-        import urllib.parse
         for gtype in args.type:
             p = urllib.parse.urlparse(gtype)
             if p.scheme and len(p.scheme) > 1:
@@ -781,8 +771,6 @@ def _main(args=None):
 
 
 if __name__ == '__main__':
-    import sys
-
     results = _main()
     print("\n".join(results))
     sys.exit(any(result.startswith("error: ") for result in results))
