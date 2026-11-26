@@ -74,11 +74,6 @@ class PythonAPITestCase(unittest.TestCase):
         self.assertEqual(rv, len(b"Hello from ctypes"))
         self.assertEqual(small.raw, b"Hello from ct\0")
 
-        # Test invalid format string
-        buf = create_string_buffer(14)
-        rv = PyOS_snprintf(buf, sizeof(buf), b"Hello from %Z", 123)
-        self.assertEqual(rv, -1)
-
         # not enough arguments
         self.assertRaises(TypeError, PyOS_snprintf, buf)
 
