@@ -1729,6 +1729,8 @@ condition.
       0 ** 0
       x ** (non-integer)
       x ** Infinity
+      NaN >= 0
+      NaN < 0
 
 
 .. class:: Overflow
@@ -1857,6 +1859,8 @@ expanding the precision sufficiently to avoid loss of significance:
    >>> u * (v+w)
    Decimal('0.0060000')
 
+
+.. _decimal-notes-specials:
 
 Special values
 ^^^^^^^^^^^^^^
