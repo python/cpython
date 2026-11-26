@@ -3322,6 +3322,19 @@ class BasicUDPTest(ThreadedUDPSocketTest):
         self.cli.sendto(MSG2, 0, (HOST, self.port))
 
     @requireAttrs(socket, "MSG_TRUNC")
+    @requireAttrs(socket, "MSG_PEEK")
+    @unittest.skipIf(sys.platform == "win32", "Windows raises WSAEMSGSIZE")
+    def testRecvTruncPeek(self):
+        msg = self.serv.recv(len(MSG) - 5, socket.MSG_TRUNC | socket.MSG_PEEK)
+        self.assertEqual(msg, MSG[:-5])
+
+        msg = self.serv.recv(len(MSG))
+        self.assertEqual(msg, MSG)
+
+    def _testRecvTruncPeek(self):
+        self.cli.sendto(MSG, 0, (HOST, self.port))
+
+    @requireAttrs(socket, "MSG_TRUNC")
     @unittest.skipIf(sys.platform == "win32", "Windows raises WSAEMSGSIZE")
     def testRecvFromTrunc(self):
         # Truncated read where recvfrom() returns the real size of the datagram
@@ -3335,6 +3348,20 @@ class BasicUDPTest(ThreadedUDPSocketTest):
     def _testRecvFromTrunc(self):
         self.cli.sendto(MSG, 0, (HOST, self.port))
         self.cli.sendto(MSG2, 0, (HOST, self.port))
+
+    @requireAttrs(socket, "MSG_TRUNC")
+    @requireAttrs(socket, "MSG_PEEK")
+    @unittest.skipIf(sys.platform == "win32", "Windows raises WSAEMSGSIZE")
+    def testRecvFromTruncPeek(self):
+        msg, addr = self.serv.recvfrom(len(MSG) - 5,
+                                       socket.MSG_TRUNC | socket.MSG_PEEK)
+        self.assertEqual(msg, MSG[:-5])
+
+        msg, addr = self.serv.recvfrom(len(MSG))
+        self.assertEqual(msg, MSG)
+
+    def _testRecvFromTruncPeek(self):
+        self.cli.sendto(MSG, 0, (HOST, self.port))
 
 
 @unittest.skipUnless(HAVE_SOCKET_UDPLITE,
