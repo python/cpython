@@ -1,0 +1,13 @@
+Add a new :ref:`PyTupleWriter API <pytuplewriter>` to create a
+:class:`tuple` when the final size is not known in advance. Add functions:
+
+* :c:func:`PyTupleWriter_Create`
+* :c:func:`PyTupleWriter_Finish`
+* :c:func:`PyTupleWriter_FinishWithSize`
+* :c:func:`PyTupleWriter_Discard`
+* :c:func:`PyTupleWriter_GetSize`
+* :c:func:`PyTupleWriter_SetItem`
+* :c:func:`PyTupleWriter_SetItems`
+* :c:func:`PyTupleWriter_Resize`
+
+Patch by Victor Stinner.
