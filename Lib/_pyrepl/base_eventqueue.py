@@ -42,7 +42,12 @@ class BaseEventQueue:
         self.encoding = encoding
         self.events: deque[Event] = deque()
         self.buf = bytearray()
-        default = float(os.environ.get("PYREPL_ESC_TIMEOUT", ESC_TIMEOUT_DEFAULT))
+        try:
+            default = float(os.environ.get("PYREPL_ESC_TIMEOUT", ESC_TIMEOUT_DEFAULT))
+        except ValueError, OverflowError:
+            default = ESC_TIMEOUT_DEFAULT
+        if not 0 <= default < float("inf"):
+            default = ESC_TIMEOUT_DEFAULT
         self.esc_timeout = esc_timeout if esc_timeout is not None else default
 
     def get(self) -> Event | None:
