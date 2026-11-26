@@ -17,6 +17,7 @@ import enum
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import threading_helper
 from test.support.isolation import runInSubprocess
 from test.support.script_helper import assert_python_ok
 from test.test_tkinter.support import setUpModule  # noqa: F401
@@ -1003,6 +1004,91 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             iter(widget)
         with self.assertRaisesRegex(TypeError, 'is not a container or iterable'):
             widget in widget
+
+
+@unittest.skipIf(sys.platform == 'darwin',
+                 'Tk only works in the main thread on macOS')
+@threading_helper.requires_working_threading()
+class MainloopThreadsTest(unittest.TestCase):
+    # gh-162647: The mainloop() of Tcl interpreters in different threads
+    # should not affect each other.
+
+    def setUp(self):
+        # Tk objects created in other threads must not become the default
+        # root.
+        self.addCleanup(setattr, tkinter, '_support_default_root',
+                        tkinter._support_default_root)
+        tkinter._support_default_root = False
+        self.roots = {}
+        self.results = []
+
+    def mainloop_thread(self, name, ticking=False):
+        # Return a thread which runs mainloop() of a new Tk.
+        def run():
+            root = tkinter.Tk()
+            root.withdraw()
+            if ticking:
+                def tick():
+                    root.after(20, tick)
+                tick()
+            self.roots[name] = root
+            try:
+                root.mainloop()
+                self.results.append((name, None))
+            except BaseException as e:
+                self.results.append((name, e))
+            finally:
+                # The interpreter should be deleted in its thread.
+                del self.roots[name]
+                root.destroy()
+                del root
+                _tkinter._finalize_thread()
+        return threading.Thread(target=run)
+
+    def wait_mainloop(self, name):
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            if name in self.roots:
+                break
+        # A call from other thread waits until mainloop() runs.
+        self.roots[name].tk.call('info', 'patchlevel')
+
+    def quit_all(self):
+        for root in list(self.roots.values()):
+            root.quit()
+
+    def test_quit(self):
+        threads = [self.mainloop_thread('a'),
+                   self.mainloop_thread('b', ticking=True)]
+        with threading_helper.start_threads(threads, unlock=self.quit_all):
+            self.wait_mainloop('a')
+            self.wait_mainloop('b')
+            # quit() stops the mainloop() of its interpreter even if it
+            # waits for events, and does not stop other mainloop().
+            self.roots['a'].quit()
+            threads[0].join(support.SHORT_TIMEOUT)
+            self.assertEqual(self.results, [('a', None)])
+        self.assertEqual(self.results, [('a', None), ('b', None)])
+
+    def test_callback_error(self):
+        threads = [self.mainloop_thread('b', ticking=True)]
+        with threading_helper.start_threads(threads, unlock=self.quit_all):
+            self.wait_mainloop('b')
+            root = tkinter.Tk()
+            self.addCleanup(root.destroy)
+            root.withdraw()
+            def callback():
+                raise ZeroDivisionError
+            root.tk.createcommand('callback', callback)
+            root.tk.call('after', 0, 'callback')
+            root.update()
+            # Let the mainloop() in other thread run for a while.
+            time.sleep(0.2)
+        # The error was not raised in other thread...
+        self.assertEqual(self.results, [('b', None)])
+        # ...but by the next mainloop() in this thread.
+        root.after(100, root.quit)
+        with self.assertRaises(ZeroDivisionError):
+            root.mainloop()
 
 
 class TkTest(AbstractTkTest, unittest.TestCase):
