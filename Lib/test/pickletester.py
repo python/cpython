@@ -3678,8 +3678,7 @@ class AbstractPickleTests:
     def test_dead_weakref(self):
         if self.py_version < (3, 16):
             self.skipTest('not supported in Python < 3.16')
-        # A dead reference stays dead, and all dead references unpickle as
-        # the same object.
+        # A dead reference is unpickled as a dead reference.
         obj = WeakrefTarget()
         wr = weakref.ref(obj)
         obj2 = WeakrefTarget()
@@ -3689,11 +3688,12 @@ class AbstractPickleTests:
         self.assertIsNone(wr())
         for proto in protocols:
             with self.subTest(proto=proto):
-                a, b = self.loads(self.dumps([wr, wr2], proto))
+                a, b, c = self.loads(self.dumps([wr, wr2, wr], proto))
                 self.assertIs(type(a), weakref.ref)
-                self.assertIs(a, b)
-                support.gc_collect()
+                self.assertIs(type(b), weakref.ref)
                 self.assertIsNone(a())
+                self.assertIsNone(b())
+                self.assertIs(c, a)
 
     def test_proxy(self):
         # A Proxy is unpickled as the wrapped object.

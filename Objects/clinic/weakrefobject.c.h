@@ -21,14 +21,15 @@ weakref_hash(PyObject *self)
 }
 
 PyDoc_STRVAR(weakref_ref_new__doc__,
-"ReferenceType(object, callback=None, /)\n"
+"ReferenceType(object=<unrepresentable>, callback=None, /)\n"
 "--\n"
 "\n"
 "Create a weak reference to object.\n"
 "\n"
 "Calling the reference returns object, or None once it has been garbage\n"
 "collected.  If callback is given, it is called with the reference as\n"
-"its only argument when object is about to be finalized.");
+"its only argument when object is about to be finalized.\n"
+"If object is omitted, create a dead reference.");
 
 static PyObject *
 weakref_ref_new_impl(PyTypeObject *type, PyObject *object,
@@ -39,15 +40,18 @@ weakref_ref_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     PyTypeObject *base_tp = &_PyWeakref_RefType;
-    PyObject *object;
+    PyObject *object = NULL;
     PyObject *callback = NULL;
 
     if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("ReferenceType", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("ReferenceType", PyTuple_GET_SIZE(args), 1, 2)) {
+    if (!_PyArg_CheckPositional("ReferenceType", PyTuple_GET_SIZE(args), 0, 2)) {
         goto exit;
+    }
+    if (PyTuple_GET_SIZE(args) < 1) {
+        goto skip_optional;
     }
     object = PyTuple_GET_ITEM(args, 0);
     if (PyTuple_GET_SIZE(args) < 2) {
@@ -67,7 +71,7 @@ weakref_ref_vectorcall(PyObject *type, PyObject *const *args,
 {
     PyObject *return_value = NULL;
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    PyObject *object;
+    PyObject *object = NULL;
     PyObject *callback = NULL;
 
     assert(_PyType_CAST(type)->tp_new == weakref_ref_new);
@@ -77,8 +81,11 @@ weakref_ref_vectorcall(PyObject *type, PyObject *const *args,
     if (!_PyArg_NoKwnames("ReferenceType", kwnames)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("ReferenceType", nargs, 1, 2)) {
+    if (!_PyArg_CheckPositional("ReferenceType", nargs, 0, 2)) {
         goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
     }
     object = args[0];
     if (nargs < 2) {
@@ -101,7 +108,7 @@ weakref_ref_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     PyTypeObject *base_tp = &_PyWeakref_RefType;
-    PyObject *object;
+    PyObject *object = NULL;
     PyObject *callback = Py_None;
 
     if ((Py_IS_TYPE(self, base_tp) ||
@@ -109,8 +116,11 @@ weakref_ref_init(PyObject *self, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("ReferenceType", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("ReferenceType", PyTuple_GET_SIZE(args), 1, 2)) {
+    if (!_PyArg_CheckPositional("ReferenceType", PyTuple_GET_SIZE(args), 0, 2)) {
         goto exit;
+    }
+    if (PyTuple_GET_SIZE(args) < 1) {
+        goto skip_optional;
     }
     object = PyTuple_GET_ITEM(args, 0);
     if (PyTuple_GET_SIZE(args) < 2) {
@@ -123,4 +133,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=774282aa1017bab5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dbb0df47f9c66ee7 input=a9049054013a1b77]*/

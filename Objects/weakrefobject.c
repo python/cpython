@@ -471,7 +471,7 @@ get_or_create_weakref(PyTypeObject *type, PyObject *obj, PyObject *callback)
 @vectorcall
 weakref.ReferenceType.__new__ as weakref_ref_new
 
-    object: object
+    object: object = NULL
     callback: object(c_default="NULL") = None
     /
 
@@ -480,20 +480,24 @@ Create a weak reference to object.
 Calling the reference returns object, or None once it has been garbage
 collected.  If callback is given, it is called with the reference as
 its only argument when object is about to be finalized.
+If object is omitted, create a dead reference.
 [clinic start generated code]*/
 
 static PyObject *
 weakref_ref_new_impl(PyTypeObject *type, PyObject *object,
                      PyObject *callback)
-/*[clinic end generated code: output=0b84aee8668f4c2f input=0cd09b468ebb6371]*/
+/*[clinic end generated code: output=0b84aee8668f4c2f input=d7e0f1e99ed5b384]*/
 {
+    if (object == NULL) {
+        return (PyObject *)allocate_weakref(type, Py_None, NULL);
+    }
     return (PyObject *)get_or_create_weakref(type, object, callback);
 }
 
 /*[clinic input]
 weakref.ReferenceType.__init__ as weakref_ref_init
 
-    object: object
+    object: object = NULL
     callback: object = None
     /
 [clinic start generated code]*/
@@ -501,7 +505,7 @@ weakref.ReferenceType.__init__ as weakref_ref_init
 static int
 weakref_ref_init_impl(PyWeakReference *self, PyObject *object,
                       PyObject *callback)
-/*[clinic end generated code: output=d36cfa9ccd36856e input=373a3e3f2841a4fa]*/
+/*[clinic end generated code: output=d36cfa9ccd36856e input=5caba13eba258115]*/
 {
     /* The arguments were already used by __new__; only validate them. */
     return 0;

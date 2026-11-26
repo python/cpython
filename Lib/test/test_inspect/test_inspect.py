@@ -6547,7 +6547,9 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_weakref_module_has_signatures(self):
         import weakref
-        self._test_module_has_signatures(weakref)
+        unsupported_signature = {'ref', 'ReferenceType'}
+        self._test_module_has_signatures(weakref,
+                unsupported_signature=unsupported_signature)
 
     def test_python_function_override_signature(self):
         def func(*args, **kwargs):

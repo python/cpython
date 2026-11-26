@@ -73,15 +73,10 @@ pickle(super, pickle_super)
 
 from _weakref import ref as _ref
 
-# All dead weak references are interchangeable, so they are pickled as
-# references to this set.  It is unpickled as a new set which dies with
-# the unpickler's memo, and all dead references as the same reference.
-_dead_referent = set()
-
 def pickle_weakref(r):
     obj = r()
     if obj is None:
-        return _ref, (_dead_referent,)
+        return _ref, ()
     return _ref, (Proxy(obj),)
 
 pickle(_ref, pickle_weakref)
