@@ -440,8 +440,8 @@ this function returns 42.
        finally:
            return 42
 
-The exception information is not available to the program during execution of
-the :keyword:`!finally` clause.
+On entry to the :keyword:`!finally` clause, any saved exception is available
+from :func:`sys.exception` and can be re-raised with a bare :keyword:`raise`.
 
 .. index::
    pair: statement; return
