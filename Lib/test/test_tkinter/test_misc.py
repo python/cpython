@@ -5,6 +5,7 @@ import platform
 import signal
 import sys
 import textwrap
+import threading
 import unittest
 import weakref
 import tkinter
@@ -596,6 +597,31 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         finally:
             user32.SendMessageW(hwnd, WM_EXITSIZEMOVE, 0, 0)
         self.assertTrue(sizes)
+
+    def test_nested_mainloop(self):
+        # gh-162650: Calls from other thread are still dispatched after
+        # a nested mainloop() exits.
+        root = self.root
+        results = []
+        def call():
+            try:
+                results.append(root.tk.call('expr', '6*7'))
+            except RuntimeError as e:
+                results.append(e)
+        def start():
+            root.after(0, root.quit)
+            root.mainloop()  # nested
+            thread = threading.Thread(target=call)
+            thread.start()
+            def wait():
+                if thread.is_alive():
+                    root.after(10, wait)
+                else:
+                    root.quit()
+            wait()
+        root.after(0, start)
+        root.mainloop()
+        self.assertEqual(results, [42])
 
     def test_wait_variable(self):
         var = tkinter.StringVar(self.root)
