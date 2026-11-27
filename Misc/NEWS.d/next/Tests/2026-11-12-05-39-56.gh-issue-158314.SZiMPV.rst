@@ -1,0 +1,3 @@
+Fix ``test_typing.GenericTests.test_parameters_deep_recursion`` on 32-bit
+ARM debug builds, where 150,000 nested lists did not exhaust the limited C
+stack.
