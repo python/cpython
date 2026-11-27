@@ -4523,7 +4523,9 @@ int
 _PyListBuilder_Resize(PyListBuilder *builder, Py_ssize_t new_size)
 {
     PyListObject *list = _PyList_CAST(builder);
+#if _PyListBuilder_INIT_ITEMS
     Py_ssize_t old_size = Py_SIZE(list);
+#endif
 
     // On Free Threading, it can call _PyObject_GC_SET_SHARED() on the list
     int res = list_resize(list, new_size);
@@ -4653,8 +4655,8 @@ PyListBuilder_Extend(PyListBuilder *builder, PyObject *iterable)
 // Force inlining to optimize "if (steal)" at build time
 static inline Py_ALWAYS_INLINE int
 listbuilder_extend_array(PyListBuilder *builder,
-                        PyObject *const *items, Py_ssize_t nitem,
-                        int steal)
+                         PyObject *const *items, Py_ssize_t nitem,
+                         int steal)
 {
     assert(listbuilder_check_consistency(builder));
     assert(nitem >= 0);
