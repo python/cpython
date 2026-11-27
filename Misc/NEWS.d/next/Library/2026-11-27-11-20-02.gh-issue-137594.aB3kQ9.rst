@@ -1,0 +1,3 @@
+Fix :func:`unittest.mock.create_autospec` for coroutine functions so that
+signature validation and call recording occur immediately when called rather
+than being deferred until the returned coroutine is awaited.

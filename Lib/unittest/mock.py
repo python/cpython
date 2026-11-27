@@ -208,24 +208,15 @@ def _set_signature(mock, original, instance=False):
     return funcopy
 
 def _set_async_signature(mock, original, instance=False, is_async_mock=False):
-    # creates an async function with signature (*args, **kwargs) that delegates to a
-    # mock. It still does signature checking by calling a lambda with the same
-    # signature as the original.
-
-    skipfirst = isinstance(original, type)
-    func, sig = _get_signature_object(original, instance, skipfirst)
-    def checksig(*args, **kwargs):
-        sig.bind(*args, **kwargs)
-    _copy_func_details(func, checksig)
-
-    name = original.__name__
-    context = {'_checksig_': checksig, 'mock': mock}
-    src = """async def %s(*args, **kwargs):
-    _checksig_(*args, **kwargs)
-    return await mock(*args, **kwargs)""" % name
-    exec (src, context)
-    funcopy = context[name]
-    _setup_func(funcopy, mock, sig)
+    # creates a function marked as a coroutine function with signature
+    # (*args, **kwargs) that delegates to an async mock. Using a synchronous
+    # wrapper marked via markcoroutinefunction ensures signature checking and
+    # call recording happen immediately when called, rather than being
+    # deferred until the returned coroutine is awaited.
+    funcopy = _set_signature(mock, original, instance=instance)
+    if funcopy is mock:
+        return mock
+    inspect.markcoroutinefunction(funcopy)
     _setup_async_mock(funcopy)
     return funcopy
 

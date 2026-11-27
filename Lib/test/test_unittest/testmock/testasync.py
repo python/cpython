@@ -222,6 +222,13 @@ class AsyncAutospecTest(unittest.TestCase):
         async def main():
             await awaitable
 
+        self.assertTrue(spec.called)
+        self.assertEqual(spec.call_count, 1)
+        self.assertEqual(spec.call_args, call(1, 2, c=3))
+        self.assertEqual(spec.call_args_list, [call(1, 2, c=3)])
+        self.assertEqual(spec.mock_calls, [call(1, 2, c=3)])
+        spec.assert_called_once_with(1, 2, c=3)
+
         self.assertEqual(spec.await_count, 0)
         self.assertIsNone(spec.await_args)
         self.assertEqual(spec.await_args_list, [])
@@ -232,6 +239,7 @@ class AsyncAutospecTest(unittest.TestCase):
         self.assertTrue(inspect.iscoroutinefunction(spec))
         self.assertTrue(asyncio.iscoroutine(awaitable))
         self.assertTrue(inspect.iscoroutine(awaitable))
+        self.assertEqual(spec.call_count, 1)
         self.assertEqual(spec.await_count, 1)
         self.assertEqual(spec.await_args, call(1, 2, c=3))
         self.assertEqual(spec.await_args_list, [call(1, 2, c=3)])
@@ -245,22 +253,17 @@ class AsyncAutospecTest(unittest.TestCase):
 
     def test_autospec_checks_signature(self):
         spec = create_autospec(async_func_args)
-        # signature is not checked when called
-        awaitable = spec()
-        self.assertListEqual(spec.mock_calls, [])
-
-        async def main():
-            await awaitable
-
-        # but it is checked when awaited
         with self.assertRaises(TypeError):
-            run(main())
+            spec()
 
         # _checksig_ raises before running or awaiting the mock
+        self.assertFalse(spec.called)
+        self.assertEqual(spec.call_count, 0)
         self.assertListEqual(spec.mock_calls, [])
         self.assertEqual(spec.await_count, 0)
         self.assertIsNone(spec.await_args)
         self.assertEqual(spec.await_args_list, [])
+        spec.assert_not_called()
         spec.assert_not_awaited()
 
     def test_patch_with_autospec(self):
@@ -275,6 +278,11 @@ class AsyncAutospecTest(unittest.TestCase):
                 self.assertTrue(inspect.iscoroutine(awaitable))
                 self.assertTrue(inspect.isawaitable(awaitable))
 
+                # Call is recorded immediately, before awaiting
+                self.assertTrue(mock_method.called)
+                self.assertEqual(mock_method.call_count, 1)
+                mock_method.assert_called_once_with(1, 2, c=3)
+
                 # Verify the default values during mock setup
                 self.assertEqual(mock_method.await_count, 0)
                 self.assertEqual(mock_method.await_args_list, [])
@@ -283,6 +291,7 @@ class AsyncAutospecTest(unittest.TestCase):
 
                 await awaitable
 
+            self.assertEqual(mock_method.call_count, 1)
             self.assertEqual(mock_method.await_count, 1)
             self.assertEqual(mock_method.await_args, call(1, 2, c=3))
             self.assertEqual(mock_method.await_args_list, [call(1, 2, c=3)])
@@ -292,9 +301,47 @@ class AsyncAutospecTest(unittest.TestCase):
             mock_method.assert_awaited()
 
             mock_method.reset_mock()
+            self.assertFalse(mock_method.called)
+            self.assertEqual(mock_method.call_count, 0)
             self.assertEqual(mock_method.await_count, 0)
             self.assertIsNone(mock_method.await_args)
             self.assertEqual(mock_method.await_args_list, [])
+
+        run(test_async())
+
+    def test_patch_with_autospec_side_effect_records_call_before_await(self):
+        async def async_side_effect(a, b, *, c):
+            return a + b + c
+
+        async def test_async():
+            with patch(
+                f"{__name__}.async_func_args",
+                side_effect=async_side_effect,
+                autospec=True,
+            ) as mock_method:
+                coro = async_func_args(1, 2, c=3)
+                self.assertTrue(mock_method.called)
+                mock_method.assert_called_once_with(1, 2, c=3)
+                mock_method.assert_not_awaited()
+
+                result = await coro
+                self.assertEqual(result, 6)
+                mock_method.assert_awaited_once_with(1, 2, c=3)
+
+            with patch.object(
+                AsyncClass, "async_method", side_effect=AsyncClass.async_method,
+                autospec=True,
+            ) as mock_method:
+                inst = AsyncClass()
+                self.assertTrue(inspect.iscoroutinefunction(inst.async_method))
+                coro = inst.async_method()
+                self.assertTrue(mock_method.called)
+                mock_method.assert_called_once_with(inst)
+                mock_method.assert_not_awaited()
+                await coro
+                mock_method.assert_awaited_once_with(inst)
+                with self.assertRaises(TypeError):
+                    inst.async_method("unexpected")
 
         run(test_async())
 
