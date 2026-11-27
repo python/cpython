@@ -1966,7 +1966,7 @@ dequeiter_next_lock_held(dequeiterobject *it, dequeobject *deque)
     PyObject *item;
 
     if (it->deque->state != it->state) {
-        it->counter = 0;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->counter, 0);
         PyErr_SetString(PyExc_RuntimeError,
                         "deque mutated during iteration");
         return NULL;
@@ -1978,7 +1978,7 @@ dequeiter_next_lock_held(dequeiterobject *it, dequeobject *deque)
 
     item = it->b->data[it->index];
     it->index++;
-    it->counter--;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(it->counter, it->counter - 1);
     if (it->index == BLOCKLEN && it->counter > 0) {
         CHECK_NOT_END(it->b->rightlink);
         it->b = it->b->rightlink;
@@ -1987,6 +1987,14 @@ dequeiter_next_lock_held(dequeiterobject *it, dequeobject *deque)
     return Py_NewRef(item);
 }
 
+/* The mutable fields of a deque iterator (b, index and counter) are only
+ * written while holding the critical section of the deque it iterates over,
+ * never the iterator's own lock.  Concurrent next() calls on a shared
+ * iterator are therefore serialized by the deque's lock, and locking the
+ * iterator as well is unnecessary.  This halves the number of atomic
+ * operations per item in the free-threaded build.  __length_hint__ reads
+ * counter without locking, so writes to it use relaxed atomic stores.
+ */
 static PyObject *
 dequeiter_next(PyObject *op)
 {
@@ -1995,9 +2003,9 @@ dequeiter_next(PyObject *op)
     // It's safe to access it->deque without holding the per-object lock for it
     // here; it->deque is only assigned during construction of it.
     dequeobject *deque = it->deque;
-    Py_BEGIN_CRITICAL_SECTION2(it, deque);
+    Py_BEGIN_CRITICAL_SECTION(deque);
     result = dequeiter_next_lock_held(it, deque);
-    Py_END_CRITICAL_SECTION2();
+    Py_END_CRITICAL_SECTION();
 
     return result;
 }
@@ -2056,10 +2064,10 @@ dequeiter_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
     // here; it->deque is only assigned during construction of it.
     dequeobject *deque = it->deque;
     Py_ssize_t size, counter;
-    Py_BEGIN_CRITICAL_SECTION2(it, deque);
+    Py_BEGIN_CRITICAL_SECTION(deque);
     size = Py_SIZE(deque);
     counter = it->counter;
-    Py_END_CRITICAL_SECTION2();
+    Py_END_CRITICAL_SECTION();
     return Py_BuildValue("O(On)", ty, deque, size - counter);
 }
 
@@ -2119,7 +2127,7 @@ dequereviter_next_lock_held(dequeiterobject *it, dequeobject *deque)
         return NULL;
 
     if (it->deque->state != it->state) {
-        it->counter = 0;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->counter, 0);
         PyErr_SetString(PyExc_RuntimeError,
                         "deque mutated during iteration");
         return NULL;
@@ -2129,7 +2137,7 @@ dequereviter_next_lock_held(dequeiterobject *it, dequeobject *deque)
 
     item = it->b->data[it->index];
     it->index--;
-    it->counter--;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(it->counter, it->counter - 1);
     if (it->index < 0 && it->counter > 0) {
         CHECK_NOT_END(it->b->leftlink);
         it->b = it->b->leftlink;
@@ -2146,9 +2154,10 @@ dequereviter_next(PyObject *self)
     // It's safe to access it->deque without holding the per-object lock for it
     // here; it->deque is only assigned during construction of it.
     dequeobject *deque = it->deque;
-    Py_BEGIN_CRITICAL_SECTION2(it, deque);
+    // See the comment above dequeiter_next().
+    Py_BEGIN_CRITICAL_SECTION(deque);
     item = dequereviter_next_lock_held(it, deque);
-    Py_END_CRITICAL_SECTION2();
+    Py_END_CRITICAL_SECTION();
     return item;
 }
 
