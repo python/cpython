@@ -1,0 +1,2 @@
+IDLE no longer silently fails to start when the user configuration directory
+cannot be created. It now starts with default settings and shows a warning.
