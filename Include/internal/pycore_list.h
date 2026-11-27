@@ -80,35 +80,14 @@ PyAPI_FUNC(PyObject *)_PyList_FromStackRefStealOnSuccess(const union _PyStackRef
 PyAPI_FUNC(PyObject *)_PyList_AsTupleAndClear(PyListObject *v);
 
 #ifdef Py_DEBUG
+   // In debug mode, PyListBuilder_Finish() makes sure that all list items
+   // are initialized.
 #  define _PyListBuilder_INIT_ITEMS 1
 #else
+   // In release mode, list items are not initialized for best performance.
+   // The caller is responsible to initialize all items.
 #  define _PyListBuilder_INIT_ITEMS 0
 #endif
-
-extern int _PyListBuilder_Resize(
-    PyListBuilder *builder,
-    Py_ssize_t new_size);
-extern void _PyListBuilder_ResetSize(
-    PyListBuilder *builder,
-    Py_ssize_t size);
-
-
-// The caller must resize the list so it's big enough to set this item.
-// A builder list item must be set exactly once.
-static inline void
-_PyListBuilder_SET_ITEM_STEAL(PyListBuilder *builder, Py_ssize_t index,
-                              PyObject *item)
-{
-    assert(item != NULL);
-
-    PyListObject *list = (PyListObject*)builder;
-    assert(0 <= index && index < Py_SIZE(list));
-#if _PyListBuilder_INIT_ITEMS
-    assert(list->ob_item[index] == NULL);
-#endif
-
-    list->ob_item[index] = item;
-}
 
 #ifdef __cplusplus
 }

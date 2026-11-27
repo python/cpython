@@ -169,7 +169,6 @@ builder_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
     if (self->builder == NULL) {
         return -1;
     }
-
     return 0;
 }
 
@@ -180,9 +179,7 @@ builder_dealloc(PyObject *self_raw)
 {
     BuilderObject *self = (BuilderObject *)self_raw;
     PyTypeObject *tp = Py_TYPE(self);
-    if (self->builder) {
-        PyListBuilder_Discard(self->builder);
-    }
+    PyListBuilder_Discard(self->builder);  // self->builder can be NULL
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -376,6 +373,5 @@ _PyTestCapi_Init_List(PyObject *m)
     if (PyModule_AddIntConstant(m, "LIST_SMALL_ALLOCATED", _Py_LIST_SMALL_ALLOCATED) < 0) {
         return -1;
     }
-
     return 0;
 }

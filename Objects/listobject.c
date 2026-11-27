@@ -320,7 +320,7 @@ list_new_prealloc(Py_ssize_t size)
         }
     }
 
-    if (size <= 0) {
+    if (size == 0) {
         op->ob_item = NULL;
     }
     else {
@@ -333,11 +333,11 @@ list_new_prealloc(Py_ssize_t size)
         op->ob_item = array->ob_item;
 #else
         op->ob_item = (PyObject **) PyMem_Malloc(size * sizeof(PyObject *));
-#endif
         if (op->ob_item == NULL) {
             Py_DECREF(op);
             return PyErr_NoMemory();
         }
+#endif
     }
     Py_SET_SIZE(op, 0);
     op->allocated = size;
@@ -4519,8 +4519,8 @@ PyListBuilder_Finish(PyListBuilder *builder)
 }
 
 
-int
-_PyListBuilder_Resize(PyListBuilder *builder, Py_ssize_t new_size)
+static int
+listbuilder_resize(PyListBuilder *builder, Py_ssize_t new_size)
 {
     PyListObject *list = _PyList_CAST(builder);
 #if _PyListBuilder_INIT_ITEMS
@@ -4530,9 +4530,10 @@ _PyListBuilder_Resize(PyListBuilder *builder, Py_ssize_t new_size)
     // On Free Threading, it can call _PyObject_GC_SET_SHARED() on the list
     int res = list_resize(list, new_size);
 #if _PyListBuilder_INIT_ITEMS
-    if (res == 0 && new_size > old_size) {
+    Py_ssize_t allocated = list->allocated;
+    if (res == 0 && allocated > old_size) {
         memset(&list->ob_item[old_size], 0,
-               (new_size - old_size) * sizeof(PyObject*));
+               (allocated - old_size) * sizeof(PyObject*));
     }
 #endif
     return res;
@@ -4543,21 +4544,31 @@ int
 PyListBuilder_AppendSteal(PyListBuilder *builder, PyObject *item)
 {
     assert(listbuilder_check_consistency(builder));
+    assert(item != NULL);
     PyListObject *list = _PyList_CAST(builder);
 
     Py_ssize_t index = Py_SIZE(list);
     Py_ssize_t allocated = list->allocated;
     if (index < allocated) {
         Py_SET_SIZE(list, index + 1);
+#if _PyListBuilder_INIT_ITEMS
+        // A list item must be set exactly once
+        assert(list->ob_item[index] == NULL);
+#endif
         list->ob_item[index] = item;
         return 0;
     }
 
-    if (_PyListBuilder_Resize(builder, index + 1) < 0) {
+    if (listbuilder_resize(builder, index + 1) < 0) {
         Py_DECREF(item);
         return -1;
     }
-    _PyListBuilder_SET_ITEM_STEAL(builder, index, item);
+
+#if _PyListBuilder_INIT_ITEMS
+    // A list item must be set exactly once
+    assert(list->ob_item[index] == NULL);
+#endif
+    list->ob_item[index] = item;
     return 0;
 }
 
@@ -4569,8 +4580,8 @@ PyListBuilder_Append(PyListBuilder *builder, PyObject *item)
 }
 
 
-void
-_PyListBuilder_ResetSize(PyListBuilder *builder, Py_ssize_t size)
+static void
+listbuilder_reset_size(PyListBuilder *builder, Py_ssize_t size)
 {
     assert(listbuilder_check_consistency(builder));
     PyListObject *list = _PyList_CAST(builder);
@@ -4642,10 +4653,10 @@ PyListBuilder_Extend(PyListBuilder *builder, PyObject *iterable)
         res = list_extend_iter_lock_held(self, iterable);
     }
 
-    if (res < 0 && Py_SIZE(self) != old_size) {
+    if (res < 0) {
         // On error, reset the builder to its previous state:
         // discard added items
-        _PyListBuilder_ResetSize(builder, old_size);
+        listbuilder_reset_size(builder, old_size);
     }
 
     return res;
@@ -4658,6 +4669,13 @@ listbuilder_extend_array(PyListBuilder *builder,
                          PyObject *const *items, Py_ssize_t nitem,
                          int steal)
 {
+#ifdef Py_DEBUG
+    if (nitem < 0) {
+        PyErr_Format(PyExc_ValueError, "nitem must be >= 0");
+        return -1;
+    }
+#endif
+
     assert(listbuilder_check_consistency(builder));
     assert(nitem >= 0);
 
@@ -4670,7 +4688,7 @@ listbuilder_extend_array(PyListBuilder *builder,
     Py_ssize_t size = Py_SIZE(list);
     Py_ssize_t new_size = size + nitem;
     if (new_size > list->allocated) {
-        if (_PyListBuilder_Resize(builder, new_size) < 0) {
+        if (listbuilder_resize(builder, new_size) < 0) {
             if (steal) {
                 for (Py_ssize_t i = 0; i < nitem; i++) {
                     Py_DECREF(items[i]);
