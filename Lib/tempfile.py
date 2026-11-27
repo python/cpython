@@ -969,10 +969,13 @@ class TemporaryDirectory:
     @classmethod
     def _rmtree(cls, name, ignore_errors=False, repeated=False, dir_fd=None,
                 fullname=None):
-        if fullname is None:
-            fullname = name
+
+        # work with str paths throughout
+        name = _os.fsdecode(name)
+        fullname = name if fullname is None else _os.fsdecode(fullname)
 
         def onexc(func, path, exc, direntry=None, dir_fd=None):
+            path = _os.fsdecode(path)
             # On DragonFly BSD, UF_NOUNLINK removal fails with EISDIR, not EPERM.
             if isinstance(exc, (PermissionError, IsADirectoryError)):
                 if repeated and path == name:
