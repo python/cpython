@@ -64,6 +64,8 @@ def py_make_scanner(context):
             raise StopIteration(idx)
 
     def scan_once(string, idx):
+        if idx < 0:
+            raise ValueError('idx cannot be negative')
         try:
             return _scan_once(string, idx)
         finally:
