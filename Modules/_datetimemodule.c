@@ -2795,12 +2795,22 @@ delta_new_impl(PyTypeObject *type, PyObject *days, PyObject *seconds,
                PyObject *minutes, PyObject *hours, PyObject *weeks)
 /*[clinic end generated code: output=61d7e02a92a97700 input=8aebc4cdef360d1f]*/
 {
+    /* vectorcall passes borrowed references; hold strong references before
+       any conversion can execute arbitrary Python code. */
+    Py_XINCREF(days);
+    Py_XINCREF(seconds);
+    Py_XINCREF(microseconds);
+    Py_XINCREF(milliseconds);
+    Py_XINCREF(minutes);
+    Py_XINCREF(hours);
+    Py_XINCREF(weeks);
+
     PyObject *self = NULL;
 
     PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
     if (st == NULL) {
-        return NULL;
+        goto Done;
     }
 
     PyObject *x = NULL;         /* running sum of microseconds */
@@ -2886,7 +2896,16 @@ delta_new_impl(PyTypeObject *type, PyObject *days, PyObject *seconds,
     Py_DECREF(x);
 
 Done:
-    RELEASE_CURRENT_STATE(st, current_mod);
+    Py_XDECREF(days);
+    Py_XDECREF(seconds);
+    Py_XDECREF(microseconds);
+    Py_XDECREF(milliseconds);
+    Py_XDECREF(minutes);
+    Py_XDECREF(hours);
+    Py_XDECREF(weeks);
+    if (st != NULL) {
+        RELEASE_CURRENT_STATE(st, current_mod);
+    }
     return self;
 
 #undef CLEANUP
