@@ -2911,7 +2911,8 @@ class PyZipFile(ZipFile):
         try:
             if self.debug:
                 print("Compiling", file_py)
-            code = loader.source_to_code(source_bytes, archivename)
+            code = loader.source_to_code(source_bytes, archivename,
+                                         _optimize=self._optimize)
         except Exception as err:
             # Historically, this function prints messages here rather than raising
             # (see test_zipfile.test_write_filtered_python_package)
