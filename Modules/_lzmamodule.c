@@ -26,6 +26,19 @@
     #error "The maximum block size accepted by liblzma is SIZE_MAX."
 #endif
 
+
+/*
+ * If the lzma.h we're building against is so old as not to define these, this
+ * provides their equivalent values so that the names remain defined in Python
+ * regardless of the header versions used at build time.
+ */
+#ifndef LZMA_FILTER_ARM64
+#define LZMA_FILTER_ARM64       LZMA_VLI_C(0x0A)
+#endif
+#ifndef LZMA_FILTER_RISCV
+#define LZMA_FILTER_RISCV       LZMA_VLI_C(0x0B)
+#endif
+
 /* On success, return value >= 0
    On failure, return -1 */
 static inline Py_ssize_t
@@ -373,6 +386,8 @@ lzma_filter_converter(_lzma_state *state, PyObject *spec, void *ptr)
         case LZMA_FILTER_ARM:
         case LZMA_FILTER_ARMTHUMB:
         case LZMA_FILTER_SPARC:
+        case LZMA_FILTER_ARM64:
+        case LZMA_FILTER_RISCV:
             f->options = parse_filter_spec_bcj(state, spec);
             return f->options != NULL;
         default:
@@ -491,7 +506,9 @@ build_filter_spec(const lzma_filter *f)
         case LZMA_FILTER_IA64:
         case LZMA_FILTER_ARM:
         case LZMA_FILTER_ARMTHUMB:
-        case LZMA_FILTER_SPARC: {
+        case LZMA_FILTER_SPARC:
+        case LZMA_FILTER_ARM64:
+        case LZMA_FILTER_RISCV: {
             lzma_options_bcj *options = f->options;
             if (options) {
                 ADD_FIELD(options, start_offset);
@@ -1106,7 +1123,6 @@ error:
 }
 
 /*[clinic input]
-@permit_long_docstring_body
 _lzma.LZMADecompressor.decompress
 
     data: Py_buffer
@@ -1114,24 +1130,25 @@ _lzma.LZMADecompressor.decompress
 
 Decompress *data*, returning uncompressed data as bytes.
 
-If *max_length* is nonnegative, returns at most *max_length* bytes of
-decompressed data. If this limit is reached and further output can be
-produced, *self.needs_input* will be set to ``False``. In this case, the next
-call to *decompress()* may provide *data* as b'' to obtain more of the output.
+If *max_length* is nonnegative, returns at most *max_length* bytes
+of decompressed data. If this limit is reached and further output
+can be produced, *self.needs_input* will be set to ``False``.  In
+this case, the next call to *decompress()* may provide *data* as b''
+to obtain more of the output.
 
-If all of the input data was decompressed and returned (either because this
-was less than *max_length* bytes, or because *max_length* was negative),
-*self.needs_input* will be set to True.
+If all of the input data was decompressed and returned (either
+because this was less than *max_length* bytes, or because
+*max_length* was negative), *self.needs_input* will be set to True.
 
-Attempting to decompress data after the end of stream is reached raises an
-EOFError.  Any data found after the end of the stream is ignored and saved in
-the unused_data attribute.
+Attempting to decompress data after the end of stream is reached
+raises an EOFError.  Any data found after the end of the stream is
+ignored and saved in the unused_data attribute.
 [clinic start generated code]*/
 
 static PyObject *
 _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
                                        Py_ssize_t max_length)
-/*[clinic end generated code: output=ef4e20ec7122241d input=d5cbd45801b4b8b0]*/
+/*[clinic end generated code: output=ef4e20ec7122241d input=0eb62669c4315dee]*/
 {
     PyObject *result = NULL;
 
@@ -1492,6 +1509,62 @@ _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
     return result;
 }
 
+
+PyDoc_STRVAR(lzma_version_info__doc__,
+"_lzma.lzma_version_info\n\
+\n\
+Lzma version information as a named tuple.");
+
+static PyStructSequence_Field lzma_version_info_fields[] = {
+    {"major", "Major release number"},
+    {"minor", "Minor release number"},
+    {"patch", "Patch release number"},
+    {"stability", "'alpha', 'beta', or 'stable'"},
+    {0}
+};
+
+static PyStructSequence_Desc lzma_version_info_desc = {
+    "_lzma.lzma_version_info",        /* name */
+    lzma_version_info__doc__,         /* doc */
+    lzma_version_info_fields,         /* fields */
+    4
+};
+
+static PyObject *
+make_lzma_version_info(PyTypeObject *type, unsigned int number)
+{
+    PyObject *version;
+    int pos = 0;
+    unsigned int major = number / 10000000u;
+    unsigned int minor = (number % 10000000u) / 10000u;
+    unsigned int patch = (number % 10000u) / 10u;
+    unsigned int stability = number % 10u;
+    const char *stability_string = (stability == 0) ? "alpha"
+                                 : (stability == 1) ? "beta"
+                                 : "stable";
+
+    version = PyStructSequence_New(type);
+    if (version == NULL) {
+        return NULL;
+    }
+
+#define SetItem(VALUE) \
+    PyStructSequence_SET_ITEM(version, pos++, VALUE); \
+    if (PyErr_Occurred()) { \
+        Py_DECREF(version); \
+        return NULL; \
+    }
+
+    SetItem(PyLong_FromUnsignedLong(major))
+    SetItem(PyLong_FromUnsignedLong(minor))
+    SetItem(PyLong_FromUnsignedLong(patch))
+    SetItem(PyUnicode_FromString(stability_string))
+#undef SetItem
+
+    return version;
+}
+
+
 /* Some of our constants are more than 32 bits wide, so PyModule_AddIntConstant
    would not work correctly on platforms with 32-bit longs. */
 static int
@@ -1544,6 +1617,8 @@ lzma_exec(PyObject *module)
     ADD_INT_PREFIX_MACRO(module, FILTER_ARMTHUMB);
     ADD_INT_PREFIX_MACRO(module, FILTER_SPARC);
     ADD_INT_PREFIX_MACRO(module, FILTER_POWERPC);
+    ADD_INT_PREFIX_MACRO(module, FILTER_ARM64);
+    ADD_INT_PREFIX_MACRO(module, FILTER_RISCV);
     ADD_INT_PREFIX_MACRO(module, MF_HC3);
     ADD_INT_PREFIX_MACRO(module, MF_HC4);
     ADD_INT_PREFIX_MACRO(module, MF_BT2);
@@ -1584,6 +1659,33 @@ lzma_exec(PyObject *module)
         return -1;
     }
 
+    /* lzma_version */
+    if (PyModule_Add(module, "LZMA_VERSION",
+                     PyUnicode_FromString(LZMA_VERSION_STRING)) < 0) {
+        return -1;
+    }
+    if (PyModule_Add(module, "lzma_version",
+                     PyUnicode_FromString(lzma_version_string())) < 0) {
+        return -1;
+    }
+    PyTypeObject *version_type;
+    version_type = PyStructSequence_NewType(&lzma_version_info_desc);
+    if (version_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(module, "LZMA_VERSION_INFO",
+            make_lzma_version_info(version_type, LZMA_VERSION)) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    if (PyModule_Add(module, "lzma_version_info",
+            make_lzma_version_info(version_type, lzma_version_number())) < 0)
+    {
+        Py_DECREF(version_type);
+        return -1;
+    }
+    Py_DECREF(version_type);
     return 0;
 }
 

@@ -64,6 +64,8 @@ versions of Python, without recompilation.
 
    For simplicity, this document talks about *extensions*, but Stable ABI
    works the same way for all uses of the API – for example, embedding Python.
+   When embedding Python on Linux, see :ref:`embedding-python-versions`
+   for how to link the application and for limitations.
 
 There are two Stable ABIs:
 
@@ -74,7 +76,7 @@ There are two Stable ABIs:
   :term:`free-threaded <free-threaded build>` builds of CPython.
   It has stricter API limitations than ``abi3``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
       ``abi3t`` was added in :pep:`803`
 
@@ -114,7 +116,7 @@ versions of Python.
 
 All functions in Stable ABI are present as functions in Python's shared
 library, not solely as macros.
-This makes them usable are usable from languages that don't use the C
+This makes them usable in languages that don't use the C
 preprocessor, including Python's :py:mod:`ctypes`.
 
 
@@ -170,7 +172,7 @@ both Stable ABIs.
    :term:`free-threaded builds <free-threaded build>` of CPython.
    See :ref:`above <abi3-compiling>` for common information.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 Both macros specify a target ABI; the different naming style is due to
 backwards compatibility.

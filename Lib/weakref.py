@@ -22,6 +22,7 @@ from _weakref import (
 from _weakrefset import WeakSet
 
 import _collections_abc  # Import after _weakref to avoid circular import.
+from copyreg import Proxy, _Reducer
 import sys
 import itertools
 
@@ -34,6 +35,7 @@ __all__ = ["ref", "proxy", "getweakrefcount", "getweakrefs",
 
 
 _collections_abc.MutableSet.register(WeakSet)
+
 
 class WeakMethod(ref):
     """
@@ -65,6 +67,24 @@ class WeakMethod(ref):
         self_wr = ref(self)
         return self
 
+    def __copy__(self):
+        meth = self()
+        if meth is None:
+            # A dead weak method cannot be recreated.
+            return self
+        return type(self)(meth)
+
+    def __reduce__(self):
+        # The instance is pickled weakly; the bound method is rebuilt on
+        # unpickling by looking the function up on the instance.
+        # The callback is not preserved.
+        meth = self()
+        if meth is None:
+            raise TypeError(
+                "cannot pickle a weak reference to a dead object")
+        return self.__class__, (_Reducer((getattr, (Proxy(meth.__self__),
+                                                    meth.__func__.__name__))),)
+
     def __call__(self):
         obj = super().__call__()
         func = self._func_ref()
@@ -95,6 +115,10 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
     Entries in the dictionary will be discarded when no strong
     reference to the value exists anymore
     """
+    # Slots give __getstate__() a uniform (dict, slots) shape for __reduce__.
+    # __dict__ carries user attributes; the removal callback needs __weakref__.
+    __slots__ = '__dict__', '__weakref__', 'data', '_remove'
+
     # We inherit the constructor without worrying about the input
     # dictionary; since it uses our .update() method, we get the right
     # checks (if the other dictionary is a WeakValueDictionary,
@@ -156,6 +180,16 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
             if o is not None:
                 new[deepcopy(key, memo)] = o
         return new
+
+    def __reduce__(self):
+        # The values must be strongly referenced elsewhere in the pickle.
+        # data and _remove are rebuilt by the reconstructor.
+        dict, slots = self.__getstate__()
+        for name in ('data', '_remove'):
+            slots.pop(name, None)
+        state = (dict, slots) if dict or slots else None
+        items = ((key, Proxy(o)) for key, o in self.items())
+        return (self.__class__, (), state, None, items)
 
     def get(self, key, default=None):
         try:
@@ -305,6 +339,8 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
     can be especially useful with objects that override attribute
     accesses.
     """
+    # See the comment on WeakValueDictionary.__slots__.
+    __slots__ = '__dict__', '__weakref__', 'data', '_remove'
 
     def __init__(self, dict=None):
         self.data = {}
@@ -352,6 +388,16 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
             if o is not None:
                 new[o] = deepcopy(value, memo)
         return new
+
+    def __reduce__(self):
+        # The keys must be strongly referenced elsewhere in the pickle.
+        # data and _remove are rebuilt by the reconstructor.
+        dict, slots = self.__getstate__()
+        for name in ('data', '_remove'):
+            slots.pop(name, None)
+        state = (dict, slots) if dict or slots else None
+        items = ((Proxy(key), value) for key, value in self.items())
+        return (self.__class__, (), state, None, items)
 
     def get(self, key, default=None):
         return self.data.get(ref(key),default)

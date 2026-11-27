@@ -4,8 +4,17 @@ import re
 import sys
 import unittest
 
+from test.support import import_helper
+
 from .util import setup_module, DebuggerTests
 
+
+_testinternalcapi = import_helper.import_module("_testinternalcapi")
+NATIVE_JIT_ENABLED = (
+    hasattr(sys, "_jit")
+    and sys._jit.is_enabled()
+    and _testinternalcapi.get_jit_backend() == "jit"
+)
 
 JIT_SAMPLE_SCRIPT = os.path.join(os.path.dirname(__file__), "gdb_jit_sample.py")
 # In batch GDB, break in builtin_id() while it is running under JIT,
@@ -62,14 +71,14 @@ def setUpModule():
 # Python/jit_unwind.c, and the synthetic EH-frame is only implemented for
 # x86_64 and AArch64 (a #error fires otherwise). Skip cleanly on other
 # platforms or architectures instead of producing timeouts / empty backtraces.
-# is_enabled() implies is_available() and also implies that the runtime has
-# JIT execution active; interpreter-only tier 2 builds don't hit this path.
+# sys._jit.is_enabled() is true for --enable-experimental-jit=interpreter,
+# but these tests need native JIT code and a py::jit:executor frame.
 @unittest.skipUnless(sys.platform == "linux",
                      "GDB JIT interface is only implemented for Linux + ELF")
 @unittest.skipUnless(platform.machine() in ("x86_64", "aarch64"),
                      "GDB JIT CFI emitter only supports x86_64 and AArch64")
-@unittest.skipUnless(hasattr(sys, "_jit") and sys._jit.is_enabled(),
-                     "requires a JIT-enabled build with JIT execution active")
+@unittest.skipUnless(NATIVE_JIT_ENABLED,
+                     "requires native JIT execution active")
 class JitBacktraceTests(DebuggerTests):
     def get_stack_trace(self, **kwargs):
         # These tests validate the JIT-relevant part of the backtrace via

@@ -45,8 +45,8 @@ class ResourceTest(unittest.TestCase):
         resource.setrlimit(resource.RLIMIT_FSIZE, (max, max))
         resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
 
-    @unittest.skipIf(sys.platform == "vxworks",
-                     "setting RLIMIT_FSIZE is not supported on VxWorks")
+    @unittest.skipIf(sys.platform in ("vxworks", "cygwin"),
+                     f"setting RLIMIT_FSIZE is not supported on {sys.platform}")
     @unittest.skipUnless(hasattr(resource, 'RLIMIT_FSIZE'), 'requires resource.RLIMIT_FSIZE')
     def test_fsize_enforced(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
@@ -84,8 +84,8 @@ class ResourceTest(unittest.TestCase):
         except (OverflowError, ValueError):
             pass
 
-    @unittest.skipIf(sys.platform == "vxworks",
-                     "setting RLIMIT_FSIZE is not supported on VxWorks")
+    @unittest.skipIf(sys.platform in ("vxworks", "cygwin"),
+                     f"setting RLIMIT_FSIZE is not supported on {sys.platform}")
     @unittest.skipUnless(hasattr(resource, 'RLIMIT_FSIZE'), 'requires resource.RLIMIT_FSIZE')
     def test_fsize_not_too_big(self):
         (cur, max) = resource.getrlimit(resource.RLIMIT_FSIZE)
@@ -99,6 +99,11 @@ class ResourceTest(unittest.TestCase):
             # silently converted the limit value to RLIM_INFINITY.
             if sys.maxsize < 2**32 <= cur <= resource.RLIM_INFINITY:
                 return [(resource.RLIM_INFINITY, max), (cur, max)]
+            # Solaris silently converts limits that do not fit in a signed
+            # 64-bit integer to RLIM_INFINITY.
+            if cur >= 2**63-1:
+                return [(resource.RLIM_INFINITY, max),
+                        (min(cur, resource.RLIM_INFINITY), max)]
             return [(min(cur, resource.RLIM_INFINITY), max)]
 
         resource.setrlimit(resource.RLIMIT_FSIZE, (2**31-5, max))
@@ -163,8 +168,8 @@ class ResourceTest(unittest.TestCase):
             pass
 
     # Issue 6083: Reference counting bug
-    @unittest.skipIf(sys.platform == "vxworks",
-                     "setting RLIMIT_CPU is not supported on VxWorks")
+    @unittest.skipIf(sys.platform in ("vxworks", "cygwin"),
+                     f"setting RLIMIT_CPU is not supported on {sys.platform}")
     @unittest.skipUnless(hasattr(resource, 'RLIMIT_CPU'), 'requires resource.RLIMIT_CPU')
     def test_setrusage_refcount(self):
         limits = resource.getrlimit(resource.RLIMIT_CPU)

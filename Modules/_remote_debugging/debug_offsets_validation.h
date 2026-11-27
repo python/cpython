@@ -31,7 +31,7 @@
 #define FIELD_SIZE(type, member) sizeof(((type *)0)->member)
 
 enum {
-    PY_REMOTE_DEBUG_OFFSETS_TOTAL_SIZE = 840,
+    PY_REMOTE_DEBUG_OFFSETS_TOTAL_SIZE = 888,
     PY_REMOTE_ASYNC_DEBUG_OFFSETS_TOTAL_SIZE = 104,
 };
 
@@ -47,6 +47,15 @@ static_assert(
     sizeof(struct _Py_AsyncioModuleDebugOffsets) ==
         PY_REMOTE_ASYNC_DEBUG_OFFSETS_TOTAL_SIZE,
     "Update _remote_debugging validation for _Py_AsyncioModuleDebugOffsets");
+
+/* Derive unexported offsets from adjacent fields to keep the debug-offset
+ * table compatible across patch releases. */
+static_assert(offsetof(PyThreadState, exc_info) ==
+              offsetof(PyThreadState, current_exception) + sizeof(uintptr_t),
+              "exc_info must immediately follow current_exception");
+static_assert(offsetof(_PyErr_StackItem, previous_item) ==
+              offsetof(_PyErr_StackItem, exc_value) + sizeof(uintptr_t),
+              "previous_item must immediately follow exc_value");
 
 /*
  * This logic lives in a private header because it is shared by module.c and
@@ -249,6 +258,7 @@ validate_fixed_field(
 #define PY_REMOTE_DEBUG_RUNTIME_STATE_FIELDS(APPLY, buffer_size) \
     APPLY(runtime_state, interpreters_head, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size)
 
+/* current_exception also covers the adjacent exc_info pointer. */
 #define PY_REMOTE_DEBUG_THREAD_STATE_FIELDS(APPLY, buffer_size) \
     APPLY(thread_state, native_thread_id, sizeof(unsigned long), _Alignof(long), buffer_size); \
     APPLY(thread_state, interp, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
@@ -256,12 +266,13 @@ validate_fixed_field(
     APPLY(thread_state, status, FIELD_SIZE(PyThreadState, _status), _Alignof(unsigned int), buffer_size); \
     APPLY(thread_state, holds_gil, sizeof(int), _Alignof(int), buffer_size); \
     APPLY(thread_state, gil_requested, sizeof(int), _Alignof(int), buffer_size); \
-    APPLY(thread_state, current_exception, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
+    APPLY(thread_state, current_exception, 2 * sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
     APPLY(thread_state, thread_id, sizeof(unsigned long), _Alignof(long), buffer_size); \
     APPLY(thread_state, next, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
     APPLY(thread_state, current_frame, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
     APPLY(thread_state, base_frame, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
-    APPLY(thread_state, last_profiled_frame, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size)
+    APPLY(thread_state, last_profiled_frame, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size); \
+    APPLY(thread_state, last_profiled_frame_seq, sizeof(uintptr_t), _Alignof(uintptr_t), buffer_size)
 
 #define PY_REMOTE_DEBUG_INTERPRETER_STATE_FIELDS(APPLY, buffer_size) \
     APPLY(interpreter_state, id, sizeof(int64_t), _Alignof(int64_t), buffer_size); \
@@ -304,7 +315,9 @@ validate_fixed_field(
 
 #define PY_REMOTE_DEBUG_UNICODE_OBJECT_FIELDS(APPLY, buffer_size) \
     APPLY(unicode_object, length, sizeof(Py_ssize_t), _Alignof(Py_ssize_t), buffer_size); \
-    APPLY(unicode_object, asciiobject_size, sizeof(char), _Alignof(char), buffer_size)
+    APPLY(unicode_object, state, sizeof(struct _PyUnicodeObject_state), _Alignof(struct _PyUnicodeObject_state), buffer_size); \
+    APPLY(unicode_object, asciiobject_size, sizeof(char), _Alignof(char), buffer_size); \
+    APPLY(unicode_object, compactunicodeobject_size, sizeof(char), _Alignof(char), buffer_size)
 
 #define PY_REMOTE_DEBUG_GEN_OBJECT_FIELDS(APPLY, buffer_size) \
     APPLY(gen_object, gi_frame_state, sizeof(int8_t), _Alignof(int8_t), buffer_size); \
@@ -348,10 +361,11 @@ _PyRemoteDebug_ValidateDebugOffsetsLayout(struct _Py_DebugOffsets *debug_offsets
     PY_REMOTE_DEBUG_THREAD_STATE_FIELDS(
         PY_REMOTE_DEBUG_VALIDATE_FIELD,
         SIZEOF_THREAD_STATE);
+    /* exc_value also covers the adjacent previous_item pointer. */
     PY_REMOTE_DEBUG_VALIDATE_FIXED_FIELD(
         err_stackitem,
         exc_value,
-        sizeof(uintptr_t),
+        2 * sizeof(uintptr_t),
         _Alignof(uintptr_t),
         sizeof(_PyErr_StackItem));
     PY_REMOTE_DEBUG_VALIDATE_NESTED_FIELD(
@@ -370,11 +384,25 @@ _PyRemoteDebug_ValidateDebugOffsetsLayout(struct _Py_DebugOffsets *debug_offsets
         sizeof(uintptr_t),
         _Alignof(uintptr_t),
         SIZEOF_GC_RUNTIME_STATE);
+    PY_REMOTE_DEBUG_VALIDATE_FIELD(
+        gc,
+        generation_stats,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        SIZEOF_GC_RUNTIME_STATE);
     PY_REMOTE_DEBUG_VALIDATE_NESTED_FIELD(
         interpreter_state,
         gc,
         gc,
         frame,
+        sizeof(uintptr_t),
+        _Alignof(uintptr_t),
+        INTERP_STATE_BUFFER_SIZE);
+    PY_REMOTE_DEBUG_VALIDATE_NESTED_FIELD(
+        interpreter_state,
+        gc,
+        gc,
+        generation_stats,
         sizeof(uintptr_t),
         _Alignof(uintptr_t),
         INTERP_STATE_BUFFER_SIZE);

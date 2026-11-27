@@ -3,12 +3,17 @@
 # by abc.py to load everything else at startup.
 
 from _weakref import ref
+from copyreg import Proxy
 from types import GenericAlias
 
 __all__ = ['WeakSet']
 
 
 class WeakSet:
+    # Slots give __getstate__() a uniform (dict, slots) shape for __reduce__.
+    # __dict__ carries user attributes; add() needs __weakref__.
+    __slots__ = '__dict__', '__weakref__', 'data', '_remove'
+
     def __init__(self, data=None):
         self.data = set()
 
@@ -40,7 +45,13 @@ class WeakSet:
         return wr in self.data
 
     def __reduce__(self):
-        return self.__class__, (list(self),), self.__getstate__()
+        # The elements must be strongly referenced elsewhere in the pickle.
+        # data and _remove are rebuilt by the constructor.
+        dict, slots = self.__getstate__()
+        for name in ('data', '_remove'):
+            slots.pop(name, None)
+        state = (dict, slots) if dict or slots else None
+        return (self.__class__, ([Proxy(item) for item in self],), state)
 
     def add(self, item):
         self.data.add(ref(item, self._remove))
@@ -50,6 +61,8 @@ class WeakSet:
 
     def copy(self):
         return self.__class__(self)
+
+    __copy__ = copy
 
     def pop(self):
         while True:

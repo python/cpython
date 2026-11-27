@@ -191,12 +191,27 @@ class ForwardRef:
 
         arg = self.__forward_arg__
         if arg.isidentifier() and not keyword.iskeyword(arg):
+            resolved = _sentinel
             if arg in locals:
-                return locals[arg]
+                resolved = locals[arg]
             elif arg in globals:
-                return globals[arg]
+                resolved = globals[arg]
             elif hasattr(builtins, arg):
-                return getattr(builtins, arg)
+                resolved = getattr(builtins, arg)
+
+            if resolved is not _sentinel:
+                if isinstance(resolved, types.LazyImportType):
+                    # We try reifying the lazy object. If this fails, we propagate
+                    # the error in the VALUE format and leave the
+                    # ForwardRef unresolved in the FORWARDREF format.
+                    try:
+                        return resolved.resolve()
+                    except Exception:
+                        if not is_forwardref_format:
+                            raise
+                        return self
+                else:
+                    return resolved
             elif is_forwardref_format:
                 return self
             else:
@@ -225,29 +240,6 @@ class ForwardRef:
             else:
                 new_locals.transmogrify(self.__cell__)
                 return result
-
-    def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
-        import typing
-        import warnings
-
-        if type_params is _sentinel:
-            typing._deprecation_warning_for_no_type_params_passed(
-                "typing.ForwardRef._evaluate"
-            )
-            type_params = ()
-        warnings._deprecated(
-            "ForwardRef._evaluate",
-            "{name} is a private API and is retained for compatibility, but will be removed"
-            " in Python 3.16. Use ForwardRef.evaluate() or typing.evaluate_forward_ref() instead.",
-            remove=(3, 16),
-        )
-        return typing.evaluate_forward_ref(
-            self,
-            globals=globalns,
-            locals=localns,
-            type_params=type_params,
-            _recursive_guard=recursive_guard,
-        )
 
     @property
     def __forward_arg__(self):
@@ -1113,9 +1105,17 @@ def type_repr(value):
 
     """
     if isinstance(value, (type, types.FunctionType, types.BuiltinFunctionType)):
-        if value.__module__ == "builtins":
+        module = value.__module__
+        if module is None:
+            # Built-in methods have __module__ set to None; recover the module
+            # from the bound object (the class itself for class-bound methods).
+            obj = getattr(value, "__self__", None)
+            if obj is not None:
+                cls = obj if isinstance(obj, type) else type(obj)
+                module = cls.__module__
+        if module is None or module == "builtins":
             return value.__qualname__
-        return f"{value.__module__}.{value.__qualname__}"
+        return f"{module}.{value.__qualname__}"
     elif isinstance(value, _Template):
         tree = _template_to_ast(value)
         return ast.unparse(tree)

@@ -19,7 +19,6 @@ from generators_common import (
     cflags,
 )
 from cwriter import CWriter
-from dataclasses import dataclass
 from typing import TextIO
 from stack import get_stack_effect
 

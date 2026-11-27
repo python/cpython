@@ -44,13 +44,13 @@ def _colorize_json(json_str, theme):
 def main():
     description = ('A simple command line interface for json module '
                    'to validate and pretty-print JSON objects.')
-    parser = argparse.ArgumentParser(description=description, color=True)
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument('infile', nargs='?',
                         help='a JSON file to be validated or pretty-printed; '
-                             'defaults to stdin',
+                             'defaults to `stdin`',
                         default='-')
     parser.add_argument('outfile', nargs='?',
-                        help='write the output of infile to outfile',
+                        help='write the output of `infile` to `outfile`',
                         default=None)
     parser.add_argument('--sort-keys', action='store_true', default=False,
                         help='sort the output of dictionaries alphabetically by key')
@@ -58,7 +58,7 @@ def main():
                         help='disable escaping of non-ASCII characters')
     parser.add_argument('--json-lines', action='store_true', default=False,
                         help='parse input using the JSON Lines format. '
-                        'Use with --no-indent or --compact to produce valid JSON Lines output.')
+                        'Use with `--no-indent` or `--compact` to produce valid JSON Lines output.')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--indent', default=4, type=int,
                        help='separate items with newlines and use this number '

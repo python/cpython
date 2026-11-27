@@ -324,15 +324,22 @@ def prepare_predicate(next, token):
                 index = -1
         def select(context, result):
             parent_map = get_parent_map(context)
+            cache = {}
             for elem in result:
                 try:
                     parent = parent_map[elem]
+                except KeyError:
+                    continue
+                key = (parent, elem.tag)
+                if key not in cache:
                     # FIXME: what if the selector is "*" ?
-                    elems = list(parent.findall(elem.tag))
-                    if elems[index] is elem:
-                        yield elem
-                except (IndexError, KeyError):
-                    pass
+                    elems = parent.findall(elem.tag)
+                    try:
+                        cache[key] = elems[index]
+                    except IndexError:
+                        cache[key] = None
+                if cache[key] is elem:
+                    yield elem
         return select
     raise SyntaxError("invalid predicate")
 
@@ -380,8 +387,11 @@ def iterfind(elem, path, namespaces=None):
             return
         selector = []
         while 1:
+            prepare = ops.get(token[0])
+            if prepare is None:
+                raise SyntaxError("invalid path") from None
             try:
-                selector.append(ops[token[0]](next, token))
+                selector.append(prepare(next, token))
             except StopIteration:
                 raise SyntaxError("invalid path") from None
             try:

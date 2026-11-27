@@ -137,6 +137,9 @@ class TestScanstring:
             '"\\ud834\\u-123"',
             '"\\ud834\\u+123"',
             '"\\ud834\\u1_23"',
+            # Truncated or non-hex \uXXXX escape at end of input.
+            '"\\u004',
+            '"\\uXYZW',
         ]
         for s in bad_escapes:
             with self.assertRaises(self.JSONDecodeError, msg=s):

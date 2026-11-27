@@ -14,11 +14,12 @@ except ImportError:
 
 import asyncio
 from test.test_asyncio import utils as test_utils
+from test import support
 from test.support import socket_helper
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class StreamTests(test_utils.TestCase):
@@ -591,6 +592,14 @@ class StreamTests(test_utils.TestCase):
         stream.set_exception(exc)
         self.assertIs(stream.exception(), exc)
 
+        # Raised even when the data is already buffered.
+        stream.feed_data(b'line\n')
+        self.assertRaises(
+            ValueError, self.loop.run_until_complete, stream.readline())
+        self.assertRaises(
+            ValueError, self.loop.run_until_complete, stream.readuntil())
+        self.assertEqual(b'line\n', stream._buffer)
+
     def test_exception_waiter(self):
         stream = asyncio.StreamReader(loop=self.loop)
 
@@ -860,6 +869,84 @@ class StreamTests(test_utils.TestCase):
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
         self.loop.run_until_complete(run_test())
         self.assertEqual(messages, [])
+
+    @unittest.skipIf(ssl is None, 'No ssl module')
+    def test_start_tls_connection_lost_during_handshake(self):
+        # The protocol must get connection_lost() when the connection is
+        # lost while the start_tls() handshake is in progress, so that
+        # wait_closed() completes instead of hanging forever.
+
+        async def server_handler(client_reader, client_writer):
+            line = await client_reader.readline()
+            self.assertEqual(line, b"STARTTLS\n")
+            client_writer.write(b"go ahead\n")
+            await client_writer.drain()
+            with self.assertRaises(ConnectionAbortedError):
+                await client_writer.start_tls(
+                    test_utils.simple_server_sslcontext(),
+                    ssl_handshake_timeout=0.1)
+            client_writer.close()
+            with self.assertRaises(ConnectionAbortedError):
+                await asyncio.wait_for(client_writer.wait_closed(),
+                                       support.SHORT_TIMEOUT)
+            handler_done.set()
+
+        async def client(addr):
+            reader, writer = await asyncio.open_connection(*addr)
+            writer.write(b"STARTTLS\n")
+            await writer.drain()
+            line = await reader.readline()
+            self.assertEqual(line, b"go ahead\n")
+            # Never send a ClientHello: the server's handshake times out.
+            data = await reader.read()
+            self.assertEqual(data, b"")
+            writer.close()
+            await writer.wait_closed()
+
+        async def run_test():
+            server = await asyncio.start_server(
+                server_handler, socket_helper.HOSTv4, 0)
+            server_addr = server.sockets[0].getsockname()
+
+            await client(server_addr)
+            await asyncio.wait_for(handler_done.wait(),
+                                   support.SHORT_TIMEOUT)
+            server.close()
+            await server.wait_closed()
+
+        handler_done = asyncio.Event()
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+        self.loop.run_until_complete(run_test())
+        self.assertEqual(messages, [])
+
+    def test_streamwriter_start_tls_updates_reader_transport(self):
+        reader = asyncio.StreamReader(loop=self.loop)
+        protocol = asyncio.StreamReaderProtocol(reader, loop=self.loop)
+        old_transport = mock.Mock()
+        old_transport.get_extra_info.return_value = None
+        old_transport.is_closing.return_value = False
+        protocol.connection_made(old_transport)
+
+        writer = asyncio.StreamWriter(old_transport, protocol, reader, self.loop)
+
+        ssl_context = mock.sentinel.ssl_context
+        new_transport = mock.Mock()
+        new_transport.get_extra_info.return_value = ssl_context
+        self.loop.start_tls = mock.AsyncMock(return_value=new_transport)
+
+        self.loop.run_until_complete(writer.start_tls(ssl_context))
+
+        self.loop.start_tls.assert_awaited_once_with(
+            old_transport, protocol, ssl_context,
+            server_side=False, server_hostname=None,
+            ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None,
+        )
+        self.assertIs(writer.transport, new_transport)
+        self.assertIs(protocol._transport, new_transport)
+        self.assertIs(reader._transport, new_transport)
+        self.assertTrue(protocol._over_ssl)
 
     def test_streamreader_constructor_without_loop(self):
         with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
@@ -1202,13 +1289,11 @@ class StreamTests(test_utils.TestCase):
         self.assertEqual(messages, [])
 
     def _basetest_unhandled_exceptions(self, handle_echo):
-        port = socket_helper.find_unused_port()
-
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
-        async def client():
-            rd, wr = await asyncio.open_connection('localhost', port)
+        async def client(addr):
+            rd, wr = await asyncio.open_connection(*addr)
             wr.write(b'test msg')
             await wr.drain()
             wr.close()
@@ -1216,9 +1301,9 @@ class StreamTests(test_utils.TestCase):
 
         async def main():
             server = await asyncio.start_server(
-                handle_echo, 'localhost', port)
+                handle_echo, socket_helper.HOSTv4, 0)
             await server.start_serving()
-            await client()
+            await client(server.sockets[0].getsockname())
             server.close()
             await server.wait_closed()
 
@@ -1239,8 +1324,53 @@ class StreamTests(test_utils.TestCase):
         messages = self._basetest_unhandled_exceptions(handle_echo)
         self.assertEqual(messages, [])
 
+    def test_unhandled_exception_sync_callback(self):
+        # An exception raised by a plain-function client_connected_cb is
+        # reported like the coroutine case and the transport is closed.
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        async def client(addr):
+            rd, wr = await asyncio.open_connection(*addr)
+            async with asyncio.timeout(60):
+                data = await rd.read()
+            self.assertEqual(data, b'')  # the server closed the connection
+            wr.close()
+            await wr.wait_closed()
+
+        async def main():
+            def handle_echo(reader, writer):
+                raise Exception('test')
+
+            server = await asyncio.start_server(
+                handle_echo, socket_helper.HOSTv4, 0)
+            await server.start_serving()
+            await client(server.sockets[0].getsockname())
+            server.close()
+            await server.wait_closed()
+
+        self.loop.run_until_complete(main())
+
+        self.assertEqual(messages[0]['message'],
+                    'Unhandled exception in client_connected_cb')
+
     def test_open_connection_happy_eyeball_refcycles(self):
-        port = socket_helper.find_unused_port()
+        # Keep the port bound but not listening on both loopback addresses
+        # that "localhost" may resolve to, so connections fail.
+        reserved = []
+        self.addCleanup(lambda: [s.close() for s in reserved])
+        sock4 = socket.socket()
+        reserved.append(sock4)
+        sock4.bind((socket_helper.HOSTv4, 0))
+        port = sock4.getsockname()[1]
+        if socket_helper.IPV6_ENABLED:
+            sock6 = socket.socket(socket.AF_INET6)
+            reserved.append(sock6)
+            try:
+                sock6.bind((socket_helper.HOSTv6, port))
+            except OSError:
+                self.skipTest(f'cannot bind {socket_helper.HOSTv6} port {port}')
+
         async def main():
             exc = None
             try:

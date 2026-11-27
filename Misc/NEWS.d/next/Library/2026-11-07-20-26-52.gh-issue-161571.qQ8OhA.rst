@@ -1,0 +1,3 @@
+Fix a crash in :func:`curses.tparm` for capabilities with parameters
+that they format as strings, such as ``Ms`` of xterm.
+Bytes objects are now accepted for these parameters.

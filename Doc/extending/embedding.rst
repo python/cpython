@@ -95,15 +95,16 @@ perform some operation on a file. ::
    See :ref:`arg-parsing-string-and-buffers` for a description of this macro.
 
 Setting :c:member:`PyConfig.program_name` should be called before
-:c:func:`Py_InitializeFromConfig` to inform the interpreter about paths to Python run-time
-libraries.  Next, the Python interpreter is initialized with
-:c:func:`Py_Initialize`, followed by the execution of a hard-coded Python script
-that prints the date and time.  Afterwards, the :c:func:`Py_FinalizeEx` call shuts
-the interpreter down, followed by the end of the program.  In a real program,
-you may want to get the Python script from another source, perhaps a text-editor
-routine, a file, or a database.  Getting the Python code from a file can better
-be done by using the :c:func:`PyRun_SimpleFile` function, which saves you the
-trouble of allocating memory space and loading the file contents.
+:c:func:`Py_InitializeFromConfig` to inform the interpreter about paths to
+Python run-time libraries.  Next, the Python interpreter is initialized with
+:c:func:`Py_InitializeFromConfig`, followed by the execution of a hard-coded
+Python script that prints the date and time.  Afterwards, the
+:c:func:`Py_FinalizeEx` call shuts the interpreter down, followed by the end of
+the program.  In a real program, you may want to get the Python script from
+another source, perhaps a text-editor routine, a file, or a database.  Getting
+the Python code from a file can better be done by using the
+:c:func:`PyRun_SimpleFile` function, which saves you the trouble of allocating
+memory space and loading the file contents.
 
 
 .. _lower-level-embedding:
@@ -355,3 +356,178 @@ combine together.  For example:
 
 
 .. XXX similar documentation for Windows missing
+
+
+.. _embedding-python-versions:
+
+Linking for one or several Python versions on Linux
+===================================================
+
+The flags obtained from ``pythonX.Y-config --ldflags --embed`` link the
+application against one minor version of Python.
+If that Python was built as a shared library, the executable records a
+dependency on the versioned library, such as :file:`libpython3.12.so.1.0`,
+and expected that specific minor version at runtime.
+This is the recommended setup for most host (embedding) applications.
+Build the application for each Python version that it supports,
+or distribute it together with the Python that it was built with.
+
+Using the :ref:`Limited API <limited-c-api>` does not change this.
+Defining :c:macro:`Py_LIMITED_API` restricts your source code to API that is
+compatible across minor versions, but the library dependency is recorded when
+linking, so the executable still requires :file:`libpython3.12.so.1.0`.
+
+A binary that needs to run with several minor Python versions must use only
+the Limited API and must *also* avoid the versioned dependency.
+
+.. warning::
+
+   Host applications that use the :ref:`Limited API <limited-c-api>`
+   must be aware of the following limitations:
+
+   * It can only initialize Python with :c:func:`Py_Initialize` or
+     :c:func:`Py_InitializeEx`, which set Python up much like the
+     :program:`python` command does.
+     They honor :envvar:`PYTHONHOME` and :envvar:`PYTHONPATH`, add the
+     :data:`user site-packages directory <site.USER_SITE>` to
+     :data:`sys.path`, and terminate the process if initialization fails.
+     They set :data:`sys.executable` to the :program:`python3` program found
+     on :envvar:`!PATH`, which can belong to a different Python installation
+     than the library that was loaded.
+     The functions that accept an
+     :ref:`isolated configuration <init-isolated-conf>`,
+     :c:func:`Py_InitializeFromConfig` and
+     :c:func:`Py_InitializeFromInitConfig`, are not part of the Limited API.
+   * The Python that gets loaded is only known at run-time.
+     Checking that it is suitable is up to the application.
+     An incompatible Python, such as a too-old or too-new version,
+     is not rejected automatically.
+   * The Stable ABI keeps functions available in later versions, but it does
+     not guarantee identical behavior.
+     The default configuration and the way :data:`sys.path` is computed can
+     change between Python versions, and between installations of the same
+     version.
+     Test the application with every Python version and installation that it
+     is meant to support.
+     See also :ref:`limited-api-caveats`.
+
+A Python built with :option:`--enable-shared` and without
+:option:`--with-pydebug` installs :file:`libpython3.so` next to the versioned
+library.
+When the dynamic loader loads this library, it also loads the versioned
+library that it was built with, and symbols looked up through
+:file:`libpython3.so` are found in the versioned library.
+An application can therefore load :file:`libpython3.so` with
+:manpage:`dlopen(3)` and look up each function that it uses with
+:manpage:`dlsym(3)`.
+
+This only works at run time.
+When linking an executable, the linker does not use the dependencies of a
+library to resolve symbols, and :file:`libpython3.so` defines no Python
+symbols of its own, so linking with ``-lpython3`` fails with
+``undefined reference`` errors.
+
+For example, with Python 3.12 as the oldest supported version::
+
+   #define Py_LIMITED_API 0x030c0000  /* Limited API 3.12 */
+   #include <Python.h>
+   #include <dlfcn.h>
+   #include <stdio.h>
+
+   /* The API this application uses, declared as in Python.h.
+      Everything is reached through these pointers. */
+   static struct {
+       const unsigned long *Version;
+       const char *(*GetVersion)(void);
+       void (*InitializeEx)(int);
+       int (*FinalizeEx)(void);
+   } py;
+
+   #define LOAD(lib, pointer, name) \
+       ((*(void **)&(pointer) = dlsym(lib, name)) != NULL)
+
+   int
+   main(int argc, char *argv[])
+   {
+       /* For brevity, the path comes from the command line.  A real
+          application reads it from its own configuration. */
+       if (argc != 2 || argv[1][0] != '/') {
+           fprintf(stderr, "usage: %s /absolute/path/to/libpython3.so\n",
+                   argv[0]);
+           return 2;
+       }
+       /* RTLD_GLOBAL is required: it lets the extension modules that
+          Python imports find Python's symbols. */
+       void *lib = dlopen(argv[1], RTLD_NOW | RTLD_GLOBAL);
+       if (lib == NULL) {
+           fprintf(stderr, "Python is not available: %s\n", dlerror());
+           return 1;
+       }
+       if (!LOAD(lib, py.Version, "Py_Version")
+           || !LOAD(lib, py.GetVersion, "Py_GetVersion")
+           || !LOAD(lib, py.InitializeEx, "Py_InitializeEx")
+           || !LOAD(lib, py.FinalizeEx, "Py_FinalizeEx"))
+       {
+           fprintf(stderr, "Unsupported Python: %s\n", dlerror());
+           return 1;
+       }
+       if (*py.Version < Py_LIMITED_API) {
+           fprintf(stderr, "Python %s is older than 3.12\n", py.GetVersion());
+           return 1;
+       }
+
+       py.InitializeEx(0);
+       printf("Loaded Python %s\n", py.GetVersion());
+       return py.FinalizeEx() < 0 ? 120 : 0;
+   }
+
+Compile the program with Python's headers, but without the output of
+``--ldflags``:
+
+.. code-block:: shell-session
+
+   $ gcc $(/opt/bin/python3.12-config --includes) -o myapp myapp.c
+   $ ./myapp /usr/local/lib/libpython3.so
+   Loaded Python 3.14.10 (main, Nov  5 2026, 09:47:10) [GCC 14.2.0]
+
+No Python library is passed to the linker, so the executable does not depend
+on one.
+You can check this with ``readelf``:
+
+.. code-block:: shell-session
+
+   $ readelf -d myapp | grep NEEDED
+    0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+
+For the same reason, Python functions can only be called through such
+pointers.
+This includes the functions that macros in :file:`Python.h` expand to:
+for example, call :c:func:`Py_DecRef` through a pointer instead of using
+:c:func:`Py_DECREF`.
+
+* The path passed to ``dlopen()`` selects the code that runs in your process.
+  It should come from a trusted source and name a file that only trusted
+  users can replace.
+* Use an absolute path.
+  The dynamic loader looks for a name without a slash in its usual search
+  path, such as :envvar:`!LD_LIBRARY_PATH` and the system library directories.
+  It looks for the versioned library that :file:`libpython3.so` depends on in
+  the same way, and not next to :file:`libpython3.so`.
+  To choose the exact file, pass the absolute path of the versioned library
+  to ``dlopen()`` instead.
+* ``RTLD_GLOBAL`` is required.
+  Extension modules are generally not linked against a Python library,
+  so Python can only import them if its symbols are visible globally.
+
+.. rubric:: Unsupported workaround: renaming the dependency after linking
+
+Some applications are instead linked against a versioned library as described
+:ref:`above <compiling>`, and the dependency recorded in the executable is
+then renamed to :file:`libpython3.so`, for example with ``patchelf``.
+
+.. warning::
+
+   Renaming the dependency this way is unsupported.
+   Nothing checks that such an executable only uses the Stable ABI, and it
+   can contain copies of Python data, such as ``PyLong_Type``, whose size
+   differs between Python versions.

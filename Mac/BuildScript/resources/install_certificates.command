@@ -1,4 +1,8 @@
 #!/bin/sh
+# Installing into the global environment is the point; ensure that the user
+# hasn't configured pip to always require a virtual environment.
+unset PIP_REQUIRE_VENV
+unset PIP_REQUIRE_VIRTUALENV
 
 /Library/Frameworks/Python.framework/Versions/@PYVER@/bin/python@PYVER@ << "EOF"
 
