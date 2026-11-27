@@ -584,8 +584,8 @@ e_getitem(arrayobject *ap, Py_ssize_t i)
 static int
 e_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    double x;
-    if (!PyArg_Parse(v, "d;array item must be float", &x)) {
+    double x = PyFloat_AsDouble(v);
+    if (x == -1.0 && PyErr_Occurred()) {
         return -1;
     }
 
@@ -607,9 +607,10 @@ f_getitem(arrayobject *ap, Py_ssize_t i)
 static int
 f_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    double x;
-    if (!PyArg_Parse(v, "d;array item must be float", &x))
+    double x = PyFloat_AsDouble(v);
+    if (x == -1.0 && PyErr_Occurred()) {
         return -1;
+    }
 
     CHECK_ARRAY_BOUNDS(ap, i);
 
@@ -629,9 +630,10 @@ d_getitem(arrayobject *ap, Py_ssize_t i)
 static int
 d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    double x;
-    if (!PyArg_Parse(v, "d;array item must be float", &x))
+    double x = PyFloat_AsDouble(v);
+    if (x == -1.0 && PyErr_Occurred()) {
         return -1;
+    }
 
     CHECK_ARRAY_BOUNDS(ap, i);
 
@@ -652,9 +654,8 @@ cf_getitem(arrayobject *ap, Py_ssize_t i)
 static int
 cf_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    Py_complex x;
-
-    if (!PyArg_Parse(v, "D;array item must be complex", &x)) {
+    Py_complex x = PyComplex_AsCComplex(v);
+    if (PyErr_Occurred()) {
         return -1;
     }
 
@@ -688,10 +689,9 @@ cd_getitem(arrayobject *ap, Py_ssize_t i)
 static int
 cd_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-    Py_complex x;
+    Py_complex x = PyComplex_AsCComplex(v);
     double f[2];
-
-    if (!PyArg_Parse(v, "D;array item must be complex", &x)) {
+    if (PyErr_Occurred()) {
         return -1;
     }
 
