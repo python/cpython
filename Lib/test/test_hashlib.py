@@ -484,6 +484,20 @@ class HashLibTestCase(unittest.TestCase):
                 hashlib.new(h.name, usedforsecurity=False).name
             )
 
+    def test_name_attribute_provider_digest(self):
+        # gh-162712: digests from an OpenSSL 3 provider can have NID_undef,
+        # but the exposed name must still work with hashlib.new().
+        for requested in ("SHA256-192", "KECCAK-256"):
+            try:
+                h = hashlib.new(requested, usedforsecurity=False)
+            except ValueError:
+                continue
+            with self.subTest(requested=requested):
+                self.assertNotEqual(h.name, "undefined")
+                self.assertEqual(h.name, h.name.lower())
+                self.assertEqual(hashlib.new(h.name).digest_size,
+                                 h.digest_size)
+
     def test_large_update(self):
         aas = b'a' * 128
         bees = b'b' * 127

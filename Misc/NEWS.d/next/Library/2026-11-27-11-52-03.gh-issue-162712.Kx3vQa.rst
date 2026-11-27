@@ -1,0 +1,4 @@
+Fix :attr:`hashlib.hash.name` for digests provided by OpenSSL 3 providers.
+These digests may not have a numeric identifier, in which case the name
+used to be reported as ``"undefined"`` instead of the actual algorithm
+name, so it could not be passed back to :func:`hashlib.new`.

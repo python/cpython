@@ -1041,6 +1041,25 @@ _hashlib_HASH_get_name(PyObject *op, void *Py_UNUSED(closure))
         notify_ssl_error_occurred("missing EVP_MD for HASH context");
         return NULL;
     }
+#ifdef Py_HAS_OPENSSL3_SUPPORT
+    if (EVP_MD_nid(md) == NID_undef) {
+        /* Digests supplied by an OpenSSL 3 provider need not have a NID,
+         * in which case the ASN.1 name is just "undefined".  Use the name
+         * of the fetched EVP_MD instead (gh-162712). */
+        const char *md_name = EVP_MD_get0_name(md);
+        if (md_name == NULL) {
+            notify_ssl_error_occurred("missing name for EVP_MD");
+            return NULL;
+        }
+        PyObject *name = PyUnicode_FromString(md_name);
+        if (name == NULL) {
+            return NULL;
+        }
+        PyObject *lower = PyObject_CallMethod(name, "lower", NULL);
+        Py_DECREF(name);
+        return lower;
+    }
+#endif
     const char *name = get_hashlib_utf8name_by_evp_md(md);
     assert(name != NULL || PyErr_Occurred());
     return name == NULL ? NULL : PyUnicode_FromString(name);
