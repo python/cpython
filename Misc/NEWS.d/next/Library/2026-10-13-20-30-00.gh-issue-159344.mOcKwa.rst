@@ -1,0 +1,2 @@
+Fix :class:`unittest.mock.ThreadingMock` to notify waiting threads when a
+call is recorded, including when its side effect raises an exception or blocks.
