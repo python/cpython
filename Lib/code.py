@@ -416,4 +416,4 @@ if __name__ == "__main__":
         banner = ''
     else:
         banner = None
-    interact(banner)
+    interact(banner, use_pyrepl=True)
