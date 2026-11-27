@@ -243,15 +243,35 @@ class TestLayoutContentLines(TestCase):
         line = _content_line("Hello", prompt=_prompt("a" * 65, 65))
         result = layout_content_lines((line,), 20, 0)
 
-        self.assertEqual(len(result.wrapped_rows), 2)
-        first, second = result.wrapped_rows
-        self.assertEqual(first.prompt_width, 65)
-        self.assertEqual(first.fragments, ())
-        self.assertEqual(first.suffix, "\\")
-        self.assertEqual(first.buffer_advance, 0)
-        self.assertEqual(second.prompt_width, 0)
-        self.assertEqual(second.buffer_advance, 6)
-        self.assertEqual(result.layout_map.pos_to_xy(0), (0, 1))
+        rows = result.wrapped_rows
+        self.assertEqual(
+            [row.prompt_width for row in rows], [20, 20, 20, 5]
+        )
+        self.assertEqual([row.suffix for row in rows], ["", "", "", ""])
+        self.assertEqual(
+            [row.buffer_advance for row in rows], [0, 0, 0, 6]
+        )
+        self.assertTrue(all(row.width <= 20 for row in result.layout_map.rows))
+        self.assertEqual(result.layout_map.pos_to_xy(0), (5, 3))
+        self.assertEqual(result.layout_map.pos_to_xy(5), (10, 3))
+
+    def test_prompt_wider_than_terminal_empty_body(self):
+        line = _content_line("", prompt=_prompt("a" * 40, 40))
+        result = layout_content_lines((line,), 20, 0)
+
+        self.assertEqual(
+            [row.prompt_width for row in result.wrapped_rows], [20, 20, 0]
+        )
+        self.assertEqual(result.layout_map.pos_to_xy(0), (0, 2))
+
+    def test_prompt_filling_last_row(self):
+        line = _content_line("Hello", prompt=_prompt("a" * 39, 39))
+        result = layout_content_lines((line,), 20, 0)
+
+        rows = result.wrapped_rows
+        self.assertEqual([row.prompt_width for row in rows], [20, 19, 0])
+        self.assertEqual([row.suffix for row in rows], ["", "", ""])
+        self.assertEqual(result.layout_map.pos_to_xy(0), (0, 2))
 
     def test_layout_map_matches_wrapped_rows(self):
         line = _content_line("abc")
