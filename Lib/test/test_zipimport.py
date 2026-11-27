@@ -305,6 +305,44 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         with self.assertRaises(SyntaxError):
             spec.loader.exec_module(mod)
 
+    def test_corrupt_pyc_body_defers_to_exec(self):
+        # A valid header selects the .pyc; the body is only read on exec.
+        files = {TESTMOD + ".py": test_src,
+                 TESTMOD + pyc_ext: test_pyc[:16] + b'\xff\xff\xff'}
+        self.makeZip(files)
+        zi = zipimport.zipimporter(TEMP_ZIP)
+
+        spec = zi.find_spec(TESTMOD)
+        self.assertEqual(spec.origin,
+                         os.path.join(TEMP_ZIP, TESTMOD + pyc_ext))
+        mod = importlib.util.module_from_spec(spec)
+        with self.assertRaises(ValueError):
+            spec.loader.exec_module(mod)
+
+    def test_get_filename_reads_only_pyc_header(self):
+        # Guard against regressing to reading or decompressing the whole
+        # member; the exact byte count depends on the compression method,
+        # hence the loose bound.  The payload is compressible so that zstd
+        # needs several reads before producing any output.
+        big_src = f"x = {os.urandom(300_000).hex()!r}\n"
+        big_co = compile(big_src, "<big>", "exec")
+        big_pyc = make_pyc(big_co, NOW, 0)
+        self.makeZip({TESTMOD + pyc_ext: big_pyc})
+        zi = zipimport.zipimporter(TEMP_ZIP)
+        zi._get_files()
+
+        reads = []
+        class CountingReader(io.BufferedReader):
+            def read(self, size=-1):
+                data = super().read(size)
+                reads.append(len(data))
+                return data
+        with unittest.mock.patch.object(zipimport, '_io', wraps=zipimport._io) as m:
+            m.open_code.side_effect = lambda path: CountingReader(io.FileIO(path))
+            self.assertEqual(zi.get_filename(TESTMOD),
+                             os.path.join(TEMP_ZIP, TESTMOD + pyc_ext))
+        self.assertLess(sum(reads), len(big_pyc) // 2)
+
     def testPyc(self):
         files = {TESTMOD + pyc_ext: test_pyc}
         self.doTest(pyc_ext, files, TESTMOD)
@@ -1118,7 +1156,8 @@ class ZStdCompressedZipImportTestCase(UncompressedZipImportTestCase):
             "_get_compressor",
             return_value=ConcatenatedFrameCompressor(),
         ):
-            self.doTest(".py", {TESTMOD + ".py": test_src}, TESTMOD)
+            self.doTest(pyc_ext, {TESTMOD + ".py": test_src,
+                                  TESTMOD + pyc_ext: test_pyc}, TESTMOD)
 
     def test_concatenated_frames_linear_input(self):
         from compression import zstd
