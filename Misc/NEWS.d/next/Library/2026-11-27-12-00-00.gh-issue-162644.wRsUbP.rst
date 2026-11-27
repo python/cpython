@@ -1,0 +1,2 @@
+Pickling a :class:`weakref.ref` subclass with protocol 0 or 1
+now raises :exc:`TypeError` instead of :exc:`RecursionError`.

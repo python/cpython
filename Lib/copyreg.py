@@ -119,7 +119,8 @@ def _reduce_ex(self, proto):
     if base is object:
         state = None
     else:
-        if base is cls:
+        # For weakref.ref, base(self) would be a new reference to self.
+        if base is cls or base is _ref:
             raise TypeError(f"cannot pickle {cls.__name__!r} object")
         state = base(self)
     args = (cls, base, state)
