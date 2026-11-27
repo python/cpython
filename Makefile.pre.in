@@ -2955,16 +2955,16 @@ INSTALL_PC= \
 		done; \
 	fi; \
 	if test "$$dir" = '$(prefix)'; then \
-		sed "s|^prefix=.*|prefix=\$${pcfiledir}$$rel|" $< > $@; \
+		sed "s|^prefix=.*|prefix=\$${pcfiledir}$$rel|" $$src > $@; \
 	else \
-		cp $< $@; \
+		cp $$src $@; \
 	fi
 
 Misc/python-install.pc: Misc/python.pc
-	$(INSTALL_PC)
+	src=Misc/python.pc; $(INSTALL_PC)
 
 Misc/python-embed-install.pc: Misc/python-embed.pc
-	$(INSTALL_PC)
+	src=Misc/python-embed.pc; $(INSTALL_PC)
 
 # macOS' make seems to ignore a dependency on a
 # "$(BUILD_SCRIPTS_DIR): $(MKDIR_P) $@" rule.
