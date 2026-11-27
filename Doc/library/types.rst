@@ -362,7 +362,7 @@ Standard names are defined for the following types:
 
    .. versionadded:: 3.15
 
-   .. seealso:: :pep:`810`
+   .. seealso:: :ref:`lazy-imports`
 
    .. method:: resolve()
 
