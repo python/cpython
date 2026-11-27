@@ -592,9 +592,10 @@ typedef struct {
 } gc_span_stack_t;
 
 typedef struct {
+    // Keep 'in' and 'out' non-adjacent to avoid a slow paired load on AArch64.
     unsigned int in;
-    unsigned int out;
     _PyObjectStack stack;
+    unsigned int out;
     gc_span_stack_t spans;
     PyObject *buffer[BUFFER_SIZE];
     bool use_prefetch;
