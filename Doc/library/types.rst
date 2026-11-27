@@ -373,6 +373,10 @@ Standard names are defined for the following types:
          lazy import json
          json = globals()["json"].resolve()
 
+      Each call to :func:`!resolve` call does a fresh import.
+      The proxy itself does not store :func:`!resolve`'s result,
+      relying on the import mechanism to use :attr:`sys.modules`
+      to reuse modules that have already been imported.
 
 .. class:: GetSetDescriptorType
 
