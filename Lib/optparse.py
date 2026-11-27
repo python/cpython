@@ -1418,8 +1418,17 @@ class OptionParser (OptionContainer):
                 # value(s) for the last one only)
                 self._process_short_opts(rargs, values)
             elif self.allow_interspersed_args:
+                # Move the whole run of positional arguments at once:
+                # deleting them one at a time from the front is quadratic.
                 largs.append(arg)
-                del rargs[0]
+                end = 1
+                while end < len(rargs):
+                    arg = rargs[end]
+                    if arg[:1] == "-" and len(arg) > 1:
+                        break
+                    largs.append(arg)
+                    end += 1
+                del rargs[:end]
             else:
                 return                  # stop now, leave this arg in rargs
 
