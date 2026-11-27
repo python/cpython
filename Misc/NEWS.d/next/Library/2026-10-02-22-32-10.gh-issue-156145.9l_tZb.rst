@@ -1,3 +1,4 @@
 The following functions no longer set ``errno`` to zero: :func:`cmath.phase`,
-:func:`math.atan2`, :func:`math.atan2pi`, and :func:`math.copysign`.
+:func:`math.atan2`, :func:`math.atan2pi`, :func:`math.copysign`, and
+:func:`math.remainder`.
 Contributed by High Performance Kernels LLC.
