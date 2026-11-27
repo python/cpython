@@ -2853,6 +2853,14 @@ class PaxWriteTest(GNUWriteTest):
             + bytes(100) + b'ustar\x0000' + bytes(247))
 
 
+def _replace_field(buf, offset, start, end, value):
+    # Replace a field of the header block at offset, and the checksum.
+    header = buf[offset:offset + tarfile.BLOCKSIZE]
+    header[start:end] = value.ljust(end - start, b"\0")
+    header[148:156] = b"%06o\0 " % tarfile.calc_chksums(header)[0]
+    buf[offset:offset + tarfile.BLOCKSIZE] = header
+
+
 class UnicodeTest:
 
     def test_iso8859_1_filename(self):
@@ -2972,6 +2980,30 @@ class UstarUnicodeTest(UnicodeTest, unittest.TestCase):
         self._test_ustar_name("0123456789" * 15 + "01234/" + "0123456789" * 9 + "012345\xff\xff")
         self._test_ustar_name("0123456789" * 15 + "01234/" + "0123456789" * 9 + "0123456\xff\xff", ValueError)
 
+    def test_strict_invalid_name(self):
+        header = bytearray(tarfile.TarInfo("name").tobuf(self.format))
+        _replace_field(header, 0, 0, 100, b"bad\xff")
+        frombuf = tarfile.TarInfo.frombuf
+        with self.assertRaises(UnicodeDecodeError) as cm:
+            frombuf(header, "utf-8", "strict")
+        self.assertEqual(cm.exception.object, b"bad\xff")
+        # The uname cannot be decoded with "surrogateescape" either.
+        utf7 = bytearray(header)
+        _replace_field(utf7, 0, 265, 297, b"+A")
+        with self.assertRaises(UnicodeDecodeError) as cm:
+            frombuf(utf7, "utf-7", "strict")
+        self.assertEqual(cm.exception.object, b"bad\xff")
+
+        # The name is decoded before the mode.
+        _replace_field(header, 0, 100, 108, b"bad")
+        self.assertRaises(UnicodeDecodeError, frombuf, header, "utf-8",
+                          "strict")
+        buf = tarfile.TarInfo("first").tobuf(self.format) + header
+        for ignore_zeros in (False, True):
+            with tarfile.open(fileobj=io.BytesIO(buf), errors="strict",
+                              ignore_zeros=ignore_zeros) as tar:
+                self.assertRaises(UnicodeDecodeError, tar.getmembers)
+
     def _test_ustar_name(self, name, exc=None):
         with tarfile.open(tmpname, "w", format=self.format, encoding="utf-8") as tar:
             t = tarfile.TarInfo(name)
@@ -3030,6 +3062,129 @@ class GNUUnicodeTest(UnicodeTest, unittest.TestCase):
                 except KeyError:
                     self.fail("unable to read bad GNU tar pax header")
 
+    def test_strict_longname_cut_mid_character(self):
+        # The name and linkname fields of the header after a GNU longname
+        # and longlink hold their first 100 bytes, here cut mid-character.
+        t = tarfile.TarInfo("a" * 99 + "\xe4")
+        t.type = tarfile.SYMTYPE
+        t.linkname = "b" * 99 + "\uac00"
+        fobj = io.BytesIO()
+        with tarfile.open(fileobj=fobj, mode="w", format=self.format,
+                          encoding="utf-8") as tar:
+            tar.addfile(t)
+            tar.addfile(tarfile.TarInfo("last"))
+        # The fields of the longname header itself are not used.
+        buf = bytearray(fobj.getvalue())
+        _replace_field(buf, 0, 265, 297, b"\xff")
+
+        for mode in ("r:", "r|"):
+            with self.subTest(mode=mode):
+                with tarfile.open(fileobj=io.BytesIO(buf), mode=mode,
+                                  encoding="utf-8", errors="strict") as tar:
+                    names = [(m.name, m.linkname) for m in tar]
+                self.assertEqual(names, [(t.name, t.linkname), ("last", "")])
+
+    def test_strict_invalid_fields(self):
+        # The longname itself and the fields that the longname or the pax
+        # header do not replace are still decoded with the errors handler.
+        def header(name, uname):
+            t = tarfile.TarInfo(name)
+            t.uname = uname
+            return t.tobuf(self.format, "utf-8", "surrogateescape")
+
+        invalid = "a" * 100 + "\udcff"
+        cut = "a" * 99 + "\xe4"
+        pax = tarfile.TarInfo(cut).tobuf(tarfile.PAX_FORMAT)
+        for case, buf, value in (
+                ("longname", header(invalid, ""), b"a" * 100 + b"\xff"),
+                ("uname", header(cut, "\udcff"), b"\xff"),
+                ("longname and uname", header(invalid, "\udcff"), b"\xff"),
+                ("pax and uname", pax[:-tarfile.BLOCKSIZE] +
+                 header(cut, "\udcff")[-tarfile.BLOCKSIZE:], b"\xff")):
+            with self.subTest(case=case):
+                with self.assertRaises(UnicodeDecodeError) as cm:
+                    tarfile.open(fileobj=io.BytesIO(buf), encoding="utf-8",
+                                 errors="strict")
+                self.assertEqual(cm.exception.object, value)
+
+    def test_strict_invalid_field_read_again(self):
+        t = tarfile.TarInfo("a" * 99 + "\xe4")
+        t.uname = "\udcff"
+        buf = (tarfile.TarInfo("first").tobuf(self.format) +
+               t.tobuf(self.format, "utf-8", "surrogateescape") +
+               tarfile.TarInfo("last").tobuf(self.format))
+        with tarfile.open(fileobj=io.BytesIO(buf), encoding="utf-8",
+                          errors="strict") as tar:
+            # The member is not skipped.
+            for _ in range(2):
+                with self.assertRaises(UnicodeDecodeError) as cm:
+                    tar.getmembers()
+                self.assertEqual(cm.exception.object, b"\xff")
+
+    def test_strict_subclasses(self):
+        # Subclasses that override private methods read valid archives as
+        # before, and still get the errors of the fields that are not
+        # replaced, although maybe not for the fields that are replaced.
+        class NewObject(tarfile.TarInfo):
+            def __init__(self, name=""):
+                pass
+
+            def _proc_member(self, tarfile):
+                member = super()._proc_member(tarfile)
+                new = type(self).__new__(type(self))
+                for attr in "name", "type", "uname", "offset_data":
+                    setattr(new, attr, getattr(member, attr))
+                return new
+
+        class OldFromtarfile(tarfile.TarInfo):
+            # fromtarfile() as written before _fromtarfile() existed.
+            @classmethod
+            def fromtarfile(cls, tf):
+                buf = tf.fileobj.read(tarfile.BLOCKSIZE)
+                obj = cls.frombuf(buf, tf.encoding, tf.errors)
+                obj.offset = tf.fileobj.tell() - tarfile.BLOCKSIZE
+                return obj._proc_member(tf)
+
+        class OwnFromtarfile(tarfile.TarInfo):
+            @classmethod
+            def _fromtarfile(cls, tf, *, dircheck=True):
+                buf = tf.fileobj.read(tarfile.BLOCKSIZE)
+                obj = cls._frombuf(buf, tf.encoding, tf.errors,
+                                   dircheck=dircheck)
+                obj.offset = tf.fileobj.tell() - tarfile.BLOCKSIZE
+                return obj._proc_member(tf)
+
+        name = "a" * 99 + "\xe4"
+        valid = (tarfile.TarInfo("b" * 101).tobuf(self.format) +
+                 tarfile.TarInfo(name).tobuf(tarfile.PAX_FORMAT))
+        invalid = {}
+        for case, t in (("ustar", tarfile.TarInfo("a")),
+                        ("longname", tarfile.TarInfo(name))):
+            t.uname = "\udcff"
+            invalid[case] = t.tobuf(self.format, "utf-8", "surrogateescape")
+        for tarinfo in NewObject, OldFromtarfile, OwnFromtarfile:
+            for errors in "surrogateescape", "strict":
+                with self.subTest(tarinfo=tarinfo, errors=errors):
+                    with tarfile.open(fileobj=io.BytesIO(valid),
+                                      encoding="utf-8", errors=errors,
+                                      tarinfo=tarinfo) as tar:
+                        self.assertEqual(tar.getnames(), ["b" * 101, name])
+            for case, buf in invalid.items():
+                with self.subTest(tarinfo=tarinfo, case=case):
+                    with self.assertRaises(UnicodeDecodeError):
+                        tarfile.open(fileobj=io.BytesIO(buf), encoding="utf-8",
+                                     errors="strict", tarinfo=tarinfo)
+
+        # Neither when fromtarfile() of a subclass is called directly.
+        buf = (tarfile.TarInfo("first").tobuf(self.format) +
+               invalid["longname"])
+        with tarfile.open(fileobj=io.BytesIO(buf), encoding="utf-8",
+                          errors="strict") as tar:
+            for _ in range(2):
+                tar.fileobj.seek(tar.offset)
+                self.assertRaises(UnicodeDecodeError,
+                                  OldFromtarfile.fromtarfile, tar)
+
 
 class PAXUnicodeTest(UnicodeTest, unittest.TestCase):
 
@@ -3049,6 +3204,48 @@ class PAXUnicodeTest(UnicodeTest, unittest.TestCase):
                     t = tar.getmember(name)
                 except KeyError:
                     self.fail("unable to read POSIX.1-2008 binary header")
+
+    def test_strict_ustar_fields_cut_mid_character(self):
+        # Other implementations store the full values in the pax header and
+        # their first bytes in the ustar fields, possibly mid-character.
+        t = tarfile.TarInfo("a" * 99 + "\xe4")
+        t.type = tarfile.SYMTYPE
+        t.linkname = "b" * 99 + "\uac00"
+        t.uname = "u" * 31 + "\xe4"
+        t.gname = "g" * 31 + "\xe4"
+        pax = bytearray(t.tobuf(tarfile.PAX_FORMAT))
+        ustar = t.tobuf(tarfile.GNU_FORMAT, "utf-8", "strict")
+        # The fields of the pax header itself are not used.
+        _replace_field(pax, 0, 0, 100, b"PaxHeaders/\xe4")
+        buf = pax[:-tarfile.BLOCKSIZE] + ustar[-tarfile.BLOCKSIZE:]
+        buf += tarfile.TarInfo("last").tobuf()
+
+        with tarfile.open(fileobj=io.BytesIO(buf), encoding="utf-8",
+                          errors="strict") as tar:
+            names = [(m.name, m.linkname, m.uname, m.gname) for m in tar]
+        self.assertEqual(names, [(t.name, t.linkname, t.uname, t.gname),
+                                 ("last", "", "", "")])
+
+    def test_strict_path_cut_mid_character(self):
+        name = "a" * 99 + "\xe4"
+        ustar = tarfile.TarInfo(name).tobuf(
+            tarfile.GNU_FORMAT, "utf-8", "strict")[-tarfile.BLOCKSIZE:]
+        sparse = tarfile.TarInfo("sparse")
+        sparse.pax_headers = {"GNU.sparse.name": name}
+        prefix = bytearray(tarfile.TarInfo("a").tobuf(tarfile.USTAR_FORMAT))
+        _replace_field(prefix, 0, 345, 500, name.encode()[:100])
+        for case, pax, header, path in (
+                ("global path",
+                 tarfile.TarInfo.create_pax_global_header({"path": name}),
+                 ustar, name),
+                ("GNU.sparse.name",
+                 sparse.tobuf(self.format)[:-tarfile.BLOCKSIZE], ustar, name),
+                ("ustar prefix", tarfile.TarInfo(name + "/a").tobuf(
+                    self.format)[:-tarfile.BLOCKSIZE], prefix, name + "/a")):
+            with self.subTest(case=case):
+                with tarfile.open(fileobj=io.BytesIO(pax + header),
+                                  encoding="utf-8", errors="strict") as tar:
+                    self.assertEqual(tar.getnames(), [path])
 
 
 class AppendTestBase:
