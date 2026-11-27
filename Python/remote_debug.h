@@ -300,14 +300,13 @@ _Py_RemoteDebug_AliasCacheClear(proc_handle_t *handle);
 // Clean up the process handle
 UNUSED static void
 _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
-#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
-    _Py_RemoteDebug_AliasCacheClear(handle);
-#elif defined(MS_WINDOWS)
+#if defined(MS_WINDOWS)
     if (handle->hProcess != NULL) {
         CloseHandle(handle->hProcess);
         handle->hProcess = NULL;
     }
 #elif defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
+    _Py_RemoteDebug_AliasCacheClear(handle);
     if (handle->task != MACH_PORT_NULL) {
         mach_port_deallocate(mach_task_self(), handle->task);
         handle->task = MACH_PORT_NULL;
