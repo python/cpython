@@ -2173,6 +2173,10 @@
 /* Define if you have the 'tanpi' function. */
 #undef _Py_HAVE_TANPI
 
+/* Define if pthread_getattr_np under-reports the main thread's stack size
+   (musl behaviour). */
+#undef _Py_HAVE_UNRELIABLE_PTHREAD_GETATTR_NP
+
 /* Thread stack size set by the linker (in bytes). */
 #undef _Py_LINKER_THREAD_STACK_SIZE
 
