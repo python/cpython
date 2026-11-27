@@ -224,22 +224,6 @@ class InteractiveConsole(InteractiveInterpreter):
         variable is not set.
 
         """
-        if use_pyrepl is None:
-            use_pyrepl = not os.getenv('PYTHON_BASIC_REPL')
-
-        if use_pyrepl:
-            try:
-                from _pyrepl.main import CAN_USE_PYREPL
-                if CAN_USE_PYREPL:
-                    from _pyrepl.simple_interact import (
-                        run_multiline_interactive_console,
-                    )
-                    run_multiline_interactive_console(self)
-                    return
-            except ImportError:
-                pass
-            # Fall through to basic REPL if pyrepl is unavailable
-
         try:
             sys.ps1
             delete_ps1_after = False
@@ -284,6 +268,21 @@ class InteractiveConsole(InteractiveInterpreter):
                 builtins.quit = Quitter("quit")
 
         try:
+            if use_pyrepl is None:
+                use_pyrepl = not os.getenv('PYTHON_BASIC_REPL')
+            if use_pyrepl:
+                try:
+                    from _pyrepl.main import CAN_USE_PYREPL
+                    if CAN_USE_PYREPL:
+                        from _pyrepl.simple_interact import (
+                            run_multiline_interactive_console,
+                        )
+                        run_multiline_interactive_console(self)
+                        return
+                except ImportError:
+                    pass
+                # Fall through to basic REPL if pyrepl is unavailable
+
             while True:
                 try:
                     if more:
