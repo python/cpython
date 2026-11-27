@@ -81,6 +81,13 @@ types like :class:`dict`, :class:`list`, and :class:`set` use internal locks
 to protect against concurrent modifications in ways that behave similarly to
 the GIL.  See :ref:`threadsafety` for the guarantees provided by built-in types.
 
+CPython also defines when a write made by one thread is visible to another.
+A thread that loads an object reference stored by another thread, for
+example from an attribute, a global, or a list or dict item, sees the object
+fully initialized and sees everything the other thread did before the store.
+Observing only the length of a container, or a failed lookup, gives no such
+guarantee.  See :ref:`threadsafety-memory-ordering` for the full rules.
+
 .. note::
 
    It's recommended to use the :class:`threading.Lock` or other synchronization
@@ -121,7 +128,8 @@ Iterators
 
 It is generally not thread-safe to access the same iterator object from
 multiple threads concurrently, and threads may see duplicate or missing
-elements.
+elements.  An iterator shared this way may also produce more elements
+after it has raised :exc:`StopIteration` in another thread.
 
 
 Single-threaded performance
