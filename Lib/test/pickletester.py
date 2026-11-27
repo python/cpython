@@ -1816,6 +1816,9 @@ class WeakrefTarget:
     # error path must not assume hashable referents.
     __hash__ = None
 
+class WeakrefSubclass(weakref.ref):
+    pass
+
 
 class AbstractPicklingErrorTests:
     # Subclass must define self.dumps, self.pickler.
@@ -1876,6 +1879,14 @@ class AbstractPicklingErrorTests:
                 self.assertRaises(pickle.PicklingError, self.dumps,
                                   [copyreg.Proxy(obj), copyreg.Proxy(obj)],
                                   proto)
+
+    def test_weakref_subclass_errors(self):
+        # gh-162644: no infinite recursion with protocols 0 and 1.
+        obj = WeakrefTarget()
+        wr = WeakrefSubclass(obj)
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                self.assertRaises(TypeError, self.dumps, [obj, wr], proto)
 
     def test_bad_reduce_result(self):
         obj = REX([print, ()])
