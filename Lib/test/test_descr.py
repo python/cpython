@@ -2447,6 +2447,27 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(r(), None)
         del r
 
+    def test_weakrefs_from_secondary_base(self):
+        # gh-95710: weak references are supported if any base supports them,
+        # even if the primary base is a variable-size type.
+        import weakref
+        class Weak:
+            pass
+        for base, arg in (int, 42), (tuple, (1, 2)), (bytes, b'ab'):
+            with self.subTest(base=base):
+                class C(base, Weak):
+                    pass
+                c = C(arg)
+                r = weakref.ref(c)
+                self.assertIs(r(), c)
+                self.assertEqual(c, arg)
+                del c
+                support.gc_collect()
+                self.assertIsNone(r())
+                class D(base):
+                    pass
+                self.assertRaises(TypeError, weakref.ref, D(arg))
+
     def test_properties(self):
         # Testing property...
         class C(object):

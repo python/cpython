@@ -1,0 +1,4 @@
+Instances of a class that inherits from a variable-size built-in type
+(such as :class:`int` or :class:`tuple`)
+and from a class supporting weak references
+now support weak references too.
