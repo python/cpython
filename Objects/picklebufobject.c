@@ -4,6 +4,18 @@
 #include "pycore_weakref.h"     // FT_CLEAR_WEAKREFS()
 #include <stddef.h>
 
+#include "clinic/picklebufobject.c.h"
+
+/*[clinic input]
+module pickle
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6165c351cde067ba]*/
+
+/*[clinic input]
+class pickle.PickleBuffer "PyPickleBufferObject *" "&PyPickleBuffer_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b334ecd891c9cbc2]*/
+
 typedef struct {
     PyObject_HEAD
     /* The view exported by the original object */
@@ -66,19 +78,22 @@ PyPickleBuffer_Release(PyObject *obj)
     return 0;
 }
 
+/*[clinic input]
+@vectorcall
+@classmethod
+pickle.PickleBuffer.__new__ as picklebuf_new
+
+    buffer as base: object
+    /
+
+Wrapper for potentially out-of-band buffers.
+[clinic start generated code]*/
+
 static PyObject *
-picklebuf_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+picklebuf_new_impl(PyTypeObject *type, PyObject *base)
+/*[clinic end generated code: output=b8269110aace6998 input=616fff5fc36c22d4]*/
 {
-    PyPickleBufferObject *self;
-    PyObject *base;
-    char *keywords[] = {"", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:PickleBuffer",
-                                     keywords, &base)) {
-        return NULL;
-    }
-
-    self = (PyPickleBufferObject *) type->tp_alloc(type, 0);
+    PyPickleBufferObject *self = (PyPickleBufferObject *) type->tp_alloc(type, 0);
     if (self == NULL) {
         return NULL;
     }
@@ -211,10 +226,11 @@ static PyMethodDef picklebuf_methods[] = {
 PyTypeObject PyPickleBuffer_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "pickle.PickleBuffer",
-    .tp_doc = PyDoc_STR("Wrapper for potentially out-of-band buffers"),
+    .tp_doc = picklebuf_new__doc__,
     .tp_basicsize = sizeof(PyPickleBufferObject),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_new = picklebuf_new,
+    .tp_vectorcall = picklebuf_vectorcall,
     .tp_dealloc = picklebuf_dealloc,
     .tp_traverse = picklebuf_traverse,
     .tp_clear = picklebuf_clear,

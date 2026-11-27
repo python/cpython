@@ -1,7 +1,7 @@
 import unittest
 from test.test_tools import skip_if_missing, imports_under_tool
 from test import support
-from test.support.hypothesis_helper import hypothesis
+from test.support.hypothesis_helper import hypothesis, mark_hypothesis
 
 st = hypothesis.strategies
 given = hypothesis.given
@@ -115,6 +115,7 @@ class TestDawg(unittest.TestCase):
             ("ab", "1"),
         ]
     )
+    @mark_hypothesis
     def test_dawg(self, data):
         # suppress debug prints
         with support.captured_stdout() as output:
