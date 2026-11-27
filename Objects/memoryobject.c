@@ -1946,21 +1946,6 @@ pylong_as_llu(PyObject *item)
     return llu;
 }
 
-static Py_ssize_t
-pylong_as_zd(PyObject *item)
-{
-    PyObject *tmp;
-    Py_ssize_t zd;
-
-    tmp = _PyNumber_Index(item);
-    if (tmp == NULL)
-        return -1;
-
-    zd = PyLong_AsSsize_t(tmp);
-    Py_DECREF(tmp);
-    return zd;
-}
-
 static size_t
 pylong_as_zu(PyObject *item)
 {
@@ -2187,7 +2172,7 @@ pack_single(PyMemoryViewObject *self, char *ptr, PyObject *item, const char *fmt
 
     /* ssize_t and size_t */
     case 'n':
-        zd = pylong_as_zd(item);
+        zd = _PyNumber_IndexAsSsize_t(item);
         if (zd == -1 && PyErr_Occurred())
             goto err_occurred;
         CHECK_RELEASED_INT_AGAIN(self);

@@ -139,23 +139,6 @@ typedef struct {
 #include "clinic/mmapmodule.c.h"
 
 
-/* Return a Py_ssize_t from the object arg. This conversion logic is similar
-   to what AC uses for `Py_ssize_t` arguments.
-
-   Returns -1 on error. Use PyErr_Occurred() to disambiguate.
-*/
-static Py_ssize_t
-_As_Py_ssize_t(PyObject *arg) {
-    assert(arg != NULL);
-    Py_ssize_t ival = -1;
-    PyObject *iobj = _PyNumber_Index(arg);
-    if (iobj != NULL) {
-        ival = PyLong_AsSsize_t(iobj);
-        Py_DECREF(iobj);
-    }
-    return ival;
-}
-
 static void
 mmap_object_dealloc(PyObject *op)
 {
@@ -603,13 +586,13 @@ mmap_gfind_lock_held(mmap_object *self, Py_buffer *view, PyObject *start_obj,
 
     CHECK_VALID(NULL);
     if (start_obj != Py_None) {
-        start = _As_Py_ssize_t(start_obj);
+        start = _PyNumber_IndexAsSsize_t(start_obj);
         if (start == -1 && PyErr_Occurred()) {
             return NULL;
         }
 
         if (end_obj != Py_None) {
-            end = _As_Py_ssize_t(end_obj);
+            end = _PyNumber_IndexAsSsize_t(end_obj);
             if (end == -1 && PyErr_Occurred()) {
                 return NULL;
             }
@@ -1383,7 +1366,7 @@ mmap_mmap_madvise_impl(mmap_object *self, int option, Py_ssize_t start,
     if (length_obj == Py_None) {
         length = self->size;
     } else {
-        length = _As_Py_ssize_t(length_obj);
+        length = _PyNumber_IndexAsSsize_t(length_obj);
         if (length == -1 && PyErr_Occurred()) {
             return NULL;
         }
