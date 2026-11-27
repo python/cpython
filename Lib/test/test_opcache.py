@@ -7,7 +7,7 @@ import threading
 import types
 import unittest
 from test.support import (threading_helper, check_impl_detail,
-                          requires_specialization,
+                          requires_specialization, Py_GIL_DISABLED,
                           cpython_only, requires_jit_disabled, reset_code)
 from test.support.import_helper import import_module
 
@@ -2385,6 +2385,32 @@ class TestSpecializer(TestBase):
         load_enum_member()
         self.assert_specialized(load_enum_member,
                                 "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK")
+
+    @cpython_only
+    @requires_specialization
+    @unittest.skipUnless(Py_GIL_DISABLED,
+                         "deferred refcounting needs the free-threaded build")
+    @threading_helper.requires_working_threading()
+    def test_load_attr_class_mutable_value_deferred_non_owning_threading(self):
+        # Ensure load attributes from class mutable values
+        # are still enabled for deferred referencing
+        # counting from a non owning thread
+        class Value:
+            pass
+
+        class Holder:
+            attr = Value()
+
+        value = Holder.attr
+
+        def load_class_attr():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                x = Holder.attr
+
+        # Ensure we specialise from a non owning thread
+        threading_helper.run_concurrently(load_class_attr, nthreads=1)
+        self.assert_no_opcode(load_class_attr, "LOAD_ATTR_CLASS")
+        self.assertTrue(_testinternalcapi.has_deferred_refcount(value))
 
 
 if __name__ == "__main__":

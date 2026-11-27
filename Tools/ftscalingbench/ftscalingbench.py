@@ -339,6 +339,19 @@ def type_lookup():
             getattr(inst, name)
 
 
+class MyClassWithSharedAttr:
+    # instance of another heap type: LOAD_ATTR_CLASS can't specialize this
+    attr = MyObject()
+
+@register_benchmark
+def class_attribute():
+    obj = MyClassWithSharedAttr
+    for _ in range(1000 * WORK_SCALE):
+        obj.attr
+        obj.attr
+        obj.attr
+
+
 def bench_one_thread(func):
     t0 = time.perf_counter_ns()
     func()
