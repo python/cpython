@@ -92,7 +92,11 @@ Lock
 
    .. method:: locked()
 
-      Return ``True`` if the lock is *locked*.
+      Return ``True`` if the lock can not be acquired immediately.
+
+      .. versionchanged:: next
+         Also return ``True`` if the lock is *unlocked* but other tasks are
+         waiting to acquire it.
 
 
 Event
