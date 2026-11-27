@@ -119,6 +119,14 @@ class RobotFileParser:
                 if not refs[old]:
                     del refs[old]
 
+    def _add_group(self, group):
+        # Only the last entry of a group has rules, but they apply to
+        # all entries in the group.
+        rulelines = group[-1].rulelines
+        for entry in group:
+            entry.rulelines = rulelines
+            self._add_entry(entry)
+
     def parse(self, lines):
         """Parse the input lines from a robots.txt file.
 
@@ -130,8 +138,16 @@ class RobotFileParser:
         #   0: start state
         #   1: saw user-agent line
         #   2: saw an allow or disallow line
+        #   3: saw a crawl-delay or request-rate line, but no allow or
+        #      disallow line yet
+        # Crawl-delay and request-rate lines do not end a group (RFC 9309,
+        # section 2.2.4). A user-agent line after them starts a new entry
+        # in the same group: the rules apply to the whole group, but the
+        # crawl delay and request rate only apply to the user agents
+        # listed directly before them.
         state = 0
         entry = Entry()
+        group = [entry]
 
         self.modified()
         for line in lines:
@@ -148,8 +164,12 @@ class RobotFileParser:
                 line[1] = line[1].strip()
                 if line[0] == "user-agent":
                     if state == 2:
-                        self._add_entry(entry)
+                        self._add_group(group)
                         entry = Entry()
+                        group = [entry]
+                    elif state == 3:
+                        entry = Entry()
+                        group.append(entry)
                     product_token = line[1]
                     entry.useragents.append(product_token)
                     state = 1
@@ -174,7 +194,8 @@ class RobotFileParser:
                         # it will crash
                         if line[1].strip().isdecimal():
                             entry.delay = int(line[1])
-                        state = 2
+                        if state == 1:
+                            state = 3
                 elif line[0] == "request-rate":
                     if state != 0:
                         numbers = line[1].split('/')
@@ -182,7 +203,8 @@ class RobotFileParser:
                         if (len(numbers) == 2 and numbers[0].strip().isdecimal()
                             and numbers[1].strip().isdecimal()):
                             entry.req_rate = RequestRate(int(numbers[0]), int(numbers[1]))
-                        state = 2
+                        if state == 1:
+                            state = 3
                 elif line[0] == "sitemap":
                     # According to http://www.sitemaps.org/protocol.html
                     # "This directive is independent of the user-agent line,
@@ -190,7 +212,7 @@ class RobotFileParser:
                     # Therefore we do not change the state of the parser.
                     self.sitemaps.append(line[1])
         if state != 0:
-            self._add_entry(entry)
+            self._add_group(group)
 
     def _find_entry(self, useragent):
         entry = self.groups.get(useragent.lower())

@@ -399,6 +399,80 @@ User-agent: eggsbot
 Disallow: /another/path\
 """
 
+
+class CrawlDelayInGroupTest(BaseRobotTest, unittest.TestCase):
+    # Crawl-delay and Request-rate do not end a group (RFC 9309,
+    # section 2.2.4), but only apply to the user agents directly above them.
+    robots_txt = """\
+User-agent: spambot
+Crawl-delay: 3
+User-agent: eggsbot
+Crawl-delay: 5
+Request-rate: 9/30
+User-agent: hambot
+Disallow: /some/path
+    """
+    good = [('spambot', '/'), ('eggsbot', '/'), ('hambot', '/')]
+    bad = [('spambot', '/some/path'), ('eggsbot', '/some/path'),
+           ('hambot', '/some/path')]
+    expected_output = """\
+User-agent: spambot
+Crawl-delay: 3
+Disallow: /some/path
+
+User-agent: eggsbot
+Crawl-delay: 5
+Request-rate: 9/30
+Disallow: /some/path
+
+User-agent: hambot
+Disallow: /some/path\
+"""
+
+    def test_crawl_delay_and_request_rate(self):
+        parser = self.parser
+        self.assertEqual(parser.crawl_delay('spambot'), 3)
+        self.assertIsNone(parser.request_rate('spambot'))
+        self.assertEqual(parser.crawl_delay('eggsbot'), 5)
+        self.assertEqual(parser.request_rate('eggsbot'), (9, 30))
+        self.assertIsNone(parser.crawl_delay('hambot'))
+        self.assertIsNone(parser.request_rate('hambot'))
+
+
+class InvalidCrawlDelayInGroupTest(BaseRequestRateTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: spambot
+Crawl-delay: pears
+User-agent: eggsbot
+Request-rate: 9/banana
+User-agent: hambot
+Disallow: /some/path
+    """
+    good = [('spambot', '/'), ('eggsbot', '/'), ('hambot', '/')]
+    bad = [('spambot', '/some/path'), ('eggsbot', '/some/path'),
+           ('hambot', '/some/path')]
+
+
+class CrawlDelayAfterRulesTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: spambot
+Disallow: /some/path
+Crawl-delay: 3
+User-agent: eggsbot
+Disallow: /another/path
+    """
+    good = [('spambot', '/another/path'), ('eggsbot', '/some/path')]
+    bad = [('spambot', '/some/path'), ('eggsbot', '/another/path')]
+    expected_output = """\
+User-agent: spambot
+Crawl-delay: 3
+Disallow: /some/path
+
+User-agent: eggsbot
+Disallow: /another/path\
+"""
+
+
 class IgnoreEmptyLinesTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
 User-agent: spambot
