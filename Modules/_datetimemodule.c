@@ -2795,14 +2795,6 @@ delta_new_impl(PyTypeObject *type, PyObject *days, PyObject *seconds,
                PyObject *minutes, PyObject *hours, PyObject *weeks)
 /*[clinic end generated code: output=61d7e02a92a97700 input=8aebc4cdef360d1f]*/
 {
-    PyObject *self = NULL;
-
-    PyObject *current_mod;
-    datetime_state *st = GET_CURRENT_STATE(current_mod);
-    if (st == NULL) {
-        return NULL;
-    }
-
     /* vectorcall passes borrowed references; hold strong references before
        any conversion can execute arbitrary Python code. */
     Py_XINCREF(days);
@@ -2812,6 +2804,14 @@ delta_new_impl(PyTypeObject *type, PyObject *days, PyObject *seconds,
     Py_XINCREF(minutes);
     Py_XINCREF(hours);
     Py_XINCREF(weeks);
+
+    PyObject *self = NULL;
+
+    PyObject *current_mod;
+    datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
+        return NULL;
+    }
 
     PyObject *x = NULL;         /* running sum of microseconds */
     PyObject *y = NULL;         /* temp sum of microseconds */
@@ -4365,7 +4365,15 @@ static PyObject *
 timezone_new_impl(PyTypeObject *type, PyObject *offset, PyObject *name)
 /*[clinic end generated code: output=41a2dda500424187 input=8901a8befbc52561]*/
 {
-    return new_timezone(offset, name);
+    /* vectorcall passes borrowed references; hold strong references before
+       new_timezone() can execute arbitrary Python code. */
+    PyObject *result;
+    Py_INCREF(offset);
+    Py_XINCREF(name);
+    result = new_timezone(offset, name);
+    Py_DECREF(offset);
+    Py_XDECREF(name);
+    return result;
 }
 
 static void
