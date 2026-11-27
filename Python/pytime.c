@@ -954,17 +954,50 @@ pytime_from_object(PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
         if (ratio == NULL) {
             return pytime_from_pyfloat(tp, obj, round, unit_to_ns);
         }
-        PyObject *nsobj = multiply_divide_and_round(unit_to_ns,
-                                                    PyTuple_GET_ITEM(ratio, 0),
-                                                    PyTuple_GET_ITEM(ratio, 1),
-                                                    round);
-        Py_DECREF(ratio);
-        if (nsobj == NULL) {
+        PyObject *divmod = checked_divmod(PyTuple_GET_ITEM(ratio, 0),
+                                          PyTuple_GET_ITEM(ratio, 1));
+        if (divmod == NULL) {
+            Py_DECREF(ratio);
             return -1;
         }
-        int rc = PyLong_AsInt64(nsobj, tp);
-        Py_DECREF(nsobj);
-        return rc;
+        PyTime_t ns;
+        if (PyLong_AsInt64(PyTuple_GET_ITEM(divmod, 0), &ns) < 0) {
+            Py_DECREF(divmod);
+            Py_DECREF(ratio);
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                pytime_overflow();
+            }
+            return -1;
+        }
+        if (round == _PyTime_ROUND_UP) {
+            /* The remainder is non-negative, so the direction of rounding
+               depends on the sign of the whole number. */
+            round = ns < 0 ? _PyTime_ROUND_FLOOR : _PyTime_ROUND_CEILING;
+        }
+        PyObject *fracobj = multiply_divide_and_round(
+                unit_to_ns, PyTuple_GET_ITEM(divmod, 1),
+                PyTuple_GET_ITEM(ratio, 1), round);
+        Py_DECREF(divmod);
+        Py_DECREF(ratio);
+        if (fracobj == NULL) {
+            return -1;
+        }
+        long frac = PyLong_AsLong(fracobj);
+        Py_DECREF(fracobj);
+        if (frac == -1 && PyErr_Occurred()) {
+            return -1;
+        }
+        if (ns < 0 && frac > 0) {
+            /* Avoid a spurious overflow near PyTime_MIN. */
+            ns += 1;
+            frac -= unit_to_ns;
+        }
+        if (pytime_mul(&ns, unit_to_ns) < 0 || pytime_add(&ns, frac) < 0) {
+            pytime_overflow();
+            return -1;
+        }
+        *tp = ns;
+        return 0;
     }
 }
 
