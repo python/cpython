@@ -1,0 +1,3 @@
+The interactive shell now highlights the matching parenthesis, bracket,
+brace, or string quote when the cursor touches a delimiter, including
+triple quotes. Patch by Bartosz Sławecki.

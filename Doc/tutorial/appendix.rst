@@ -17,7 +17,11 @@ control capabilities.
 Since Python 3.13, a new interactive shell is used by default.
 This one supports color, multiline editing, history browsing, and
 paste mode.  To disable color, see :ref:`using-on-controlling-color` for
-details.  Function keys provide some additional functionality.
+details.  When the cursor touches a parenthesis, bracket, brace, or string
+quote, its matching delimiter is highlighted.  This includes triple quotes
+and expressions in formatted and template strings.  Delimiters within
+string contents and comments are ignored.  Function keys provide some
+additional functionality.
 :kbd:`F1` enters the interactive help browser :mod:`pydoc`.
 :kbd:`F2` allows for browsing command-line history with neither output nor the
 :term:`>>>` and :term:`...` prompts. :kbd:`F3` enters "paste mode", which
