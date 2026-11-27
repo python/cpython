@@ -2952,3 +2952,16 @@ ssl
   that applies even when an application supplies its own root CA bundle, and
   regardless of whether the platform trust store has removed trust.
   (Contributed by Christian Heimes in :gh:`160040` for :cve:`2026-115557`.)
+
+
+Notable changes in 3.15.3
+=========================
+
+C API changes
+-------------
+
+* :c:func:`Py_INCREF`, :c:func:`Py_XINCREF`, :c:func:`Py_DECREF` and
+  :c:func:`Py_XDECREF` are now implemented as function calls on all limited C
+  API versions.  Previously, they were only implemented as function calls on
+  the limited C API version 3.12 or newer. Patch by Victor Stinner:
+  (Contributed by Victor Stinner in :gh:`158401`.)
