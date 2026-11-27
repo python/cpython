@@ -885,16 +885,17 @@ common_constants_clear(PyInterpreterState *interp)
             // Only `all` and `any` are heap objects; the rest are statically
             // allocated.
             // Don't rely on _Py_IsStaticImmortal().
-            if (i == CONSTANT_BUILTIN_ALL || i == CONSTANT_BUILTIN_ANY) {
+            bool is_heap = (
+                i == CONSTANT_BUILTIN_ALL
+                || i == CONSTANT_BUILTIN_ANY);
+#if defined(Py_GIL_DISABLED) || SIZEOF_VOID_P >= 4
+            // On 64-bit and free-threading builds,
+            // we can trust _Py_IsStaticImmortal.
+            assert (is_heap == !_Py_IsStaticImmortal(obj));
+#endif
+            if (is_heap) {
                 _Py_ClearImmortal(obj);
             }
-#if !defined(Py_GIL_DISABLED) && SIZEOF_VOID_P <= 4
-            else {
-                // On 64-bit and free-threading builds,
-                // we can trust _Py_IsStaticImmortal.
-                assert (!_Py_IsStaticImmortal(obj));
-            }
-#endif
         }
     }
 }
