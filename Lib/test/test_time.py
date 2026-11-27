@@ -57,6 +57,13 @@ ROUNDING_MODES = (
 )
 
 
+class RatioNumber:
+    """A number which only has the numerator and denominator attributes."""
+    def __init__(self, numerator, denominator):
+        self.numerator = numerator
+        self.denominator = denominator
+
+
 class TimeTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -1049,6 +1056,54 @@ class CPyTimeTestCase:
         d = d.quantize(1)
         return int(d)
 
+    def check_ratio_rounding(self, pytime_converter, expected_func,
+                             sec_to_unit, value_filter=None):
+        """Test the conversion of numbers which are neither int nor float.
+
+        The number of seconds is converted exactly to the number of units
+        (sec_to_unit per second), rounded with the specified rounding mode
+        and passed to expected_func().
+        """
+        exp = round(math.log10(sec_to_unit)) - 12
+        # Timestamps in picoseconds: rounding to a nanosecond is required.
+        ps_timestamps = sorted({ns * 1000 + delta
+                                for ns in self._rounding_values(False)
+                                for delta in (-501, -500, -499, -1, 0,
+                                              1, 499, 500, 501)})
+        for time_rnd, decimal_rnd in ROUNDING_MODES:
+            with decimal.localcontext() as context:
+                context.rounding = decimal_rnd
+                for ps in ps_timestamps:
+                    units = int(decimal.Decimal(ps).scaleb(exp).quantize(1))
+                    if value_filter and not value_filter(units // sec_to_unit):
+                        continue
+                    expected = expected_func(units)
+                    for value in (fractions.Fraction(ps, 10**12),
+                                  decimal.Decimal(ps).scaleb(-12),
+                                  RatioNumber(ps, 10**12)):
+                        debug_info = {'value': value, 'rounding': decimal_rnd}
+                        self.assertEqual(pytime_converter(value, time_rnd),
+                                         expected, debug_info)
+
+        # test overflow
+        for time_rnd, _ in ROUNDING_MODES:
+            for seconds in (-self.OVERFLOW_SECONDS, self.OVERFLOW_SECONDS):
+                for value in (fractions.Fraction(seconds),
+                              decimal.Decimal(seconds),
+                              RatioNumber(seconds, 1)):
+                    debug_info = {'value': value, 'rounding': time_rnd}
+                    with self.assertRaises(OverflowError, msg=debug_info):
+                        pytime_converter(value, time_rnd)
+
+        for time_rnd, _ in ROUNDING_MODES:
+            # test nan
+            with self.assertRaises(ValueError):
+                pytime_converter(decimal.Decimal('nan'), time_rnd)
+            # a type is not a number
+            for value in (int, fractions.Fraction, RatioNumber):
+                with self.assertRaisesRegex(TypeError, 'not type'):
+                    pytime_converter(value, time_rnd)
+
 
 class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
     """
@@ -1083,6 +1138,11 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
         self.check_float_rounding(
             _PyTime_FromSecondsObject,
             lambda ns: self.decimal_round(ns * SEC_TO_NS))
+
+        self.check_ratio_rounding(
+            _PyTime_FromSecondsObject,
+            lambda ns: ns, SEC_TO_NS,
+            value_filter=lambda secs: PyTime_MIN <= secs * SEC_TO_NS <= PyTime_MAX)
 
         # test nan
         for time_rnd, _ in ROUNDING_MODES:
@@ -1235,6 +1295,10 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
                                   self.decimal_round,
                                   value_filter=self.time_t_filter)
 
+        self.check_ratio_rounding(_PyTime_ObjectToTime_t,
+                                  lambda secs: secs, 1,
+                                  value_filter=self.time_t_filter)
+
     def create_converter(self, sec_to_unit):
         def converter(secs):
             floatpart, intpart = math.modf(secs)
@@ -1261,6 +1325,11 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
                                   self.create_converter(SEC_TO_US),
                                   value_filter=self.time_t_filter)
 
+        self.check_ratio_rounding(_PyTime_ObjectToTimeval,
+                                  lambda units: divmod(units, SEC_TO_US),
+                                  SEC_TO_US,
+                                  value_filter=self.time_t_filter)
+
          # test nan
         for time_rnd, _ in ROUNDING_MODES:
             with self.assertRaises(ValueError):
@@ -1275,6 +1344,11 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
 
         self.check_float_rounding(_PyTime_ObjectToTimespec,
                                   self.create_converter(SEC_TO_NS),
+                                  value_filter=self.time_t_filter)
+
+        self.check_ratio_rounding(_PyTime_ObjectToTimespec,
+                                  lambda units: divmod(units, SEC_TO_NS),
+                                  SEC_TO_NS,
                                   value_filter=self.time_t_filter)
 
         # test nan

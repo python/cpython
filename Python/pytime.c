@@ -615,11 +615,19 @@ pytime_ratio_to_denominator(PyObject *numerator, PyObject *denominator,
         Py_DECREF(divmod);
         return -1;
     }
+    if (round == _PyTime_ROUND_UP) {
+        /* The remainder is non-negative, so the direction of rounding
+           depends on the sign of the whole number. */
+        round = *sec < 0 ? _PyTime_ROUND_FLOOR : _PyTime_ROUND_CEILING;
+    }
     PyObject *tmp = multiply_divide_and_round(scale,
                                               PyTuple_GET_ITEM(divmod, 1),
                                               denominator,
-                                              _PyTime_ROUND_HALF_EVEN);
+                                              round);
     Py_DECREF(divmod);
+    if (tmp == NULL) {
+        return -1;
+    }
     *subsec = PyLong_AsLong(tmp);
     Py_DECREF(tmp);
     if (*subsec == -1 && PyErr_Occurred()) {
