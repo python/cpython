@@ -1,0 +1,4 @@
+Fix the pure-Python :mod:`decimal` implementation returning an out-of-range
+quotient from ``//``, :func:`divmod`, :meth:`Context.divide_int
+<decimal.Context.divide_int>` and :meth:`Context.divmod <decimal.Context.divmod>`
+instead of signaling :exc:`~decimal.Overflow`.

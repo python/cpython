@@ -1503,8 +1503,9 @@ class Decimal(object):
                         context._raise_error(InvalidOperation, 'x % 0'))
 
         quotient, remainder = self._divide(other, context)
-        remainder = remainder._fix(context)
-        return quotient, remainder
+        if not other._isinfinity():
+            quotient = quotient._fix(context)
+        return quotient, remainder._fix(context)
 
     def __rdivmod__(self, other, context=None):
         """Swaps self/other and returns __divmod__."""
@@ -1650,7 +1651,10 @@ class Decimal(object):
             else:
                 return context._raise_error(DivisionUndefined, '0 // 0')
 
-        return self._divide(other, context)[0]
+        quotient = self._divide(other, context)[0]
+        if not other._isinfinity():
+            quotient = quotient._fix(context)
+        return quotient
 
     def __rfloordiv__(self, other, context=None):
         """Swaps self/other and returns __floordiv__."""

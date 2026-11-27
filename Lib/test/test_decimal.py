@@ -3293,6 +3293,29 @@ class ContextAPItests:
         self.assertRaises(TypeError, c.divmod, '1', 2)
         self.assertRaises(TypeError, c.divmod, 1, '2')
 
+    def test_divide_int_overflow(self):
+        Decimal = self.decimal.Decimal
+        Context = self.decimal.Context
+        Overflow = self.decimal.Overflow
+        Inexact = self.decimal.Inexact
+        Rounded = self.decimal.Rounded
+
+        # The quotient 300 fits in prec digits but not in Emax.
+        c = Context(prec=3, Emin=-1, Emax=1)
+        a, b = Decimal(75), Decimal('0.25')
+        for op in (c.divide_int, lambda x, y: c.divmod(x, y)[0]):
+            c.traps[Overflow] = True
+            self.assertRaises(Overflow, op, a, b)
+
+            c.traps[Overflow] = False
+            c.clear_flags()
+            self.assertEqual(op(a, b), Decimal('Infinity'))
+            for flag in (Overflow, Inexact, Rounded):
+                self.assertTrue(c.flags[flag])
+        c.clear_flags()
+        self.assertEqual(c.remainder(a, b), Decimal('0.00'))
+        self.assertFalse(any(c.flags.values()))
+
     def test_exp(self):
         Decimal = self.decimal.Decimal
         Context = self.decimal.Context
