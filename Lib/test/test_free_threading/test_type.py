@@ -1,3 +1,5 @@
+import abc
+import collections.abc
 import gc
 import threading
 import unittest
@@ -578,6 +580,40 @@ class TestType(TestCase):
         self.assertEqual(repr(D()), "A")
         self.assertIn(C, A.__subclasses__())
         self.assertNotIn(C, B.__subclasses__())
+
+    def test_abstractmethods_and_register(self):
+        # gh-156910: creating an ABC sets __abstractmethods__ and
+        # Sequence.register() sets type flags recursively.  Both take the type
+        # lock and stop the world, and racing them used to deadlock between
+        # the type lock and the stop-the-world mutex.  The gc.collect() thread
+        # adds contention on the stop-the-world mutex, which is needed to hit
+        # the deadlock.
+        done = threading.Event()
+
+        def make_abcs():
+            for _ in range(ITERS):
+                class C(abc.ABC):
+                    @abc.abstractmethod
+                    def f(self):
+                        pass
+
+        def register():
+            for _ in range(ITERS):
+                collections.abc.Sequence.register(type("S", (), {}))
+
+        def collect():
+            while not done.is_set():
+                gc.collect()
+
+        workers = [Thread(target=make_abcs) for _ in range(NTHREADS)]
+        workers += [Thread(target=register) for _ in range(NTHREADS)]
+        collector = Thread(target=collect)
+        with threading_helper.start_threads([collector]):
+            try:
+                with threading_helper.start_threads(workers):
+                    pass
+            finally:
+                done.set()
 
     def test_class_creation_with_concurrent_setattr(self):
         # Creating a class resolves its slots from the dicts along the MRO
