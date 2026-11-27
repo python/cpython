@@ -572,7 +572,7 @@ class ColorDelegatorTest(unittest.TestCase):
 
         # ?? new in 3.16
         self._assert_highlighting('a ?? b',
-                                  {'KEYWORD_OP': [('1.2', '1.4')]})
+                                  {'KEYWORD': [('1.2', '1.4')]})
 
     def test_long_multiline_string(self):
         source = textwrap.dedent('''\
