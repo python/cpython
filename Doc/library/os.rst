@@ -320,6 +320,13 @@ process and user.
    returned as long as it is a :class:`str` or :class:`bytes` object.
    In all other cases, :exc:`TypeError` is raised.
 
+   .. note::
+
+      :func:`!fspath` does not perform any path normalization, validation, or
+      resolution of components such as ``.``, ``..``, or symbolic links.
+      Use :func:`os.path.normpath` or :meth:`pathlib.Path.resolve` if path
+      normalization or resolution is needed.
+
    .. versionadded:: 3.6
 
 
