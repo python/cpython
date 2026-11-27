@@ -385,6 +385,14 @@ class MimeTypesClassTestCase(unittest.TestCase):
         eq(self.db.guess_file_type("foo.tar.Z"), ("application/x-tar", "compress"))
         eq(self.db.guess_file_type("foo.tar.bz2"), ("application/x-tar", "bzip2"))
         eq(self.db.guess_file_type("foo.tar.xz"), ("application/x-tar", "xz"))
+        eq(self.db.guess_file_type("foo.vcf"), ("text/vcard", None))
+        eq(self.db.guess_file_type("foo.vcard"), ("text/vcard", None))
+        eq(self.db.guess_extension("text/vcard"), ".vcf")
+        eq(self.db.guess_file_type("foo.gml"), ("application/gml+xml", None))
+        eq(self.db.guess_file_type("foo.ent"),
+           ("application/xml-external-parsed-entity", None))
+        eq(self.db.guess_file_type("foo.appcache"), ("text/cache-manifest", None))
+        eq(self.db.guess_file_type("foo.manifest"), (None, None))
 
     def test_data_urls(self):
         eq = self.assertEqual
@@ -412,6 +420,8 @@ class MimeTypesClassTestCase(unittest.TestCase):
         eq(self.db.guess_file_type('foo.invalid', strict=False), (None, None))
         eq(self.db.guess_extension('image/jpeg', strict=False), '.jpg')
         eq(self.db.guess_extension('image/JPEG', strict=False), '.jpg')
+        eq(self.db.guess_file_type('foo.vcf', strict=False), ('text/vcard', None))
+        eq(self.db.guess_extension('text/x-vcard', strict=False), '.vcf')
 
     def test_filename_with_url_delimiters(self):
         # bpo-38449: URL delimiters cases should be handled also.
