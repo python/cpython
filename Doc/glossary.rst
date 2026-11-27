@@ -1593,6 +1593,19 @@ Glossary
       See also :term:`binary file` for a file object able to read and write
       :term:`bytes-like objects <bytes-like object>`.
 
+   thread
+      An independent flow of execution within a process.  Every Python
+      program has at least one thread, the *main thread*, and a program
+      that never starts another is *single-threaded*.  A *multi-threaded*
+      program starts more threads, either directly with the
+      :mod:`threading` module or indirectly through functionality provided
+      by a library, such as :class:`concurrent.futures.ThreadPoolExecutor`.
+      All threads in a process share the same memory, so they can access
+      the same objects.
+
+      See also :term:`concurrency`, :term:`parallelism` and
+      :term:`thread-safe`.
+
    thread state
 
       The information used by the :term:`CPython` runtime to run in an OS thread.

@@ -22,6 +22,7 @@ Python Library Reference.
    functional.rst
    logging.rst
    logging-cookbook.rst
+   multi-threading.rst
    regex.rst
    sockets.rst
    sorting.rst
@@ -51,6 +52,7 @@ General:
 * :ref:`ipaddress-howto`
 * :ref:`logging-howto`
 * :ref:`logging-cookbook`
+* :ref:`multi-threading-howto`
 * :ref:`regex-howto`
 * :ref:`sortinghowto`
 * :ref:`unicode-howto`
