@@ -1,0 +1,1 @@
+Fix a deadlock in :class:`importlib.util.LazyLoader` when two threads first access two lazily loaded modules that import each other.
