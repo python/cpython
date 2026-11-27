@@ -3097,6 +3097,31 @@ class TestDateTime(TestDate):
             self.assertEqual(t.second, 1)
             self.assertEqual(t.microsecond, 0)
 
+    @support.run_with_tz('MSK-03')  # Something east of Greenwich
+    def test_microsecond_rounding_ratio(self):
+        # A number which only has the numerator and denominator attributes.
+        class Ratio:
+            def __init__(self, fraction):
+                self.numerator = fraction.numerator
+                self.denominator = fraction.denominator
+
+        F = fractions.Fraction
+        fts = self.theclass.fromtimestamp
+        for value in [
+            F(0), F(1, 1_000_000), F(-1, 1_000_000),
+            F(5, 10_000_000), F(-5, 10_000_000), F(15, 10_000_000),
+            2_147_475_000 + F(5, 10_000_000),
+            2_147_475_000 +
+                F(        5_000_000_000_000_000_000_000_000_000_000_000,
+                  9_999_999_999_999_999_999_999_999_999_999_999_999_999),
+            2_147_475_000 +
+                F( 9_999_995_000_000_000_000_000_000_000_000_000_000_000,
+                  10_000_000_000_000_000_000_000_000_000_000_000_000_001),
+            2_147_475_000 + F(9_999_995, 10_000_000),
+        ]:
+            with self.subTest(value=value):
+                self.assertEqual(fts(Ratio(value)), fts(value))
+
     def test_timestamp_limits(self):
         with self.subTest("minimum UTC"):
             min_dt = self.theclass.min.replace(tzinfo=timezone.utc)

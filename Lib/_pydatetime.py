@@ -1801,7 +1801,7 @@ class datetime(date):
                     n, d = t.as_integer_ratio()
                 except AttributeError:
                     n = t.numerator
-                    d = t.denumerator
+                    d = t.denominator
             except AttributeError:
                 frac, t = _math.modf(t)
                 us = round(frac * 1e6)
