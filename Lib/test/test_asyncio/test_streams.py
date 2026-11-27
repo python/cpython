@@ -1294,8 +1294,12 @@ class StreamTests(test_utils.TestCase):
 
         async def client(addr):
             rd, wr = await asyncio.open_connection(*addr)
-            wr.write(b'test msg')
-            await wr.drain()
+            # Wait until the server's handler has run and closed the
+            # connection: closing the server before it accepts the
+            # connection would drop it.
+            async with asyncio.timeout(60):
+                data = await rd.read()
+            self.assertEqual(data, b'')
             wr.close()
             await wr.wait_closed()
 
