@@ -24,8 +24,8 @@ read_mime_types(file) -- parse one file, return a dictionary or None
 """
 
 import sys
-import os
-import posixpath
+lazy import os
+lazy import posixpath
 lazy import urllib.parse
 lazy import warnings
 lazy from argparse import ArgumentParser
@@ -145,11 +145,11 @@ class MimeTypes:
             scheme = p.scheme
             url = p.path
         else:
-            warnings.warn(
+            warnings._deprecated(
                 "Passing a file path to guess_type() is deprecated and will be "
                 "removed in a future version. Use guess_file_type() instead.",
-                DeprecationWarning,
-                stacklevel=2,
+                remove=(3, 21),
+                stacklevel=4,
             )
             return self.guess_file_type(url, strict=strict)
         if scheme == 'data':
