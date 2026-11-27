@@ -6032,8 +6032,14 @@ class TestSignatureBind(unittest.TestCase):
             return x, y, options
 
         bound = inspect.signature(f).bind(y=2)
+        self.assertEqual(bound.args, ())
+        self.assertEqual(bound.kwargs, {'y': 2})
         bound.apply_defaults()
         self.assertEqual(f(*bound.args, **bound.kwargs), f(y=2))
+
+        bound = inspect.signature(f).bind(3, 4, y=5)
+        self.assertEqual(bound.args, (3, 4))
+        self.assertEqual(bound.kwargs, {'y': 5})
 
         def g(x=0, y=1, /):
             pass
