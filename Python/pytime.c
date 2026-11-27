@@ -453,8 +453,8 @@ pytime_double_to_denominator(double d, time_t *sec, long *numerator,
 /* Convert a number to a fraction representation.
  *
  * Set *ratio to a 2-tuple (numerator, denominator) and return 1 on success.
- * Return 0 if the number has neither the as_integer_ratio() method nor
- * the numerator and denominator attributes.
+ * Set *ratio to NULL and return 0 if the number has neither the
+ * as_integer_ratio() method nor the numerator and denominator attributes.
  * Return -1 on error.
  */
 static int
@@ -515,21 +515,22 @@ static PyObject *
 checked_divmod(PyObject *a, PyObject *b)
 {
     PyObject *result = PyNumber_Divmod(a, b);
-    if (result != NULL) {
-        if (!PyTuple_Check(result)) {
-            PyErr_Format(PyExc_TypeError,
-                         "divmod() returned non-tuple (type %T)",
-                         result);
-            Py_DECREF(result);
-            return NULL;
-        }
-        if (PyTuple_GET_SIZE(result) != 2) {
-            PyErr_Format(PyExc_TypeError,
-                         "divmod() returned a tuple of size %zd",
-                         PyTuple_GET_SIZE(result));
-            Py_DECREF(result);
-            return NULL;
-        }
+    if (result == NULL) {
+        return NULL;
+    }
+    if (!PyTuple_Check(result)) {
+        PyErr_Format(PyExc_TypeError,
+                     "divmod() returned non-tuple (type %T)",
+                     result);
+        Py_DECREF(result);
+        return NULL;
+    }
+    if (PyTuple_GET_SIZE(result) != 2) {
+        PyErr_Format(PyExc_TypeError,
+                     "divmod() returned a tuple of size %zd",
+                     PyTuple_GET_SIZE(result));
+        Py_DECREF(result);
+        return NULL;
     }
     return result;
 }
@@ -645,6 +646,23 @@ pytime_ratio_to_denominator(PyObject *numerator, PyObject *denominator,
 
 
 static int
+pytime_pyfloat_to_denominator(PyObject *obj, time_t *sec, long *numerator,
+                              long denominator, _PyTime_round_t round)
+{
+    double d = PyFloat_AsDouble(obj);
+    if (d == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    if (isnan(d)) {
+        PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
+        return -1;
+    }
+    return pytime_double_to_denominator(d, sec, numerator,
+                                        denominator, round);
+}
+
+
+static int
 pytime_object_to_denominator(PyObject *obj, time_t *sec, long *numerator,
                              long denominator, _PyTime_round_t round)
 {
@@ -659,17 +677,8 @@ pytime_object_to_denominator(PyObject *obj, time_t *sec, long *numerator,
         return 0;
     }
     else if (PyFloat_Check(obj)) {
-fromfloat:;
-        double d = PyFloat_AsDouble(obj);
-        if (d == -1 && PyErr_Occurred()) {
-            return -1;
-        }
-        if (isnan(d)) {
-            PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
-            return -1;
-        }
-        return pytime_double_to_denominator(d, sec, numerator,
-                                            denominator, round);
+        return pytime_pyfloat_to_denominator(obj, sec, numerator,
+                                             denominator, round);
     }
     else {
         PyObject *ratio;
@@ -677,7 +686,8 @@ fromfloat:;
             return -1;
         }
         if (ratio == NULL) {
-            goto fromfloat;
+            return pytime_pyfloat_to_denominator(obj, sec, numerator,
+                                                 denominator, round);
         }
         int rc = pytime_ratio_to_denominator(PyTuple_GET_ITEM(ratio, 0),
                                              PyTuple_GET_ITEM(ratio, 1),
@@ -686,6 +696,35 @@ fromfloat:;
         Py_DECREF(ratio);
         return rc;
     }
+}
+
+
+static int
+pytime_pyfloat_to_time_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
+{
+    double intpart;
+    /* volatile avoids optimization changing how numbers are rounded */
+    volatile double d;
+
+    d = PyFloat_AsDouble(obj);
+    if (d == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    if (isnan(d)) {
+        PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
+        return -1;
+    }
+
+    d = pytime_round(d, round);
+    (void)modf(d, &intpart);
+
+    /* See comments in pytime_double_to_denominator */
+    if (!((double)PY_TIME_T_MIN <= intpart && intpart < -(double)PY_TIME_T_MIN)) {
+        pytime_time_t_overflow();
+        return -1;
+    }
+    *sec = (time_t)intpart;
+    return 0;
 }
 
 
@@ -700,30 +739,7 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         return 0;
     }
     else if (PyFloat_Check(obj)) {
-fromfloat:;
-        double intpart;
-        /* volatile avoids optimization changing how numbers are rounded */
-        volatile double d;
-
-        d = PyFloat_AsDouble(obj);
-        if (d == -1 && PyErr_Occurred()) {
-            return -1;
-        }
-        if (isnan(d)) {
-            PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
-            return -1;
-        }
-
-        d = pytime_round(d, round);
-        (void)modf(d, &intpart);
-
-        /* See comments in pytime_double_to_denominator */
-        if (!((double)PY_TIME_T_MIN <= intpart && intpart < -(double)PY_TIME_T_MIN)) {
-            pytime_time_t_overflow();
-            return -1;
-        }
-        *sec = (time_t)intpart;
-        return 0;
+        return pytime_pyfloat_to_time_t(obj, sec, round);
     }
     else {
         PyObject *ratio;
@@ -731,7 +747,7 @@ fromfloat:;
             return -1;
         }
         if (ratio == NULL) {
-            goto fromfloat;
+            return pytime_pyfloat_to_time_t(obj, sec, round);
         }
         PyObject *secobj = divide_and_round(PyTuple_GET_ITEM(ratio, 0),
                                             PyTuple_GET_ITEM(ratio, 1),
@@ -880,6 +896,22 @@ pytime_from_double(PyTime_t *tp, double value, _PyTime_round_t round,
 
 
 static int
+pytime_from_pyfloat(PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
+                    long unit_to_ns)
+{
+    double d = PyFloat_AsDouble(obj);
+    if (d == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    if (isnan(d)) {
+        PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
+        return -1;
+    }
+    return pytime_from_double(tp, d, round, unit_to_ns);
+}
+
+
+static int
 pytime_from_object(PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
                    long unit_to_ns)
 {
@@ -904,17 +936,7 @@ pytime_from_object(PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
         return 0;
     }
     else if (PyFloat_Check(obj)) {
-fromfloat:;
-        double d;
-        d = PyFloat_AsDouble(obj);
-        if (d == -1 && PyErr_Occurred()) {
-            return -1;
-        }
-        if (isnan(d)) {
-            PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
-            return -1;
-        }
-        return pytime_from_double(tp, d, round, unit_to_ns);
+        return pytime_from_pyfloat(tp, obj, round, unit_to_ns);
     }
     else {
         PyObject *ratio;
@@ -922,7 +944,7 @@ fromfloat:;
             return -1;
         }
         if (ratio == NULL) {
-            goto fromfloat;
+            return pytime_from_pyfloat(tp, obj, round, unit_to_ns);
         }
         PyObject *nsobj = multiply_divide_and_round(unit_to_ns,
                                                     PyTuple_GET_ITEM(ratio, 0),
