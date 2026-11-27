@@ -78,6 +78,20 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         lzd.decompress(COMPRESSED_XZ)
         self.assertRaises(EOFError, lzd.decompress, b"nyan")
 
+    def test_decompressor_empty_max_length_zero_repeated(self):
+        # gh-160000: repeated decompress(b'', max_length=0) calls must
+        # return b'' instead of raising LZMAError on the second call.
+        lzd = LZMADecompressor()
+        for _ in range(3):
+            self.assertEqual(lzd.decompress(b'', max_length=0), b'')
+        # Same after real input: one byte out, then empty calls,
+        # then the rest of the stream still decompresses.
+        lzd = LZMADecompressor()
+        self.assertEqual(lzd.decompress(COMPRESSED_XZ, 1), INPUT[:1])
+        for _ in range(3):
+            self.assertEqual(lzd.decompress(b'', max_length=0), b'')
+        self.assertEqual(lzd.decompress(b''), INPUT[1:])
+
     def test_decompressor_memlimit(self):
         lzd = LZMADecompressor(memlimit=1024)
         self.assertRaises(LZMAError, lzd.decompress, COMPRESSED_XZ)
