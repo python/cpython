@@ -4357,6 +4357,8 @@ type_new_slots(type_new_ctx *ctx, PyObject *dict)
         if (ctx->may_add_weak && ctx->base->tp_itemsize == 0) {
             ctx->add_weak++;
         }
+        /* Secondary bases may provide weakrefs */
+        type_new_slots_bases(ctx);
     }
     else {
         /* Have slots */
