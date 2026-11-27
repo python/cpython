@@ -2096,8 +2096,10 @@ class BaseEventLoop(events.AbstractEventLoop):
             nnew = len(self._ready) - nready
             self._run_handles(nleft, eager=False)
             later = [self._ready.popleft() for i in range(nready - nleft)]
-            self._run_handles(nnew, eager=False)
-            self._ready.extendleft(reversed(later))
+            try:
+                self._run_handles(nnew, eager=False)
+            finally:
+                self._ready.extendleft(reversed(later))
             return
         ntodo = len(self._ready)
         if nleft > 0:

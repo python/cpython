@@ -1408,6 +1408,33 @@ class EagerProcessingTests(test_utils.TestCase):
         self.loop.run_forever()
         self.assertEqual(['stopper', 'next', 'later'], calls)
 
+    def test_run_forever_stop_final_iteration_raises(self):
+        calls = []
+        handle = None
+
+        def first(loop):
+            loop.call_soon(stopper, loop)
+            loop.call_soon(calls.append, 'next')
+
+        def stopper(loop):
+            nonlocal handle
+            calls.append('stopper')
+            loop.stop()
+            handle = loop.call_soon(calls.append, 'later')
+            loop.call_later(0, raiser)
+
+        def raiser():
+            raise SystemExit(3)
+
+        self.loop.call_soon(first, self.loop)
+        with self.assertRaises(SystemExit):
+            self.loop.run_forever()
+
+        # The timer raises in the final iteration after stop(); the callback
+        # scheduled for the next run of the loop is not lost.
+        self.assertEqual(['stopper', 'next'], calls)
+        self.assertEqual([handle], list(self.loop._ready))
+
     def test_run_forever_stop_in_carried_callbacks(self):
         calls = []
         handle = None
