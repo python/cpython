@@ -2426,6 +2426,15 @@ The expression ``x if C else y`` first evaluates the condition, *C* rather than 
 If *C* is true, *x* is evaluated and its value is returned; otherwise, *y* is
 evaluated and its value is returned.
 
+Conditional expressions group from right to left, so
+``a if b else c if d else e`` means ``a if b else (c if d else e)``::
+
+   >>> n = 2
+   >>> print('positive' if n > 0
+   ...       else 'negative' if n < 0
+   ...       else 'zero')
+   positive
+
 See :pep:`308` for more details about conditional expressions.
 
 
