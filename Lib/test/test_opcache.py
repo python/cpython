@@ -550,6 +550,101 @@ class TestCallCache(TestBase):
 
     @requires_jit_disabled
     @requires_specialization
+    def test_awaited_calls(self):
+        async def exact(x):
+            return sys._getframe().f_generator is None
+
+        async def general(x, y=None):
+            return sys._getframe().f_generator is None
+
+        class C:
+            async def exact(self, x):
+                return sys._getframe().f_generator is None
+
+            async def general(self, x, y=None):
+                return sys._getframe().f_generator is None
+
+        c = C()
+        bound_exact = c.exact
+        bound_general = c.general
+
+        async def outer():
+            return [
+                await exact(1),
+                await general(1),
+                await bound_exact(1),
+                await bound_general(1),
+                await exact(x=1),
+                await bound_exact(x=1),
+            ]
+
+        def run():
+            coro = outer()
+            try:
+                coro.send(None)
+            except StopIteration as exc:
+                return exc.value
+            self.fail("outer() suspended")
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            # All coroutines run without a coroutine object.
+            self.assertEqual(run(), [True] * 6)
+        for opname in ("CALL_PY_EXACT_ARGS_AWAITED",
+                       "CALL_PY_GENERAL_AWAITED",
+                       "CALL_BOUND_METHOD_EXACT_ARGS_AWAITED",
+                       "CALL_BOUND_METHOD_GENERAL_AWAITED",
+                       "CALL_KW_PY_AWAITED",
+                       "CALL_KW_BOUND_METHOD_AWAITED"):
+            self.assert_specialized(outer, opname)
+        self.assert_no_opcode(outer, "CALL_PY_EXACT_ARGS")
+        self.assertEqual(run(), [True] * 6)
+
+    @requires_jit_disabled
+    @requires_specialization
+    def test_awaited_non_coroutine_calls(self):
+        # Awaited calls of anything but a coroutine function get the same
+        # specializations as other calls.
+        class Ready:
+            def __init__(self, value):
+                self.value = value
+
+            def __await__(self):
+                return self.value
+                yield
+
+        ready = Ready(1)
+
+        def make_ready():
+            return ready
+
+        get_ready = [ready].__getitem__
+
+        async def outer():
+            return [
+                await Ready(1),
+                await make_ready(),
+                await get_ready(0),
+            ]
+
+        def run():
+            coro = outer()
+            try:
+                coro.send(None)
+            except StopIteration as exc:
+                return exc.value
+            self.fail("outer() suspended")
+
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            self.assertEqual(run(), [1, 1, 1])
+        for opname in ("CALL_ALLOC_AND_ENTER_INIT",
+                       "CALL_PY_EXACT_ARGS",
+                       "CALL_BUILTIN_O"):
+            self.assert_specialized(outer, opname)
+        self.assert_no_opcode(outer, "CALL_PY_EXACT_ARGS_AWAITED")
+        self.assertEqual(run(), [1, 1, 1])
+
+    @requires_jit_disabled
+    @requires_specialization
     def test_push_init_frame_fails(self):
         def instantiate():
             return InitTakesArg()
@@ -1630,8 +1725,15 @@ class TestSpecializer(TestBase):
                 except StopIteration:
                     break
 
+        class Suspend:
+            def __await__(self):
+                yield
+
         class CM:
             async def __aenter__(self):
+                # Without suspending, it would run lazily and the SEND
+                # after it would be skipped.
+                await Suspend()
                 return self
 
             async def __aexit__(self, *exc):

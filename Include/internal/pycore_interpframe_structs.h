@@ -44,13 +44,17 @@ struct _PyInterpreterFrame {
     char owner;
     uint8_t visited:1;
     uint8_t external:1; /* Set when the frame was pushed by something other than the VM */
+    uint8_t lazy_coro:2;  /* LAZY_CORO_REQUESTED or LAZY_CORO_RUNNING */
 #ifdef Py_DEBUG
     uint8_t stackpointer_valid:1;
-    uint8_t lltrace:5;
+    uint8_t lltrace:3;
 #endif
     /* Locals and stack */
     _PyStackRef localsplus[1];
 };
+
+#define LAZY_CORO_REQUESTED 1
+#define LAZY_CORO_RUNNING 2
 
 
 /* _PyGenObject_HEAD defines the initial segment of generator

@@ -85,6 +85,10 @@ See also :ref:`Reflection <reflection>`.
 
    .. versionadded:: 3.11
 
+   .. versionchanged:: 3.16
+      May return ``NULL`` for a coroutine frame before its first suspension;
+      see :attr:`frame.f_generator`.
+
 
 .. c:function:: PyObject* PyFrame_GetGlobals(PyFrameObject *frame)
 
