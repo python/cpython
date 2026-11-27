@@ -1025,7 +1025,7 @@ exit:
 
 PyDoc_STRVAR(pysqlite_connection_backup__doc__,
 "backup($self, /, target, *, pages=-1, progress=None, name=\'main\',\n"
-"       sleep=0.25)\n"
+"       sleep=0.25, timeout=-1.0)\n"
 "--\n"
 "\n"
 "Makes a backup of the database.");
@@ -1037,7 +1037,7 @@ static PyObject *
 pysqlite_connection_backup_impl(pysqlite_Connection *self,
                                 pysqlite_Connection *target, int pages,
                                 PyObject *progress, const char *name,
-                                double sleep);
+                                double sleep, double timeout);
 
 static PyObject *
 pysqlite_connection_backup(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1045,7 +1045,7 @@ pysqlite_connection_backup(PyObject *self, PyObject *const *args, Py_ssize_t nar
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 5
+    #define NUM_KEYWORDS 6
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -1054,7 +1054,7 @@ pysqlite_connection_backup(PyObject *self, PyObject *const *args, Py_ssize_t nar
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(target), &_Py_ID(pages), &_Py_ID(progress), &_Py_ID(name), &_Py_ID(sleep), },
+        .ob_item = { &_Py_ID(target), &_Py_ID(pages), &_Py_ID(progress), &_Py_ID(name), &_Py_ID(sleep), &_Py_ID(timeout), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1063,20 +1063,21 @@ pysqlite_connection_backup(PyObject *self, PyObject *const *args, Py_ssize_t nar
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
+    static const char * const _keywords[] = {"target", "pages", "progress", "name", "sleep", "timeout", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "backup",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[5];
+    PyObject *argsbuf[6];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     pysqlite_Connection *target;
     int pages = -1;
     PyObject *progress = Py_None;
     const char *name = "main";
     double sleep = 0.25;
+    double timeout = -1.0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1119,18 +1120,33 @@ pysqlite_connection_backup(PyObject *self, PyObject *const *args, Py_ssize_t nar
             goto skip_optional_kwonly;
         }
     }
-    if (PyFloat_CheckExact(args[4])) {
-        sleep = PyFloat_AS_DOUBLE(args[4]);
+    if (args[4]) {
+        if (PyFloat_CheckExact(args[4])) {
+            sleep = PyFloat_AS_DOUBLE(args[4]);
+        }
+        else
+        {
+            sleep = PyFloat_AsDouble(args[4]);
+            if (sleep == -1.0 && PyErr_Occurred()) {
+                goto exit;
+            }
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (PyFloat_CheckExact(args[5])) {
+        timeout = PyFloat_AS_DOUBLE(args[5]);
     }
     else
     {
-        sleep = PyFloat_AsDouble(args[4]);
-        if (sleep == -1.0 && PyErr_Occurred()) {
+        timeout = PyFloat_AsDouble(args[5]);
+        if (timeout == -1.0 && PyErr_Occurred()) {
             goto exit;
         }
     }
 skip_optional_kwonly:
-    return_value = pysqlite_connection_backup_impl((pysqlite_Connection *)self, target, pages, progress, name, sleep);
+    return_value = pysqlite_connection_backup_impl((pysqlite_Connection *)self, target, pages, progress, name, sleep, timeout);
 
 exit:
     return return_value;
@@ -1601,4 +1617,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=faee86c7feaa0937 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4f316c5217e784f5 input=a9049054013a1b77]*/
