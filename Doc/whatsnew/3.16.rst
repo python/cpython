@@ -249,6 +249,17 @@ copy
   :gh:`155044`, :gh:`155041`, :gh:`155040`, and :gh:`155033`.)
 
 
+copyreg
+-------
+
+* Add :class:`copyreg.Proxy`, a wrapper that is pickled as the wrapped object.
+  Reduction functions can use it to pickle objects
+  to which the reconstructed object only holds weak references.
+  The wrapped object must be strongly referenced elsewhere in the same pickle;
+  otherwise pickling raises :exc:`pickle.PicklingError`.
+  (Contributed by Serhiy Storchaka in :gh:`74876`.)
+
+
 csv
 ---
 
@@ -1525,6 +1536,12 @@ Build changes
 
   (Contributed by Stefano Rivera in :gh:`131372`.)
 
+* The paths in the installed ``build-details.json`` file (:pep:`739`) are
+  now relative to the file's location instead of absolute, so the file stays
+  correct when the installation is moved.
+
+  (Contributed by Itamar Oren in :gh:`119696`.)
+
 * Add the :option:`--with-curses` :program:`configure` option to select the
   curses backend for the :mod:`curses` and :mod:`curses.panel` modules.
   In addition to ``ncursesw`` and ``ncurses``, it can now build against the
@@ -1554,6 +1571,12 @@ Build changes
 * iOS builds can now be configured as free-threaded or debug builds.
 
   (Contributed by Russell Keith-Magee in :gh:`159385`.)
+
+* :mod:`tkinter` now requires Tcl/Tk built with thread support.
+  This only affects Tcl/Tk 8, since Tcl/Tk 9 is always built with
+  thread support.
+
+  (Contributed by Michiel de Hoon in :gh:`140494`.)
 
 
 .. _whatsnew316-apple-platforms:
