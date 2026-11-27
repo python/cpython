@@ -2947,20 +2947,24 @@ python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
 # With --enable-relocatable, the installed pkg-config files define prefix
 # relative to their own location, when the pkgconfig directory is inside
 # the prefix.
-Misc/python-install.pc Misc/python-embed-install.pc: Misc/python.pc Misc/python-embed.pc
+INSTALL_PC= \
 	rel=; dir='$(LIBPC)'; \
 	if test "$(RELOCATABLE)" = yes; then \
 		while test "$$dir" != '$(prefix)' && test "$$dir" != /; do \
 			rel="$$rel/.."; dir=`dirname "$$dir"`; \
 		done; \
 	fi; \
-	for pc in python python-embed; do \
-		if test "$$dir" = '$(prefix)'; then \
-			sed "s|^prefix=.*|prefix=\$${pcfiledir}$$rel|" Misc/$$pc.pc > Misc/$$pc-install.pc; \
-		else \
-			cp Misc/$$pc.pc Misc/$$pc-install.pc; \
-		fi; \
-	done
+	if test "$$dir" = '$(prefix)'; then \
+		sed "s|^prefix=.*|prefix=\$${pcfiledir}$$rel|" $$src > $@; \
+	else \
+		cp $$src $@; \
+	fi
+
+Misc/python-install.pc: Misc/python.pc
+	src=Misc/python.pc; $(INSTALL_PC)
+
+Misc/python-embed-install.pc: Misc/python-embed.pc
+	src=Misc/python-embed.pc; $(INSTALL_PC)
 
 # macOS' make seems to ignore a dependency on a
 # "$(BUILD_SCRIPTS_DIR): $(MKDIR_P) $@" rule.

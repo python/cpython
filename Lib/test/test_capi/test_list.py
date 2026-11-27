@@ -1,4 +1,5 @@
 import array
+import sys
 import threading
 import unittest
 from collections import UserList
@@ -65,6 +66,9 @@ class CAPITest(unittest.TestCase):
         self.assertIsNot(lst2, lst)
         self.assertRaises(SystemError, list_new, NULL)
         self.assertRaises(SystemError, list_new, -1)
+        max_nitem = sys.maxsize // _testcapi.SIZEOF_VOID_P
+        self.assertRaises(MemoryError, list_new, max_nitem + 1)
+        self.assertRaises(MemoryError, list_new, sys.maxsize)
 
     def test_list_size(self):
         # Test PyList_Size()

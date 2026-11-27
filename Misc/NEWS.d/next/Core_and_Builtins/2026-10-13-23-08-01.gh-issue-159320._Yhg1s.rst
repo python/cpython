@@ -1,0 +1,2 @@
+Enable stack size limit detection on musl and other non-glibc Linux
+platforms (like Android), instead of relying on a fixed stack size limit.
