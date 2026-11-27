@@ -27,6 +27,10 @@
 #include "pycore_time.h"          // _PyTime_Init()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
+#ifdef MS_WINDOWS
+#  include <windows.h>
+#endif
+
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -2383,11 +2387,13 @@ tstate_wait_attach(PyThreadState *tstate)
 void
 _PyThreadState_Attach(PyThreadState *tstate)
 {
-#if defined(Py_DEBUG)
-    // This is called from PyEval_RestoreThread(). Similar
-    // to it, we need to ensure errno doesn't change.
-    int err = errno;
+    // Reattachment may wait for GC and change errno, even after a successful
+    // system call (gh-161769). Preserve the caller's error state in release
+    // builds as well as debug builds.
+#ifdef MS_WINDOWS
+    DWORD last_error = GetLastError();
 #endif
+    int err = errno;
 
     _Py_EnsureTstateNotNULL(tstate);
     if (current_fast_get() != NULL) {
@@ -2434,8 +2440,9 @@ _PyThreadState_Attach(PyThreadState *tstate)
     _PyStats_Attach((_PyThreadStateImpl *)tstate);
 #endif
 
-#if defined(Py_DEBUG)
     errno = err;
+#ifdef MS_WINDOWS
+    SetLastError(last_error);
 #endif
 }
 
