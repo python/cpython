@@ -601,11 +601,12 @@ class Regrtest:
             coverage = self.results.get_coverage_results()
             self.display_result(runtests)
 
-            if self.want_rerun and self.results.need_rerun():
-                self.rerun_failed_tests(runtests)
+            if not self.results.worker_bug:
+                if self.want_rerun and self.results.need_rerun():
+                    self.rerun_failed_tests(runtests)
 
-            if self.want_bisect and self.results.need_rerun():
-                self.run_bisect(runtests)
+                if self.want_bisect and self.results.need_rerun():
+                    self.run_bisect(runtests)
         finally:
             if use_load_tracker:
                 self.logger.stop_load_tracker()
