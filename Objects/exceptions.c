@@ -1435,7 +1435,7 @@ BaseExceptionGroup_split_impl(PyBaseExceptionGroupObject *self,
         return NULL;
     }
 
-    _Py_ASSERT_STATIC_IMMORTAL(Py_None);
+    assert(_Py_IsStaticImmortal(Py_None));
     PyObject *result = _PyTuple_FromPairSteal(
             split_result.match ? split_result.match : Py_None,
             split_result.rest ? split_result.rest : Py_None);

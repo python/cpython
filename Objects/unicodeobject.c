@@ -579,6 +579,13 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 {
 #define CHECK(expr) \
     do { if (!(expr)) { _PyObject_ASSERT_FAILED_MSG(op, Py_STRINGIFY(expr)); } } while (0)
+#ifdef Py_GIL_DISABLED
+# define CHECK_IF_GIL(expr) (void)(expr)
+# define CHECK_IF_FT(expr) CHECK(expr)
+#else
+# define CHECK_IF_GIL(expr) CHECK(expr)
+# define CHECK_IF_FT(expr) (void)(expr)
+#endif
 
     assert(op != NULL);
     CHECK(PyUnicode_Check(op));
@@ -673,23 +680,20 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
                 //   are static but use SSTATE_NOT_INTERNED
             }
             else {
-                _Py_ASSERT_MORTAL(op);
+                CHECK_IF_GIL(!_Py_IsImmortal(op));
             }
             break;
         case SSTATE_INTERNED_MORTAL:
             CHECK(!ascii->state.statically_allocated);
-            _Py_ASSERT_MORTAL(op);
-            _Py_ASSERT_NOT_STATIC_IMMORTAL(op);
+            CHECK_IF_GIL(!_Py_IsImmortal(op));
             break;
         case SSTATE_INTERNED_IMMORTAL:
             CHECK(!ascii->state.statically_allocated);
-            _Py_ASSERT_IMMORTAL(op);
-            _Py_ASSERT_NOT_STATIC_IMMORTAL(op);
+            CHECK_IF_FT(_Py_IsImmortal(op));
             break;
         case SSTATE_INTERNED_IMMORTAL_STATIC:
             CHECK(ascii->state.statically_allocated);
-            _Py_ASSERT_IMMORTAL(op);
-            _Py_ASSERT_STATIC_IMMORTAL(op);
+            CHECK_IF_FT(_Py_IsImmortal(op));
             break;
         default:
             Py_UNREACHABLE();

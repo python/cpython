@@ -18,41 +18,6 @@ extern "C" {
 
 #include <stdbool.h>              // bool
 
-// Stable ABI extensions compiled for Python 3.11 and lower can make
-// immortal objects, including statically allocated ones, mortal.
-// free-threading and 64-bit-GIL builds use flags to track immortality,
-// so _Py_IsImmortal and _Py_IsStaticImmortal are trustworthy.
-// On 32-bit-GIL builds, they are not.
-#ifndef _Py_IMMORTALITY_IS_RELIABLE
-#  if defined(Py_GIL_DISABLED)
-#    define _Py_IMMORTALITY_IS_RELIABLE 1
-#  else
-#    define _Py_IMMORTALITY_IS_RELIABLE 0
-#  endif
-#endif
-#ifndef _Py_STATIC_IMMORTALITY_IS_RELIABLE
-#  if defined(Py_GIL_DISABLED) || (SIZEOF_VOID_P > 4)
-#    define _Py_STATIC_IMMORTALITY_IS_RELIABLE 1
-#  else
-#    define _Py_STATIC_IMMORTALITY_IS_RELIABLE 0
-#  endif
-#endif
-// Define the most common assertion macros.
-#if _Py_IMMORTALITY_IS_RELIABLE
-#  define _Py_ASSERT_IMMORTAL(op) assert(_Py_IsImmortal(op))
-#  define _Py_ASSERT_MORTAL(op) assert(!_Py_IsImmortal(op))
-#else
-#  define _Py_ASSERT_IMMORTAL(op) ((void)(op))
-#  define _Py_ASSERT_MORTAL(op) ((void)(op))
-#endif
-#if _Py_STATIC_IMMORTALITY_IS_RELIABLE
-#  define _Py_ASSERT_STATIC_IMMORTAL(op)  assert(_Py_IsStaticImmortal(op))
-#  define _Py_ASSERT_NOT_STATIC_IMMORTAL(op)  assert(!_Py_IsStaticImmortal(op))
-#else
-#  define _Py_ASSERT_STATIC_IMMORTAL(op) ((void)(op))
-#  define _Py_ASSERT_NOT_STATIC_IMMORTAL(op) ((void)(op))
-#endif
-
 
 // This value is added to `ob_ref_shared` for objects that use deferred
 // reference counting so that they are not immediately deallocated when the
@@ -235,7 +200,7 @@ PyAPI_FUNC(void) _Py_SetImmortalUntracked(PyObject *op);
 static inline void _Py_SetMortal(PyObject *op, short refcnt)
 {
     if (op) {
-        _Py_ASSERT_IMMORTAL(op);
+        assert(_Py_IsImmortal(op));
 #ifdef Py_GIL_DISABLED
         op->ob_tid = _Py_UNOWNED_TID;
         op->ob_ref_local = 0;
@@ -441,7 +406,7 @@ static inline void Py_DECREF_MORTAL(const char *filename, int lineno, PyObject *
         _Py_NegativeRefcount(filename, lineno, op);
     }
     _Py_DECREF_STAT_INC();
-    _Py_ASSERT_NOT_STATIC_IMMORTAL(op);
+    assert(!_Py_IsStaticImmortal(op));
     if (!_Py_IsImmortal(op)) {
         _Py_DECREF_DecRefTotal();
     }
@@ -457,7 +422,7 @@ static inline void _Py_DECREF_MORTAL_SPECIALIZED(const char *filename, int linen
         _Py_NegativeRefcount(filename, lineno, op);
     }
     _Py_DECREF_STAT_INC();
-    _Py_ASSERT_NOT_STATIC_IMMORTAL(op);
+    assert(!_Py_IsStaticImmortal(op));
     if (!_Py_IsImmortal(op)) {
         _Py_DECREF_DecRefTotal();
     }
@@ -475,7 +440,7 @@ static inline void _Py_DECREF_MORTAL_SPECIALIZED(const char *filename, int linen
 
 static inline void Py_DECREF_MORTAL(PyObject *op)
 {
-    _Py_ASSERT_NOT_STATIC_IMMORTAL(op);
+    assert(!_Py_IsStaticImmortal(op));
     _Py_DECREF_STAT_INC();
     if (--op->ob_refcnt == 0) {
         _Py_Dealloc(op);
@@ -485,7 +450,7 @@ static inline void Py_DECREF_MORTAL(PyObject *op)
 
 static inline void Py_DECREF_MORTAL_SPECIALIZED(PyObject *op, destructor destruct)
 {
-    _Py_ASSERT_NOT_STATIC_IMMORTAL(op);
+    assert(!_Py_IsStaticImmortal(op));
     _Py_DECREF_STAT_INC();
     if (--op->ob_refcnt == 0) {
         _PyReftracerTrack(op, PyRefTracer_DESTROY);
@@ -510,11 +475,7 @@ _PyObject_Init(PyObject *op, PyTypeObject *typeobj)
 {
     assert(op != NULL);
     Py_SET_TYPE(op, typeobj);
-#ifndef NDEBUG
-    if (!_PyType_HasFeature(typeobj, Py_TPFLAGS_HEAPTYPE)) {
-        _Py_ASSERT_IMMORTAL(typeobj);
-    }
-#endif
+    assert(_PyType_HasFeature(typeobj, Py_TPFLAGS_HEAPTYPE) || _Py_IsImmortal(typeobj));
     _Py_INCREF_TYPE(typeobj);
     _Py_NewReference(op);
 }
@@ -1026,7 +987,7 @@ extern int _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict);
 #ifndef Py_GIL_DISABLED
 static inline Py_ALWAYS_INLINE void _Py_INCREF_MORTAL(PyObject *op)
 {
-    _Py_ASSERT_MORTAL(op);
+    assert(!_Py_IsStaticImmortal(op));
     op->ob_refcnt++;
     _Py_INCREF_STAT_INC();
 #if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)

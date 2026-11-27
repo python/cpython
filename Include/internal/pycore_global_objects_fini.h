@@ -12,13 +12,12 @@ extern "C" {
 
 #include "pycore_bytesobject.h"   // _PyBytes_CheckOverflow()
 #include "pycore_long.h"          // TAG_FROM_SIGN_AND_SIZE()
-#include "pycore_object.h"        // _Py_IMMORTALITY_IS_RELIABLE
 
 static inline void
 _PyStaticObject_CheckSingleton(PyObject *obj, PyTypeObject *type)
 {
-    // Check immortality
-    _PyObject_ASSERT(obj, _Py_IsImmortal(obj) || !_Py_IMMORTALITY_IS_RELIABLE);
+    // Check PyObject.ob_refcnt
+    _PyObject_ASSERT(obj, _Py_IsImmortal(obj));
 
     // Check PyObject.ob_type
     _PyObject_ASSERT(obj, Py_TYPE(obj) == type);

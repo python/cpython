@@ -46,7 +46,7 @@ static inline PyObject*
 bytes_get_empty(void)
 {
     PyObject *empty = &EMPTY->ob_base.ob_base;
-    _Py_ASSERT_STATIC_IMMORTAL(empty);
+    assert(_Py_IsImmortal(empty));
     return empty;
 }
 
@@ -56,7 +56,7 @@ static inline PyObject*
 bytes_get_char(uint8_t ch)
 {
     PyObject *obj = (PyObject*)CHARACTER(ch);
-    _Py_ASSERT_STATIC_IMMORTAL(obj);
+    assert(_Py_IsImmortal(obj));
     return obj;
 }
 

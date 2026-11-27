@@ -12,7 +12,7 @@ _types_exec(PyObject *m)
 {
 #define EXPORT_STATIC_TYPE(NAME, TYPE)                                   \
     do {                                                                 \
-        _Py_ASSERT_STATIC_IMMORTAL((PyObject *)&(TYPE));                 \
+        assert(PyUnstable_IsImmortal((PyObject *)&(TYPE)));              \
         if (PyModule_AddObjectRef(m, (NAME), (PyObject *)&(TYPE)) < 0) { \
             return -1;                                                   \
         }                                                                \

@@ -1144,7 +1144,7 @@ PyObject_RichCompareBool(PyObject *v, PyObject *w, int op)
         return -1;
     if (PyBool_Check(res)) {
         ok = (res == Py_True);
-        _Py_ASSERT_STATIC_IMMORTAL(res);
+        assert(_Py_IsImmortal(res));
     }
     else {
         ok = PyObject_IsTrue(res);

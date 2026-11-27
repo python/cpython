@@ -1444,7 +1444,7 @@ maybe_instr_make_load_smallint(cfg_instr *instr, PyObject *newconst,
             return -1;
         }
         if (!overflow && _PY_IS_SMALL_INT(val) && 0 <= val && val <= 255) {
-            _Py_ASSERT_IMMORTAL(newconst);
+            assert(_Py_IsImmortal(newconst));
             INSTR_SET_OP1(instr, LOAD_SMALL_INT, (int)val);
             return 1;
         }
@@ -1492,7 +1492,7 @@ maybe_instr_make_load_common_const(cfg_instr *instr, PyObject *newconst)
     else {
         return 0;
     }
-    _Py_ASSERT_IMMORTAL(newconst);
+    assert(_Py_IsImmortal(newconst));
     INSTR_SET_OP1(instr, LOAD_COMMON_CONSTANT, oparg);
     return 1;
 }

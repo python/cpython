@@ -2850,7 +2850,7 @@ unsafe_object_compare(PyObject *v, PyObject *w, MergeState *ms)
 
     if (PyBool_Check(res_obj)) {
         res = (res_obj == Py_True);
-        _Py_ASSERT_STATIC_IMMORTAL(res_obj);
+        assert(_Py_IsImmortal(res_obj));
     }
     else {
         res = PyObject_IsTrue(res_obj);

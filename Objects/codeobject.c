@@ -3127,7 +3127,7 @@ intern_one_constant(PyObject *op)
         return op;
     }
 
-    _Py_ASSERT_IMMORTAL(entry->value);
+    assert(_Py_IsImmortal(entry->value));
     return (PyObject *)entry->value;
 }
 
