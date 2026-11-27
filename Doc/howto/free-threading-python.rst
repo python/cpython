@@ -79,7 +79,8 @@ The free-threaded build of CPython aims to provide similar thread-safety
 behavior at the Python level to the default GIL-enabled build.  Built-in
 types like :class:`dict`, :class:`list`, and :class:`set` use internal locks
 to protect against concurrent modifications in ways that behave similarly to
-the GIL.  See :ref:`threadsafety` for the guarantees provided by built-in types.
+the GIL.  See :ref:`threadsafety` for the guarantees provided by built-in types
+and :ref:`library-threadsafety` for standard library types.
 
 .. note::
 

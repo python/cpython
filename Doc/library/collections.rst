@@ -667,6 +667,11 @@ Example:
     >>> d
     deque(['c', 'b', 'a'])
 
+.. seealso::
+
+   :ref:`thread-safety-deque` for the thread-safety guarantees of
+   :class:`deque` objects in the :term:`free-threaded build`.
+
 
 :class:`deque` Recipes
 ^^^^^^^^^^^^^^^^^^^^^^
