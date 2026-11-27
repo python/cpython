@@ -2810,7 +2810,7 @@ delta_new_impl(PyTypeObject *type, PyObject *days, PyObject *seconds,
     PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
     if (st == NULL) {
-        return NULL;
+        goto Done;
     }
 
     PyObject *x = NULL;         /* running sum of microseconds */
@@ -2903,7 +2903,9 @@ Done:
     Py_XDECREF(minutes);
     Py_XDECREF(hours);
     Py_XDECREF(weeks);
-    RELEASE_CURRENT_STATE(st, current_mod);
+    if (st != NULL) {
+        RELEASE_CURRENT_STATE(st, current_mod);
+    }
     return self;
 
 #undef CLEANUP
