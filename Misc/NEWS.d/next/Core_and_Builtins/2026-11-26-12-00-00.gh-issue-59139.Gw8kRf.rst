@@ -1,0 +1,1 @@
+Weak references to a generator are no longer cleared if the generator is resurrected by its finalizer.

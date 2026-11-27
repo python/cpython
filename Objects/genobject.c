@@ -209,16 +209,13 @@ gen_dealloc(PyObject *self)
 {
     PyGenObject *gen = _PyGen_CAST(self);
 
-    _PyObject_GC_UNTRACK(gen);
-
-    FT_CLEAR_WEAKREFS(self, gen->gi_weakreflist);
-
-    _PyObject_GC_TRACK(self);
-
     if (PyObject_CallFinalizerFromDealloc(self))
         return;                     /* resurrected.  :( */
 
     _PyObject_GC_UNTRACK(self);
+    /* Clear weakrefs only after the finalizer, which can resurrect
+       the generator. */
+    FT_CLEAR_WEAKREFS(self, gen->gi_weakreflist);
     if (PyAsyncGen_CheckExact(gen)) {
         /* We have to handle this case for asynchronous generators
            right here, because this code has to be between UNTRACK

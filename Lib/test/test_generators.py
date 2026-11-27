@@ -134,6 +134,30 @@ class FinalizationTest(unittest.TestCase):
         self.assertEqual(len(resurrected), 1)
         self.assertIsInstance(resurrected[0].gi_code, types.CodeType)
 
+    def test_generator_resurrect_weakref(self):
+        # gh-59139: weak references to a generator must not be cleared
+        # if the generator is resurrected by its finalizer.
+        resurrected = []
+        callbacks = []
+
+        def gen():
+            try:
+                yield
+            finally:
+                resurrected.append(sys._getframe().f_generator)
+
+        g = gen()
+        next(g)
+        wr = weakref.ref(g, callbacks.append)
+        del g
+        self.assertEqual(len(resurrected), 1)
+        self.assertIs(wr(), resurrected[0])
+        self.assertEqual(callbacks, [])
+        resurrected.clear()
+        support.gc_collect()
+        self.assertIsNone(wr())
+        self.assertEqual(callbacks, [wr])
+
     def test_exhausted_generator_frame_cycle(self):
         def g():
             yield

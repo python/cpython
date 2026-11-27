@@ -578,11 +578,15 @@ references (by calling :c:func:`PyObject_ClearWeakRefs`)::
    static void
    Trivial_dealloc(PyObject *op)
    {
-       /* Clear weakrefs first before calling any destructors */
+       /* Clear weakrefs before clearing the object's state */
        PyObject_ClearWeakRefs(op);
        /* ... remainder of destruction code omitted for brevity ... */
        Py_TYPE(op)->tp_free(op);
    }
+
+If the type has a finalizer (:c:member:`~PyTypeObject.tp_finalize`),
+clear weak references after calling :c:func:`PyObject_CallFinalizerFromDealloc`,
+because the finalizer can resurrect the object.
 
 
 More Suggestions
