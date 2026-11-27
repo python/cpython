@@ -1,0 +1,4 @@
+Fix :mod:`asyncio` socket transports of :class:`~asyncio.SelectorEventLoop`
+losing data when :meth:`~asyncio.WriteTransport.writelines` is called while
+the socket is full. Only platforms where the transport does not use
+:meth:`socket.socket.sendmsg`, such as Windows, were affected.
