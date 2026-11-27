@@ -382,7 +382,7 @@ the Limited API and must *also* avoid the versioned dependency.
 
 .. warning::
 
-   Host application that uses the :ref:`Limited API <limited-c-api>`
+   Host applications that use the :ref:`Limited API <limited-c-api>`
    must be aware of the following limitations:
 
    * It can only initialize Python with :c:func:`Py_Initialize` or
