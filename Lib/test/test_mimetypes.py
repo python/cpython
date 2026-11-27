@@ -457,7 +457,6 @@ class MimeTypesClassTestCase(unittest.TestCase):
         eq(self.db.guess_type(r'scheme:foo\.tar.gz'), gzip_expected)
 
     def test_url(self):
-        result = self.db.guess_type('http://example.com/host.html')
         result = self.db.guess_type('http://host.html')
         msg = 'URL only has a host name, not a file'
         self.assertSequenceEqual(result, (None, None), msg)
@@ -467,6 +466,13 @@ class MimeTypesClassTestCase(unittest.TestCase):
         result = self.db.guess_type('http://example.com/host.html#x.tar')
         self.assertSequenceEqual(result, ('text/html', None))
         result = self.db.guess_type('http://example.com/host.html?q=x.tar')
+        self.assertSequenceEqual(result, ('text/html', None))
+
+    def test_file_url(self):
+        result = self.db.guess_type('file:///a/b/c/file.txt')
+        self.assertSequenceEqual(result, ('text/plain', None))
+        # a local path URL which looks a bit like a netloc
+        result = self.db.guess_type('file:///host.html')
         self.assertSequenceEqual(result, ('text/html', None))
 
     def test_guess_all_types(self):
