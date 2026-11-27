@@ -60,6 +60,20 @@ class TestEncode(CTest):
         with self.assertRaises(ZeroDivisionError):
             enc('spam', 4)
 
+    def test_str_subclass_from_encoder(self):
+        # gh-162525: Don't call __str__() on a str subclass returned by
+        # the encoder() argument
+        class StrSubclass(str):
+            def __str__(self):
+                return "StrSubclass"
+
+        enc = self.json.encoder.c_make_encoder(None, lambda obj: str(obj),
+                                               lambda s: StrSubclass('"x"'),
+                                               None, ': ', ', ',
+                                               False, False, False)
+        self.assertEqual(enc('spam', 0), ('"x"',))
+        self.assertEqual(enc({'spam': 'eggs'}, 0), ('{"x": "x"}',))
+
     def test_bad_markers_argument_to_encoder(self):
         # https://bugs.python.org/issue45269
         with self.assertRaisesRegex(
