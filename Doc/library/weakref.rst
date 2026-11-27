@@ -614,11 +614,14 @@ follows::
             self.remove()
 
 Starting with Python 3.4, :meth:`~object.__del__` methods no longer prevent
-reference cycles from being garbage collected, and module globals are
-no longer forced to :const:`None` during :term:`interpreter shutdown`.
-So this code should work without any issues on CPython.
+reference cycles from being garbage collected,
+and most modules are garbage collected during :term:`interpreter shutdown`
+instead of having their globals forced to :const:`None`.
+But globals of modules that are still alive late in the shutdown
+can still be replaced by :const:`None`,
+so a :meth:`!__del__` method called at that time may fail.
 
-However, handling of :meth:`~object.__del__` methods is notoriously implementation
+Moreover, handling of :meth:`~object.__del__` methods is notoriously implementation
 specific, since it depends on internal details of the interpreter's garbage
 collector implementation.
 
