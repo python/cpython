@@ -464,7 +464,46 @@ test_critical_sections_stw(PyObject *self, PyObject *Py_UNUSED(args))
 
 #endif // Py_CAN_START_THREADS
 
+#ifdef Py_GIL_DISABLED
+static PyObject *
+test_critical_section2_stw_first_lock(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    // gh-144513 made the slow paths skip locking while the world is stopped.
+    // The inline fast path of a two-object critical section has already
+    // locked the first mutex when it calls the slow path for the second one.
+    PyObject *d1 = PyDict_New();
+    PyObject *d2 = PyDict_New();
+    if (d1 == NULL || d2 == NULL) {
+        Py_XDECREF(d1);
+        Py_XDECREF(d2);
+        return NULL;
+    }
+    PyObject *lo = (uintptr_t)d1 < (uintptr_t)d2 ? d1 : d2;   // locked first
+    PyObject *hi = (lo == d1) ? d2 : d1;
+
+    // Stands for a mutex that was handed off to a thread which is suspended.
+    PyMutex_Lock(&hi->ob_mutex);
+
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyEval_StopTheWorld(interp);
+    Py_BEGIN_CRITICAL_SECTION2(lo, hi);
+    Py_END_CRITICAL_SECTION2();
+    _PyEval_StartTheWorld(interp);
+
+    // The section has ended: its first mutex must not be locked any more.
+    assert(!PyMutex_IsLocked(&lo->ob_mutex));
+
+    PyMutex_Unlock(&hi->ob_mutex);
+    Py_DECREF(d1);
+    Py_DECREF(d2);
+    Py_RETURN_NONE;
+}
+#endif
+
 static PyMethodDef test_methods[] = {
+#ifdef Py_GIL_DISABLED
+    {"test_critical_section2_stw_first_lock", test_critical_section2_stw_first_lock, METH_NOARGS},
+#endif
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
     {"test_critical_sections_nest", test_critical_sections_nest, METH_NOARGS},
     {"test_critical_sections_suspend", test_critical_sections_suspend, METH_NOARGS},
