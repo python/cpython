@@ -48,6 +48,22 @@ def create_bound_method():
     return C().method
 
 
+def pickle_function():
+    return 42
+
+
+class ProxyLoop:
+    # Holds a weak proxy to itself (gh-62268).
+    setstate_calls = 0
+
+    def __init__(self):
+        self.recursive = weakref.proxy(self)
+
+    def __setstate__(self, state):
+        type(self).setstate_calls += 1
+        self.__dict__.update(state)
+
+
 class WeakValueDictionaryWithSlots(weakref.WeakValueDictionary):
     __slots__ = ('x', 'y')
 
@@ -1162,6 +1178,98 @@ class ReferencesTestCase(TestBase):
         test()
         gc.collect()
         self.assertEqual(errors, [])
+
+    def test_getreferent(self):
+        from _weakref import _getreferent
+        obj = Object(1)
+        r = weakref.ref(obj)
+        p = weakref.proxy(obj)
+        self.assertIs(_getreferent(r), obj)
+        self.assertIs(_getreferent(p), obj)
+        self.assertRaises(TypeError, _getreferent, obj)
+        del obj
+        gc_collect()
+        self.assertIsNone(_getreferent(r))
+        self.assertIsNone(_getreferent(p))
+
+    def test_pickle_proxy(self):
+        # A proxy is unpickled as a proxy to the restored object,
+        # regardless of pickling order.
+        obj = Object(1)
+        p = weakref.proxy(obj)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                obj2, p2 = pickle.loads(pickle.dumps([obj, p], proto))
+                self.assertIs(type(p2), weakref.ProxyType)
+                self.assertIs(p2, weakref.proxy(obj2))
+                p2, obj2 = pickle.loads(pickle.dumps([p, obj], proto))
+                self.assertIs(p2, weakref.proxy(obj2))
+
+    def test_pickle_callable_proxy(self):
+        obj = pickle_function
+        p = weakref.proxy(obj)
+        self.assertIs(type(p), weakref.CallableProxyType)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                obj2, p2 = pickle.loads(pickle.dumps([obj, p], proto))
+                self.assertIs(type(p2), weakref.CallableProxyType)
+                self.assertIs(p2, weakref.proxy(obj2))
+                self.assertEqual(p2(), 42)
+
+    def test_pickle_dead_proxy(self):
+        # A dead proxy stays dead.
+        obj = Object(1)
+        p = weakref.proxy(obj)
+        del obj
+        gc_collect()
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                p2 = pickle.loads(pickle.dumps(p, proto))
+                gc_collect()
+                self.assertIsInstance(p2, weakref.ProxyTypes)
+                self.assertRaises(ReferenceError, getattr, p2, 'arg')
+
+    def test_pickle_proxy_self_loop(self):
+        # The object is restored once (gh-62268).
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                data = pickle.dumps(ProxyLoop(), proto)
+                ProxyLoop.setstate_calls = 0
+                obj = pickle.loads(data)
+                self.assertEqual(ProxyLoop.setstate_calls, 1)
+                self.assertIs(obj.recursive, weakref.proxy(obj))
+
+    def test_pickle_proxy_without_strong_ref(self):
+        obj = Object(1)
+        p = weakref.proxy(obj)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                self.assertRaises(pickle.PicklingError, pickle.dumps, p, proto)
+
+    def test_copy_proxy(self):
+        obj = Object(1)
+        p = weakref.proxy(obj)
+        self.assertIs(copy.copy(p), p)
+        del obj
+        gc_collect()
+        self.assertIs(copy.copy(p), p)
+
+    def test_deepcopy_proxy(self):
+        # A deep copy refers to the deep copy of the object,
+        # so it must be deep-copied together with it.
+        obj = Object(1)
+        p = weakref.proxy(obj)
+        obj2, p2 = copy.deepcopy([obj, p])
+        self.assertIsNot(obj2, obj)
+        self.assertIs(p2, weakref.proxy(obj2))
+        # Otherwise the copy of the object is discarded.
+        p2 = copy.deepcopy(p)
+        gc_collect()
+        self.assertRaises(ReferenceError, getattr, p2, 'arg')
+        # A dead proxy is not copied.
+        del obj
+        gc_collect()
+        self.assertIs(copy.deepcopy(p), p)
 
 
 class SubclassableWeakrefTestCase(TestBase):

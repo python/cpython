@@ -3636,6 +3636,8 @@ class AbstractPickleTests:
                     self.assertEqual(x.__dict__, y.__dict__, detail)
 
     def test_newobj_proxies(self):
+        if self.py_version < (3, 16):
+            self.skipTest('not supported in Python < 3.16')
         # NEWOBJ should use the __class__ rather than the raw type
         classes = myclasses[:]
         # Cannot create weakproxies to these classes
@@ -3652,9 +3654,10 @@ class AbstractPickleTests:
                     x = C(C.sample)
                     x.foo = 42
                     p = weakref.proxy(x)
-                    s = self.dumps(p, proto)
-                    y = self.loads(s)
+                    s = self.dumps([p, x], proto)
+                    p2, y = self.loads(s)
                     self.assertEqual(type(y), type(x))  # rather than type(p)
+                    self.assertIs(p2, weakref.proxy(y))
                     detail = (proto, C, B, x, y, type(y))
                     self.assertEqual(B(x), B(y), detail)
                     self.assertEqual(x.__dict__, y.__dict__, detail)

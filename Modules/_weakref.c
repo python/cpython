@@ -110,6 +110,36 @@ _weakref_getweakrefs(PyObject *module, PyObject *object)
 
 
 /*[clinic input]
+_weakref._getreferent
+    weakref: object
+    /
+
+Return the object referred to by a weak reference or proxy.
+
+Return None if the referent is no longer alive.
+[clinic start generated code]*/
+
+static PyObject *
+_weakref__getreferent(PyObject *module, PyObject *weakref)
+/*[clinic end generated code: output=0ee2af16dff9f385 input=1b02512a1c3189da]*/
+{
+    if (!PyWeakref_Check(weakref)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a weak reference or proxy, not %T", weakref);
+        return NULL;
+    }
+    PyObject *obj;
+    if (PyWeakref_GetRef(weakref, &obj) < 0) {
+        return NULL;
+    }
+    if (obj == NULL) {
+        Py_RETURN_NONE;
+    }
+    return obj;
+}
+
+
+/*[clinic input]
 
 _weakref.proxy
     object: object
@@ -135,6 +165,7 @@ weakref_functions[] =  {
     _WEAKREF_GETWEAKREFCOUNT_METHODDEF
     _WEAKREF__REMOVE_DEAD_WEAKREF_METHODDEF
     _WEAKREF_GETWEAKREFS_METHODDEF
+    _WEAKREF__GETREFERENT_METHODDEF
     _WEAKREF_PROXY_METHODDEF
     {NULL, NULL, 0, NULL}
 };

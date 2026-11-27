@@ -76,6 +76,17 @@ PyDoc_STRVAR(_weakref_getweakrefs__doc__,
 #define _WEAKREF_GETWEAKREFS_METHODDEF    \
     {"getweakrefs", (PyCFunction)_weakref_getweakrefs, METH_O, _weakref_getweakrefs__doc__},
 
+PyDoc_STRVAR(_weakref__getreferent__doc__,
+"_getreferent($module, weakref, /)\n"
+"--\n"
+"\n"
+"Return the object referred to by a weak reference or proxy.\n"
+"\n"
+"Return None if the referent is no longer alive.");
+
+#define _WEAKREF__GETREFERENT_METHODDEF    \
+    {"_getreferent", (PyCFunction)_weakref__getreferent, METH_O, _weakref__getreferent__doc__},
+
 PyDoc_STRVAR(_weakref_proxy__doc__,
 "proxy($module, object, callback=None, /)\n"
 "--\n"
@@ -112,4 +123,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=60f59adc1dc9eab8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f3229d034d6fdd85 input=a9049054013a1b77]*/
