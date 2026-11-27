@@ -1,0 +1,2 @@
+Fix :attr:`ipaddress.IPv6Network.exploded` for networks with a scope ID and
+avoid redundant string round-tripping in ``_BaseV6._explode_shorthand_ip_string()``.
