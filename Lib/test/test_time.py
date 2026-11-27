@@ -1101,7 +1101,7 @@ class CPyTimeTestCase:
                 pytime_converter(decimal.Decimal('nan'), time_rnd)
             # a type is not a number
             for value in (int, fractions.Fraction, RatioNumber):
-                with self.assertRaisesRegex(TypeError, 'not type'):
+                with self.assertRaisesRegex(TypeError, 'must be real number'):
                     pytime_converter(value, time_rnd)
 
 

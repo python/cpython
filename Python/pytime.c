@@ -462,8 +462,8 @@ maybe_as_integer_ratio(PyObject *number, PyObject **ratio)
 {
     *ratio = NULL;
     if (PyType_Check(number)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "required a number, not type");
+        PyErr_Format(PyExc_TypeError,
+                     "must be real number, not %T", number);
         return -1;
     }
     PyObject *meth;
@@ -960,8 +960,8 @@ pytime_from_object(PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
             Py_DECREF(ratio);
             return -1;
         }
-        PyTime_t ns;
-        if (PyLong_AsInt64(PyTuple_GET_ITEM(divmod, 0), &ns) < 0) {
+        PyTime_t units;
+        if (PyLong_AsInt64(PyTuple_GET_ITEM(divmod, 0), &units) < 0) {
             Py_DECREF(divmod);
             Py_DECREF(ratio);
             if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
@@ -972,7 +972,7 @@ pytime_from_object(PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
         if (round == _PyTime_ROUND_UP) {
             /* The remainder is non-negative, so the direction of rounding
                depends on the sign of the whole number. */
-            round = ns < 0 ? _PyTime_ROUND_FLOOR : _PyTime_ROUND_CEILING;
+            round = units < 0 ? _PyTime_ROUND_FLOOR : _PyTime_ROUND_CEILING;
         }
         PyObject *fracobj = multiply_divide_and_round(
                 unit_to_ns, PyTuple_GET_ITEM(divmod, 1),
@@ -987,16 +987,18 @@ pytime_from_object(PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
         if (frac == -1 && PyErr_Occurred()) {
             return -1;
         }
-        if (ns < 0 && frac > 0) {
+        if (units < 0 && frac > 0) {
             /* Avoid a spurious overflow near PyTime_MIN. */
-            ns += 1;
+            units += 1;
             frac -= unit_to_ns;
         }
-        if (pytime_mul(&ns, unit_to_ns) < 0 || pytime_add(&ns, frac) < 0) {
+        if (pytime_mul(&units, unit_to_ns) < 0
+            || pytime_add(&units, frac) < 0)
+        {
             pytime_overflow();
             return -1;
         }
-        *tp = ns;
+        *tp = units;
         return 0;
     }
 }
