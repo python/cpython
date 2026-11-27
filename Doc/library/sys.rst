@@ -954,7 +954,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
      :attr:`module.__lazy_modules__`. This is the default mode.
    * ``"all"``: Make all eligible module-scope imports potentially lazy.
 
-   See also :func:`set_lazy_imports` and :pep:`810`.
+   See also :func:`set_lazy_imports` and :ref:`lazy-imports`.
 
    .. versionadded:: 3.15
 
@@ -1538,7 +1538,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       In future versions of Python, these may be removed, and/or additional
       extras may be added.
 
-   See also :func:`set_lazy_imports` and :pep:`810`.
+   See also :func:`set_lazy_imports` and :ref:`lazy-imports`.
 
    .. versionadded:: 3.15
 
@@ -1848,7 +1848,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    In addition to the mode, lazy imports can be controlled via the filter
    provided by :func:`set_lazy_imports_filter`.
 
-   See also :func:`get_lazy_imports` and :pep:`810`.
+   See also :func:`get_lazy_imports` and :ref:`lazy-imports`.
 
    .. versionadded:: 3.15
 
@@ -1885,7 +1885,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    This is an advanced feature intended for specialized users who need
    fine-grained control over lazy import behavior.
 
-   See also :func:`get_lazy_imports_filter` and :pep:`810`.
+   See also :func:`get_lazy_imports_filter` and :ref:`lazy-imports`.
 
    .. versionadded:: 3.15
 

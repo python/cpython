@@ -921,7 +921,9 @@ If an error occurs during module loading (such as :exc:`ImportError` or
 used, not at the import statement itself.
 
 The sections below describe name resolution and runtime controls.
-See :pep:`810` for the full specification of lazy imports.
+
+.. seealso:: :pep:`810` provides the rationale and initial specification
+   for lazy imports.
 
 .. versionadded:: 3.15
 
