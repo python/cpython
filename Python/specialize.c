@@ -1280,7 +1280,7 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
     }
     #endif
 
-    unsigned long tp_flags = PyType_GetFlags(owner_cls);
+    uint64_t tp_flags = PyType_GetFlags64(owner_cls);
     if (tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         #ifndef Py_GIL_DISABLED
         assert(_PyDictKeys_StringLookup(
@@ -1633,7 +1633,7 @@ get_init_for_simple_managed_python_class(PyTypeObject *tp, unsigned int *tp_vers
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OVERRIDDEN);
         return NULL;
     }
-    unsigned long tp_flags = PyType_GetFlags(tp);
+    uint64_t tp_flags = PyType_GetFlags64(tp);
     if (!(tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         /* Is this possible? */
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_EXPECTED_ERROR);
