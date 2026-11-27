@@ -1,0 +1,2 @@
+Fix :func:`os.truncate` not raising :exc:`OSError` on Windows when
+truncation fails.
