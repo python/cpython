@@ -10,8 +10,8 @@ gdbm = import_helper.import_module("dbm.gnu")  # skip if not supported
 filename = TESTFN
 
 class TestGdbm(unittest.TestCase):
-    @staticmethod
-    def setUpClass():
+    @classmethod
+    def setUpClass(cls):
         if support.verbose:
             print(f"gdbm version: {gdbm.gdbm_version}")
 
