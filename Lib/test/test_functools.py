@@ -3676,11 +3676,68 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(str(Signature.from_callable(A.func)),
                          '(self, item, arg: int) -> str')
         self.assertEqual(str(Signature.from_callable(A().func)),
-                         '(self, item, arg: int) -> str')
+                         '(item, arg: int) -> str')
+        self.assertIs(A().func.__wrapped__, A.func.__wrapped__)
         self.assertEqual(str(Signature.from_callable(A.cls_func)),
                          '(cls, item, arg: int) -> str')
         self.assertEqual(str(Signature.from_callable(A.static_func)),
                          '(item, arg: int) -> str')
+
+    def test_signature_of_method_wrapping_function(self):
+        def func(arg):
+            return arg
+
+        class A:
+            @functools.singledispatchmethod
+            @functools.wraps(func)
+            def method(self, arg):
+                return func(arg)
+
+        method = A().method
+        self.assertEqual(method(42), 42)
+        self.assertEqual(str(Signature.from_callable(method)), '(arg)')
+
+    def test_signature_of_method_wrapping_bound_method(self):
+        class A:
+            @functools.singledispatchmethod
+            def method(self, arg):
+                return arg
+
+        wrapped = A().method
+
+        class B:
+            @functools.wraps(wrapped)
+            def method(self, arg):
+                return wrapped(arg)
+
+        method = B().method
+        self.assertEqual(method(42), 42)
+        self.assertEqual(str(Signature.from_callable(method)), '(arg)')
+
+    def test_method_with_text_signature(self):
+        def func(self, arg, /):
+            return arg
+
+        func.__text_signature__ = '(arg, /)'
+
+        class A:
+            method = functools.singledispatchmethod(func)
+
+        self.assertEqual(str(Signature.from_callable(A().method)), '(arg, /)')
+
+    def test_method_signature_without_positional_parameters(self):
+        class A:
+            @functools.singledispatchmethod
+            def method():
+                raise NotImplementedError
+
+            @method.register(object)
+            def _(self, arg):
+                return arg
+
+        method = A().method
+        self.assertEqual(method(42), 42)
+        self.assertEqual(str(Signature.from_callable(method)), '()')
 
     def test_method_non_descriptor(self):
         class Callable:
