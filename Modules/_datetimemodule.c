@@ -4367,15 +4367,7 @@ static PyObject *
 timezone_new_impl(PyTypeObject *type, PyObject *offset, PyObject *name)
 /*[clinic end generated code: output=41a2dda500424187 input=8901a8befbc52561]*/
 {
-    /* vectorcall passes borrowed references; hold strong references before
-       new_timezone() can execute arbitrary Python code. */
-    PyObject *result;
-    Py_INCREF(offset);
-    Py_XINCREF(name);
-    result = new_timezone(offset, name);
-    Py_DECREF(offset);
-    Py_XDECREF(name);
-    return result;
+    return new_timezone(offset, name);
 }
 
 static void
