@@ -64,6 +64,8 @@ versions of Python, without recompilation.
 
    For simplicity, this document talks about *extensions*, but Stable ABI
    works the same way for all uses of the API – for example, embedding Python.
+   When embedding Python on Linux, see :ref:`embedding-python-versions`
+   for how to link the application and for limitations.
 
 There are two Stable ABIs:
 
