@@ -62,7 +62,7 @@ _PyFrame_GetBytecode(_PyInterpreterFrame *f)
     PyCodeObject *co = _PyFrame_GetCode(f);
     _PyCodeArray *tlbc = _PyCode_GetTLBCArray(co);
     assert(f->tlbc_index >= 0 && f->tlbc_index < tlbc->size);
-    return (_Py_CODEUNIT *)tlbc->entries[f->tlbc_index];
+    return (_Py_CODEUNIT *)_Py_atomic_load_ptr_acquire(&tlbc->entries[f->tlbc_index]);
 #else
     return _PyCode_CODE(_PyFrame_GetCode(f));
 #endif
@@ -289,11 +289,17 @@ _PyFrame_StackAssertInvalid(_PyInterpreterFrame *frame)
  * NOTE: We allow racy accesses to the instruction pointer
  * from other threads for sys._current_frames() and similar APIs.
  */
-static inline bool _Py_NO_SANITIZE_THREAD
+static inline bool _Py_NO_SANITIZE_THREAD _Py_NO_SANITIZE_MEMORY
 _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
 {
     if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
         return true;
+    }
+    /* Frames owned by a frame object are guaranteed complete by take_ownership().
+     * Checking instr_ptr here would race with take_ownership() when called from
+     * another thread (e.g. pdb walking frame->f_back cross-thread). */
+    if (frame->owner == FRAME_OWNED_BY_FRAME_OBJECT) {
+        return false;
     }
     return frame->owner != FRAME_OWNED_BY_GENERATOR &&
            frame->instr_ptr < _PyFrame_GetBytecode(frame) +
