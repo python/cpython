@@ -924,6 +924,7 @@ If both the :attr:`~Pickler.dispatch_table` and
    exact instances of :class:`int`, :class:`float`, :class:`bytes`,
    :class:`str`, :class:`dict`, :class:`set`, :class:`frozenset`, :class:`list`
    and :class:`tuple`.
+   It is never called for :class:`copyreg.Proxy` objects.
 
 Here is a simple example where we allow pickling and reconstructing
 a given class::
