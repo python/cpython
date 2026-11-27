@@ -3460,6 +3460,7 @@ class CodePageTest(unittest.TestCase):
         self.assertEqual(codecs.lookup('windows-1252').name, 'cp1252')
 
     def test_lookup_invalid_code_page_names(self):
+        # gh-162462: only the canonical cpXXX spelling is accepted.
         for encoding in ('cp01252', 'cp1_252', 'cp+1252', 'cp-1'):
             with self.subTest(encoding=encoding):
                 self.assertRaises(LookupError, codecs.lookup, encoding)
