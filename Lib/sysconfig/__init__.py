@@ -651,13 +651,13 @@ def get_config_var(name):
 
 
 def get_platform():
-    """Return a string that identifies the current platform.
+    """Return a string that identifies the platform Python was built for.
 
     This is used mainly to distinguish platform-specific build directories and
     platform-specific built distributions.  Typically includes the OS name and
-    version and the architecture (as supplied by 'os.uname()'), although the
-    exact information included depends on the OS; on Linux, the kernel version
-    isn't particularly important.
+    version and the architecture (as supplied by 'os.uname()' at build time),
+    although the exact information included depends on the OS; on Linux, the
+    kernel version isn't particularly important.
 
     Examples of returned values:
        linux-x86_64
@@ -679,6 +679,16 @@ def get_platform():
     - android-24-arm64_v8a
 
     For other non-POSIX platforms, currently just returns :data:`sys.platform`."""
+    if os.name == 'posix' and '_PYTHON_HOST_PLATFORM' not in os.environ:
+        # The runtime kernel may report a different, compatible architecture.
+        # During the build, HOST_PLATFORM has not been generated yet.
+        platform = get_config_var('HOST_PLATFORM')
+        if platform:
+            return platform
+    return _get_platform()
+
+
+def _get_platform():
     if os.name == 'nt':
         import _sysconfig
         platform = _sysconfig.get_platform()
@@ -703,6 +713,16 @@ def get_platform():
         osname = osname.lower().replace('/', '')
         machine = machine.replace(' ', '_')
         machine = machine.replace('/', '-')
+
+        if osname == 'linux':
+            # A native 32-bit build can run on a 64-bit kernel too. Use the
+            # compiler's target to distinguish it from a 64-bit build.
+            multiarch = get_config_var('MULTIARCH') or ''
+            build_machine = multiarch.partition('-')[0]
+            if build_machine in ('i386', 'i686') and machine == 'x86_64':
+                machine = 'i686'
+            elif build_machine == 'arm' and machine == 'aarch64':
+                machine = 'armv8l'
 
     if osname == "android" or sys.platform == "android":
         osname = "android"
