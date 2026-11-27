@@ -2725,6 +2725,22 @@ class SSLObjectTests(unittest.TestCase):
         self.assertFalse(context.check_hostname)
         context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())
 
+    def test_check_hostname_rejects_server_side(self):
+        # gh-65224: check_hostname only applies to client connections, so
+        # server mode rejects it with an error that says so.
+        exp_str = ("check_hostname cannot be used with server_side=True; "
+                   "use a separate server context or disable check_hostname")
+
+        _, server_context, _ = testing_context()
+        server_context.check_hostname = True
+        with self.assertRaisesRegex(ValueError, exp_str):
+            server_context.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(),
+                                    server_side=True)
+
+        with self.assertRaisesRegex(ValueError, exp_str):
+            with socket.socket() as sock:
+                server_context.wrap_socket(sock, server_side=True)
+
     def test_server_side_bad_params(self):
         # A server neither sends a hostname nor resumes a client's session,
         # so wrap_bio() rejects both in server mode like wrap_socket()
