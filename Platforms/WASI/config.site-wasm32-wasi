@@ -57,3 +57,7 @@ ac_cv_func_fchmod=no
 ac_cv_func_fchmodat=no
 ac_cv_func_statvfs=no
 ac_cv_func_fstatvfs=no
+
+# WASI SDK 34 declares some things that simply error out.
+ac_cv_func_pipe2=no
+ac_cv_func_pthread_getcpuclockid=no

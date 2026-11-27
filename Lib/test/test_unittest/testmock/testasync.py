@@ -15,7 +15,7 @@ from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock, Mock,
 
 
 def tearDownModule():
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class AsyncClass:

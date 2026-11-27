@@ -2,12 +2,13 @@ import unittest
 from unittest import mock
 
 import asyncio
+from asyncio import protocols
 
 
 def tearDownModule():
     # not needed for the test file but added for uniformness with all other
     # asyncio test files for the sake of unified cleanup
-    asyncio.events._set_event_loop_policy(None)
+    asyncio.set_event_loop(None)
 
 
 class ProtocolsAbsTests(unittest.TestCase):
@@ -63,5 +64,32 @@ class ProtocolsAbsTests(unittest.TestCase):
         self.assertNotHasAttr(sp, '__dict__')
 
 
-if __name__ == '__main__':
+class FeedDataToBufferedProtoTests(unittest.TestCase):
+    def _make_proto(self, bufsize):
+        received = bytearray()
+        buf = bytearray(bufsize)
+
+        class P(asyncio.BufferedProtocol):
+            def get_buffer(self, sizehint):
+                return buf
+
+            def buffer_updated(self, nbytes):
+                received.extend(buf[:nbytes])
+
+        return P(), received
+
+    def test_large_multi_iteration(self):
+        proto, received = self._make_proto(64)
+        data = bytes(range(256)) * 16
+        protocols._feed_data_to_buffered_proto(proto, data)
+        self.assertEqual(bytes(received), data)
+
+    def test_memoryview_input(self):
+        proto, received = self._make_proto(64)
+        payload = b"y" * 200
+        protocols._feed_data_to_buffered_proto(proto, memoryview(payload))
+        self.assertEqual(bytes(received), payload)
+
+
+if __name__ == "__main__":
     unittest.main()

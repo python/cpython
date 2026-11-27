@@ -68,6 +68,12 @@ class PythonAPITestCase(unittest.TestCase):
         PyOS_snprintf(buf, sizeof(buf), b"Hello from %s (%d, %d, %d)", b"ctypes", 1, 2, 3)
         self.assertEqual(buf.value, b"Hello from ctypes (1, 2, 3)")
 
+        # Test truncated output
+        small = create_string_buffer(14)
+        rv = PyOS_snprintf(small, sizeof(small), b"Hello from %s", b"ctypes")
+        self.assertEqual(rv, len(b"Hello from ctypes"))
+        self.assertEqual(small.raw, b"Hello from ct\0")
+
         # not enough arguments
         self.assertRaises(TypeError, PyOS_snprintf, buf)
 

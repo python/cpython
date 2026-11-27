@@ -638,13 +638,15 @@ class Unparser(NodeVisitor):
             for value in node.values:
                 self._write_ftstring_inner(value, is_format_spec=is_format_spec)
         elif isinstance(node, Constant) and isinstance(node.value, str):
-            value = node.value.replace("{", "{{").replace("}", "}}")
-
+            value = node.value
             if is_format_spec:
                 value = value.replace("\\", "\\\\")
+                value = value.replace("{", "\\x7b").replace("}", "\\x7d")
                 value = value.replace("'", "\\'")
                 value = value.replace('"', '\\"')
                 value = value.replace("\n", "\\n")
+            else:
+                value = value.replace("{", "{{").replace("}", "}}")
             self.write(value)
         elif isinstance(node, FormattedValue):
             self.visit_FormattedValue(node)
@@ -925,7 +927,11 @@ class Unparser(NodeVisitor):
         # Special case: 3.__abs__() is a syntax error, so if node.value
         # is an integer literal then we need to either parenthesize
         # it or add an extra space to get 3 .__abs__().
-        if isinstance(node.value, Constant) and isinstance(node.value.value, int):
+        # bool is a subclass of int, but True.real and False.real are
+        # valid without a space.
+        if (isinstance(node.value, Constant)
+                and isinstance(node.value.value, int)
+                and not isinstance(node.value.value, bool)):
             self.write(" ")
         self.write(".")
         self.write(node.attr)

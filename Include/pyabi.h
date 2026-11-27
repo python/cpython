@@ -39,7 +39,7 @@
 #  undef Py_LIMITED_API
 #  define Py_LIMITED_API 0x03020000
 #endif
-#if defined(Py_TARGET_ABI3T) && Py_TARGET_ABI3T+0 < 0x030f0000
+#if defined(Py_TARGET_ABI3T) && Py_TARGET_ABI3T+0 < _Py_PACK_VERSION(3, 15)
 #  error "Py_TARGET_ABI3T must be 0x030f0000 (3.15) or above"
 #endif
 
@@ -55,6 +55,8 @@
  *
  *  (Don't use Py_TARGET_ABI3T directly. It's currently only used to set these
  *   2 macros, and defined for users' convenience.)
+ *
+ * This logic is currently partially duplicated in PC/pyconfig.h.
  */
 #if defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED) \
         && !defined(Py_TARGET_ABI3T)

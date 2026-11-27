@@ -30,7 +30,8 @@ This avoids all the overhead of SAX and pulldom to gain performance.
 from xml.dom import xmlbuilder, minidom, Node
 from xml.dom import EMPTY_NAMESPACE, EMPTY_PREFIX, XMLNS_NAMESPACE
 from xml.parsers import expat
-from xml.dom.minidom import _append_child, _set_attribute_node
+from xml.dom.minidom import (_append_child, _set_attribute_node,
+                            _XML_WHITESPACE)
 from xml.dom.NodeFilter import NodeFilter
 
 TEXT_NODE = Node.TEXT_NODE
@@ -159,7 +160,6 @@ class ExpatBuilder:
             self._intern_setdefault = self._parser.intern.setdefault
             self._parser.buffer_text = True
             self._parser.ordered_attributes = True
-            self._parser.specified_attributes = True
             self.install(self._parser)
         return self._parser
 
@@ -352,11 +352,13 @@ class ExpatBuilder:
         self.curNode = node
 
         if attributes:
+            specified = self.getParser().GetSpecifiedAttributeCount()
             for i in range(0, len(attributes), 2):
                 a = minidom.Attr(attributes[i], EMPTY_NAMESPACE,
                                  None, EMPTY_PREFIX)
                 value = attributes[i+1]
                 a.value = value
+                a.specified = i < specified
                 a.ownerDocument = self.document
                 _set_attribute_node(node, a)
 
@@ -412,7 +414,8 @@ class ExpatBuilder:
         # whitespace.
         L = []
         for child in node.childNodes:
-            if child.nodeType == TEXT_NODE and not child.data.strip():
+            if (child.nodeType == TEXT_NODE
+                    and not child.data.strip(_XML_WHITESPACE)):
                 L.append(child)
 
         # Remove ignorable whitespace from the tree.
@@ -760,6 +763,7 @@ class Namespaces:
             node._ensure_attributes()
             _attrs = node._attrs
             _attrsNS = node._attrsNS
+            specified = self.getParser().GetSpecifiedAttributeCount()
             for i in range(0, len(attributes), 2):
                 aname = attributes[i]
                 value = attributes[i+1]
@@ -775,6 +779,7 @@ class Namespaces:
                     _attrsNS[(EMPTY_NAMESPACE, aname)] = a
                 a.ownerDocument = self.document
                 a.value = value
+                a.specified = i < specified
                 a.ownerElement = node
 
     if __debug__:

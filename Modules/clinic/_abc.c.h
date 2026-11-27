@@ -140,15 +140,27 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_abc__set_subclasscheck__doc__,
+"_set_subclasscheck($module, func, /)\n"
+"--\n"
+"\n"
+"Internal ABC helper to register ABCMeta.__subclasscheck__.\n"
+"\n"
+"Classes whose metaclass resolves __subclasscheck__ to func are checked\n"
+"natively when walking the subclass tree of an ABC.");
+
+#define _ABC__SET_SUBCLASSCHECK_METHODDEF    \
+    {"_set_subclasscheck", (PyCFunction)_abc__set_subclasscheck, METH_O, _abc__set_subclasscheck__doc__},
+
 PyDoc_STRVAR(_abc_get_cache_token__doc__,
 "get_cache_token($module, /)\n"
 "--\n"
 "\n"
 "Returns the current ABC cache token.\n"
 "\n"
-"The token is an opaque object (supporting equality testing) identifying the\n"
-"current version of the ABC cache for virtual subclasses. The token changes\n"
-"with every call to register() on any ABC.");
+"The token is an opaque object (supporting equality testing) identifying\n"
+"the current version of the ABC cache for virtual subclasses.  The token\n"
+"changes with every call to register() on any ABC.");
 
 #define _ABC_GET_CACHE_TOKEN_METHODDEF    \
     {"get_cache_token", (PyCFunction)_abc_get_cache_token, METH_NOARGS, _abc_get_cache_token__doc__},
@@ -161,4 +173,4 @@ _abc_get_cache_token(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _abc_get_cache_token_impl(module);
 }
-/*[clinic end generated code: output=1989b6716c950e17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5d71c05c399149c5 input=a9049054013a1b77]*/

@@ -5,9 +5,12 @@ import pickle
 import unittest
 import zoneinfo
 
+from test.support import mark_module
 from test.support.hypothesis_helper import hypothesis
 
 import test.test_zoneinfo._support as test_support
+
+mark_module('hypothesis')
 
 ZoneInfoTestBase = test_support.ZoneInfoTestBase
 

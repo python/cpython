@@ -1,3 +1,0 @@
-Fix :func:`runpy.run_module` and :func:`runpy.run_path` to set the
-:attr:`~ImportError.name` attribute on the :exc:`ImportError` they
-raise.

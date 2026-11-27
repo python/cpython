@@ -5,16 +5,23 @@ import os
 import pathlib
 import re
 import unittest
-from test.support import import_helper, os_helper
+from test.support import import_helper, os_helper, requires_resource
 
 _winapi = import_helper.import_module('_winapi', required_on=['win'])
 
 MAXIMUM_WAIT_OBJECTS = 64
 MAXIMUM_BATCHED_WAIT_OBJECTS = (MAXIMUM_WAIT_OBJECTS - 1) ** 2
 
+
+def close_events(events):
+    for handle in events:
+        _winapi.CloseHandle(handle)
+
+
 class WinAPIBatchedWaitForMultipleObjectsTests(unittest.TestCase):
     def _events_waitall_test(self, n):
         evts = [_winapi.CreateEventW(0, False, False, None) for _ in range(n)]
+        self.addCleanup(close_events, evts)
 
         with self.assertRaises(TimeoutError):
             _winapi.BatchedWaitForMultipleObjects(evts, True, 100)
@@ -42,6 +49,7 @@ class WinAPIBatchedWaitForMultipleObjectsTests(unittest.TestCase):
 
     def _events_waitany_test(self, n):
         evts = [_winapi.CreateEventW(0, False, False, None) for _ in range(n)]
+        self.addCleanup(close_events, evts)
 
         with self.assertRaises(TimeoutError):
             _winapi.BatchedWaitForMultipleObjects(evts, False, 100)
@@ -144,7 +152,7 @@ class WinAPITests(unittest.TestCase):
         # Pipe instance is available, so this passes
         _winapi.WaitNamedPipe(pipe_name, 0)
 
-        with open(pipe_name, 'w+b') as pipe2:
+        with open(pipe_name, 'w+b', buffering=0) as pipe2:
             # No instances available, so this times out
             # (WinError 121 does not get mapped to TimeoutError)
             with self.assertRaises(OSError):
@@ -157,6 +165,39 @@ class WinAPITests(unittest.TestCase):
             pipe2.write(b'testdata')
             pipe2.flush()
             self.assertEqual((b'testdata', 8), _winapi.PeekNamedPipe(pipe, 8)[:2])
+
+    def test_console_mode_non_console_handle(self):
+        rfd, wfd = _winapi.CreatePipe(None, 0)
+        self.addCleanup(_winapi.CloseHandle, rfd)
+        self.addCleanup(_winapi.CloseHandle, wfd)
+
+        with self.assertRaises(OSError):
+            _winapi.GetConsoleMode(rfd)
+        with self.assertRaises(OSError):
+            _winapi.SetConsoleMode(rfd, 0)
+        with self.assertRaises(OSError):
+            _winapi.FlushConsoleInputBuffer(rfd)
+
+    @requires_resource('console')
+    def test_console_mode(self):
+        try:
+            handle = _winapi.CreateFile(
+                "CONIN$",
+                _winapi.GENERIC_READ | _winapi.GENERIC_WRITE,
+                3,  # 3=FILE_SHARE_READ|FILE_SHARE_WRITE
+                _winapi.NULL,
+                _winapi.OPEN_EXISTING,
+                0,
+                _winapi.NULL)
+        except OSError:
+            self.skipTest("requires a console")
+        self.addCleanup(_winapi.CloseHandle, handle)
+
+        mode = _winapi.GetConsoleMode(handle)
+        self.assertIsInstance(mode, int)
+        self.assertIsNone(_winapi.SetConsoleMode(handle, mode))
+        self.assertEqual(_winapi.GetConsoleMode(handle), mode)
+        self.assertIsNone(_winapi.FlushConsoleInputBuffer(handle))
 
     def test_event_source_registration(self):
         source_name = "PythonTestEventSource"

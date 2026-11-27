@@ -88,6 +88,10 @@ def import_module(name, deprecated=False, *, required_on=()):
     compared against sys.platform.
     """
     with _ignore_deprecated_imports(deprecated):
+        f = sys._getframe(1)
+        if f.f_globals is f.f_locals:
+            from test.support import mark_module
+            mark_module(f'requires_{name}', globals=f.f_globals)
         try:
             return importlib.import_module(name)
         except ImportError as msg:
@@ -120,6 +124,20 @@ def frozen_modules(enabled=True):
 
 
 @contextlib.contextmanager
+def force_eager_imports():
+    """Force eager imports inside the context manager."""
+    original_lazy_imports_filter = sys.get_lazy_imports_filter()
+    sys.set_lazy_imports_filter(
+        # Tools must be imported eagerly under this context manager:
+        lambda importing, imported, fromlist: False
+    )
+    try:
+        yield
+    finally:
+        sys.set_lazy_imports_filter(original_lazy_imports_filter)
+
+
+@contextlib.contextmanager
 def multi_interp_extensions_check(enabled=True):
     """Force legacy modules to be allowed in subinterpreters (or not).
 
@@ -142,6 +160,7 @@ def multi_interp_extensions_check(enabled=True):
 def import_fresh_module(name, fresh=(), blocked=(), *,
                         deprecated=False,
                         usefrozen=False,
+                        eager_imports=True,
                         ):
     """Import and return a module, deliberately bypassing sys.modules.
 
@@ -173,7 +192,12 @@ def import_fresh_module(name, fresh=(), blocked=(), *,
     """
     # NOTE: test_heapq, test_json and test_warnings include extra sanity checks
     # to make sure that this utility function is working as expected
-    with _ignore_deprecated_imports(deprecated):
+    eager_imports_context = (
+        force_eager_imports
+        if eager_imports
+        else contextlib.nullcontext
+    )
+    with eager_imports_context(), _ignore_deprecated_imports(deprecated):
         # Keep track of modules saved for later restoration as well
         # as those which just need a blocking entry removed
         fresh = list(fresh)
@@ -325,7 +349,7 @@ def ready_to_import(name=None, source=""):
                 sys.modules.pop(name, None)
 
 
-def ensure_lazy_imports(imported_module, modules_to_block):
+def ensure_lazy_imports(imported_module, modules_to_block, *, additional_code=None):
     """Test that when imported_module is imported, none of the modules in
     modules_to_block are imported as a side effect."""
     modules_to_block = frozenset(modules_to_block)
@@ -343,6 +367,16 @@ def ensure_lazy_imports(imported_module, modules_to_block):
             raise AssertionError(f'unexpectedly imported after importing {imported_module}: {{after}}')
         """
     )
+    if additional_code:
+        script += additional_code
+        script += textwrap.dedent(
+            f"""
+            if unexpected := modules_to_block & sys.modules.keys():
+                after = ", ".join(unexpected)
+                raise AssertionError(f'unexpectedly imported after additional code: {{after}}')
+            """
+        )
+
     from .script_helper import assert_python_ok
     assert_python_ok("-S", "-c", script)
 

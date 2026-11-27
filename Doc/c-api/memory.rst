@@ -77,7 +77,7 @@ memory footprint as a whole. Consequently, under certain circumstances, the
 Python memory manager may or may not trigger appropriate actions, like garbage
 collection, memory compaction or other preventive procedures. Note that by using
 the C library allocator as shown in the previous example, the allocated memory
-for the I/O buffer escapes completely the Python memory manager.
+for the I/O buffer completely escapes the Python memory manager.
 
 .. seealso::
 
@@ -157,7 +157,7 @@ zero bytes.
 
 .. c:function:: void* PyMem_RawCalloc(size_t nelem, size_t elsize)
 
-   Allocates *nelem* elements each whose size in bytes is *elsize* and returns
+   Allocates *nelem* elements each of size *elsize* bytes and returns
    a pointer of type :c:expr:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
@@ -235,7 +235,7 @@ In the GIL-enabled build (default build) the
 
 .. c:function:: void* PyMem_Calloc(size_t nelem, size_t elsize)
 
-   Allocates *nelem* elements each whose size in bytes is *elsize* and returns
+   Allocates *nelem* elements each of size *elsize* bytes and returns
    a pointer of type :c:expr:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
@@ -368,7 +368,7 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
 
 .. c:function:: void* PyObject_Calloc(size_t nelem, size_t elsize)
 
-   Allocates *nelem* elements each whose size in bytes is *elsize* and returns
+   Allocates *nelem* elements each of size *elsize* bytes and returns
    a pointer of type :c:expr:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
@@ -437,6 +437,8 @@ Release build                        ``"pymalloc"``           ``malloc``        
 Debug build                          ``"pymalloc_debug"``     ``malloc`` + debug    ``pymalloc`` + debug    ``pymalloc`` + debug
 Release build, without pymalloc      ``"malloc"``             ``malloc``            ``malloc``              ``malloc``
 Debug build, without pymalloc        ``"malloc_debug"``       ``malloc`` + debug    ``malloc`` + debug      ``malloc`` + debug
+Release build, with ASan or MSan     ``"malloc"``             ``malloc``            ``malloc``              ``malloc``
+Debug build, with ASan or MSan       ``"malloc_debug"``       ``malloc`` + debug    ``malloc`` + debug      ``malloc`` + debug
 Free-threaded build                  ``"mimalloc"``           ``mimalloc``          ``mimalloc``            ``mimalloc``
 Free-threaded debug build            ``"mimalloc_debug"``     ``mimalloc`` + debug  ``mimalloc`` + debug    ``mimalloc`` + debug
 ===================================  =======================  ====================  ======================  ======================
@@ -451,6 +453,10 @@ Legend:
 * "+ debug": with :ref:`debug hooks on the Python memory allocators
   <pymem-debug-hooks>`.
 * "Debug build": :ref:`Python build in debug mode <debug-build>`.
+* "with ASan or MSan": sanitizer build as configured using the
+  :option:`--with-address-sanitizer`,
+  :option:`--with-hwaddress-sanitizer`, and/or
+  :option:`--with-memory-sanitizer` option.
 
 .. _customize-memory-allocators:
 
@@ -705,9 +711,11 @@ This allocator is disabled if Python is configured with the
 :option:`--without-pymalloc` option. It can also be disabled at runtime using
 the :envvar:`PYTHONMALLOC` environment variable (ex: ``PYTHONMALLOC=malloc``).
 
-Typically, it makes sense to disable the pymalloc allocator when building
-Python with AddressSanitizer (:option:`--with-address-sanitizer`) which helps
-uncover low level bugs within the C code.
+The pymalloc allocator is disabled by default when Python is built with
+a sanitizer which does not track pymalloc allocations
+(:option:`--with-address-sanitizer`, :option:`--with-hwaddress-sanitizer`,
+:option:`--with-memory-sanitizer`).
+Use :envvar:`PYTHONMALLOC=pymalloc <PYTHONMALLOC>` to enable pymalloc.
 
 Customize pymalloc Arena Allocator
 ----------------------------------

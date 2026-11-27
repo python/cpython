@@ -1,2 +1,0 @@
-Fix the ``__qualname__`` attribute of ``__annotate__`` functions on
-functions.
