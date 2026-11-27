@@ -4491,6 +4491,38 @@ nm_##MPDFUNC(PyObject *self)                                \
     return result;                                          \
 }
 
+typedef void (*mpd_binaryfunc)(mpd_t *, const mpd_t *, const mpd_t *,
+                               const mpd_context_t *, uint32_t *);
+
+static PyObject *
+dec_binop_int64(decimal_state *state, PyObject *context, mpd_binaryfunc op,
+                PyObject *decimal, int64_t value, int reflected)
+{
+    mpd_uint_t data[_Py_DEC_MINALLOC];
+    mpd_t integer = {
+        .flags = MPD_STATIC | MPD_STATIC_DATA,
+        .alloc = _Py_DEC_MINALLOC,
+        .data = data,
+    };
+    uint32_t status = 0;
+    mpd_qset_i64_exact(&integer, value, &status);
+    if (status && dec_addstatus(context, status)) {
+        mpd_del(&integer);
+        return NULL;
+    }
+    PyObject *result = dec_alloc(state);
+    if (result != NULL) {
+        const mpd_t *a = reflected ? &integer : MPD(decimal);
+        const mpd_t *b = reflected ? MPD(decimal) : &integer;
+        op(MPD(result), a, b, CTX(context), &status);
+        if (dec_addstatus(context, status)) {
+            Py_CLEAR(result);
+        }
+    }
+    mpd_del(&integer);
+    return result;
+}
+
 /* Binary number method that uses default module context. */
 #define Dec_BinaryNumberMethod(MPDFUNC) \
 static PyObject *                                                \
@@ -4503,6 +4535,18 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
                                                                  \
     decimal_state *state = find_state_left_or_right(self, other); \
     CURRENT_CONTEXT(state, context) ;                            \
+    int reflected = PyLong_CheckExact(self);                     \
+    if (reflected || PyLong_CheckExact(other)) {                 \
+        PyObject *integer = reflected ? self : other;            \
+        int overflow;                                            \
+        long long value =                                        \
+            PyLong_AsLongLongAndOverflow(integer, &overflow);    \
+        if (!overflow) {                                         \
+            return dec_binop_int64(state, context, MPDFUNC,      \
+                                   reflected ? other : self,     \
+                                   value, reflected);            \
+        }                                                        \
+    }                                                            \
     CONVERT_BINOP(&a, &b, self, other, context);                 \
                                                                  \
     if ((result = dec_alloc(state)) == NULL) {                   \

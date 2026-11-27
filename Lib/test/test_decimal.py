@@ -1335,6 +1335,53 @@ class PyFormatTest(FormatTest, unittest.TestCase):
 class ArithmeticOperatorsTest:
     '''Unit tests for all arithmetic operators, binary and unary.'''
 
+    def test_int64_operands(self):
+        Decimal = self.decimal.Decimal
+
+        class SubDecimal(Decimal):
+            pass
+
+        class SubInt(int):
+            pass
+
+        operands = (
+            -(2**63) - 1, -(2**63), -1, 0, 2**63 - 1, 2**63,
+            True, SubInt(7),
+        )
+        for cls in (Decimal, SubDecimal):
+            d = cls("-1.25")
+            for n in operands:
+                for op in (operator.add, operator.sub, operator.mul,
+                           operator.truediv, operator.floordiv, operator.mod):
+                    for left, right in ((d, n), (n, d)):
+                        with self.subTest(cls=cls, n=n, op=op, left=left):
+                            with self.decimal.localcontext(prec=6) as ctx:
+                                ctx.clear_traps()
+                                ctx.clear_flags()
+                                expected = op(Decimal(left), Decimal(right))
+                                flags = ctx.flags.copy()
+                                ctx.clear_flags()
+                                actual = op(left, right)
+                                self.assertIs(type(actual), Decimal)
+                                self.assertEqual(
+                                    actual.as_tuple(), expected.as_tuple()
+                                )
+                                self.assertEqual(ctx.flags.copy(), flags)
+
+    def test_int_operand_traps(self):
+        dec = self.decimal
+        with dec.localcontext(prec=2) as ctx:
+            ctx.traps[dec.Inexact] = True
+            ctx.clear_flags()
+            with self.assertRaises(dec.Inexact):
+                dec.Decimal(2**63 - 1) - dec.Decimal("0.1")
+            expected_flags = ctx.flags.copy()
+            ctx.clear_flags()
+            with self.assertRaises(dec.Inexact):
+                (2**63 - 1) - dec.Decimal("0.1")
+            self.assertEqual(ctx.flags.copy(), expected_flags)
+            self.assertTrue(ctx.flags[dec.Inexact])
+
     def test_addition(self):
         Decimal = self.decimal.Decimal
 

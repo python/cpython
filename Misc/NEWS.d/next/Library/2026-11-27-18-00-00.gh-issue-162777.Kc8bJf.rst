@@ -1,0 +1,2 @@
+Speed up arithmetic between a :class:`~decimal.Decimal` and an :class:`int`
+that fits in a signed 64-bit integer.
