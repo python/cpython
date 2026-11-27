@@ -3888,12 +3888,14 @@ solid_base(PyTypeObject *type)
 /// data passed to update_slots_callback()
 typedef struct {
     pytype_slotdef **defs;
+    // If not NULL, only check if any slot would change, setting *changed.
+    bool *changed;
 } update_callback_data_t;
 
 static void object_dealloc(PyObject *);
 static PyObject *object_new(PyTypeObject *, PyObject *, PyObject *);
 static int object_init(PyObject *, PyObject *, PyObject *);
-static int update_slot(PyTypeObject *, PyObject *);
+static int update_slot(PyTypeObject *, PyObject *, bool *);
 static void fixup_slot_dispatchers(PyTypeObject *);
 static int type_ready(PyTypeObject *, int, int);
 static int type_ready_publish(PyTypeObject *, int);
@@ -6720,8 +6722,22 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
 static int
 update_slot_after_setattr(PyTypeObject *type, PyObject *name)
 {
+#ifdef Py_GIL_DISABLED
+    // Check if we actually need to update the slot.  If not, we can skip the
+    // STW, which can be expensive.  This is pretty common since assigning a new
+    // function to an existing slot name, like "C.__getitem__ = f", usually
+    // changes no slot.
+    ASSERT_TYPE_LOCK_HELD();
+    bool changed = false;
+    if (update_slot(type, name, &changed) < 0) {
+        return -1;
+    }
+    if (!changed) {
+        return 0;
+    }
+#endif
     types_stop_world();
-    int res = update_slot(type, name);
+    int res = update_slot(type, name, NULL);
     types_start_world();
 #ifdef Py_GIL_DISABLED
     // Invalidate again, after the slots are updated and while TYPE_LOCK is
@@ -12122,11 +12138,14 @@ fail:
  * If descrs is not NULL, it holds the descriptors found by
  * collect_slot_descrs() and no lookups are done.
  *
+ * If changed is not NULL, the type is not modified.  Instead, *changed is
+ * set to true if the slot (or tp_flags) would be changed.
+ *
  * Exceptions that occur internally are ignored, such as when looking up
  * descriptors. */
 static void
 update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
-                PyObject **descrs)
+                PyObject **descrs, bool *changed)
 {
     ASSERT_NEW_TYPE_OR_LOCKED(type);
 
@@ -12264,7 +12283,14 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
             }
             if (p->function == slot_tp_call) {
                 /* A generic __call__ is incompatible with vectorcall */
-                type_clear_flags(type, Py_TPFLAGS_HAVE_VECTORCALL);
+                if (changed != NULL) {
+                    if (type->tp_flags & Py_TPFLAGS_HAVE_VECTORCALL) {
+                        *changed = true;
+                    }
+                }
+                else {
+                    type_clear_flags(type, Py_TPFLAGS_HAVE_VECTORCALL);
+                }
             }
         }
         PyStackRef_CLOSE(descr_ref);
@@ -12277,8 +12303,15 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
         slot_value = generic;
     }
 
-    ASSERT_WORLD_STOPPED_OR_NEW_TYPE(type);
-    *ptr = slot_value;
+    if (changed != NULL) {
+        if (*ptr != slot_value) {
+            *changed = true;
+        }
+    }
+    else {
+        ASSERT_WORLD_STOPPED_OR_NEW_TYPE(type);
+        *ptr = slot_value;
+    }
 
     if (next_p != NULL) {
         *next_p = p;
@@ -12293,17 +12326,23 @@ update_slots_callback(PyTypeObject *type, void *data)
     ASSERT_NEW_TYPE_OR_LOCKED(type);
 
     update_callback_data_t *update_data = (update_callback_data_t *)data;
+    bool *changed = update_data->changed;
     pytype_slotdef **pp = update_data->defs;
     for (; *pp; pp++) {
-        update_one_slot(type, *pp, NULL, NULL);
+        if (changed != NULL && *changed) {
+            break;  // already known that an update is needed
+        }
+        update_one_slot(type, *pp, NULL, NULL, changed);
     }
     return 0;
 }
 
 /* Update the slots after assignment to a class (type) attribute.  In the
-   free-threaded build, this is called with the world stopped. */
+   free-threaded build, this is called with the world stopped.  If changed is
+   not NULL, nothing is updated and *changed is set to true if any slot of the
+   type or its subclasses would change. */
 static int
-update_slot(PyTypeObject *type, PyObject *name)
+update_slot(PyTypeObject *type, PyObject *name, bool *changed)
 {
     pytype_slotdef *ptrs[MAX_EQUIV];
     pytype_slotdef *p;
@@ -12332,6 +12371,7 @@ update_slot(PyTypeObject *type, PyObject *name)
 
     update_callback_data_t callback_data;
     callback_data.defs = ptrs;
+    callback_data.changed = changed;
     return update_subclasses(type, name,
                              update_slots_callback, (void *)&callback_data);
 }
@@ -12352,7 +12392,7 @@ fixup_slot_dispatchers(PyTypeObject *type)
         descrs = NULL;
     }
     for (pytype_slotdef *p = slotdefs; p->name; ) {
-        update_one_slot(type, p, &p, descrs);
+        update_one_slot(type, p, &p, descrs, NULL);
     }
     if (descrs != NULL) {
         clear_slot_descrs(descrs);
@@ -12367,7 +12407,7 @@ update_all_slots(PyTypeObject* type)
     types_stop_world();
     for (pytype_slotdef *p = slotdefs; p->name; p++) {
         /* update_slot returns int but can't actually fail in this case*/
-        update_slot(type, p->name_strobj);
+        update_slot(type, p->name_strobj, NULL);
     }
     types_start_world();
     // Invalidate the version tags after the slots are updated, while
@@ -12535,8 +12575,12 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
         // With the world stopped, use borrowed references to the subclasses,
         // so that dropping a reference cannot run type_dealloc().  Look up
         // attr_name without calling __eq__ of non-str keys, consistent with
-        // find_slot_name_in_mro().
-        assert(types_world_is_stopped());
+        // find_slot_name_in_mro().  This is also done with only TYPE_LOCK held
+        // when checking for slot changes (see update_slot()).  That is safe
+        // too: type_dealloc() removes the type from tp_subclasses, which
+        // requires TYPE_LOCK, before it tears down the type, and the type
+        // dicts are only modified with TYPE_LOCK held.
+        ASSERT_TYPE_LOCK_HELD();
         if (_PyWeakref_IS_DEAD(ref)) {
             continue;
         }
