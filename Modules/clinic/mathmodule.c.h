@@ -436,6 +436,59 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(math_remainder__doc__,
+"remainder($module, x, y, /)\n"
+"--\n"
+"\n"
+"Return the difference of x and the closest integer multiple of y.\n"
+"\n"
+"This is the IEEE 754-style remainder operation, returning x - n*y,\n"
+"where n*y is the integer multiple of y nearest x.  The result is\n"
+"always exact.  In the case where x is exactly halfway between two\n"
+"multiples of y, the nearest even value of n is used.");
+
+#define MATH_REMAINDER_METHODDEF    \
+    {"remainder", _PyCFunction_CAST(math_remainder), METH_FASTCALL, math_remainder__doc__},
+
+static PyObject *
+math_remainder_impl(PyObject *module, double x, double y);
+
+static PyObject *
+math_remainder(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    double x;
+    double y;
+
+    if (!_PyArg_CheckPositional("remainder", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        x = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(args[0]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        y = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        y = PyFloat_AsDouble(args[1]);
+        if (y == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_remainder_impl(module, x, y);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_dist__doc__,
 "dist($module, p, q, /)\n"
 "--\n"
@@ -1164,4 +1217,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3452ce8caa2d1bd7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a03e1c1820dd2b78 input=a9049054013a1b77]*/

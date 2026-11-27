@@ -670,100 +670,6 @@ m_lgamma(double x)
     return r;
 }
 
-/* IEEE 754-style remainder operation: x - n*y where n*y is the nearest
-   multiple of y to x, taking n even in the case of a tie. Assuming an IEEE 754
-   binary floating-point format, the result is always exact. */
-
-static double
-m_remainder(double x, double y)
-{
-    /* Deal with most common case first. */
-    if (isfinite(x) && isfinite(y)) {
-        double absx, absy, c, m, r;
-
-        if (y == 0.0) {
-            return Py_NAN;
-        }
-
-        absx = fabs(x);
-        absy = fabs(y);
-        m = fmod(absx, absy);
-
-        /*
-           Warning: some subtlety here. What we *want* to know at this point is
-           whether the remainder m is less than, equal to, or greater than half
-           of absy. However, we can't do that comparison directly because we
-           can't be sure that 0.5*absy is representable (the multiplication
-           might incur precision loss due to underflow). So instead we compare
-           m with the complement c = absy - m: m < 0.5*absy if and only if m <
-           c, and so on. The catch is that absy - m might also not be
-           representable, but it turns out that it doesn't matter:
-
-           - if m > 0.5*absy then absy - m is exactly representable, by
-             Sterbenz's lemma, so m > c
-           - if m == 0.5*absy then again absy - m is exactly representable
-             and m == c
-           - if m < 0.5*absy then either (i) 0.5*absy is exactly representable,
-             in which case 0.5*absy < absy - m, so 0.5*absy <= c and hence m <
-             c, or (ii) absy is tiny, either subnormal or in the lowest normal
-             binade. Then absy - m is exactly representable and again m < c.
-        */
-
-        c = absy - m;
-        if (m < c) {
-            r = m;
-        }
-        else if (m > c) {
-            r = -c;
-        }
-        else {
-            /*
-               Here absx is exactly halfway between two multiples of absy,
-               and we need to choose the even multiple. x now has the form
-
-                   absx = n * absy + m
-
-               for some integer n (recalling that m = 0.5*absy at this point).
-               If n is even we want to return m; if n is odd, we need to
-               return -m.
-
-               So
-
-                   0.5 * (absx - m) = (n/2) * absy
-
-               and now reducing modulo absy gives us:
-
-                                                  | m, if n is odd
-                   fmod(0.5 * (absx - m), absy) = |
-                                                  | 0, if n is even
-
-               Now m - 2.0 * fmod(...) gives the desired result: m
-               if n is even, -m if m is odd.
-
-               Note that all steps in fmod(0.5 * (absx - m), absy)
-               will be computed exactly, with no rounding error
-               introduced.
-            */
-            assert(m == c);
-            r = m - 2.0 * fmod(0.5 * (absx - m), absy);
-        }
-        return copysign(1.0, x) * r;
-    }
-
-    /* Special values. */
-    if (isnan(x)) {
-        return x;
-    }
-    if (isnan(y)) {
-        return y;
-    }
-    if (isinf(x)) {
-        return Py_NAN;
-    }
-    assert(isinf(y));
-    return x;
-}
-
 
 /*
     Various platforms (Solaris, OpenBSD) do nonstandard things for log(0),
@@ -902,7 +808,7 @@ is_error(double x, int raise_edom)
 }
 
 /*
-   math_1 is used to wrap a libm function f that takes a double
+   math_1 is used to wrap a libm function func that takes a double
    argument and returns a double.
 
    The error reporting follows these rules, which are designed to do
@@ -999,70 +905,11 @@ math_1a(PyObject *arg, double (*func) (double), const char *err_msg)
 }
 
 /*
-   math_2 is used to wrap a libm function f that takes two double
-   arguments and returns a double.
-
-   The error reporting follows these rules, which are designed to do
-   the right thing on C89/C99 platforms and IEEE 754/non IEEE 754
-   platforms.
-
-   - a NaN result from non-NaN inputs causes ValueError to be raised
-   - an infinite result from finite inputs causes OverflowError to be
-     raised.
-   - if the result is finite and errno == EDOM then ValueError is
-     raised
-   - if the result is finite and nonzero and errno == ERANGE then
-     OverflowError is raised
-
-   The last rule is used to catch overflow on platforms which follow
-   C89 but for which HUGE_VAL is not an infinity.
-
-   For most two-argument functions (fmod, hypot)
-   these rules are enough to ensure that Python's functions behave as
-   specified in 'Annex F' of the C99 standard, with the 'invalid' and
-   'divide-by-zero' floating-point exceptions mapping to Python's
-   ValueError and the 'overflow' floating-point exception mapping to
-   OverflowError.
+   math_2ne is used to wrap a libm function func that takes two double
+   arguments and returns a double, when the function being wrapped is
+   known NOT to need error checking (i.e., no overflow, invalid, or
+   divide-by-zero is possible).
 */
-
-static PyObject *
-math_2(PyObject *const *args, Py_ssize_t nargs,
-       double (*func) (double, double), const char *funcname)
-{
-    double x, y, r;
-    if (!_PyArg_CheckPositional(funcname, nargs, 2, 2)) {
-        return NULL;
-    }
-    x = PyFloat_AsDouble(args[0]);
-    if (x == -1.0 && PyErr_Occurred()) {
-        return NULL;
-    }
-    y = PyFloat_AsDouble(args[1]);
-    if (y == -1.0 && PyErr_Occurred()) {
-        return NULL;
-    }
-    errno = 0;
-    r = (*func)(x, y);
-    if (isnan(r)) {
-        if (!isnan(x) && !isnan(y))
-            errno = EDOM;
-        else
-            errno = 0;
-    }
-    else if (isinf(r)) {
-        if (isfinite(x) && isfinite(y))
-            errno = ERANGE;
-        else
-            errno = 0;
-    }
-    if (errno && is_error(r, 1))
-        return NULL;
-    else
-        return PyFloat_FromDouble(r);
-}
-
-/* variant of math_2, to be used when the function being wrapped is known NOT
-   to need error checking (i.e., no overflow, invalid, or divide-by-zero).  */
 
 static PyObject *
 math_2ne(PyObject *const *args, Py_ssize_t nargs,
@@ -1105,12 +952,6 @@ math_2ne(PyObject *const *args, Py_ssize_t nargs,
 #define FUNC1AD(funcname, func, docstring, err_msg)                     \
     static PyObject * math_##funcname(PyObject *self, PyObject *args) { \
         return math_1a(args, func, err_msg);                            \
-    }\
-    PyDoc_STRVAR(math_##funcname##_doc, docstring);
-
-#define FUNC2(funcname, func, docstring) \
-    static PyObject * math_##funcname(PyObject *self, PyObject *const *args, Py_ssize_t nargs) { \
-        return math_2(args, nargs, func, #funcname); \
     }\
     PyDoc_STRVAR(math_##funcname##_doc, docstring);
 
@@ -1333,12 +1174,6 @@ FUNC1D(log1p, m_log1p, 0,
       "Return the natural logarithm of 1+x (base e).\n\n"
       "The result is computed in a way which is accurate for x near zero.",
       "expected argument value > -1, got %s")
-FUNC2(remainder, m_remainder,
-      "remainder($module, x, y, /)\n--\n\n"
-      "Difference between x and the closest integer multiple of y.\n\n"
-      "Return x - n*y where n*y is the closest integer multiple of y.\n"
-      "In the case where x is exactly halfway between two multiples of\n"
-      "y, the nearest even value of n is used. The result is always exact.")
 
 /*[clinic input]
 math.signbit
@@ -2002,6 +1837,123 @@ math_fmod_impl(PyObject *module, double x, double y)
     else
         return PyFloat_FromDouble(r);
 }
+
+
+/*[clinic input]
+math.remainder
+
+    x: double
+    y: double
+    /
+
+Return the difference of x and the closest integer multiple of y.
+
+This is the IEEE 754-style remainder operation, returning x - n*y,
+where n*y is the integer multiple of y nearest x.  The result is
+always exact.  In the case where x is exactly halfway between two
+multiples of y, the nearest even value of n is used.
+[clinic start generated code]*/
+
+static PyObject *
+math_remainder_impl(PyObject *module, double x, double y)
+/*[clinic end generated code: output=3731f0be1ed96ed8 input=f14404f16d69cdbd]*/
+{
+    /* Deal with most common case first. */
+    if (isfinite(x) && isfinite(y)) {
+        double absx, absy, c, m, r;
+
+        if (y == 0.0) {
+            goto invalid_label;
+        }
+
+        /* These function calls will not set errno.  In particular, fmod(x, y)
+           can only raise "invalid" for x infinite or y zero.  */
+        absx = fabs(x);
+        absy = fabs(y);
+        m = fmod(absx, absy);
+
+        /*
+           Warning: some subtlety here. What we *want* to know at this point is
+           whether the remainder m is less than, equal to, or greater than half
+           of absy. However, we can't do that comparison directly because we
+           can't be sure that 0.5*absy is representable (the multiplication
+           might incur precision loss due to underflow). So instead we compare
+           m with the complement c = absy - m: m < 0.5*absy if and only if m <
+           c, and so on. The catch is that absy - m might also not be
+           representable, but it turns out that it doesn't matter:
+
+           - if m > 0.5*absy then absy - m is exactly representable, by
+             Sterbenz's lemma, so m > c
+           - if m == 0.5*absy then again absy - m is exactly representable
+             and m == c
+           - if m < 0.5*absy then either (i) 0.5*absy is exactly representable,
+             in which case 0.5*absy < absy - m, so 0.5*absy <= c and hence m <
+             c, or (ii) absy is tiny, either subnormal or in the lowest normal
+             binade. Then absy - m is exactly representable and again m < c.
+        */
+
+        c = absy - m;
+        if (m < c) {
+            r = m;
+        }
+        else if (m > c) {
+            r = -c;
+        }
+        else {
+            /*
+               Here absx is exactly halfway between two multiples of absy,
+               and we need to choose the even multiple. x now has the form
+
+                   absx = n * absy + m
+
+               for some integer n (recalling that m = 0.5*absy at this point).
+               If n is even we want to return m; if n is odd, we need to
+               return -m.
+
+               So
+
+                   0.5 * (absx - m) = (n/2) * absy
+
+               and now reducing modulo absy gives us:
+
+                                                  | m, if n is odd
+                   fmod(0.5 * (absx - m), absy) = |
+                                                  | 0, if n is even
+
+               Now m - 2.0 * fmod(...) gives the desired result: m
+               if n is even, -m if m is odd.
+
+               Note that all steps in fmod(0.5 * (absx - m), absy)
+               will be computed exactly, with no rounding error
+               introduced.
+
+               Note that (absx - m) is finite and absy is nonzero,
+               so the call to fmod will not set errno.
+            */
+            assert(m == c);
+            r = m - 2.0 * fmod(0.5 * (absx - m), absy);
+        }
+        return PyFloat_FromDouble(copysign(1.0, x) * r);
+    }
+
+    /* Special values. */
+    if (isnan(x)) {
+        return PyFloat_FromDouble(x);
+    }
+    if (isnan(y)) {
+        return PyFloat_FromDouble(y);
+    }
+    if (isinf(x)) {
+        goto invalid_label;
+    }
+    assert(isinf(y));
+    return PyFloat_FromDouble(x);
+
+  invalid_label:
+    PyErr_SetString(PyExc_ValueError, "math domain error");
+    return NULL;
+}
+
 
 /*
 Given a *vec* of values, compute the vector norm:
@@ -3307,7 +3259,7 @@ static PyMethodDef math_methods[] = {
     MATH_MODF_METHODDEF
     MATH_POW_METHODDEF
     MATH_RADIANS_METHODDEF
-    {"remainder",       _PyCFunction_CAST(math_remainder), METH_FASTCALL,  math_remainder_doc},
+    MATH_REMAINDER_METHODDEF
     MATH_SIGNBIT_METHODDEF
     {"sin",             math_sin,       METH_O,         math_sin_doc},
     {"sinh",            math_sinh,      METH_O,         math_sinh_doc},
