@@ -3637,6 +3637,20 @@ class ScreenTests(NewtermTestBase):
 
     @unittest.skipUnless(hasattr(curses, 'new_prescr'),
                          'requires curses.new_prescr()')
+    def test_failed_newterm_after_new_prescr(self):
+        # A failed newterm() also consumes the pending new_prescr() screen,
+        # so new_prescr() returns a new one and the next newterm() works.
+        s = self.make_pty()
+        pre = curses.new_prescr()
+        with self.assertRaises(curses.error):
+            curses.newterm('no-such-terminal', s, s)
+        self.assertIsNot(curses.new_prescr(), pre)
+        screen = curses.newterm('xterm', s, s)
+        screen.stdscr.addstr(0, 0, 'x')
+        screen.stdscr.refresh()
+
+    @unittest.skipUnless(hasattr(curses, 'new_prescr'),
+                         'requires curses.new_prescr()')
     def test_initscr_after_new_prescr_keeps_screen_alive(self):
         # initscr() adopts the SCREEN created by new_prescr().  Dropping the
         # pre-screen wrapper must not delete the live screen.

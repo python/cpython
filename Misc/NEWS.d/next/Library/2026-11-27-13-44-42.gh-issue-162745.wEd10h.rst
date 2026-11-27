@@ -1,0 +1,2 @@
+Fix :func:`curses.new_prescr` returning a stale screen after
+:func:`curses.newterm` fails.
