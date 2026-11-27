@@ -917,6 +917,14 @@ _Py_atomic_load_ssize_relaxed(const Py_ssize_t *obj)
                                 memory_order_relaxed);
 }
 
+static inline size_t
+_Py_atomic_load_size_relaxed(const size_t *obj)
+{
+    _Py_USING_STD;
+    return atomic_load_explicit((const _Atomic(size_t)*)obj,
+                                memory_order_relaxed);
+}
+
 static inline void*
 _Py_atomic_load_ptr_relaxed(const void *obj)
 {
@@ -1154,6 +1162,14 @@ _Py_atomic_store_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value)
 {
     _Py_USING_STD;
     atomic_store_explicit((_Atomic(Py_ssize_t)*)obj, value,
+                          memory_order_relaxed);
+}
+
+static inline void
+_Py_atomic_store_size_relaxed(size_t *obj, size_t value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(size_t)*)obj, value,
                           memory_order_relaxed);
 }
 
