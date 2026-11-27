@@ -413,8 +413,9 @@ struct _stoptheworld_state {
     PyMutex mutex;       // Serializes stop-the-world attempts.
 
     // NOTE: The below fields are protected by HEAD_LOCK(runtime), not by the
-    // above mutex.
-    bool requested;      // Set when a pause is requested.
+    // above mutex. `requested` is written atomically so that detaching
+    // threads can check it without holding HEAD_LOCK.
+    int requested;       // Set when a pause is requested.
     bool world_stopped;  // Set when the world is stopped.
     bool is_global;      // Set when contained in PyRuntime struct.
 

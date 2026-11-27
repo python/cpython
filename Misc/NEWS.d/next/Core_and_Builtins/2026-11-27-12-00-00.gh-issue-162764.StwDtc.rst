@@ -1,0 +1,5 @@
+Reduce the latency of stop-the-world pauses in the :term:`free-threaded build`.
+Threads that detach (for example, to block on a lock or around a blocking
+call) while a pause is pending now notify the requesting thread, and threads
+waiting to re-attach after a previous pause are asked to stop.  Previously,
+such pauses could be delayed by about one millisecond.
