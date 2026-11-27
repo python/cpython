@@ -1,0 +1,4 @@
+When a type's internal :term:`method resolution order` data is cleared as
+the type  is being torn down during garbage collection,
+:c:func:`PyType_GetModuleByToken` and :c:func:`PyType_GetModuleByDef` can
+now still retrieve its module.
