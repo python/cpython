@@ -1390,7 +1390,11 @@ class PunycodeTest(unittest.TestCase):
             (b"Proprostnemluvesky-&uyb24dma41a", "strict", UnicodeDecodeError("punycode", b"", 19, 20, "")),
             (b"Proprostnemluvesky-uyb24d&ma41a", "strict", UnicodeDecodeError("punycode", b"", 25, 26, "")),
             (b"Proprostnemluvesky-uyb24dma41a&", "strict", UnicodeDecodeError("punycode", b"", 30, 31, "")),
+            # A delimiter not preceded by any basic code point (RFC 3492, 6.2)
+            (b"-", "strict", UnicodeDecodeError("punycode", b"", 0, 1, "")),
+            (b"-80a1acny", "strict", UnicodeDecodeError("punycode", b"", 0, 1, "")),
             (b"xn--w&", "ignore", "xn-"),
+            (b"-80a1acny", "ignore", ""),
         ]
         for puny, errors, expected in testcases:
             with self.subTest(puny=puny, errors=errors):
@@ -1667,6 +1671,8 @@ class IDNACodecTest(unittest.TestCase):
         (b"xn--pythn-&mua.org", UnicodeDecodeError("idna", b"xn--pythn-&mua.org", 10, 11, "")),
         (b"xn--pythn-m&ua.org", UnicodeDecodeError("idna", b"xn--pythn-m&ua.org", 11, 12, "")),
         (b"xn--pythn-mua&.org", UnicodeDecodeError("idna", b"xn--pythn-mua&.org", 13, 14, "")),
+        (b"bugs.xn--pythn-&mua.org", UnicodeDecodeError("idna", b"bugs.xn--pythn-&mua.org", 15, 16, "")),
+        (b".xn--pythn-&mua.org", UnicodeDecodeError("idna", b".xn--pythn-&mua.org", 11, 12, "")),
     ]
     invalid_encode_testcases = [
         (f"foo.{'\xff'*60}", UnicodeEncodeError("idna", f"foo.{'\xff'*60}", 4, 64, "")),
@@ -1785,6 +1791,22 @@ class IDNACodecTest(unittest.TestCase):
         self.assertEqual(decoder.decode(b"ple-9ta.o", ), "\xe4xample.")
         self.assertEqual(decoder.decode(b"rg."), "org.")
         self.assertEqual(decoder.decode(b"", True), "")
+
+    def test_incremental_decode_leading_empty_labels(self):
+        # The dot after an empty label at the start of the input has to be
+        # counted as consumed, or it is decoded again by the next call.
+        for data in b".python.org", b"..python.org.", b"..", b"." * 100:
+            with self.subTest(data=data):
+                decoder = codecs.getincrementaldecoder("idna")()
+                result = decoder.decode(data)
+                self.assertNotIn(b".", decoder.getstate()[0])
+                result += decoder.decode(b"", True)
+                self.assertEqual(result, data.decode("idna"))
+                self.assertEqual(decoder.getstate(), (b"", 0))
+                self.assertEqual(decoder.decode(b"", True), "")
+
+        with io.TextIOWrapper(io.BytesIO(b"." * 100), encoding="idna") as f:
+            self.assertEqual(f.readline(), "." * 100)
 
     def test_incremental_decode_invalid(self):
         iterdecode_testcases = [
@@ -3250,6 +3272,27 @@ class TransformCodecTest(unittest.TestCase):
     def test_uu_invalid(self):
         # Missing "begin" line
         self.assertRaises(ValueError, codecs.decode, b"", "uu-codec")
+
+    def test_uu_begin_line(self):
+        # Only a "begin <octal mode> [<filename>]" line starts the encoded
+        # data; other lines starting with "begin" are leading text.
+        block = codecs.encode(b"data", "uu-codec")
+        other = codecs.encode(b"other", "uu-codec").partition(b"\n")[2]
+        for line in (b"begin 666 name", b"begin 0 name with spaces",
+                     b"begin 644 name\r", b"begin 666"):
+            with self.subTest(line=line):
+                encoded = line + b"\n" + other
+                self.assertEqual(codecs.decode(encoded + block, "uu-codec"),
+                                 b"other")
+        for line in (b"beginning of the text", b"begin", b"begin ",
+                     b"begin mode name", b"begin 888 name",
+                     b"beginx 666 name", b"begin-base64 666 name"):
+            with self.subTest(line=line):
+                encoded = line + b"\n" + other
+                self.assertRaises(ValueError, codecs.decode,
+                                  encoded, "uu-codec")
+                self.assertEqual(codecs.decode(encoded + block, "uu-codec"),
+                                 b"data")
 
 
 # The codec system tries to add notes to exceptions in order to ensure

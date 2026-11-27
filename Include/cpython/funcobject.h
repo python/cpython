@@ -148,9 +148,9 @@ PyAPI_FUNC(PyObject *) PyStaticMethod_New(PyObject *);
     V(MODIFY_QUALNAME)
 
 typedef enum {
-    #define PY_DEF_EVENT(EVENT) PyFunction_EVENT_##EVENT,
-    PY_FOREACH_FUNC_EVENT(PY_DEF_EVENT)
-    #undef PY_DEF_EVENT
+    #define _Py_DEF_EVENT(EVENT) PyFunction_EVENT_##EVENT,
+    PY_FOREACH_FUNC_EVENT(_Py_DEF_EVENT)
+    #undef _Py_DEF_EVENT
 } PyFunction_WatchEvent;
 
 /*

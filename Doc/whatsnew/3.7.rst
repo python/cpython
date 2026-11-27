@@ -248,7 +248,7 @@ locales are available on the running system, it has the downside of having no
 effect on extension modules (such as GNU ``readline``), child processes running
 non-Python applications, and child processes running older versions of Python.
 To reduce the risk of corrupting text data when communicating with such
-components, Python 3.7 also implements :ref:`whatsnew37-pep540`).
+components, Python 3.7 also implements :ref:`whatsnew37-pep538`.
 
 The UTF-8 mode is enabled by default when the locale is ``C`` or ``POSIX``, and
 the :pep:`538` locale coercion feature fails to change it to a UTF-8 based
@@ -1085,7 +1085,7 @@ itertools
 
 :func:`itertools.islice` now accepts
 :meth:`integer-like objects <object.__index__>` as start, stop,
-and slice arguments.
+and step arguments.
 (Contributed by Will Roberts in :issue:`30537`.)
 
 

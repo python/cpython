@@ -1777,6 +1777,8 @@ condition.
       0 ** 0
       x ** (non-integer)
       x ** Infinity
+      NaN >= 0
+      NaN < 0
 
 
 .. class:: Overflow
@@ -1905,6 +1907,8 @@ expanding the precision sufficiently to avoid loss of significance:
    >>> u * (v+w)
    Decimal('0.0060000')
 
+
+.. _decimal-notes-specials:
 
 Special values
 ^^^^^^^^^^^^^^
@@ -2266,7 +2270,7 @@ applied to the *result* of the computation::
    Decimal('3.1416')
    >>> pi - Decimal('0.00005')        # Subtract unrounded numbers, then round
    Decimal('3.1415')
-   >>> pi + 0 - Decimal('0.00005').   # Intermediate values are rounded
+   >>> pi + 0 - Decimal('0.00005')    # Intermediate values are rounded
    Decimal('3.1416')
 
 Q: Some decimal values always print with exponential notation.  Is there a way

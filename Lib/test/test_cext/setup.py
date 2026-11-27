@@ -42,6 +42,9 @@ if not MSVC:
 
         # Ask for strict(er) compliance with the standard
         '-pedantic-errors',
+
+        # gh-154643: Headers should not use undefined macros in #if
+        '-Werror=undef',
     ]
     if not support.Py_GIL_DISABLED:
         PUBLIC_CFLAGS.append(
@@ -94,6 +97,9 @@ if not MSVC:
 
         # We also use `long long`, a C++11 feature we can enable individually.
         '-Wno-long-long',
+
+        # gh-154643: Headers should not use undefined macros in #if
+        '-Werror=undef',
     ]
     INTERNAL_CXXFLAGS = [
         # Do not complain about unused parameteres in the internal C API

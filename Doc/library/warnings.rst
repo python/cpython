@@ -188,6 +188,8 @@ class, to turn a warning into an error we simply raise ``category(message)``.
 If a warning is reported and doesn't match any registered filter then the
 "default" action is applied (hence its name).
 
+.. versionchanged:: 3.15
+   Added regular expression support for *message* and *module*.
 
 
 .. _repeated-warning-suppression-criteria:

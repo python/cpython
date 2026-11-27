@@ -1300,6 +1300,7 @@ PyDictProxy_New(PyObject *mapping)
 }
 
 /*[clinic input]
+@vectorcall
 @classmethod
 mappingproxy.__new__ as mappingproxy_new
 
@@ -1310,7 +1311,7 @@ Read-only proxy of a mapping.
 
 static PyObject *
 mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping)
-/*[clinic end generated code: output=65f27f02d5b68fa7 input=c156df096ef7590c]*/
+/*[clinic end generated code: output=65f27f02d5b68fa7 input=7388846480c052d2]*/
 {
     return PyDictProxy_New(mapping);
 }
@@ -1816,6 +1817,7 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
 }
 
 /*[clinic input]
+@vectorcall
 property.__init__ as property_init
 
     fget: object(c_default="NULL") = None
@@ -1855,7 +1857,7 @@ class C(object):
 static int
 property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
                    PyObject *fdel, PyObject *doc)
-/*[clinic end generated code: output=01a960742b692b57 input=dfb5dbbffc6932d5]*/
+/*[clinic end generated code: output=01a960742b692b57 input=ea89304c10df241b]*/
 {
     if (fget == Py_None)
         fget = NULL;
@@ -2007,7 +2009,11 @@ static int
 property_clear(PyObject *self)
 {
     propertyobject *pp = (propertyobject *)self;
+    Py_CLEAR(pp->prop_get);
+    Py_CLEAR(pp->prop_set);
+    Py_CLEAR(pp->prop_del);
     Py_CLEAR(pp->prop_doc);
+    Py_CLEAR(pp->prop_name);
     return 0;
 }
 
@@ -2053,6 +2059,7 @@ PyTypeObject PyDictProxy_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     mappingproxy_new,                           /* tp_new */
+    .tp_vectorcall = mappingproxy_vectorcall,
 };
 
 PyTypeObject PyProperty_Type = {
@@ -2097,4 +2104,5 @@ PyTypeObject PyProperty_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
+    .tp_vectorcall = property_vectorcall,
 };

@@ -11,13 +11,13 @@
 /*[clinic input]
 class typevar "typevarobject *" "&_PyTypeVar_Type"
 class paramspec "paramspecobject *" "&_PyParamSpec_Type"
-class paramspecargs "paramspecattrobject *" "&_PyParamSpecArgs_Type"
-class paramspeckwargs "paramspecattrobject *" "&_PyParamSpecKwargs_Type"
+class ParamSpecArgs "paramspecattrobject *" "&_PyParamSpecArgs_Type"
+class ParamSpecKwargs "paramspecattrobject *" "&_PyParamSpecKwargs_Type"
 class typevartuple "typevartupleobject *" "&_PyTypeVarTuple_Type"
-class typealias "typealiasobject *" "&_PyTypeAlias_Type"
+class TypeAliasType "typealiasobject *" "&_PyTypeAlias_Type"
 class Generic "PyObject *" "&PyGeneric_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=aa86741931a0f55c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=009c4108cbaa37f7]*/
 
 typedef struct {
     PyObject_HEAD
@@ -1025,8 +1025,9 @@ paramspecargs_repr(PyObject *self)
 
 
 /*[clinic input]
+@vectorcall
 @classmethod
-paramspecargs.__new__ as paramspecargs_new
+ParamSpecArgs.__new__ as paramspecargs_new
 
     origin: object
 
@@ -1035,7 +1036,7 @@ Create a ParamSpecArgs object.
 
 static PyObject *
 paramspecargs_new_impl(PyTypeObject *type, PyObject *origin)
-/*[clinic end generated code: output=9a1463dc8942fe4e input=3596a0bb6183c208]*/
+/*[clinic end generated code: output=9a1463dc8942fe4e input=415d6a7945b33d22]*/
 {
     return (PyObject *)paramspecattr_new(type, origin);
 }
@@ -1072,6 +1073,7 @@ static PyType_Slot paramspecargs_slots[] = {
     {Py_tp_doc, (void *)paramspecargs_doc},
     {Py_tp_methods, paramspecargs_methods},
     {Py_tp_new, paramspecargs_new},
+    {Py_tp_vectorcall, paramspecargs_vectorcall},
     {Py_tp_dealloc, paramspecattr_dealloc},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
@@ -1105,8 +1107,9 @@ paramspeckwargs_repr(PyObject *self)
 }
 
 /*[clinic input]
+@vectorcall
 @classmethod
-paramspeckwargs.__new__ as paramspeckwargs_new
+ParamSpecKwargs.__new__ as paramspeckwargs_new
 
     origin: object
 
@@ -1115,7 +1118,7 @@ Create a ParamSpecKwargs object.
 
 static PyObject *
 paramspeckwargs_new_impl(PyTypeObject *type, PyObject *origin)
-/*[clinic end generated code: output=277b11967ebaf4ab input=981bca9b0cf9e40a]*/
+/*[clinic end generated code: output=277b11967ebaf4ab input=40bc05ed19d5379a]*/
 {
     return (PyObject *)paramspecattr_new(type, origin);
 }
@@ -1152,6 +1155,7 @@ static PyType_Slot paramspeckwargs_slots[] = {
     {Py_tp_doc, (void *)paramspeckwargs_doc},
     {Py_tp_methods, paramspeckwargs_methods},
     {Py_tp_new, paramspeckwargs_new},
+    {Py_tp_vectorcall, paramspeckwargs_vectorcall},
     {Py_tp_dealloc, paramspecattr_dealloc},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
@@ -1899,14 +1903,23 @@ typealias_dealloc(PyObject *self)
 static PyObject *
 typealias_get_value(typealiasobject *ta)
 {
-    if (ta->value != NULL) {
-        return Py_NewRef(ta->value);
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(ta);
+    result = Py_XNewRef(ta->value);
+    Py_END_CRITICAL_SECTION();
+    if (result != NULL) {
+        return result;
     }
-    PyObject *result = PyObject_CallNoArgs(ta->compute_value);
+    result = PyObject_CallNoArgs(ta->compute_value);
     if (result == NULL) {
         return NULL;
     }
+    PyObject *old_value;
+    Py_BEGIN_CRITICAL_SECTION(ta);
+    old_value = ta->value;
     ta->value = Py_NewRef(result);
+    Py_END_CRITICAL_SECTION();
+    Py_XDECREF(old_value);
     return result;
 }
 
@@ -2110,13 +2123,13 @@ typealias_clear(PyObject *op)
 }
 
 /*[clinic input]
-typealias.__reduce__ as typealias_reduce
+TypeAliasType.__reduce__ as typealias_reduce
 
 [clinic start generated code]*/
 
 static PyObject *
 typealias_reduce_impl(typealiasobject *self)
-/*[clinic end generated code: output=913724f92ad3b39b input=4f06fbd9472ec0f1]*/
+/*[clinic end generated code: output=913724f92ad3b39b input=6538d1f206634f9a]*/
 {
     return Py_NewRef(self->name);
 }
@@ -2140,8 +2153,9 @@ static PyMethodDef typealias_methods[] = {
 
 
 /*[clinic input]
+@vectorcall
 @classmethod
-typealias.__new__ as typealias_new
+TypeAliasType.__new__ as typealias_new
 
     name: object(subclass_of="&PyUnicode_Type")
     value: object
@@ -2155,7 +2169,7 @@ Create a TypeAliasType.
 static PyObject *
 typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
                    PyObject *type_params, PyObject *qualname)
-/*[clinic end generated code: output=b7f6d9f1c577cd9c input=6516623275f87b5e]*/
+/*[clinic end generated code: output=b7f6d9f1c577cd9c input=31d9ae8db4ea742b]*/
 {
     if (type_params != NULL && !PyTuple_Check(type_params)) {
         PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");
@@ -2236,6 +2250,7 @@ PyTypeObject _PyTypeAlias_Type = {
     .tp_alloc = PyType_GenericAlloc,
     .tp_dealloc = typealias_dealloc,
     .tp_new = typealias_new,
+    .tp_vectorcall = typealias_vectorcall,
     .tp_free = PyObject_GC_Del,
     .tp_iter = unpack_iter,
     .tp_traverse = typealias_traverse,
@@ -2359,6 +2374,9 @@ _Py_subscript_generic(PyThreadState* unused, PyObject *params)
         return NULL;
     }
     params = unpack_typevartuples(params);
+    if (params == NULL) {
+        return NULL;
+    }
     PyObject *args[2] = {(PyObject *)interp->cached_objects.generic_type, params};
     PyObject *result = call_typing_func_object("_GenericAlias", args, 2);
     Py_DECREF(params);
