@@ -1,4 +1,3 @@
-import array
 import sys
 import threading
 import unittest
