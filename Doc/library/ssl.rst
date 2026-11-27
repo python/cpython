@@ -411,7 +411,8 @@ Certificate handling
    same format as used for the *cafile* parameter in
    :meth:`SSLContext.load_verify_locations`.  The call will attempt to validate the
    server certificate against that set of root certificates, and will fail
-   if the validation attempt fails.  A timeout can be specified with the
+   if the validation attempt fails or the certificate hostname does not match
+   the server hostname.  A timeout can be specified with the
    ``timeout`` parameter.
 
    .. versionchanged:: 3.3
@@ -423,6 +424,11 @@ Certificate handling
 
    .. versionchanged:: 3.10
       The *timeout* parameter was added.
+
+   .. versionchanged:: next
+      The function now raises :exc:`SSLCertVerificationError` if *ca_certs* is
+      specified but the certificate hostname does not match the server
+      hostname.
 
 .. function:: DER_cert_to_PEM_cert(der_cert_bytes)
 
