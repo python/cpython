@@ -139,6 +139,13 @@ Other language changes
   :func:`asyncio.print_call_graph` can see through them into the awaited code.
   (Contributed by Kumar Aditya in :gh:`157361`.)
 
+* Functions that take timestamp or timeout arguments
+  no longer convert numbers other than integers and floats
+  (such as :class:`~decimal.Decimal` and :class:`~fractions.Fraction`)
+  to :class:`float`.
+  They are converted exactly, which avoids the precision loss.
+  (Contributed by Serhiy Storchaka in :gh:`67795`.)
+
 
 Default interactive shell
 =========================
