@@ -1,0 +1,2 @@
+Fix coverage percentages reported by :mod:`trace` when
+:option:`!--summary` is used without :option:`!--missing`.

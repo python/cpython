@@ -279,6 +279,13 @@ class CoverageResults:
             n_hits, n_lines = self.write_results_file(coverpath, source,
                                                       lnotab, count, encoding)
             if summary and n_lines:
+                if not show_missing:
+                    executable = _find_executable_linenos(filename)
+                    n_lines += sum(
+                        lineno in executable and lineno not in count
+                        and PRAGMA_NOCOVER not in line
+                        for lineno, line in enumerate(source, 1)
+                    )
                 sums[modulename] = n_lines, n_hits, modulename, filename
 
         if summary and sums:

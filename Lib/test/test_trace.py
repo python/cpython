@@ -487,6 +487,31 @@ class TestCoverageCommandLineOutput(unittest.TestCase):
                 "           print('unreachable')\n"
             )
 
+    def test_summary_without_missing(self):
+        for options in ([], ['--missing']):
+            with self.subTest(options=options):
+                _, stdout, _ = assert_python_ok(
+                    '-m', 'trace', '--count', '--summary', *options, self.codefile)
+                self.assertIn(b'3   66.7%', stdout)
+                with open(self.coverfile, encoding='iso-8859-15') as f:
+                    self.assertEqual('>>>>>>' in f.read(), bool(options))
+
+    def test_summary_preserves_results_file_override(self):
+        seen = []
+
+        class Results(trace.CoverageResults):
+            def write_results_file(self, path, lines, lnotab, lines_hit, encoding=None):
+                seen.append(bool(lnotab))
+                return super().write_results_file(path, lines, lnotab, lines_hit, encoding)
+
+        counts = {(self.codefile, 2): 1, (self.codefile, 3): 1}
+        results = Results(counts)
+        results.write_results()
+        with captured_stdout() as stdout:
+            results.write_results(show_missing=False, summary=True)
+        self.assertEqual(seen, [True, False])
+        self.assertIn('3   66.7%', stdout.getvalue())
+
     def test_cover_files_written_with_highlight(self):
         argv = '-m trace --count --missing'.split() + [self.codefile]
         status, stdout, stderr = assert_python_ok(*argv)
