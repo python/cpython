@@ -1679,12 +1679,14 @@ type_set_abstractmethods(PyObject *tp, PyObject *value, void *Py_UNUSED(closure)
     }
 
     BEGIN_TYPE_LOCK();
-    types_stop_world();
-    if (abstract)
-        type_add_flags(type, Py_TPFLAGS_IS_ABSTRACT);
-    else
-        type_clear_flags(type, Py_TPFLAGS_IS_ABSTRACT);
-    types_start_world();
+    if (abstract != ((type->tp_flags & Py_TPFLAGS_IS_ABSTRACT) != 0)) {
+        types_stop_world();
+        if (abstract)
+            type_add_flags(type, Py_TPFLAGS_IS_ABSTRACT);
+        else
+            type_clear_flags(type, Py_TPFLAGS_IS_ABSTRACT);
+        types_start_world();
+    }
     // Invalidate the version tag after update, while TYPE_LOCK is
     // still held.
     ASSERT_TYPE_LOCK_HELD();
