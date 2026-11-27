@@ -314,6 +314,9 @@ On Free Threading, it's more efficient than the ``PyList`` C API to create a
    On success, return ``0``.
    On error, set an exception, leave the builder unchanged, and return ``-1``.
 
+   If resizing the builder fails (memory allocation failure), the builder is
+   restored to its previous state: discard added items.
+
 .. c:function:: int PyListBuilder_ExtendArraySteal(PyListBuilder *builder, PyObject *const *items, Py_ssize_t nitem)
 
    Similar to :c:func:`PyListBuilder_ExtendArray`, but :term:`steal` references
