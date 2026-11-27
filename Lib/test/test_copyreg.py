@@ -49,6 +49,11 @@ class CopyRegTestCase(unittest.TestCase):
         import copy
         self.assertEqual(True, copy.copy(True))
 
+    def test_proxy_not_subclassable(self):
+        with self.assertRaisesRegex(TypeError, 'not an acceptable base type'):
+            class P(copyreg.Proxy):
+                pass
+
     def test_extension_registry(self):
         mod, func, code = 'junk1 ', ' junk2', 0xabcd
         e = ExtensionSaver(code)

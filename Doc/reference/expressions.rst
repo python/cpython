@@ -2129,12 +2129,15 @@ built-in types.
   involved, they compare mathematically (algorithmically) correct without loss
   of precision.
 
-  The not-a-number values ``float('NaN')`` and ``decimal.Decimal('NaN')`` are
+  The not-a-number floating-point numbers, like ``float('NaN')``, are
   special.  Any ordered comparison of a number to a not-a-number value is false.
   A counter-intuitive implication is that not-a-number values are not equal to
   themselves.  For example, if ``x = float('NaN')``, ``3 < x``, ``x < 3`` and
   ``x == x`` are all false, while ``x != x`` is true.  This behavior is
-  compliant with IEEE 754.
+  compliant with IEEE 754.  Similar behavior holds for
+  :class:`decimal.Decimal`'s not-a-number values, like ``Decimal('NaN')``.
+  Refer to the :ref:`Special values <decimal-notes-specials>` section
+  of the :mod:`decimal` documentation.
 
 * ``None`` and :data:`NotImplemented` are singletons.  :PEP:`8` advises that
   comparisons for singletons should always be done with ``is`` or ``is not``,
@@ -2422,6 +2425,15 @@ and can appear as a sub-expression.
 The expression ``x if C else y`` first evaluates the condition, *C* rather than *x*.
 If *C* is true, *x* is evaluated and its value is returned; otherwise, *y* is
 evaluated and its value is returned.
+
+Conditional expressions group from right to left, so
+``a if b else c if d else e`` means ``a if b else (c if d else e)``::
+
+   >>> n = 2
+   >>> print('positive' if n > 0
+   ...       else 'negative' if n < 0
+   ...       else 'zero')
+   positive
 
 See :pep:`308` for more details about conditional expressions.
 
