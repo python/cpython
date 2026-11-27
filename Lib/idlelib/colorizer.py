@@ -21,6 +21,7 @@ def any(name, alternates):
 
 def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
+    kw_op = r"\s(?P<KEYWORD_OP>\?\?)\s"
     match_softkw = (
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<MATCH_SOFTKW>match)\b" +
@@ -70,7 +71,7 @@ def make_pat():
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
     prog = re.compile("|".join([
                                 type_softkw, builtin, comment, string, kw,
-                                match_softkw, case_default,
+                                kw_op, match_softkw, case_default,
                                 case_softkw_and_pattern, lazy_softkw,
                                 any("SYNC", [r"\n"]),
                                ]),
@@ -181,6 +182,7 @@ class ColorDelegator(Delegator):
         self.tagdefs = {
             "COMMENT": idleConf.GetHighlight(theme, "comment"),
             "KEYWORD": idleConf.GetHighlight(theme, "keyword"),
+            "KEYWORD_OP": idleConf.GetHighlight(theme, "keyword"),
             "BUILTIN": idleConf.GetHighlight(theme, "builtin"),
             "STRING": idleConf.GetHighlight(theme, "string"),
             "DEFINITION": idleConf.GetHighlight(theme, "definition"),

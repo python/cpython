@@ -157,6 +157,14 @@ class TestUtils(TestCase):
                     ("1", "number"),
                 ],
             ),
+            (
+                "a and b or c ?? d",
+                [
+                    ("and", "keyword"),
+                    ("or", "keyword"),
+                    ("??", "keyword"),
+                ],
+            ),
         ]
         for code, expected_highlights in cases:
             with self.subTest(code=code):

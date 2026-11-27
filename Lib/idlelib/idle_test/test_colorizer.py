@@ -564,6 +564,16 @@ class ColorDelegatorTest(unittest.TestCase):
         self._assert_highlighting('lazy = 1', {})
         self._assert_highlighting('lazy foo', {})
 
+    def test_boolean_operators(self):
+        self._assert_highlighting('a and b',
+                                  {'KEYWORD': [('1.2', '1.5')]})
+        self._assert_highlighting('a or b',
+                                  {'KEYWORD': [('1.2', '1.4')]})
+
+        # ?? new in 3.16
+        self._assert_highlighting('a ?? b',
+                                  {'KEYWORD_OP': [('1.2', '1.4')]})
+
     def test_long_multiline_string(self):
         source = textwrap.dedent('''\
             """a

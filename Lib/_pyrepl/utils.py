@@ -226,12 +226,15 @@ def gen_colors_from_token_stream(
                 span = Span.from_token(token, line_lengths)
                 yield ColorSpan(span, "number")
             case T.OP:
+                tag = "op"
                 if token.string in "([{":
                     bracket_level += 1
                 elif token.string in ")]}":
                     bracket_level -= 1
+                elif token.string == "??":
+                    tag = "keyword"
                 span = Span.from_token(token, line_lengths)
-                yield ColorSpan(span, "op")
+                yield ColorSpan(span, tag)
             case T.NAME:
                 if is_def_name:
                     is_def_name = False
