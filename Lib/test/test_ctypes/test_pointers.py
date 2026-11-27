@@ -98,6 +98,19 @@ class PointersTestCase(unittest.TestCase):
         x.value = -99
         self.assertEqual(res.contents.value, -99)
 
+    def test_contents_rejects_spoofed_class(self):
+        # gh-161390: __class__ must not make a non-ctypes object look valid.
+        class Forge:
+            __slots__ = ("a", "b", "c", "d")
+            __class__ = c_int
+
+            def __init__(self):
+                self.a = c_int(7)
+                self.b = self.c = self.d = None
+
+        with self.assertRaises(TypeError):
+            pointer(c_int(1)).contents = Forge()
+
     def test_callbacks_with_pointers(self):
         # a function type receiving a pointer
         PROTOTYPE = CFUNCTYPE(c_int, POINTER(c_int))
