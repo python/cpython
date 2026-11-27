@@ -59,6 +59,8 @@ Stable Application Binary Interface
 For simplicity, this document talks about *extensions*, but the Limited API
 and Stable ABI work the same way for all uses of the API – for example,
 embedding Python.
+When embedding Python on Linux, see :ref:`embedding-python-versions`
+for how to link the application and for limitations.
 
 .. _limited-c-api:
 
@@ -148,6 +150,8 @@ Compiling with ``Py_LIMITED_API`` will then yield an extension that can be
 distributed where a version-specific one is not available – for example,
 for prereleases of an upcoming Python version.
 
+
+.. _limited-api-caveats:
 
 Limited API Caveats
 -------------------
