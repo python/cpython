@@ -593,13 +593,17 @@ class ExtendedInterpolation(Interpolation):
                 if v is None:
                     continue
                 if "$" in v:
+                    if sect == section:
+                        submap = map
+                    else:
+                        submap = dict(parser.items(sect, raw=True))
                     self._interpolate_some(
                         parser,
                         opt,
                         accum,
                         v,
                         sect,
-                        dict(parser.items(sect, raw=True)),
+                        submap,
                         depth + 1,
                     )
                 else:
