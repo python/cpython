@@ -1,2 +1,0 @@
-:func:`pkgutil.resolve_name` gets a new optional, keyword-only argument
-called ``strict``.  The default is ``False`` for backward compatibility.

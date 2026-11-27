@@ -23,7 +23,7 @@ Misc variables:
 """
 
 from types import FunctionType
-from copyreg import dispatch_table
+from copyreg import dispatch_table, Proxy
 from copyreg import _extension_registry, _inverted_registry, _extension_cache
 from itertools import batched
 from functools import partial
@@ -485,6 +485,9 @@ class _Pickler:
         self.write = self.framer.write
         self._write_large_bytes = self.framer.write_large_bytes
         self.memo = {}
+        # Ids of objects reached so far only through weak references; any
+        # left at the end of dump() is an error.  See save_proxy.
+        self._weak_only = set()
         self.proto = int(protocol)
         self.bin = protocol >= 1
         self.fast = 0
@@ -499,6 +502,7 @@ class _Pickler:
         useful when re-using picklers.
         """
         self.memo.clear()
+        self._weak_only.clear()
 
     def dump(self, obj):
         """Write a pickled representation of obj to the open file."""
@@ -512,6 +516,14 @@ class _Pickler:
         if self.proto >= 4:
             self.framer.start_framing()
         self.save(obj)
+        if self._weak_only:
+            # These referents would be collected right after loading.  Report
+            # distinct type names: referents may be numerous and unhashable.
+            names = {_T(self.memo[i][1])
+                     for i in self._weak_only if i in self.memo}
+            raise PicklingError(
+                "cannot pickle weak reference(s) whose referent(s) have no "
+                "strong reference in the pickle: " + ", ".join(sorted(names)))
         self.write(STOP)
         self.framer.end_framing()
 
@@ -559,7 +571,7 @@ class _Pickler:
 
         return GET + repr(i).encode("ascii") + b'\n'
 
-    def save(self, obj, save_persistent_id=True):
+    def save(self, obj, save_persistent_id=True, weak=False):
         self.framer.commit_frame()
 
         # Check for persistent id (defined by a subclass)
@@ -572,7 +584,14 @@ class _Pickler:
         # Check the memo
         x = self.memo.get(id(obj))
         if x is not None:
+            # A strong reference anchors the object: no longer weak-only.
+            if not weak:
+                self._weak_only.discard(id(obj))
             self.write(self.get(x[0]))
+            return
+
+        if type(obj) is Proxy:
+            self.save_proxy(obj)
             return
 
         rv = NotImplemented
@@ -632,6 +651,12 @@ class _Pickler:
         except BaseException as exc:
             exc.add_note(f'when serializing {_T(obj)} object')
             raise
+
+        # A completed non-weak save anchors obj.  Only save_reduce() memoizes
+        # an object after its arguments, so only here can a weak reference to
+        # a still-in-progress obj have tagged it.
+        if not weak:
+            self._weak_only.discard(id(obj))
 
     def persistent_id(self, obj):
         # This exists so a subclass can override it
@@ -1264,6 +1289,19 @@ class _Pickler:
     dispatch[FunctionType] = save_global
     dispatch[type] = save_type
 
+    def save_proxy(self, obj):
+        # A Proxy is pickled as its wrapped object, saved *weakly* (no
+        # anchoring, see save()).  The object is tagged weak-only only after
+        # its whole subtree, so a strong cycle inside it cannot anchor it.
+        # An object already in the memo is anchored or already tracked;
+        # otherwise it stays tagged until a strong save of it.
+        obj = obj.obj
+        i = id(obj)
+        anchored = i in self.memo
+        self.save(obj, weak=True)
+        if not anchored and i in self.memo:
+            self._weak_only.add(i)
+
 
 # Unpickling machinery
 
@@ -1623,11 +1661,7 @@ class _Unpickler:
     def _instantiate(self, klass, args):
         if (args or not isinstance(klass, type) or
             hasattr(klass, "__getinitargs__")):
-            try:
-                value = klass(*args)
-            except TypeError as err:
-                raise TypeError("in constructor for %s: %s" %
-                                (klass.__name__, str(err)), err.__traceback__)
+            value = klass(*args)
         else:
             value = klass.__new__(klass)
         self.append(value)
@@ -1937,7 +1971,6 @@ def _main(args=None):
     import pprint
     parser = argparse.ArgumentParser(
         description='display contents of the pickle files',
-        color=True,
     )
     parser.add_argument(
         'pickle_file',

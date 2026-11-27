@@ -515,7 +515,7 @@ since it is impossible to detect the termination of alien threads.
    This constructor should always be called with keyword arguments.  Arguments
    are:
 
-   *group* should be ``None``; reserved for future extension when a
+   *group* must be ``None`` as it is reserved for future extension when a
    :class:`!ThreadGroup` class is implemented.
 
    *target* is the callable object to be invoked by the :meth:`run` method.
@@ -821,7 +821,7 @@ locks.  In the locked state, some thread owns the lock; in the unlocked state,
 no thread owns it.
 
 Threads call a lock's :meth:`~RLock.acquire` method to lock it,
-and its :meth:`~Lock.release` method to unlock it.
+and its :meth:`~RLock.release` method to unlock it.
 
 .. note::
 
@@ -832,7 +832,7 @@ and its :meth:`~Lock.release` method to unlock it.
 
 RLock's :meth:`~RLock.acquire`/:meth:`~RLock.release` call pairs may be nested,
 unlike Lock's :meth:`~Lock.acquire`/:meth:`~Lock.release`. Only the final
-:meth:`~RLock.release` (the :meth:`~Lock.release` of the outermost pair) resets
+:meth:`~RLock.release` (the :meth:`~RLock.release` of the outermost pair) resets
 the lock to an unlocked state and allows another thread blocked in
 :meth:`~RLock.acquire` to proceed.
 
@@ -1502,7 +1502,7 @@ of the derived iterators.
    In this example, each number is printed exactly once, but the work is shared
    between the two threads.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: synchronized_iterator(func)
@@ -1540,7 +1540,7 @@ of the derived iterators.
    The returned wrapper preserves the metadata of *func*, such as its name and
    wrapped function reference.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: concurrent_tee(iterable, n=2)
@@ -1591,4 +1591,4 @@ of the derived iterators.
    In this example, both consumer threads see the full sequence of squares
    from a single generator expression.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15

@@ -60,6 +60,14 @@ PyAPI_FUNC(int) _Py_convert_optional_to_non_negative_ssize_t(PyObject *, void *)
 // Export for 'math' shared extension.
 PyAPI_FUNC(PyObject*) _PyNumber_Index(PyObject *o);
 
+typedef struct {
+    PyObject *object;
+    PySendResult kind;
+} PySendResultPair;
+
+// Same as PyIter_Send but returns a struct for MSVC tailcall support
+PyAPI_FUNC(PySendResultPair) _PyIter_Send(PyObject *iter, PyObject *arg);
+
 #ifdef __cplusplus
 }
 #endif

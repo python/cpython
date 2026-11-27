@@ -65,6 +65,16 @@ find_state_by_type(PyTypeObject *tp)
     return get_module_state(mod);
 }
 
+// The generated code (clinic/itertoolsmodule.c.h) needs the object types
+// of the type slots implemented with Argument Clinic.
+typedef struct chainobject chainobject;
+typedef struct productobject productobject;
+typedef struct combinationsobject combinationsobject;
+typedef struct cwrobject cwrobject;
+typedef struct permutationsobject permutationsobject;
+typedef struct accumulateobject accumulateobject;
+typedef struct ziplongestobject ziplongestobject;
+
 /*[clinic input]
 module itertools
 class itertools.groupby "groupbyobject *" "clinic_state()->groupby_type"
@@ -77,16 +87,18 @@ class itertools.dropwhile "dropwhileobject *" "clinic_state()->dropwhile_type"
 class itertools.takewhile "takewhileobject *" "clinic_state()->takewhile_type"
 class itertools.starmap "starmapobject *" "clinic_state()->starmap_type"
 class itertools.chain "chainobject *" "clinic_state()->chain_type"
+class itertools.product "productobject *" "clinic_state()->product_type"
 class itertools.combinations "combinationsobject *" "clinic_state()->combinations_type"
-class itertools.combinations_with_replacement "cwr_object *" "clinic_state()->cwr_type"
+class itertools.combinations_with_replacement "cwrobject *" "clinic_state()->cwr_type"
 class itertools.permutations "permutationsobject *" "clinic_state()->permutations_type"
 class itertools.accumulate "accumulateobject *" "clinic_state()->accumulate_type"
+class itertools.zip_longest "ziplongestobject *" "clinic_state()->ziplongest_type"
 class itertools.compress "compressobject *" "clinic_state()->compress_type"
 class itertools.filterfalse "filterfalseobject *" "clinic_state()->filterfalse_type"
 class itertools.count "countobject *" "clinic_state()->count_type"
 class itertools.pairwise "pairwiseobject *" "clinic_state()->pairwise_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=aa48fe4de9d4080f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1086fb2d308d75d2]*/
 
 #define clinic_state() (find_state_by_type(type))
 #define clinic_state_by_cls() (get_module_state_by_cls(base_tp))
@@ -107,6 +119,8 @@ typedef struct {
 #define batchedobject_CAST(op)  ((batchedobject *)(op))
 
 /*[clinic input]
+@permit_long_summary
+@vectorcall
 @classmethod
 itertools.batched.__new__ as batched_new
     iterable: object
@@ -136,7 +150,7 @@ than n.
 static PyObject *
 batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n,
                  int strict)
-/*[clinic end generated code: output=c6de11b061529d3e input=7814b47e222f5467]*/
+/*[clinic end generated code: output=c6de11b061529d3e input=e225f892d3eee347]*/
 {
     PyObject *it;
     batchedobject *bo;
@@ -257,6 +271,7 @@ static PyType_Slot batched_slots[] = {
     {Py_tp_iternext, batched_next},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, batched_new},
+    {Py_tp_vectorcall, batched_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -282,6 +297,7 @@ typedef struct {
 #define pairwiseobject_CAST(op) ((pairwiseobject *)(op))
 
 /*[clinic input]
+@vectorcall
 @classmethod
 itertools.pairwise.__new__ as pairwise_new
     iterable: object
@@ -294,7 +310,7 @@ Return an iterator of overlapping pairs taken from the input iterator.
 
 static PyObject *
 pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=9f0267062d384456 input=6e7c3cddb431a8d6]*/
+/*[clinic end generated code: output=9f0267062d384456 input=32624f8712dcf0a3]*/
 {
     PyObject *it;
     pairwiseobject *po;
@@ -406,6 +422,7 @@ static PyType_Slot pairwise_slots[] = {
     {Py_tp_iternext, pairwise_next},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, pairwise_new},
+    {Py_tp_vectorcall, pairwise_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -437,6 +454,8 @@ typedef struct {
 static PyObject *_grouper_create(groupbyobject *, PyObject *);
 
 /*[clinic input]
+@permit_long_summary
+@vectorcall
 @classmethod
 itertools.groupby.__new__
 
@@ -452,7 +471,7 @@ make an iterator that returns consecutive keys and groups from the iterable
 
 static PyObject *
 itertools_groupby_impl(PyTypeObject *type, PyObject *it, PyObject *keyfunc)
-/*[clinic end generated code: output=cbb1ae3a90fd4141 input=6b3d123e87ff65a1]*/
+/*[clinic end generated code: output=cbb1ae3a90fd4141 input=83700c6814fea634]*/
 {
     groupbyobject *gbo;
 
@@ -580,6 +599,7 @@ static PyType_Slot groupby_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, groupby_next},
     {Py_tp_new, itertools_groupby},
+    {Py_tp_vectorcall, itertools_groupby_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -766,13 +786,17 @@ teedataobject_newinternal(itertools_state *state, PyObject *it)
 static PyObject *
 teedataobject_jumplink(itertools_state *state, teedataobject *tdo)
 {
+    PyObject *link;
+    Py_BEGIN_CRITICAL_SECTION(tdo);
     if (tdo->nextlink == NULL)
         tdo->nextlink = teedataobject_newinternal(state, tdo->it);
-    return Py_XNewRef(tdo->nextlink);
+    link = Py_XNewRef(tdo->nextlink);
+    Py_END_CRITICAL_SECTION();
+    return link;
 }
 
 static PyObject *
-teedataobject_getitem(teedataobject *tdo, int i)
+teedataobject_getitem_lock_held(teedataobject *tdo, int i)
 {
     PyObject *value;
 
@@ -798,6 +822,16 @@ teedataobject_getitem(teedataobject *tdo, int i)
     return Py_NewRef(value);
 }
 
+static PyObject *
+teedataobject_getitem(teedataobject *tdo, int i)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(tdo);
+    result = teedataobject_getitem_lock_held(tdo, i);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 static int
 teedataobject_traverse(PyObject *op, visitproc visit, void * arg)
 {
@@ -817,8 +851,11 @@ teedataobject_safe_decref(PyObject *obj)
 {
     while (obj && _PyObject_IsUniquelyReferenced(obj)) {
         teedataobject *tmp = teedataobject_CAST(obj);
-        PyObject *nextlink = tmp->nextlink;
+        PyObject *nextlink;
+        Py_BEGIN_CRITICAL_SECTION(obj);
+        nextlink = tmp->nextlink;
         tmp->nextlink = NULL;
+        Py_END_CRITICAL_SECTION();
         Py_SETREF(obj, nextlink);
     }
     Py_XDECREF(obj);
@@ -831,11 +868,13 @@ teedataobject_clear(PyObject *op)
     PyObject *tmp;
     teedataobject *tdo = teedataobject_CAST(op);
 
+    Py_BEGIN_CRITICAL_SECTION(op);
     Py_CLEAR(tdo->it);
     for (i=0 ; i<tdo->numread ; i++)
         Py_CLEAR(tdo->values[i]);
     tmp = tdo->nextlink;
     tdo->nextlink = NULL;
+    Py_END_CRITICAL_SECTION();
     teedataobject_safe_decref(tmp);
     return 0;
 }
@@ -851,6 +890,7 @@ teedataobject_dealloc(PyObject *op)
 }
 
 /*[clinic input]
+@vectorcall
 @classmethod
 itertools.teedataobject.__new__
     iterable as it: object
@@ -863,7 +903,7 @@ Data container common to multiple tee objects.
 static PyObject *
 itertools_teedataobject_impl(PyTypeObject *type, PyObject *it,
                              PyObject *values, PyObject *next)
-/*[clinic end generated code: output=3343ceb07e08df5e input=be60f2fabd2b72ba]*/
+/*[clinic end generated code: output=3343ceb07e08df5e input=02647670a03714c0]*/
 {
     teedataobject *tdo;
     Py_ssize_t i, len;
@@ -911,6 +951,7 @@ static PyType_Slot teedataobject_slots[] = {
     {Py_tp_traverse, teedataobject_traverse},
     {Py_tp_clear, teedataobject_clear},
     {Py_tp_new, itertools_teedataobject},
+    {Py_tp_vectorcall, itertools_teedataobject_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -928,20 +969,67 @@ static PyObject *
 tee_next(PyObject *op)
 {
     teeobject *to = teeobject_CAST(op);
-    PyObject *value, *link;
+    PyObject *value;
 
+#ifndef Py_GIL_DISABLED
+    /* The GIL already serializes access, so keep the simple path without the
+       snapshot and revalidation that the free-threaded build needs. */
     if (to->index >= LINKCELLS) {
-        link = teedataobject_jumplink(to->state, to->dataobj);
-        if (link == NULL)
+        PyObject *link = teedataobject_jumplink(to->state, to->dataobj);
+        if (link == NULL) {
             return NULL;
+        }
         Py_SETREF(to->dataobj, (teedataobject *)link);
         to->index = 0;
     }
     value = teedataobject_getitem(to->dataobj, to->index);
-    if (value == NULL)
+    if (value == NULL) {
         return NULL;
+    }
     to->index++;
     return value;
+#else
+    for (;;) {
+        teedataobject *dataobj;
+        int index;
+
+        /* Snapshot the branch position (strong ref to the shared data object)
+           under the tee lock; the data object is locked separately, not nested,
+           then the advance is revalidated. */
+        Py_BEGIN_CRITICAL_SECTION(op);
+        dataobj = (teedataobject *)Py_NewRef((PyObject *)to->dataobj);
+        index = to->index;
+        Py_END_CRITICAL_SECTION();
+
+        if (index < LINKCELLS) {
+            value = teedataobject_getitem(dataobj, index);
+            if (value != NULL) {
+                Py_BEGIN_CRITICAL_SECTION(op);
+                if (to->dataobj == dataobj && to->index == index) {
+                    to->index = index + 1;
+                }
+                Py_END_CRITICAL_SECTION();
+            }
+            Py_DECREF(dataobj);
+            return value;
+        }
+
+        PyObject *link = teedataobject_jumplink(to->state, dataobj);
+        if (link == NULL) {
+            Py_DECREF(dataobj);
+            return NULL;
+        }
+        Py_BEGIN_CRITICAL_SECTION(op);
+        if (to->dataobj == dataobj) {
+            Py_SETREF(to->dataobj, (teedataobject *)link);
+            to->index = 0;
+            link = NULL;
+        }
+        Py_END_CRITICAL_SECTION();
+        Py_XDECREF(link);
+        Py_DECREF(dataobj);
+    }
+#endif
 }
 
 static int
@@ -960,8 +1048,10 @@ tee_copy_impl(teeobject *to)
     if (newto == NULL) {
         return NULL;
     }
+    Py_BEGIN_CRITICAL_SECTION(to);
     newto->dataobj = (teedataobject *)Py_NewRef(to->dataobj);
     newto->index = to->index;
+    Py_END_CRITICAL_SECTION();
     newto->weakreflist = NULL;
     newto->state = to->state;
     PyObject_GC_Track(newto);
@@ -1139,6 +1229,7 @@ typedef struct {
 
 /*[clinic input]
 @permit_long_summary
+@vectorcall
 @classmethod
 itertools.cycle.__new__
     iterable: object
@@ -1148,7 +1239,7 @@ Return elements from the iterable until it is exhausted. Then repeat the sequenc
 
 static PyObject *
 itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=f60e5ec17a45b35c input=ead392f4aac7afd8]*/
+/*[clinic end generated code: output=f60e5ec17a45b35c input=183a6615ee9f1440]*/
 {
     PyObject *it;
     PyObject *saved;
@@ -1247,6 +1338,7 @@ static PyType_Slot cycle_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, cycle_next},
     {Py_tp_new, itertools_cycle},
+    {Py_tp_vectorcall, itertools_cycle_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -1272,6 +1364,7 @@ typedef struct {
 #define dropwhileobject_CAST(op)    ((dropwhileobject *)(op))
 
 /*[clinic input]
+@vectorcall
 @classmethod
 itertools.dropwhile.__new__
     predicate as func: object
@@ -1284,7 +1377,7 @@ Afterwards, return every element until the iterable is exhausted.
 
 static PyObject *
 itertools_dropwhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
-/*[clinic end generated code: output=92f9d0d89af149e4 input=d39737147c9f0a26]*/
+/*[clinic end generated code: output=92f9d0d89af149e4 input=38ed294cc91d3aa8]*/
 {
     PyObject *it;
     dropwhileobject *lz;
@@ -1371,6 +1464,7 @@ static PyType_Slot dropwhile_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, dropwhile_next},
     {Py_tp_new, itertools_dropwhile},
+    {Py_tp_vectorcall, itertools_dropwhile_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -1397,6 +1491,7 @@ typedef struct {
 
 /*[clinic input]
 @permit_long_summary
+@vectorcall
 @classmethod
 itertools.takewhile.__new__
     predicate as func: object
@@ -1407,7 +1502,7 @@ Return successive entries from an iterable as long as the predicate evaluates to
 
 static PyObject *
 itertools_takewhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
-/*[clinic end generated code: output=bb179ea7864e2ef6 input=61e42255dd0a7657]*/
+/*[clinic end generated code: output=bb179ea7864e2ef6 input=168fa0aa716792be]*/
 {
     PyObject *it;
     takewhileobject *lz;
@@ -1490,6 +1585,7 @@ static PyType_Slot takewhile_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, takewhile_next},
     {Py_tp_new, itertools_takewhile},
+    {Py_tp_vectorcall, itertools_takewhile_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -1707,6 +1803,7 @@ typedef struct {
 
 /*[clinic input]
 @permit_long_summary
+@vectorcall
 @classmethod
 itertools.starmap.__new__
     function as func: object
@@ -1717,7 +1814,7 @@ Return an iterator whose values are returned from the function evaluated with an
 
 static PyObject *
 itertools_starmap_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
-/*[clinic end generated code: output=79eeb81d452c6e8d input=8c9068da0692d6d2]*/
+/*[clinic end generated code: output=79eeb81d452c6e8d input=a7986310dcdb9694]*/
 {
     PyObject *it;
     starmapobject *lz;
@@ -1792,6 +1889,7 @@ static PyType_Slot starmap_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, starmap_next},
     {Py_tp_new, itertools_starmap},
+    {Py_tp_vectorcall, itertools_starmap_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -1807,11 +1905,11 @@ static PyType_Spec starmap_spec = {
 
 /* chain object **************************************************************/
 
-typedef struct {
+struct chainobject {
     PyObject_HEAD
     PyObject *source;                   /* Iterator over input iterables */
     PyObject *active;                   /* Currently running input iterator */
-} chainobject;
+};
 
 #define chainobject_CAST(op)    ((chainobject *)(op))
 
@@ -1893,10 +1991,16 @@ chain_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
-static inline PyObject *
-chain_next_lock_held(PyObject *op)
+/*[clinic input]
+@critical_section
+itertools.chain.__next__ as chain_next
+[clinic start generated code]*/
+
+static PyObject *
+chain_next_impl(chainobject *self)
+/*[clinic end generated code: output=91e716f45def7fa9 input=e17098e9dc88706b]*/
 {
-    chainobject *lz = chainobject_CAST(op);
+    chainobject *lz = self;
     PyObject *item;
 
     /* lz->source is the iterator of iterables. If it's NULL, we've already
@@ -1932,16 +2036,6 @@ chain_next_lock_held(PyObject *op)
     return NULL;
 }
 
-static PyObject *
-chain_next(PyObject *op)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = chain_next_lock_held(op);
-    Py_END_CRITICAL_SECTION()
-    return result;
-}
-
 PyDoc_STRVAR(chain_doc,
 "chain(*iterables)\n\
 --\n\
@@ -1950,10 +2044,14 @@ Return a chain object whose .__next__() method returns elements from the\n\
 first iterable until it is exhausted, then elements from the next\n\
 iterable, until all of the iterables are exhausted.");
 
+PyDoc_STRVAR(chain_class_getitem_doc,
+"chain is generic over the type of its contents.\n\
+This is the union of the types of the input iterable contents.");
+
 static PyMethodDef chain_methods[] = {
     ITERTOOLS_CHAIN_FROM_ITERABLE_METHODDEF
     {"__class_getitem__",    Py_GenericAlias,
-    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    METH_O|METH_CLASS,       chain_class_getitem_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1981,13 +2079,13 @@ static PyType_Spec chain_spec = {
 
 /* product object ************************************************************/
 
-typedef struct {
+struct productobject {
     PyObject_HEAD
     PyObject *pools;        /* tuple of pool tuples */
     Py_ssize_t *indices;    /* one index per pool */
     PyObject *result;       /* most recently returned result tuple */
     int stopped;            /* set to 1 when the iterator is exhausted */
-} productobject;
+};
 
 #define productobject_CAST(op)  ((productobject *)(op))
 
@@ -2108,10 +2206,16 @@ product_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+itertools.product.__next__ as product_next
+[clinic start generated code]*/
+
 static PyObject *
-product_next_lock_held(PyObject *op)
+product_next_impl(productobject *self)
+/*[clinic end generated code: output=d20b8571608c2043 input=54266fe7ed4a857a]*/
 {
-    productobject *lz = productobject_CAST(op);
+    productobject *lz = self;
     PyObject *pool;
     PyObject *elem;
     PyObject *oldelem;
@@ -2195,16 +2299,6 @@ empty:
     return NULL;
 }
 
-static PyObject *
-product_next(PyObject *op)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = product_next_lock_held(op);
-    Py_END_CRITICAL_SECTION()
-    return result;
-}
-
 static PyMethodDef product_methods[] = {
     {"__sizeof__", product_sizeof, METH_NOARGS, sizeof_doc},
     {NULL,              NULL}   /* sentinel */
@@ -2249,18 +2343,19 @@ static PyType_Spec product_spec = {
 
 /* combinations object *******************************************************/
 
-typedef struct {
+struct combinationsobject {
     PyObject_HEAD
     PyObject *pool;         /* input converted to a tuple */
     Py_ssize_t *indices;    /* one index per result element */
     PyObject *result;       /* most recently returned result tuple */
     Py_ssize_t r;           /* size of result tuple */
     int stopped;            /* set to 1 when the iterator is exhausted */
-} combinationsobject;
+};
 
 #define combinationsobject_CAST(op) ((combinationsobject *)(op))
 
 /*[clinic input]
+@vectorcall
 @classmethod
 itertools.combinations.__new__
     iterable: object
@@ -2273,7 +2368,7 @@ combinations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)
 static PyObject *
 itertools_combinations_impl(PyTypeObject *type, PyObject *iterable,
                             Py_ssize_t r)
-/*[clinic end generated code: output=87a689b39c40039c input=a32f07a15cfa4676]*/
+/*[clinic end generated code: output=87a689b39c40039c input=119eb0d9196abfe3]*/
 {
     combinationsobject *co;
     Py_ssize_t n;
@@ -2347,10 +2442,16 @@ combinations_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+itertools.combinations.__next__ as combinations_next
+[clinic start generated code]*/
+
 static PyObject *
-combinations_next_lock_held(PyObject *op)
+combinations_next_impl(combinationsobject *self)
+/*[clinic end generated code: output=19965c1a1f4b8f2a input=93000f6ec48380d7]*/
 {
-    combinationsobject *co = combinationsobject_CAST(op);
+    combinationsobject *co = self;
     PyObject *elem;
     PyObject *oldelem;
     PyObject *pool = co->pool;
@@ -2433,16 +2534,6 @@ empty:
     return NULL;
 }
 
-static PyObject *
-combinations_next(PyObject *op)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = combinations_next_lock_held(op);
-    Py_END_CRITICAL_SECTION()
-    return result;
-}
-
 static PyMethodDef combinations_methods[] = {
     {"__sizeof__", combinations_sizeof, METH_NOARGS, sizeof_doc},
     {NULL,              NULL}   /* sentinel */
@@ -2457,6 +2548,7 @@ static PyType_Slot combinations_slots[] = {
     {Py_tp_iternext, combinations_next},
     {Py_tp_methods, combinations_methods},
     {Py_tp_new, itertools_combinations},
+    {Py_tp_vectorcall, itertools_combinations_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -2498,20 +2590,21 @@ static PyType_Spec combinations_spec = {
                 if sorted(indices) == list(indices):
                     yield tuple(pool[i] for i in indices)
 */
-typedef struct {
+struct cwrobject {
     PyObject_HEAD
     PyObject *pool;         /* input converted to a tuple */
     Py_ssize_t *indices;    /* one index per result element */
     PyObject *result;       /* most recently returned result tuple */
     Py_ssize_t r;           /* size of result tuple */
     int stopped;            /* set to 1 when the cwr iterator is exhausted */
-} cwrobject;
+};
 
 #define cwrobject_CAST(op)  ((cwrobject *)(op))
 
 /*[clinic input]
 @permit_long_summary
 @permit_long_docstring_body
+@vectorcall
 @classmethod
 itertools.combinations_with_replacement.__new__
     iterable: object
@@ -2525,7 +2618,7 @@ static PyObject *
 itertools_combinations_with_replacement_impl(PyTypeObject *type,
                                              PyObject *iterable,
                                              Py_ssize_t r)
-/*[clinic end generated code: output=48b26856d4e659ca input=828696750169e84f]*/
+/*[clinic end generated code: output=48b26856d4e659ca input=8bd0382a7253de95]*/
 {
     cwrobject *co;
     Py_ssize_t n;
@@ -2599,10 +2692,16 @@ cwr_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+itertools.combinations_with_replacement.__next__ as cwr_next
+[clinic start generated code]*/
+
 static PyObject *
-cwr_next_lock_held(PyObject *op)
+cwr_next_impl(cwrobject *self)
+/*[clinic end generated code: output=760ddcfbf905ee37 input=d9ed46a28a5bb29a]*/
 {
-    cwrobject *co = cwrobject_CAST(op);
+    cwrobject *co = self;
     PyObject *elem;
     PyObject *oldelem;
     PyObject *pool = co->pool;
@@ -2679,16 +2778,6 @@ empty:
     return NULL;
 }
 
-static PyObject *
-cwr_next(PyObject *op)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = cwr_next_lock_held(op);
-    Py_END_CRITICAL_SECTION()
-    return result;
-}
-
 static PyMethodDef cwr_methods[] = {
     {"__sizeof__", cwr_sizeof, METH_NOARGS, sizeof_doc},
     {NULL,              NULL}   /* sentinel */
@@ -2703,6 +2792,7 @@ static PyType_Slot cwr_slots[] = {
     {Py_tp_iternext, cwr_next},
     {Py_tp_methods, cwr_methods},
     {Py_tp_new, itertools_combinations_with_replacement},
+    {Py_tp_vectorcall, itertools_combinations_with_replacement_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -2744,7 +2834,7 @@ def permutations(iterable, r=None):
             return
 */
 
-typedef struct {
+struct permutationsobject {
     PyObject_HEAD
     PyObject *pool;         /* input converted to a tuple */
     Py_ssize_t *indices;    /* one index per element in the pool */
@@ -2752,11 +2842,12 @@ typedef struct {
     PyObject *result;       /* most recently returned result tuple */
     Py_ssize_t r;           /* size of result tuple */
     int stopped;            /* set to 1 when the iterator is exhausted */
-} permutationsobject;
+};
 
 #define permutationsobject_CAST(op) ((permutationsobject *)(op))
 
 /*[clinic input]
+@vectorcall
 @classmethod
 itertools.permutations.__new__
     iterable: object
@@ -2769,7 +2860,7 @@ permutations(range(3), 2) --> (0,1), (0,2), (1,0), (1,2), (2,0), (2,1)
 static PyObject *
 itertools_permutations_impl(PyTypeObject *type, PyObject *iterable,
                             PyObject *robj)
-/*[clinic end generated code: output=296a72fa76d620ea input=57d0170a4ac0ec7a]*/
+/*[clinic end generated code: output=296a72fa76d620ea input=3679c9c6e757d17d]*/
 {
     permutationsobject *po;
     Py_ssize_t n;
@@ -2868,10 +2959,16 @@ permutations_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+itertools.permutations.__next__ as permutations_next
+[clinic start generated code]*/
+
 static PyObject *
-permutations_next_lock_held(PyObject *op)
+permutations_next_impl(permutationsobject *self)
+/*[clinic end generated code: output=17d8db4465bd3ee5 input=d4c1a1eed76a35e0]*/
 {
-    permutationsobject *po = permutationsobject_CAST(op);
+    permutationsobject *po = self;
     PyObject *elem;
     PyObject *oldelem;
     PyObject *pool = po->pool;
@@ -2959,16 +3056,6 @@ empty:
     return NULL;
 }
 
-static PyObject *
-permutations_next(PyObject *op)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = permutations_next_lock_held(op);
-    Py_END_CRITICAL_SECTION()
-    return result;
-}
-
 static PyMethodDef permuations_methods[] = {
     {"__sizeof__", permutations_sizeof, METH_NOARGS, sizeof_doc},
     {NULL,              NULL}   /* sentinel */
@@ -2983,6 +3070,7 @@ static PyType_Slot permutations_slots[] = {
     {Py_tp_iternext, permutations_next},
     {Py_tp_methods, permuations_methods},
     {Py_tp_new, itertools_permutations},
+    {Py_tp_vectorcall, itertools_permutations_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -2998,18 +3086,19 @@ static PyType_Spec permutations_spec = {
 
 /* accumulate object ********************************************************/
 
-typedef struct {
+struct accumulateobject {
     PyObject_HEAD
     PyObject *total;
     PyObject *it;
     PyObject *binop;
     PyObject *initial;
     itertools_state *state;
-} accumulateobject;
+};
 
 #define accumulateobject_CAST(op)   ((accumulateobject *)(op))
 
 /*[clinic input]
+@vectorcall
 @classmethod
 itertools.accumulate.__new__
     iterable: object
@@ -3022,7 +3111,7 @@ Return series of accumulated sums (or other binary function results).
 static PyObject *
 itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
                           PyObject *binop, PyObject *initial)
-/*[clinic end generated code: output=66da2650627128f8 input=c4ce20ac59bf7ffd]*/
+/*[clinic end generated code: output=66da2650627128f8 input=9c7edffb7110edc9]*/
 {
     PyObject *it;
     accumulateobject *lz;
@@ -3075,10 +3164,16 @@ accumulate_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+itertools.accumulate.__next__ as accumulate_next
+[clinic start generated code]*/
+
 static PyObject *
-accumulate_next_lock_held(PyObject *op)
+accumulate_next_impl(accumulateobject *self)
+/*[clinic end generated code: output=30d3f9b40248d8a6 input=758a144b7cfb1ef4]*/
 {
-    accumulateobject *lz = accumulateobject_CAST(op);
+    accumulateobject *lz = self;
     PyObject *val, *newtotal;
 
     if (lz->initial != Py_None) {
@@ -3108,16 +3203,6 @@ accumulate_next_lock_held(PyObject *op)
     return newtotal;
 }
 
-static PyObject *
-accumulate_next(PyObject *op)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = accumulate_next_lock_held(op);
-    Py_END_CRITICAL_SECTION()
-    return result;
-}
-
 static PyType_Slot accumulate_slots[] = {
     {Py_tp_dealloc, accumulate_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -3126,6 +3211,7 @@ static PyType_Slot accumulate_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, accumulate_next},
     {Py_tp_new, itertools_accumulate},
+    {Py_tp_vectorcall, itertools_accumulate_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -3157,19 +3243,20 @@ typedef struct {
 #define compressobject_CAST(op) ((compressobject *)(op))
 
 /*[clinic input]
+@vectorcall
 @classmethod
 itertools.compress.__new__
     data as seq1: object
     selectors as seq2: object
 Return data elements corresponding to true selector elements.
 
-Forms a shorter iterator from selected data elements using the selectors to
-choose the data elements.
+Forms a shorter iterator from selected data elements using the selectors
+to choose the data elements.
 [clinic start generated code]*/
 
 static PyObject *
 itertools_compress_impl(PyTypeObject *type, PyObject *seq1, PyObject *seq2)
-/*[clinic end generated code: output=7e67157212ed09e0 input=79596d7cd20c77e5]*/
+/*[clinic end generated code: output=7e67157212ed09e0 input=a886cf13635c9780]*/
 {
     PyObject *data=NULL, *selectors=NULL;
     compressobject *lz;
@@ -3262,6 +3349,7 @@ static PyType_Slot compress_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, compress_next},
     {Py_tp_new, itertools_compress},
+    {Py_tp_vectorcall, itertools_compress_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -3286,6 +3374,7 @@ typedef struct {
 #define filterfalseobject_CAST(op)  ((filterfalseobject *)(op))
 
 /*[clinic input]
+@vectorcall
 @classmethod
 itertools.filterfalse.__new__
     function as func: object
@@ -3298,7 +3387,7 @@ If function is None, return the items that are false.
 
 static PyObject *
 itertools_filterfalse_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
-/*[clinic end generated code: output=55f87eab9fc0484e input=2d684a2c66f99cde]*/
+/*[clinic end generated code: output=55f87eab9fc0484e input=a80f7d973f6efc81]*/
 {
     PyObject *it;
     filterfalseobject *lz;
@@ -3385,6 +3474,7 @@ static PyType_Slot filterfalse_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, filterfalse_next},
     {Py_tp_new, itertools_filterfalse},
+    {Py_tp_vectorcall, itertools_filterfalse_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -3427,6 +3517,8 @@ slow_mode:  when cnt == PY_SSIZE_T_MAX, step is not int(1), or cnt is a float.
 */
 
 /*[clinic input]
+@permit_long_summary
+@vectorcall
 @classmethod
 itertools.count.__new__
     start as long_cnt: object(c_default="NULL") = 0
@@ -3444,7 +3536,7 @@ Equivalent to:
 static PyObject *
 itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
                      PyObject *long_step)
-/*[clinic end generated code: output=09a9250aebd00b1c input=d7a85eec18bfcd94]*/
+/*[clinic end generated code: output=09a9250aebd00b1c input=b8a57119ba1cdd54]*/
 {
     countobject *lz;
     int fast_mode;
@@ -3600,9 +3692,11 @@ static PyObject *
 count_repr(PyObject *op)
 {
     countobject *lz = countobject_CAST(op);
-    if (lz->long_cnt == NULL)
+    if (lz->long_cnt == NULL) {
+        Py_ssize_t cnt = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->cnt);
         return PyUnicode_FromFormat("%s(%zd)",
-                                    _PyType_Name(Py_TYPE(lz)), lz->cnt);
+                                    _PyType_Name(Py_TYPE(lz)), cnt);
+    }
 
     if (PyLong_Check(lz->long_step)) {
         long step = PyLong_AsLong(lz->long_step);
@@ -3630,6 +3724,7 @@ static PyType_Slot count_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, count_next},
     {Py_tp_new, itertools_count},
+    {Py_tp_vectorcall, itertools_count_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -3775,14 +3870,14 @@ static PyType_Spec repeat_spec = {
 
 /* ziplongest object *********************************************************/
 
-typedef struct {
+struct ziplongestobject {
     PyObject_HEAD
     Py_ssize_t tuplesize;
     Py_ssize_t numactive;
     PyObject *ittuple;                  /* tuple of iterators */
     PyObject *result;
     PyObject *fillvalue;
-} ziplongestobject;
+};
 
 #define ziplongestobject_CAST(op)   ((ziplongestobject *)(op))
 
@@ -3878,10 +3973,16 @@ zip_longest_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+itertools.zip_longest.__next__ as zip_longest_next
+[clinic start generated code]*/
+
 static PyObject *
-zip_longest_next_lock_held(PyObject *op)
+zip_longest_next_impl(ziplongestobject *self)
+/*[clinic end generated code: output=11bc756cf896c576 input=5b1e3b52098852a9]*/
 {
-    ziplongestobject *lz = ziplongestobject_CAST(op);
+    ziplongestobject *lz = self;
     Py_ssize_t i;
     Py_ssize_t tuplesize = lz->tuplesize;
     PyObject *result = lz->result;
@@ -3947,16 +4048,6 @@ zip_longest_next_lock_held(PyObject *op)
             PyTuple_SET_ITEM(result, i, item);
         }
     }
-    return result;
-}
-
-static PyObject *
-zip_longest_next(PyObject *op)
-{
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = zip_longest_next_lock_held(op);
-    Py_END_CRITICAL_SECTION()
     return result;
 }
 

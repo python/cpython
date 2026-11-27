@@ -282,7 +282,7 @@ class mock_Shell:
     def __init__(self, text):
         text.tag_prevrange = Mock(return_value=None)
         self.text = text
-        self.prompt_last_line = ">>> "
+        self.is_shell = True
         self.indentwidth = 4
         self.tabwidth = 8
 

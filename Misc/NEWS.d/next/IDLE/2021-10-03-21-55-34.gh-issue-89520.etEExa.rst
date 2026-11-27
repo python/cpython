@@ -1,3 +1,0 @@
-Make IDLE extension configuration look at user config files, allowing
-user-installed extensions to have settings and key bindings defined in
-~/.idlerc.

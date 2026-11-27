@@ -359,7 +359,7 @@ class TestTimeit(unittest.TestCase):
                 seconds_per_increment=0.003, switches=["-u", "parsec"]
             )
         self.assertIn(
-            "choose from nsec, usec, msec, sec", error_stringio.getvalue()
+            "choose from 'nsec', 'usec', 'msec', 'sec'", error_stringio.getvalue()
         )
 
     def test_main_exception(self):

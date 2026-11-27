@@ -137,6 +137,8 @@ def iter_async_frames(awaited_info_list):
 
 
 class Collector(ABC):
+    aggregating = False
+
     @abstractmethod
     def collect(self, stack_frames, timestamps_us=None):
         """Collect profiling data from stack frames.
@@ -155,7 +157,11 @@ class Collector(ABC):
 
     @abstractmethod
     def export(self, filename):
-        """Export collected data to a file."""
+        """Export collected data.
+
+        Returns:
+            bool: True if output was generated, False if there was no data to export.
+        """
 
     @staticmethod
     def _filter_internal_frames(frames):

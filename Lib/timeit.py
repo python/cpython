@@ -299,14 +299,14 @@ Library usage: see the `Timer` class.""",
         "-p",
         "--process",
         action="store_true",
-        help="use time.process_time() (default is time.perf_counter())",
+        help="use `time.process_time()` (default is `time.perf_counter()`)",
     )
     parser.add_argument(
         "-t",
         "--target-time",
         type=float,
         default=default_target_time,
-        help="if --number is 0 the code will run until it takes "
+        help="if `--number` is 0 the code will run until it takes "
         "at least this many seconds (default %(default)s)",
     )
     parser.add_argument(

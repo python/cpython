@@ -141,6 +141,8 @@ Cross platform
    Returns the system's release, e.g. ``'2.2.0'`` or ``'NT'``. An empty string is
    returned if the value cannot be determined.
 
+   On iOS and Android, this is the user-facing OS release. To obtain the
+   Darwin or Linux kernel release, use :func:`os.uname`.
 
 .. function:: system()
 
@@ -162,9 +164,6 @@ Cross platform
 
    Returns the system's release version, e.g. ``'#3 on degas'``. An empty string is
    returned if the value cannot be determined.
-
-   On iOS and Android, this is the user-facing OS version. To obtain the
-   Darwin or Linux kernel version, use :func:`os.uname`.
 
 .. function:: uname()
 
@@ -326,7 +325,7 @@ Android platform
 
    * ``release`` - Android version, as a string (e.g. ``"14"``).
 
-   * ``api_level`` - API level of the running device, as an integer (e.g. ``34``
+   * ``api_level`` - Major component of the API level, as an integer (e.g. ``34``
      for Android 14). To get the API level which Python was built against, see
      :func:`sys.getandroidapilevel`.
 

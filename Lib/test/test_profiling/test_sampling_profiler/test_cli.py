@@ -1,11 +1,13 @@
 """Tests for sampling profiler CLI argument parsing and functionality."""
 
 import io
+import json
 import os
 import subprocess
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
 try:
@@ -21,11 +23,79 @@ from test.support import (
     requires_remote_subprocess_debugging,
 )
 
-from profiling.sampling.cli import main
-from profiling.sampling.constants import PROFILING_MODE_ALL, PROFILING_MODE_WALL
+from profiling.sampling.binary_reader import BinaryReader
+from profiling.sampling.cli import (
+    FORMAT_EXTENSIONS,
+    _create_collector,
+    _generate_output_filename,
+    _handle_output,
+    _replay_with_reader,
+    _skip_idle_for_mode,
+    main,
+)
+from profiling.sampling.constants import (
+    PROFILING_MODE_ALL,
+    PROFILING_MODE_CPU,
+    PROFILING_MODE_EXCEPTION,
+    PROFILING_MODE_GIL,
+    PROFILING_MODE_WALL,
+)
 from profiling.sampling.errors import SamplingScriptNotFoundError, SamplingModuleNotFoundError, SamplingUnknownProcessError
+from profiling.sampling.jsonl_collector import JsonlCollector
 
 class TestSampleProfilerCLI(unittest.TestCase):
+    def test_skip_idle_mode_mapping(self):
+        self.assertFalse(_skip_idle_for_mode(PROFILING_MODE_WALL))
+        self.assertTrue(_skip_idle_for_mode(PROFILING_MODE_CPU))
+        self.assertTrue(_skip_idle_for_mode(PROFILING_MODE_GIL))
+        self.assertFalse(_skip_idle_for_mode(PROFILING_MODE_ALL))
+        self.assertFalse(_skip_idle_for_mode(PROFILING_MODE_EXCEPTION))
+        # Preserve the previous default for modes unknown to this CLI.
+        self.assertTrue(_skip_idle_for_mode(999))
+
+    @requires_remote_subprocess_debugging()
+    def test_exception_mode_captures_blocked_handler(self):
+        script = """
+import time
+
+try:
+    raise ValueError("boom")
+except ValueError:
+    time.sleep(30)
+"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            script_path = os.path.join(temp_dir, "blocked_handler.py")
+            output_path = os.path.join(temp_dir, "output.txt")
+            with open(script_path, "w", encoding="utf-8") as file:
+                file.write(script)
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "profiling.sampling",
+                    "run",
+                    "--mode",
+                    "exception",
+                    "--collapsed",
+                    "-r",
+                    "1000",
+                    "-d",
+                    "1",
+                    "-o",
+                    output_path,
+                    script_path,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            with open(output_path, encoding="utf-8") as file:
+                output = file.read()
+            self.assertIn("blocked_handler.py", output)
+
     def _setup_sync_mocks(self, mock_socket, mock_popen):
         """Helper to set up socket and process mocks for coordinator tests."""
         # Mock the sync socket with context manager support
@@ -716,6 +786,26 @@ class TestSampleProfilerCLI(unittest.TestCase):
             call_kwargs = mock_sample.call_args[1]
             self.assertEqual(call_kwargs.get("async_aware"), "running")
 
+    def test_handle_output_browser_not_opened_when_export_fails(self):
+        for format_type in ("flamegraph", "diff_flamegraph", "heatmap"):
+            with self.subTest(format=format_type):
+                collector = mock.MagicMock()
+                collector.export.return_value = False
+                args = SimpleNamespace(
+                    format=format_type,
+                    outfile="profile.html",
+                    browser=True,
+                )
+
+                with (
+                    mock.patch("profiling.sampling.cli.os.path.isdir", return_value=False),
+                    mock.patch("profiling.sampling.cli._open_in_browser") as mock_open,
+                ):
+                    _handle_output(collector, args, pid=12345, mode=0)
+
+                collector.export.assert_called_once_with("profile.html")
+                mock_open.assert_not_called()
+
     def test_async_aware_with_async_mode_all(self):
         """Test --async-aware with --async-mode all."""
         test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--async-mode", "all"]
@@ -855,6 +945,23 @@ class TestSampleProfilerCLI(unittest.TestCase):
         self.assertIn("--all-threads", error_msg)
         self.assertIn("incompatible with --async-aware", error_msg)
 
+    def test_async_aware_incompatible_with_binary(self):
+        """Test --async-aware is incompatible with --binary."""
+        test_args = ["profiling.sampling.cli", "attach", "12345",
+                     "--async-aware", "--binary"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("--binary", error_msg)
+        self.assertIn("incompatible with --async-aware", error_msg)
+
     @unittest.skipIf(is_emscripten, "subprocess not available")
     def test_run_nonexistent_script_exits_cleanly(self):
         """Test that running a non-existent script exits with a clean error."""
@@ -902,7 +1009,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 mock.patch("sys.argv", ["profiling.sampling.cli", "replay", profile]),
                 mock.patch(
                     "profiling.sampling.cli.BinaryReader",
-                    side_effect=ValueError("Unsupported format version 2"),
+                    side_effect=ValueError("Unsupported format version 3"),
                 ),
             ):
                 with self.assertRaises(SystemExit) as cm:
@@ -910,5 +1017,122 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         self.assertEqual(
             str(cm.exception),
-            "Error: Unsupported format version 2",
+            "Error: Unsupported format version 3",
         )
+
+    def test_cli_replay_propagates_recorded_mode(self):
+        reader = mock.MagicMock()
+        reader.get_info.return_value = {
+            "sample_interval_us": 1000,
+            "sample_count": 0,
+            "compression_type": 0,
+            "mode": PROFILING_MODE_CPU,
+            "capture_config": {"all_threads": True},
+        }
+        reader.replay_samples.return_value = 0
+        collector = mock.MagicMock()
+        collector.export.return_value = True
+        args = SimpleNamespace(
+            format="diff_flamegraph",
+            input_file="current.bin",
+            diff_baseline="baseline.bin",
+            outfile="diff.html",
+            browser=False,
+        )
+
+        with mock.patch(
+            "profiling.sampling.cli._create_collector",
+            return_value=collector,
+        ) as create_collector:
+            _replay_with_reader(args, reader)
+
+        create_collector.assert_called_once_with(
+            "diff_flamegraph",
+            1000,
+            skip_idle=False,
+            mode=PROFILING_MODE_CPU,
+            diff_baseline="baseline.bin",
+            capture_config={"all_threads": True},
+        )
+
+    def test_cli_jsonl_format_mutually_exclusive_with_pstats(self):
+        """--jsonl and --pstats cannot be combined (mutually exclusive group)."""
+        with (
+            mock.patch(
+                "sys.argv",
+                [
+                    "profiling.sampling.cli",
+                    "attach",
+                    "12345",
+                    "--jsonl",
+                    "--pstats",
+                ],
+            ),
+            mock.patch("sys.stderr", io.StringIO()),
+        ):
+            with self.assertRaises(SystemExit):
+                main()
+
+    def test_cli_jsonl_extension_in_format_extensions(self):
+        """FORMAT_EXTENSIONS maps 'jsonl' -> 'jsonl' so default filenames work."""
+        self.assertEqual(FORMAT_EXTENSIONS["jsonl"], "jsonl")
+        self.assertEqual(_generate_output_filename("jsonl", 12345), "jsonl_12345.jsonl")
+
+    def test_cli_jsonl_create_collector_propagates_mode(self):
+        """_create_collector('jsonl', ..., mode=X) lands X in the meta record."""
+        collector = _create_collector(
+            "jsonl",
+            sample_interval_usec=1000,
+            skip_idle=False,
+            mode=PROFILING_MODE_CPU,
+        )
+        self.assertIsInstance(collector, JsonlCollector)
+
+        with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as f:
+            jsonl_path = f.name
+        self.addCleanup(os.unlink, jsonl_path)
+        collector.export(jsonl_path)
+        with open(jsonl_path, "r", encoding="utf-8") as f:
+            records = [json.loads(line) for line in f]
+        meta = next(r for r in records if r["type"] == "meta")
+        self.assertEqual(meta["mode"], "cpu")
+
+    def test_cli_binary_create_collector_propagates_mode(self):
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            binary_path = f.name
+        self.addCleanup(os.unlink, binary_path)
+        collector = _create_collector(
+            "binary",
+            sample_interval_usec=1000,
+            skip_idle=True,
+            mode=PROFILING_MODE_CPU,
+            output_file=binary_path,
+            compression="none",
+            capture_config={"native": True},
+        )
+        collector.export(None)
+
+        with BinaryReader(binary_path) as reader:
+            info = reader.get_info()
+            self.assertEqual(info["mode"], PROFILING_MODE_CPU)
+            self.assertTrue(info["capture_config"]["native"])
+
+    def test_cli_jsonl_rejects_opcodes_combination(self):
+        """--opcodes is incompatible with --jsonl per opcodes_compatible_formats."""
+        test_args = [
+            "profiling.sampling.cli",
+            "attach",
+            "12345",
+            "--jsonl",
+            "--opcodes",
+        ]
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            mock.patch("profiling.sampling.cli.sample"),
+            self.assertRaises(SystemExit) as cm,
+        ):
+            main()
+
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("--opcodes", mock_stderr.getvalue())

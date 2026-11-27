@@ -72,9 +72,13 @@ file, socket, window, or any similar types.  It does "copy" functions and
 classes (shallow and deeply), by returning the original object unchanged; this
 is compatible with the way these are treated by the :mod:`pickle` module.
 
-Shallow copies of dictionaries can be made using :meth:`dict.copy`, and
-of lists by assigning a slice of the entire list, for example,
-``copied_list = original_list[:]``.
+Shallow copies of many collections can be made using the corresponding
+:meth:`!copy` method (such as :meth:`list.copy`, :meth:`dict.copy` or
+:meth:`set.copy`), and of sequences (such as lists or bytearrays) by making
+a slice of the entire sequence (``sequence[:]``).
+However, these methods and slicing can create an instance of the base type
+when copying an instance of a subclass, whereas :func:`copy.copy` normally
+returns an instance of the same type.
 
 .. index:: pair: module; pickle
 

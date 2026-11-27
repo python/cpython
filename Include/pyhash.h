@@ -47,6 +47,10 @@ extern "C" {
 #  endif /* uint64_t && uint32_t && aligned */
 #endif /* Py_HASH_ALGORITHM */
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 16)
+PyAPI_FUNC(Py_hash_t) Py_HashBuffer(const void *ptr, Py_ssize_t len);
+#endif
+
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_HASH_H
 #  include "cpython/pyhash.h"

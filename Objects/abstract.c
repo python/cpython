@@ -9,6 +9,7 @@
 #include "pycore_list.h"          // _PyList_AppendTakeRef()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_object.h"        // _Py_CheckSlotResult()
+#include "pycore_stackref.h"      // _PyStackRef
 #include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -208,7 +209,7 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 int
 PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result)
 {
-    if (PyDict_CheckExact(obj)) {
+    if (PyAnyDict_CheckExact(obj)) {
         return PyDict_GetItemRef(obj, key, result);
     }
 
@@ -852,7 +853,6 @@ _PyBuffer_ReleaseInInterpreterAndRawFree(PyInterpreterState *interp,
 PyObject *
 PyObject_Format(PyObject *obj, PyObject *format_spec)
 {
-    PyObject *meth;
     PyObject *empty = NULL;
     PyObject *result = NULL;
 
@@ -879,21 +879,32 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
         format_spec = empty;
     }
 
-    /* Find the (unbound!) __format__ method */
-    meth = _PyObject_LookupSpecial(obj, &_Py_ID(__format__));
-    if (meth == NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (!_PyErr_Occurred(tstate)) {
-            _PyErr_Format(tstate, PyExc_TypeError,
-                          "Type %.100s doesn't define __format__",
-                          Py_TYPE(obj)->tp_name);
+    /* Find the __format__ method and call it, without creating
+       a temporary bound method where possible. */
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    _PyStackRef self = PyStackRef_FromPyObjectBorrow(obj);
+    int found = _PyObject_LookupSpecialMethod(&_Py_ID(__format__),
+                                              &cref.ref, &self);
+    if (found > 0) {
+        PyObject *meth = PyStackRef_AsPyObjectBorrow(cref.ref);
+        PyObject *args[2] = {PyStackRef_AsPyObjectBorrow(self), format_spec};
+        if (args[0] != NULL) {
+            /* Unbound method: prepend self. */
+            result = PyObject_Vectorcall(meth, args, 2, NULL);
         }
-        goto done;
+        else {
+            result = PyObject_Vectorcall(meth, args + 1, 1, NULL);
+        }
     }
-
-    /* And call it. */
-    result = PyObject_CallOneArg(meth, format_spec);
-    Py_DECREF(meth);
+    else if (found == 0) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "Type %.100s doesn't define __format__",
+                      Py_TYPE(obj)->tp_name);
+    }
+    PyStackRef_XCLOSE(self);
+    _PyThreadState_PopCStackRef(tstate, &cref);
 
     if (result && !PyUnicode_Check(result)) {
         PyErr_Format(PyExc_TypeError,
@@ -1343,7 +1354,7 @@ PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
             if (f != NULL)
                 return sequence_repeat(f, v, w);
         }
-        else if (mw != NULL) {
+        if (mw != NULL) {
             /* Note that the right hand operand should not be
              * mutated in this case so sq_inplace_repeat is not
              * used. */
@@ -2462,7 +2473,7 @@ PyMapping_Keys(PyObject *o)
     if (o == NULL) {
         return null_error();
     }
-    if (PyDict_CheckExact(o)) {
+    if (PyAnyDict_CheckExact(o)) {
         return PyDict_Keys(o);
     }
     return method_output_as_list(o, &_Py_ID(keys));
@@ -2474,7 +2485,7 @@ PyMapping_Items(PyObject *o)
     if (o == NULL) {
         return null_error();
     }
-    if (PyDict_CheckExact(o)) {
+    if (PyAnyDict_CheckExact(o)) {
         return PyDict_Items(o);
     }
     return method_output_as_list(o, &_Py_ID(items));
@@ -2486,7 +2497,7 @@ PyMapping_Values(PyObject *o)
     if (o == NULL) {
         return null_error();
     }
-    if (PyDict_CheckExact(o)) {
+    if (PyAnyDict_CheckExact(o)) {
         return PyDict_Values(o);
     }
     return method_output_as_list(o, &_Py_ID(values));
@@ -2599,6 +2610,28 @@ check_class(PyObject *cls, const char *error)
     return -1;
 }
 
+/* Return 1 if inst.__class__ would resolve to object's own getset descriptor,
+   i.e. evaluate to Py_TYPE(inst).  Types with a custom tp_getattro or an
+   overridden __class__ return 0 and take the generic lookup. */
+static inline int
+class_attr_is_type(PyObject *inst)
+{
+    PyTypeObject *tp = Py_TYPE(inst);
+    if (tp->tp_getattro != PyObject_GenericGetAttr) {
+        return 0;
+    }
+    _PyStackRef cref;
+    _PyType_LookupStackRefAndVersion(tp, &_Py_ID(__class__), &cref);
+    if (PyStackRef_IsNull(cref)) {
+        return 0;
+    }
+    PyObject *descr = PyStackRef_AsPyObjectBorrow(cref);
+    int res = (Py_IS_TYPE(descr, &PyGetSetDescr_Type)
+               && PyDescr_TYPE(descr) == &PyBaseObject_Type);
+    PyStackRef_CLOSE(cref);
+    return res;
+}
+
 static int
 object_isinstance(PyObject *inst, PyObject *cls)
 {
@@ -2607,6 +2640,9 @@ object_isinstance(PyObject *inst, PyObject *cls)
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
         if (retval == 0) {
+            if (class_attr_is_type(inst)) {
+                return 0;
+            }
             retval = PyObject_GetOptionalAttr(inst, &_Py_ID(__class__), &icls);
             if (icls != NULL) {
                 if (icls != (PyObject *)(Py_TYPE(inst)) && PyType_Check(icls)) {
@@ -2633,6 +2669,37 @@ object_isinstance(PyObject *inst, PyObject *cls)
     }
 
     return retval;
+}
+
+static int
+call_special_method(PyThreadState *tstate, PyObject *cls, PyObject *name,
+                    const char *where, PyObject *arg, PyObject **res)
+{
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    _PyStackRef self = PyStackRef_FromPyObjectBorrow(cls);
+    int found = _PyObject_LookupSpecialMethod(name, &cref.ref, &self);
+    if (found > 0) {
+        *res = NULL;
+        if (!_Py_EnterRecursiveCallTstate(tstate, where)) {
+            PyObject *method = PyStackRef_AsPyObjectBorrow(cref.ref);
+            PyObject *args[2] = {PyStackRef_AsPyObjectBorrow(self), arg};
+            if (args[0] != NULL) {
+                /* Unbound method: prepend self. */
+                *res = PyObject_Vectorcall(method, args, 2, NULL);
+            }
+            else {
+                *res = PyObject_Vectorcall(method, args + 1, 1, NULL);
+            }
+            _Py_LeaveRecursiveCallTstate(tstate);
+        }
+        if (*res == NULL) {
+            found = -1;
+        }
+    }
+    PyStackRef_XCLOSE(self);
+    _PyThreadState_PopCStackRef(tstate, &cref);
+    return found;
 }
 
 static int
@@ -2672,26 +2739,16 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
         return r;
     }
 
-    PyObject *checker = _PyObject_LookupSpecial(cls, &_Py_ID(__instancecheck__));
-    if (checker != NULL) {
-        if (_Py_EnterRecursiveCallTstate(tstate, " in __instancecheck__")) {
-            Py_DECREF(checker);
-            return -1;
-        }
-
-        PyObject *res = PyObject_CallOneArg(checker, inst);
-        _Py_LeaveRecursiveCallTstate(tstate);
-        Py_DECREF(checker);
-
-        if (res == NULL) {
-            return -1;
-        }
+    PyObject *res;
+    int found = call_special_method(tstate, cls, &_Py_ID(__instancecheck__),
+                                    " in __instancecheck__", inst, &res);
+    if (found > 0) {
         int ok = PyObject_IsTrue(res);
         Py_DECREF(res);
 
         return ok;
     }
-    else if (_PyErr_Occurred(tstate)) {
+    else if (found < 0) {
         return -1;
     }
 
@@ -2731,8 +2788,6 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
 static int
 object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
 {
-    PyObject *checker;
-
     /* We know what type's __subclasscheck__ does. */
     if (PyType_CheckExact(cls)) {
         /* Quick test for an exact match */
@@ -2763,23 +2818,15 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
         return r;
     }
 
-    checker = _PyObject_LookupSpecial(cls, &_Py_ID(__subclasscheck__));
-    if (checker != NULL) {
-        int ok = -1;
-        if (_Py_EnterRecursiveCallTstate(tstate, " in __subclasscheck__")) {
-            Py_DECREF(checker);
-            return ok;
-        }
-        PyObject *res = PyObject_CallOneArg(checker, derived);
-        _Py_LeaveRecursiveCallTstate(tstate);
-        Py_DECREF(checker);
-        if (res != NULL) {
-            ok = PyObject_IsTrue(res);
-            Py_DECREF(res);
-        }
+    PyObject *res;
+    int found = call_special_method(tstate, cls, &_Py_ID(__subclasscheck__),
+                                    " in __subclasscheck__", derived, &res);
+    if (found > 0) {
+        int ok = PyObject_IsTrue(res);
+        Py_DECREF(res);
         return ok;
     }
-    else if (_PyErr_Occurred(tstate)) {
+    else if (found < 0) {
         return -1;
     }
 
@@ -2950,4 +2997,12 @@ PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
         return PYGEN_RETURN;
     }
     return PYGEN_ERROR;
+}
+
+PySendResultPair
+_PyIter_Send(PyObject *iter, PyObject *arg)
+{
+    PySendResultPair pair;
+    pair.kind = PyIter_Send(iter, arg, &pair.object);
+    return pair;
 }

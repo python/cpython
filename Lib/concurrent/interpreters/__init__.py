@@ -68,8 +68,14 @@ def create():
 
 def list_all():
     """Return all existing interpreters."""
-    return [Interpreter(id, _whence=whence)
-            for id, whence in _interpreters.list_all(require_ready=True)]
+    interps = []
+    for id, whence in _interpreters.list_all(require_ready=True):
+        try:
+            interps.append(Interpreter(id, _whence=whence))
+        except InterpreterNotFoundError:
+            # It was destroyed after it was listed.
+            pass
+    return interps
 
 
 def get_current():
@@ -185,6 +191,12 @@ class Interpreter:
         in an InterpreterError.
         """
         return _interpreters.destroy(self._id, restrict=True)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        self.close()
 
     def prepare_main(self, ns=None, /, **kwargs):
         """Bind the given values into the interpreter's __main__.
