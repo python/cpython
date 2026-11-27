@@ -979,11 +979,14 @@ def singledispatch(func):
                 )
 
         if isinstance(cls, UnionType):
-            for arg in cls.__args__:
-                registry[arg] = func
+            classes = cls.__args__
         else:
-            registry[cls] = func
-        if cache_token is None and hasattr(cls, '__abstractmethods__'):
+            classes = (cls,)
+        for arg in classes:
+            registry[arg] = func
+        if cache_token is None and any(
+            hasattr(arg, '__abstractmethods__') for arg in classes
+        ):
             cache_token = get_cache_token()
         dispatch_cache.clear()
         return func
