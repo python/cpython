@@ -392,6 +392,10 @@ instantiation, of which this module provides three different variants:
    .. versionchanged:: 3.15
       Added *extra_response_headers* parameter.
 
+   .. versionchanged:: 3.16
+      Added support for HTTP single-part range requests for files,
+      as specified in :rfc:`9110#section-14`.
+
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
    and :func:`do_HEAD` functions.
