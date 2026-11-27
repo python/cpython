@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
@@ -80,17 +80,9 @@ batched_new_helper(PyTypeObject *type, PyObject *const *args,
         goto exit;
     }
     iterable = fastargs[0];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(fastargs[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        n = ival;
+    n = _PyNumber_IndexAsSsize_t(fastargs[1]);
+    if (n == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (!noptargs) {
         goto skip_optional_kwonly;
@@ -455,22 +447,14 @@ itertools_tee(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        n = ival;
-        if (n < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "n cannot be negative");
-            goto exit;
-        }
+    n = _PyNumber_IndexAsSsize_t(args[1]);
+    if (n == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (n < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "n cannot be negative");
+        goto exit;
     }
 skip_optional:
     return_value = itertools_tee_impl(module, iterable, n);
@@ -820,22 +804,14 @@ itertools_combinations_helper(PyTypeObject *type, PyObject *const *args,
         goto exit;
     }
     iterable = fastargs[0];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(fastargs[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        r = ival;
-        if (r < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "r cannot be negative");
-            goto exit;
-        }
+    r = _PyNumber_IndexAsSsize_t(fastargs[1]);
+    if (r == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (r < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "r cannot be negative");
+        goto exit;
     }
     return_value = itertools_combinations_impl(type, iterable, r);
 
@@ -871,22 +847,14 @@ itertools_combinations_vectorcall(PyObject *type, PyObject *const *args,
             NULL, kwnames);
     }
     iterable = args[0];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        r = ival;
-        if (r < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "r cannot be negative");
-            goto exit;
-        }
+    r = _PyNumber_IndexAsSsize_t(args[1]);
+    if (r == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (r < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "r cannot be negative");
+        goto exit;
     }
     return_value = itertools_combinations_impl(_PyType_CAST(type), iterable, r);
 
@@ -965,22 +933,14 @@ itertools_combinations_with_replacement_helper(PyTypeObject *type, PyObject *con
         goto exit;
     }
     iterable = fastargs[0];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(fastargs[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        r = ival;
-        if (r < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "r cannot be negative");
-            goto exit;
-        }
+    r = _PyNumber_IndexAsSsize_t(fastargs[1]);
+    if (r == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (r < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "r cannot be negative");
+        goto exit;
     }
     return_value = itertools_combinations_with_replacement_impl(type, iterable, r);
 
@@ -1016,22 +976,14 @@ itertools_combinations_with_replacement_vectorcall(PyObject *type, PyObject *con
             NULL, kwnames);
     }
     iterable = args[0];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        r = ival;
-        if (r < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "r cannot be negative");
-            goto exit;
-        }
+    r = _PyNumber_IndexAsSsize_t(args[1]);
+    if (r == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (r < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "r cannot be negative");
+        goto exit;
     }
     return_value = itertools_combinations_with_replacement_impl(_PyType_CAST(type), iterable, r);
 
@@ -1578,4 +1530,4 @@ zip_longest_next(PyObject *self)
 
     return return_value;
 }
-/*[clinic end generated code: output=60939958c9c9348b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c4b61f8d7a14c9d7 input=a9049054013a1b77]*/

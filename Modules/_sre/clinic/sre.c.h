@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_sre_getcodesize__doc__,
@@ -225,33 +225,17 @@ _sre_SRE_Pattern_prefixmatch(PyObject *self, PyTypeObject *cls, PyObject *const 
         goto skip_optional_pos;
     }
     if (args[1]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[1]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            pos = ival;
+        pos = _PyNumber_IndexAsSsize_t(args[1]);
+        if (pos == -1 && PyErr_Occurred()) {
+            goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        endpos = ival;
+    endpos = _PyNumber_IndexAsSsize_t(args[2]);
+    if (endpos == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = _sre_SRE_Pattern_prefixmatch_impl((PatternObject *)self, cls, string, pos, endpos);
@@ -321,33 +305,17 @@ _sre_SRE_Pattern_fullmatch(PyObject *self, PyTypeObject *cls, PyObject *const *a
         goto skip_optional_pos;
     }
     if (args[1]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[1]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            pos = ival;
+        pos = _PyNumber_IndexAsSsize_t(args[1]);
+        if (pos == -1 && PyErr_Occurred()) {
+            goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        endpos = ival;
+    endpos = _PyNumber_IndexAsSsize_t(args[2]);
+    if (endpos == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = _sre_SRE_Pattern_fullmatch_impl((PatternObject *)self, cls, string, pos, endpos);
@@ -419,33 +387,17 @@ _sre_SRE_Pattern_search(PyObject *self, PyTypeObject *cls, PyObject *const *args
         goto skip_optional_pos;
     }
     if (args[1]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[1]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            pos = ival;
+        pos = _PyNumber_IndexAsSsize_t(args[1]);
+        if (pos == -1 && PyErr_Occurred()) {
+            goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        endpos = ival;
+    endpos = _PyNumber_IndexAsSsize_t(args[2]);
+    if (endpos == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = _sre_SRE_Pattern_search_impl((PatternObject *)self, cls, string, pos, endpos);
@@ -514,33 +466,17 @@ _sre_SRE_Pattern_findall(PyObject *self, PyObject *const *args, Py_ssize_t nargs
         goto skip_optional_pos;
     }
     if (args[1]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[1]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            pos = ival;
+        pos = _PyNumber_IndexAsSsize_t(args[1]);
+        if (pos == -1 && PyErr_Occurred()) {
+            goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        endpos = ival;
+    endpos = _PyNumber_IndexAsSsize_t(args[2]);
+    if (endpos == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = _sre_SRE_Pattern_findall_impl((PatternObject *)self, string, pos, endpos);
@@ -612,33 +548,17 @@ _sre_SRE_Pattern_finditer(PyObject *self, PyTypeObject *cls, PyObject *const *ar
         goto skip_optional_pos;
     }
     if (args[1]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[1]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            pos = ival;
+        pos = _PyNumber_IndexAsSsize_t(args[1]);
+        if (pos == -1 && PyErr_Occurred()) {
+            goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        endpos = ival;
+    endpos = _PyNumber_IndexAsSsize_t(args[2]);
+    if (endpos == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = _sre_SRE_Pattern_finditer_impl((PatternObject *)self, cls, string, pos, endpos);
@@ -707,33 +627,17 @@ _sre_SRE_Pattern_scanner(PyObject *self, PyTypeObject *cls, PyObject *const *arg
         goto skip_optional_pos;
     }
     if (args[1]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[1]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            pos = ival;
+        pos = _PyNumber_IndexAsSsize_t(args[1]);
+        if (pos == -1 && PyErr_Occurred()) {
+            goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        endpos = ival;
+    endpos = _PyNumber_IndexAsSsize_t(args[2]);
+    if (endpos == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = _sre_SRE_Pattern_scanner_impl((PatternObject *)self, cls, string, pos, endpos);
@@ -800,17 +704,9 @@ _sre_SRE_Pattern_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        maxsplit = ival;
+    maxsplit = _PyNumber_IndexAsSsize_t(args[1]);
+    if (maxsplit == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = _sre_SRE_Pattern_split_impl((PatternObject *)self, string, maxsplit);
@@ -879,17 +775,9 @@ _sre_SRE_Pattern_sub(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        count = ival;
+    count = _PyNumber_IndexAsSsize_t(args[2]);
+    if (count == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = _sre_SRE_Pattern_sub_impl((PatternObject *)self, cls, repl, string, count);
@@ -959,17 +847,9 @@ _sre_SRE_Pattern_subn(PyObject *self, PyTypeObject *cls, PyObject *const *args, 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        count = ival;
+    count = _PyNumber_IndexAsSsize_t(args[2]);
+    if (count == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = _sre_SRE_Pattern_subn_impl((PatternObject *)self, cls, repl, string, count);
@@ -1122,17 +1002,9 @@ _sre_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         goto exit;
     }
     code = args[2];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[3]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        groups = ival;
+    groups = _PyNumber_IndexAsSsize_t(args[3]);
+    if (groups == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (!PyDict_Check(args[4])) {
         _PyArg_BadArgument("compile", "argument 'groupindex'", "dict", args[4]);
@@ -1597,4 +1469,4 @@ _sre_SRE_Scanner_search(PyObject *self, PyTypeObject *cls, PyObject *const *args
 #ifndef _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
     #define _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
 #endif /* !defined(_SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF) */
-/*[clinic end generated code: output=2e6c222a2eb0875e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f02efdf20391b9fe input=a9049054013a1b77]*/

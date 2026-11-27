@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
@@ -562,17 +562,9 @@ _ctypes_byref(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        offset = ival;
+    offset = _PyNumber_IndexAsSsize_t(args[1]);
+    if (offset == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(obj);
@@ -684,17 +676,9 @@ _ctypes_resize(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     obj = (CDataObject *)args[0];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        size = ival;
+    size = _PyNumber_IndexAsSsize_t(args[1]);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(obj);
     return_value = _ctypes_resize_impl(module, obj, size);
@@ -793,4 +777,4 @@ PyDoc_STRVAR(_ctypes_buffer_info__doc__,
 #ifndef _CTYPES_DLLIST_METHODDEF
     #define _CTYPES_DLLIST_METHODDEF
 #endif /* !defined(_CTYPES_DLLIST_METHODDEF) */
-/*[clinic end generated code: output=615c411ddc01d0a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=37057eac2b3577f2 input=a9049054013a1b77]*/

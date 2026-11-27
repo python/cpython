@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_fileutils.h"     // _Py_Off_t_Converter()
 #include "pycore_long.h"          // _PyLong_Size_t_Converter()
@@ -746,17 +746,9 @@ _ssl__SSLSocket_read(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         PyErr_SetString(PyExc_TypeError, "_ssl._SSLSocket.read requires 1 to 2 arguments");
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        len = ival;
+    len = _PyNumber_IndexAsSsize_t(args[0]);
+    if (len == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs >= 2) {
         if (PyObject_GetBuffer(args[1], &buffer, PyBUF_WRITABLE) < 0) {
@@ -3373,4 +3365,4 @@ exit:
 
 #define _SSL_SSLSESSION_HAS_TICKET_GETSETDEF {"has_ticket", (getter)_ssl_SSLSession_has_ticket_get, (setter)NULL, _ssl_SSLSession_has_ticket__doc__},
 
-/*[clinic end generated code: output=fb3476aa2f825376 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4a16d0beb8beb146 input=a9049054013a1b77]*/

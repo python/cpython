@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(py_scanstring__doc__,
@@ -46,17 +46,9 @@ py_scanstring(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     pystr = args[0];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        end = ival;
+    end = _PyNumber_IndexAsSsize_t(args[1]);
+    if (end == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 3) {
         goto skip_optional;
@@ -282,4 +274,4 @@ encoder_vectorcall(PyObject *type, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=19476c429c7246c1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3af1c5b3115d7887 input=a9049054013a1b77]*/

@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_long.h"          // _PyLong_UnsignedInt_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
@@ -91,17 +91,9 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        max_threads = ival;
+    max_threads = _PyNumber_IndexAsSsize_t(args[2]);
+    if (max_threads == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_kwonly:
     return_value = faulthandler_dump_traceback_py_impl(module, file, all_threads, max_threads);
@@ -262,17 +254,9 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[3]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        max_threads = ival;
+    max_threads = _PyNumber_IndexAsSsize_t(args[3]);
+    if (max_threads == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_kwonly:
     return_value = faulthandler_py_enable_impl(module, file, all_threads, c_stack, max_threads);
@@ -423,17 +407,9 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[4]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        max_threads = ival;
+    max_threads = _PyNumber_IndexAsSsize_t(args[4]);
+    if (max_threads == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_kwonly:
     return_value = faulthandler_dump_traceback_later_impl(module, timeout_obj, repeat, file, exit, max_threads);
@@ -560,17 +536,9 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[4]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        max_threads = ival;
+    max_threads = _PyNumber_IndexAsSsize_t(args[4]);
+    if (max_threads == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_kwonly:
     return_value = faulthandler_register_py_impl(module, signum, file, all_threads, chain, max_threads);
@@ -782,4 +750,4 @@ exit:
 #ifndef FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
     #define FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
 #endif /* !defined(FAULTHANDLER__RAISE_EXCEPTION_METHODDEF) */
-/*[clinic end generated code: output=14815a5f8afe813f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9bf8442c4c067e73 input=a9049054013a1b77]*/

@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_zstd_train_dict__doc__,
@@ -50,17 +50,9 @@ _zstd_train_dict(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     samples_sizes = args[1];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        dict_size = ival;
+    dict_size = _PyNumber_IndexAsSsize_t(args[2]);
+    if (dict_size == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     return_value = _zstd_train_dict_impl(module, samples_bytes, samples_sizes, dict_size);
 
@@ -123,17 +115,9 @@ _zstd_finalize_dict(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     samples_sizes = args[2];
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[3]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        dict_size = ival;
+    dict_size = _PyNumber_IndexAsSsize_t(args[3]);
+    if (dict_size == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     compression_level = PyLong_AsInt(args[4]);
     if (compression_level == -1 && PyErr_Occurred()) {
@@ -426,4 +410,4 @@ _zstd_set_parameter_types(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a6ad0ab41c507911 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f0e55d5d1823b104 input=a9049054013a1b77]*/

@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(unicodedata_UCD_decimal__doc__,
@@ -657,32 +657,16 @@ unicodedata_iter_graphemes(PyObject *module, PyObject *const *args, Py_ssize_t n
     if (nargs < 2) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        start = ival;
+    start = _PyNumber_IndexAsSsize_t(args[1]);
+    if (start == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 3) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        end = ival;
+    end = _PyNumber_IndexAsSsize_t(args[2]);
+    if (end == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional:
     return_value = unicodedata_iter_graphemes_impl(module, unistr, start, end);
@@ -834,4 +818,4 @@ unicodedata_extended_pictographic(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=482a87df218f07c1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=03ace54ed1775071 input=a9049054013a1b77]*/

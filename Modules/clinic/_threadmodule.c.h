@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 static PyObject *
@@ -1066,17 +1066,9 @@ _thread_stack_size(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        new_size = ival;
+    new_size = _PyNumber_IndexAsSsize_t(args[0]);
+    if (new_size == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional:
     return_value = _thread_stack_size_impl(module, new_size);
@@ -1272,4 +1264,4 @@ exit:
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
 #define _THREAD__THREADHANDLE_IDENT_GETSETDEF {"ident", (getter)_thread__ThreadHandle_ident_get, (setter)NULL, NULL},
 
-/*[clinic end generated code: output=3bfc76a318c6579d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a3fd9715e7373886 input=a9049054013a1b77]*/

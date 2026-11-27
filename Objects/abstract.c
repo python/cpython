@@ -1473,54 +1473,67 @@ PyNumber_Index(PyObject *item)
     return result;
 }
 
+Py_ssize_t
+_PyNumber_IndexAsSsize_t(PyObject *item)
+{
+    if (item != NULL && PyLong_Check(item)) {
+        /* Fast path: no new reference is needed. */
+        return PyLong_AsSsize_t(item);
+    }
+    PyObject *value = _PyNumber_Index(item);
+    if (value == NULL) {
+        return -1;
+    }
+    Py_ssize_t result = PyLong_AsSsize_t(value);
+    Py_DECREF(value);
+    return result;
+}
+
+/* Convert the int 'value', the index of 'item', to a Py_ssize_t.
+   On overflow, clip the result if err is NULL, otherwise raise err. */
+static Py_ssize_t
+index_as_ssize_t(PyObject *item, PyObject *value, PyObject *err)
+{
+    assert(PyLong_Check(value));
+    Py_ssize_t result = PyLong_AsSsize_t(value);
+    if (result != -1) {
+        return result;
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *runerr = _PyErr_Occurred(tstate);
+    /* Only OverflowError is handled differently. */
+    if (!runerr || !PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError)) {
+        return result;
+    }
+    _PyErr_Clear(tstate);
+
+    if (!err) {
+        /* No error handling desired: clip to the Py_ssize_t range. */
+        return _PyLong_IsNegative((PyLongObject *)value)
+               ? PY_SSIZE_T_MIN : PY_SSIZE_T_MAX;
+    }
+    /* Otherwise replace the error with caller's error object. */
+    _PyErr_Format(tstate, err,
+                  "cannot fit '%.200s' into an index-sized integer",
+                  Py_TYPE(item)->tp_name);
+    return -1;
+}
+
 /* Return an error on Overflow only if err is not NULL*/
 
 Py_ssize_t
 PyNumber_AsSsize_t(PyObject *item, PyObject *err)
 {
-    Py_ssize_t result;
-    PyObject *runerr;
+    if (item != NULL && PyLong_Check(item)) {
+        /* Fast path: no new reference is needed. */
+        return index_as_ssize_t(item, item, err);
+    }
     PyObject *value = _PyNumber_Index(item);
-    if (value == NULL)
+    if (value == NULL) {
         return -1;
-
-    /* We're done if PyLong_AsSsize_t() returns without error. */
-    result = PyLong_AsSsize_t(value);
-    if (result != -1)
-        goto finish;
-
-    PyThreadState *tstate = _PyThreadState_GET();
-    runerr = _PyErr_Occurred(tstate);
-    if (!runerr) {
-        goto finish;
     }
-
-    /* Error handling code -- only manage OverflowError differently */
-    if (!PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError)) {
-        goto finish;
-    }
-    _PyErr_Clear(tstate);
-
-    /* If no error-handling desired then the default clipping
-       is sufficient. */
-    if (!err) {
-        assert(PyLong_Check(value));
-        /* Whether or not it is less than or equal to
-           zero is determined by the sign of ob_size
-        */
-        if (_PyLong_IsNegative((PyLongObject *)value))
-            result = PY_SSIZE_T_MIN;
-        else
-            result = PY_SSIZE_T_MAX;
-    }
-    else {
-        /* Otherwise replace the error with caller's error object. */
-        _PyErr_Format(tstate, err,
-                      "cannot fit '%.200s' into an index-sized integer",
-                      Py_TYPE(item)->tp_name);
-    }
-
- finish:
+    Py_ssize_t result = index_as_ssize_t(item, value, err);
     Py_DECREF(value);
     return result;
 }

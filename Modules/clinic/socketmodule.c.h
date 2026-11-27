@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_long.h"          // _PyLong_UInt16_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
@@ -452,17 +452,9 @@ _socket_socket_recv(PyObject *s, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("recv", nargs, 1, 2)) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        recvlen = ival;
+    recvlen = _PyNumber_IndexAsSsize_t(args[0]);
+    if (recvlen == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 2) {
         goto skip_optional;
@@ -547,17 +539,9 @@ _socket_socket_recv_into(PyObject *s, PyObject *const *args, Py_ssize_t nargs, P
         goto skip_optional_pos;
     }
     if (args[1]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[1]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            recvlen = ival;
+        recvlen = _PyNumber_IndexAsSsize_t(args[1]);
+        if (recvlen == -1 && PyErr_Occurred()) {
+            goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -607,17 +591,9 @@ _socket_socket_recvfrom(PyObject *s, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("recvfrom", nargs, 1, 2)) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        recvlen = ival;
+    recvlen = _PyNumber_IndexAsSsize_t(args[0]);
+    if (recvlen == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 2) {
         goto skip_optional;
@@ -703,17 +679,9 @@ _socket_socket_recvfrom_into(PyObject *s, PyObject *const *args, Py_ssize_t narg
         goto skip_optional_pos;
     }
     if (args[1]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[1]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            recvlen = ival;
+        recvlen = _PyNumber_IndexAsSsize_t(args[1]);
+        if (recvlen == -1 && PyErr_Occurred()) {
+            goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -788,32 +756,16 @@ _socket_socket_recvmsg(PyObject *s, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("recvmsg", nargs, 1, 3)) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        bufsize = ival;
+    bufsize = _PyNumber_IndexAsSsize_t(args[0]);
+    if (bufsize == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 2) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        ancbufsize = ival;
+    ancbufsize = _PyNumber_IndexAsSsize_t(args[1]);
+    if (ancbufsize == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 3) {
         goto skip_optional;
@@ -890,17 +842,9 @@ _socket_socket_recvmsg_into(PyObject *s, PyObject *const *args, Py_ssize_t nargs
     if (nargs < 2) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        ancbufsize = ival;
+    ancbufsize = _PyNumber_IndexAsSsize_t(args[1]);
+    if (ancbufsize == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     if (nargs < 3) {
         goto skip_optional;
@@ -2244,17 +2188,9 @@ _socket_CMSG_LEN(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t length;
 
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(arg);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        length = ival;
+    length = _PyNumber_IndexAsSsize_t(arg);
+    if (length == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     return_value = _socket_CMSG_LEN_impl(module, length);
 
@@ -2290,17 +2226,9 @@ _socket_CMSG_SPACE(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t length;
 
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(arg);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        length = ival;
+    length = _PyNumber_IndexAsSsize_t(arg);
+    if (length == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     return_value = _socket_CMSG_SPACE_impl(module, length);
 
@@ -2449,4 +2377,4 @@ exit:
 #ifndef _SOCKET_CMSG_SPACE_METHODDEF
     #define _SOCKET_CMSG_SPACE_METHODDEF
 #endif /* !defined(_SOCKET_CMSG_SPACE_METHODDEF) */
-/*[clinic end generated code: output=e6e677d3de0c63e4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3ea9ab7ef20ed0d8 input=a9049054013a1b77]*/

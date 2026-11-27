@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(zlib_compress__doc__,
@@ -178,22 +178,14 @@ zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        bufsize = ival;
-        if (bufsize < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "bufsize cannot be negative");
-            goto exit;
-        }
+    bufsize = _PyNumber_IndexAsSsize_t(args[2]);
+    if (bufsize == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (bufsize < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "bufsize cannot be negative");
+        goto exit;
     }
 skip_optional_pos:
     return_value = zlib_decompress_impl(module, &data, wbits, bufsize);
@@ -548,22 +540,14 @@ zlib_Decompress_decompress(PyObject *self, PyTypeObject *cls, PyObject *const *a
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        max_length = ival;
-        if (max_length < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "max_length cannot be negative");
-            goto exit;
-        }
+    max_length = _PyNumber_IndexAsSsize_t(args[1]);
+    if (max_length == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (max_length < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "max_length cannot be negative");
+        goto exit;
     }
 skip_optional_pos:
     return_value = zlib_Decompress_decompress_impl((compobject *)self, cls, &data, max_length);
@@ -824,17 +808,9 @@ zlib_Decompress_flush(PyObject *self, PyTypeObject *cls, PyObject *const *args, 
     if (nargs < 1) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        length = ival;
+    length = _PyNumber_IndexAsSsize_t(args[0]);
+    if (length == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional:
     return_value = zlib_Decompress_flush_impl((compobject *)self, cls, length);
@@ -918,17 +894,9 @@ zlib__ZlibDecompressor_decompress(PyObject *self, PyObject *const *args, Py_ssiz
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        max_length = ival;
+    max_length = _PyNumber_IndexAsSsize_t(args[1]);
+    if (max_length == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = zlib__ZlibDecompressor_decompress_impl((ZlibDecompressor *)self, &data, max_length);
@@ -1338,4 +1306,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=f4c3b5abac20df9b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0649f957a763763f input=a9049054013a1b77]*/

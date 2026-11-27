@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(warnings_acquire_lock__doc__,
@@ -126,17 +126,9 @@ warnings_warn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         }
     }
     if (args[2]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[2]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            stacklevel = ival;
+        stacklevel = _PyNumber_IndexAsSsize_t(args[2]);
+        if (stacklevel == -1 && PyErr_Occurred()) {
+            goto exit;
         }
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -284,4 +276,4 @@ warnings_filters_mutated_lock_held(PyObject *module, PyObject *Py_UNUSED(ignored
 {
     return warnings_filters_mutated_lock_held_impl(module);
 }
-/*[clinic end generated code: output=fc026d6a21e12170 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=65b9b5e4aca87788 input=a9049054013a1b77]*/

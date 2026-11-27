@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(py_sha3_new__doc__,
@@ -224,22 +224,14 @@ _sha3_shake_128_digest(PyObject *self, PyObject *const *args, Py_ssize_t nargs, 
     if (!args) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        length = ival;
-        if (length < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "length cannot be negative");
-            goto exit;
-        }
+    length = _PyNumber_IndexAsSsize_t(args[0]);
+    if (length == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "length cannot be negative");
+        goto exit;
     }
     return_value = _sha3_shake_128_digest_impl((SHA3object *)self, length);
 
@@ -298,26 +290,18 @@ _sha3_shake_128_hexdigest(PyObject *self, PyObject *const *args, Py_ssize_t narg
     if (!args) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        length = ival;
-        if (length < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "length cannot be negative");
-            goto exit;
-        }
+    length = _PyNumber_IndexAsSsize_t(args[0]);
+    if (length == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "length cannot be negative");
+        goto exit;
     }
     return_value = _sha3_shake_128_hexdigest_impl((SHA3object *)self, length);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=78284adde71d590c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a6dd6c2d3d0b271 input=a9049054013a1b77]*/

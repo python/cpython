@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_IndexAsSsize_t()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
@@ -280,17 +280,9 @@ deque_rotate(PyObject *deque, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        n = ival;
+    n = _PyNumber_IndexAsSsize_t(args[0]);
+    if (n == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(deque);
@@ -434,17 +426,9 @@ deque_insert(PyObject *deque, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        index = ival;
+    index = _PyNumber_IndexAsSsize_t(args[0]);
+    if (index == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     value = args[1];
     Py_BEGIN_CRITICAL_SECTION(deque);
@@ -689,17 +673,9 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!_PyArg_CheckPositional("_tuplegetter", PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(PyTuple_GET_ITEM(args, 0));
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        index = ival;
+    index = _PyNumber_IndexAsSsize_t(PyTuple_GET_ITEM(args, 0));
+    if (index == -1 && PyErr_Occurred()) {
+        goto exit;
     }
     doc = PyTuple_GET_ITEM(args, 1);
     return_value = tuplegetter_new_impl(type, index, doc);
@@ -707,4 +683,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=de400069cf6f11a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=892d242738402543 input=a9049054013a1b77]*/

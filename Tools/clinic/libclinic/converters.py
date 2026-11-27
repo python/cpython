@@ -468,15 +468,22 @@ class Py_ssize_t_converter(CConverter):
                 argname=argname,
             )
         if self.format_unit == 'n':
-            if limited_capi:
-                PyNumber_Index = 'PyNumber_Index'
-            else:
-                PyNumber_Index = '_PyNumber_Index'
-                self.add_include('pycore_abstract.h', '_PyNumber_Index()')
+            if not limited_capi:
+                self.add_include('pycore_abstract.h',
+                                 '_PyNumber_IndexAsSsize_t()')
+                return self.format_code("""
+                    {paramname} = _PyNumber_IndexAsSsize_t({argname});
+                    if ({paramname} == -1 && PyErr_Occurred()) {{{{
+                        goto exit;
+                    }}}}{non_negative_check}
+                    """,
+                    argname=argname,
+                    non_negative_check=non_negative_check,
+                )
             return self.format_code("""
                 {{{{
                     Py_ssize_t ival = -1;
-                    PyObject *iobj = {PyNumber_Index}({argname});
+                    PyObject *iobj = PyNumber_Index({argname});
                     if (iobj != NULL) {{{{
                         ival = PyLong_AsSsize_t(iobj);
                         Py_DECREF(iobj);
@@ -488,7 +495,6 @@ class Py_ssize_t_converter(CConverter):
                 }}}}
                 """,
                 argname=argname,
-                PyNumber_Index=PyNumber_Index,
                 non_negative_check=non_negative_check,
             )
         if not limited_capi:
