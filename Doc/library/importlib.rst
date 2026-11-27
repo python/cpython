@@ -1473,9 +1473,7 @@ imported name.
 
 The :class:`importlib.util.LazyLoader` example below does the module search
 immediately and delays only module execution. It creates a module object in
-:data:`sys.modules` before execution.
-
-The example below shows how to implement lazy imports::
+:data:`sys.modules` before execution::
 
     >>> import importlib.util
     >>> import sys
