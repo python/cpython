@@ -472,7 +472,8 @@ _PyLexer_get_normal(struct tok_state *tok, ftstring_state *current, struct token
                             c, opening, tok->parenlinenostack[tok->level]));
                 }
                 else {
-                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror_with_opening(
+                            tok, tok->parencolstack[tok->level],
                             "closing parenthesis '%c' does not match "
                             "opening parenthesis '%c'",
                             c, opening));

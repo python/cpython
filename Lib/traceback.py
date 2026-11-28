@@ -1183,6 +1183,7 @@ class TracebackException:
             self.msg = exc_value.msg
             self._is_syntax_error = True
             self._exc_metadata = getattr(exc_value, "_metadata", None)
+            self._opening_offset = getattr(exc_value, "_opening_offset", None)
         elif exc_type and issubclass(exc_type, ImportError) and \
                 getattr(exc_value, "name_from", None) is not None:
             wrong_name = getattr(exc_value, "name_from", None)
@@ -1592,21 +1593,41 @@ class TracebackException:
                     dp_colno = _display_width(ltext, colno)
                     highlighted = ltext[colno:end_colno]
                     caret_count = _display_width(highlighted) if highlighted else (end_colno - colno)
+                    opening_colno = None
+                    if (
+                        isinstance(self._opening_offset, int)
+                        and self.lineno == self.end_lineno
+                    ):
+                        opening_colno = self._opening_offset - 1 - spaces
+                        if not 0 <= opening_colno < colno:
+                            opening_colno = None
+                    carets = '^' * caret_count
+                    if opening_colno is not None:
+                        dp_opening_colno = _display_width(ltext, opening_colno)
+                        carets = '^' + ' ' * (dp_colno - dp_opening_colno - 1) + carets
+                        dp_colno = dp_opening_colno
                     start_color = end_color = ""
                     if colorize:
-                        # colorize from colno to end_colno
+                        # Colorize the later range first so the earlier
+                        # opening column is unaffected by escape sequences.
                         ltext = (
                             ltext[:colno] +
                             theme.error_highlight + ltext[colno:end_colno] + theme.reset +
                             ltext[end_colno:]
                         )
+                        if opening_colno is not None:
+                            ltext = (
+                                ltext[:opening_colno] +
+                                theme.error_highlight + ltext[opening_colno] + theme.reset +
+                                ltext[opening_colno + 1:]
+                            )
                         start_color = theme.error_highlight
                         end_color = theme.reset
                     yield '    {}\n'.format(ltext)
                     yield '    {}{}{}{}\n'.format(
                         ' ' * dp_colno,
                         start_color,
-                        '^' * caret_count,
+                        carets,
                         end_color,
                     )
                 else:
