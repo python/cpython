@@ -154,12 +154,14 @@ void _mi_arena_segment_mark_abandoned(mi_segment_t* segment)
   mi_arena_memid_indices(segment->memid, &arena_idx, &bitmap_idx);
   mi_arena_t* arena = mi_arena_from_index(arena_idx);
   mi_assert_internal(arena != NULL);
+  // CPython: gh-162484: check before marking; once the segment is marked
+  // abandoned another thread can reclaim and free it.
+  mi_assert_internal(_mi_bitmap_is_claimed(arena->blocks_inuse, arena->field_count, 1, bitmap_idx));
   // set abandonment atomically
   mi_subproc_t* const subproc = segment->subproc; // don't access the segment after setting it abandoned
   const bool was_unmarked = _mi_bitmap_claim(arena->blocks_abandoned, arena->field_count, 1, bitmap_idx, NULL);
   if (was_unmarked) { mi_atomic_increment_relaxed(&subproc->abandoned_count); }
   mi_assert_internal(was_unmarked);
-  mi_assert_internal(_mi_bitmap_is_claimed(arena->blocks_inuse, arena->field_count, 1, bitmap_idx));
 }
 
 
