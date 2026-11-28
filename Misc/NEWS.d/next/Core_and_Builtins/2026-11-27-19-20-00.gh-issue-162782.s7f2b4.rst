@@ -1,0 +1,2 @@
+Speed up set operations on exact integers and on strings and tuples with
+cached hashes.

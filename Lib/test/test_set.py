@@ -2237,5 +2237,72 @@ class TestGraphs(unittest.TestCase):
 
 #==============================================================================
 
+class TestSetKeyOperations(unittest.TestCase):
+    def test_probe_mutation_during_eq(self):
+        class MutKey:
+            def __init__(self, value):
+                self.value = value
+
+            def __hash__(self):
+                return 1
+
+            def __eq__(self, other):
+                nonlocal mutate
+                if mutate is not None:
+                    change, mutate = mutate, None
+                    change()
+                return isinstance(other, MutKey) and self.value == other.value
+
+        mutate = None
+        for op in (operator.and_, operator.sub, operator.le):
+            for side in (0, 1):
+                with self.subTest(op=op, side=side):
+                    a = {MutKey(i) for i in range(4)}
+                    b = {MutKey(i) for i in range(2, 6)}
+                    target = (a, b)[side]
+                    mutate = lambda: target.update(range(100, 140))
+                    result = op(a, b)
+                    self.assertIsNone(mutate)
+                    self.assertIsInstance(result, bool if op is operator.le
+                                          else set)
+                    self.assertIn(139, target)
+
+    def test_frozenset_probe_with_mutating_eq(self):
+        class MutKey:
+            def __hash__(self):
+                return 1
+
+            def __eq__(self, other):
+                source.clear()
+                return isinstance(other, MutKey)
+
+        probe = frozenset([MutKey()])
+        source = {MutKey()}
+        self.assertTrue(source <= probe)
+        self.assertEqual(source, set())
+
+    def test_colliding_compact_ints(self):
+        self.assertEqual(hash(-1), hash(-2))
+        s = {-1, -2}
+        self.assertEqual(len(s), 2)
+        s.remove(-1)
+        self.assertNotIn(-1, s)
+        self.assertIn(-2, s)
+        s.add(-1)
+        s.remove(-2)
+        self.assertIn(-1, s)
+        self.assertNotIn(-2, s)
+
+    def test_mixed_numeric_keys(self):
+        for keys in itertools.permutations((True, 1, 1.0)):
+            s = {keys[0]}
+            s.add(keys[1])
+            self.assertIs(next(iter(s)), keys[0])
+            self.assertEqual(len(s), 1)
+            self.assertIn(keys[2], s)
+            s.remove(keys[2])
+            self.assertEqual(s, set())
+
+
 if __name__ == "__main__":
     unittest.main()

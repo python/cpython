@@ -35,6 +35,7 @@
 #include "pycore_ceval.h"               // _PyEval_GetBuiltin()
 #include "pycore_critical_section.h"    // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
 #include "pycore_dict.h"                // _PyDict_Contains_KnownHash()
+#include "pycore_long.h"                // _PyLong_BothAreCompact()
 #include "pycore_modsupport.h"          // _PyArg_NoKwnames()
 #include "pycore_object.h"              // _PyObject_GC_UNTRACK()
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_SSIZE_RELAXED()
@@ -134,32 +135,58 @@ set_compare_threadsafe(PySetObject *so, setentry *table, setentry *ep,
 
 #endif
 
+/* Return 1 if equal, 0 if not, or -1 if the keys need a rich comparison. */
+static inline int
+set_keys_eq_fast(PyObject *a, PyObject *b)
+{
+    if (PyLong_CheckExact(a) && PyLong_CheckExact(b)) {
+        PyLongObject *x = (PyLongObject *)a;
+        PyLongObject *y = (PyLongObject *)b;
+        if (_PyLong_BothAreCompact(x, y)) {
+            return _PyLong_CompactValue(x) == _PyLong_CompactValue(y);
+        }
+    }
+    else if (PyUnicode_CheckExact(a) && PyUnicode_CheckExact(b)) {
+        return unicode_eq(a, b);
+    }
+    return -1;
+}
+
+static Py_NO_INLINE int
+set_compare_entry_slow(PySetObject *so, setentry *table, setentry *entry,
+                       PyObject *startkey, PyObject *key)
+{
+    Py_INCREF(startkey);
+    int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+    Py_DECREF(startkey);
+    if (cmp < 0) {
+        return SET_LOOKKEY_ERROR;
+    }
+    if (table != so->table || entry->key != startkey) {
+        return SET_LOOKKEY_CHANGED;
+    }
+    return cmp;
+}
+
 static inline Py_ALWAYS_INLINE int
 set_compare_entry_lock_held(PySetObject *so, setentry *table, setentry *entry,
                             PyObject *key, Py_hash_t hash)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(so);
-    if (entry->hash == 0 && entry->key == NULL)
+    if (entry->hash == 0 && entry->key == NULL) {
         return SET_LOOKKEY_EMPTY;
+    }
     if (entry->hash == hash) {
         PyObject *startkey = entry->key;
         assert(startkey != dummy);
-        if (startkey == key)
+        if (startkey == key) {
             return SET_LOOKKEY_FOUND;
-        if (PyUnicode_CheckExact(startkey)
-            && PyUnicode_CheckExact(key)
-            && unicode_eq(startkey, key))
-            return SET_LOOKKEY_FOUND;
-        table = so->table;
-        Py_INCREF(startkey);
-        int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-        Py_DECREF(startkey);
-        if (cmp < 0)
-            return SET_LOOKKEY_ERROR;
-        if (table != so->table || entry->key != startkey)
-            return SET_LOOKKEY_CHANGED;
-        if (cmp > 0)
-            return SET_LOOKKEY_FOUND;
+        }
+        int eq = set_keys_eq_fast(startkey, key);
+        if (eq >= 0) {
+            return eq;
+        }
+        return set_compare_entry_slow(so, table, entry, startkey, key);
     }
     return SET_LOOKKEY_NO_MATCH;
 }
@@ -277,23 +304,29 @@ set_add_entry_takeref(PySetObject *so, PyObject *key, Py_hash_t hash)
             if (entry->hash == hash) {
                 PyObject *startkey = entry->key;
                 assert(startkey != dummy);
-                if (startkey == key)
+                if (startkey == key) {
                     goto found_active;
-                if (PyUnicode_CheckExact(startkey)
-                    && PyUnicode_CheckExact(key)
-                    && unicode_eq(startkey, key))
+                }
+                int eq = set_keys_eq_fast(startkey, key);
+                if (eq > 0) {
                     goto found_active;
-                table = so->table;
-                Py_INCREF(startkey);
-                cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-                Py_DECREF(startkey);
-                if (cmp > 0)
-                    goto found_active;
-                if (cmp < 0)
-                    goto comparison_error;
-                if (table != so->table || entry->key != startkey)
-                    goto restart;
-                mask = so->mask;
+                }
+                if (eq < 0) {
+                    table = so->table;
+                    Py_INCREF(startkey);
+                    cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+                    Py_DECREF(startkey);
+                    if (cmp > 0) {
+                        goto found_active;
+                    }
+                    if (cmp < 0) {
+                        goto comparison_error;
+                    }
+                    if (table != so->table || entry->key != startkey) {
+                        goto restart;
+                    }
+                    mask = so->mask;
+                }
             }
             else if (entry->hash == -1) {
                 assert (entry->key == dummy);
@@ -342,6 +375,36 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
     return set_add_entry_takeref(so, Py_NewRef(key), hash);
 }
 
+static inline Py_hash_t
+set_hash_key(PyObject *op)
+{
+    if (PyUnicode_CheckExact(op)) {
+        Py_hash_t h = PyUnstable_Unicode_GET_CACHED_HASH(op);
+        if (h != -1) {
+            return h;
+        }
+    }
+    else if (PyLong_CheckExact(op)) {
+        PyLongObject *v = (PyLongObject *)op;
+        if (_PyLong_IsCompact(v)) {
+            Py_hash_t h = _PyLong_CompactValue(v);
+            if (h == -1) {
+                h = -2;
+            }
+            assert(h == PyObject_Hash(op));
+            return h;
+        }
+    }
+    else if (PyTuple_CheckExact(op)) {
+        PyTupleObject *v = (PyTupleObject *)op;
+        Py_hash_t h = FT_ATOMIC_LOAD_SSIZE_RELAXED(v->ob_hash);
+        if (h != -1) {
+            return h;
+        }
+    }
+    return PyObject_Hash(op);
+}
+
 static void
 set_unhashable_type(PyObject *key)
 {
@@ -361,7 +424,7 @@ set_unhashable_type(PyObject *key)
 int
 _PySet_AddTakeRef(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash = PyObject_Hash(key);
+    Py_hash_t hash = set_hash_key(key);
     if (hash == -1) {
         set_unhashable_type(key);
         Py_DECREF(key);
@@ -600,7 +663,7 @@ set_discard_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 static int
 set_add_key(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash = PyObject_Hash(key);
+    Py_hash_t hash = set_hash_key(key);
     if (hash == -1) {
         set_unhashable_type(key);
         return -1;
@@ -611,7 +674,7 @@ set_add_key(PySetObject *so, PyObject *key)
 static int
 set_contains_key(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash = PyObject_Hash(key);
+    Py_hash_t hash = set_hash_key(key);
     if (hash == -1) {
         set_unhashable_type(key);
         return -1;
@@ -622,7 +685,7 @@ set_contains_key(PySetObject *so, PyObject *key)
 static int
 set_discard_key(PySetObject *so, PyObject *key)
 {
-    Py_hash_t hash = PyObject_Hash(key);
+    Py_hash_t hash = set_hash_key(key);
     if (hash == -1) {
         set_unhashable_type(key);
         return -1;
@@ -1806,7 +1869,7 @@ set_intersection(PySetObject *so, PyObject *other)
     }
 
     while ((key = PyIter_Next(it)) != NULL) {
-        hash = PyObject_Hash(key);
+        hash = set_hash_key(key);
         if (hash == -1)
             goto error;
         rv = set_contains_entry(so, key, hash);
@@ -2592,7 +2655,7 @@ _PySet_Contains(PySetObject *so, PyObject *key)
 {
     assert(so);
 
-    Py_hash_t hash = PyObject_Hash(key);
+    Py_hash_t hash = set_hash_key(key);
     if (hash == -1) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError)) {
             set_unhashable_type(key);
@@ -2652,7 +2715,7 @@ static PyObject *
 frozenset___contains___impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=2301ed91bc3a6dd5 input=2f04922a98d8bab7]*/
 {
-    Py_hash_t hash = PyObject_Hash(key);
+    Py_hash_t hash = set_hash_key(key);
     if (hash == -1) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError)) {
             set_unhashable_type(key);
@@ -3117,7 +3180,7 @@ PySet_Contains(PyObject *anyset, PyObject *key)
     }
 
     PySetObject *so = (PySetObject *)anyset;
-    Py_hash_t hash = PyObject_Hash(key);
+    Py_hash_t hash = set_hash_key(key);
     if (hash == -1) {
         set_unhashable_type(key);
         return -1;
