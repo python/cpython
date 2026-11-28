@@ -415,6 +415,21 @@ class ParseTest(unittest.TestCase):
             "End element: 'корінь'",
         ])
 
+    def test_cp932_ibm_extensions(self):
+        # IBM extensions, lead bytes 0xFA-0xFC, which the encoder never emits.
+        out = self.Outputter()
+        parser = expat.ParserCreate()
+        self._hookup_callbacks(parser, out)
+        data = (b'<?xml version="1.0" encoding="cp932"?>\n'
+                b'<root>\xfa\x40\xfa\xb1\xfb\xfc</root>')
+        parser.Parse(data, True)
+        self.assertEqual(out.out, [
+            ('XML declaration', ('1.0', 'cp932', -1)),
+            "Start element: 'root' {}",
+            "Character data: '\u2170\ufa11\u9ad9'",
+            "End element: 'root'",
+        ])
+
     @support.subTests('encoding', [
         'utf-8', 'utf-16', 'utf-16be', 'utf-16le',
     ])

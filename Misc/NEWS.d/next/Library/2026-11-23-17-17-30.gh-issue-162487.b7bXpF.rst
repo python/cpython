@@ -1,0 +1,2 @@
+The :mod:`XML parser <xml.parsers.expat>` now accepts the IBM extension
+characters of the ``cp932`` encoding (lead bytes 0xFA to 0xFC).

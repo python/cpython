@@ -68,6 +68,18 @@ def create_table(encoding):
                     fail('Ambiguous mapping for %#04x: '
                         '%r (U+%04X) and %d-byte sequence %r',
                         k, chr(v), v, length, encoded)
+    for k in range(256):
+        if mapping[k] != -1:
+            continue
+        for j in range(256):
+            try:
+                decoded = bytes([k, j]).decode(encoding)
+            except UnicodeDecodeError:
+                continue
+            if len(decoded) == 1:
+                info('Decode-only lead byte %#04x', k)
+                mapping[k] = -2
+                break
     return mapping
 
 def print_table(mapping):
