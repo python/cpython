@@ -69,3 +69,30 @@ static inline Py_ssize_t PySet_GET_SIZE(PyObject *so) {
 #endif
 }
 #define PySet_GET_SIZE(so) PySet_GET_SIZE(_PyObject_CAST(so))
+
+
+// --- PySetBuilder API ------------------------------------------------
+
+typedef struct PySetBuilder PySetBuilder;
+
+PyAPI_FUNC(PySetBuilder*) PySetBuilder_CreateSet(Py_ssize_t size);
+PyAPI_FUNC(PySetBuilder*) PySetBuilder_CreateFrozenSet(Py_ssize_t size);
+PyAPI_FUNC(PyObject*) PySetBuilder_Finish(PySetBuilder *builder);
+PyAPI_FUNC(void) PySetBuilder_Discard(PySetBuilder *builder);
+PyAPI_FUNC(int) PySetBuilder_Add(
+    PySetBuilder *builder,
+    PyObject *item);
+PyAPI_FUNC(int) PySetBuilder_AddSteal(
+    PySetBuilder *builder,
+    PyObject *item);
+PyAPI_FUNC(int) PySetBuilder_Update(
+    PySetBuilder *builder,
+    PyObject *iterable);
+PyAPI_FUNC(int) PySetBuilder_UpdateArray(
+    PySetBuilder *builder,
+    PyObject *const *items,
+    Py_ssize_t nitem);
+PyAPI_FUNC(int) PySetBuilder_UpdateArraySteal(
+    PySetBuilder *builder,
+    PyObject *const *items,
+    Py_ssize_t nitem);

@@ -89,6 +89,8 @@ the constructor functions work with any iterable Python object.
    actually iterable.  The constructor is also useful for copying a set
    (``c=set(s)``).
 
+   See also the :ref:`PySetBuilder API <pysetbuilder>`.
+
    .. note::
 
       The operation is atomic on :term:`free threading <free-threaded build>`
@@ -101,6 +103,8 @@ the constructor functions work with any iterable Python object.
    The *iterable* may be ``NULL`` to create a new empty frozenset.  Return the new
    set on success or ``NULL`` on failure.  Raise :exc:`TypeError` if *iterable* is
    not actually iterable.
+
+   See also the :ref:`PySetBuilder API <pysetbuilder>`.
 
    .. note::
 
@@ -213,3 +217,104 @@ Deprecated API
    If looking for the size of a set, use :c:func:`PySet_Size` instead.
 
    .. soft-deprecated:: 3.14
+
+
+.. _pysetbuilder:
+
+PySetBuilder
+------------
+
+The :c:type:`PySetBuilder` API can be used to create a :class:`set` object
+or a :class:`frozenset` object.
+
+See also the :c:func:`PySet_New` and :c:func:`PyFrozenSet_New` functions.
+
+.. versionadded:: next
+
+
+.. c:type:: PySetBuilder
+
+   A :class:`set` or :class:`frozenset` builder object.
+
+   The API is **not thread safe**. To share a builder with multiple threads, a
+   critical section or a lock is needed.
+
+   The instance must be destroyed by :c:func:`PySetBuilder_Finish` on
+   success, or :c:func:`PySetBuilder_Discard` on error.
+
+
+.. c:function:: PySetBuilder* PySetBuilder_CreateSet(Py_ssize_t size)
+
+   Create a :class:`set` using a :c:type:`PySetBuilder`.
+
+   If *size* is greater than zero, allocate an internal table big enough to
+   store *size* items.
+
+   On error, set an exception and return ``NULL``.
+
+   *size* must be positive or zero.
+
+.. c:function:: PySetBuilder* PySetBuilder_CreateFrozenSet(Py_ssize_t size)
+
+   Similar to :c:func:`PySetBuilder_CreateSet`, but create a :class:`frozenset`
+   object instead of a :class:`set` object.
+
+.. c:function:: PyObject* PySetBuilder_Finish(PySetBuilder *builder)
+
+   Finish a :c:type:`PySetBuilder` created by
+   :c:func:`PySetBuilder_CreateFrozenSet`.
+
+   On success, return a :class:`set` object (if
+   :c:func:`PySetBuilder_CreateSet` was used) or a :class:`frozenset` object
+   (if :c:func:`PySetBuilder_CreateFrozenSet` was used).
+   On error, set an exception and return ``NULL``.
+
+   The builder instance is invalid after the call in any case.
+   No API can be called on the builder after :c:func:`PySetBuilder_Finish`.
+
+.. c:function:: void PySetBuilder_Discard(PySetBuilder *builder)
+
+   Discard a :c:type:`PySetBuilder` created by :c:func:`PySetBuilder_CreateFrozenSet`.
+
+   Do nothing if *builder* is ``NULL``.
+
+   The builder instance is invalid after the call.
+   No API can be called on the builder after :c:func:`PySetBuilder_Discard`.
+
+.. c:function:: int PySetBuilder_Add(PySetBuilder *builder, PyObject *item)
+
+   Add *item* to a set builder.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
+.. c:function:: int PySetBuilder_AddSteal(PySetBuilder *builder, PyObject *item)
+
+   Similar to :c:func:`PySetBuilder_Add`, but :term:`steal` the *item*
+   reference.
+
+.. c:function:: int PySetBuilder_Update(PySetBuilder *builder, PyObject *iterable)
+
+   Update the set builder, adding elements from *iterable*.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
+   On error, elements already added are kept.
+
+.. c:function:: int PySetBuilder_UpdateArray(PySetBuilder *builder, PyObject *const *items, Py_ssize_t nitem)
+
+   Update the set builder, adding *nitem* elements from *items* array:
+   copy references from *items* to the builder.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
+   On error, elements already added are kept.
+
+   *nitem* must be positive or zero.
+
+.. c:function:: int PySetBuilder_UpdateArraySteal(PySetBuilder *builder, PyObject *const *items, Py_ssize_t nitem)
+
+   Similar to :c:func:`PySetBuilder_UpdateArray`, but :term:`steal`
+   references instead of copying references.
