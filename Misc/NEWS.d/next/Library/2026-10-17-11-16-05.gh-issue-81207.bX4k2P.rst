@@ -1,0 +1,2 @@
+Fix a potential busy loop in :meth:`socketserver.BaseServer.handle_request`
+when the timeout expires exactly at the deadline.
