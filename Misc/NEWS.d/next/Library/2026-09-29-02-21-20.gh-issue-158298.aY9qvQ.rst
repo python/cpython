@@ -1,0 +1,6 @@
+Speed up :func:`gettext.gettext`, :func:`gettext.dgettext` and the other
+functions of the GNU :program:`gettext` API: they now search for the
+:file:`.mo` file once for each combination of domain, locale directory and
+languages, and reuse the result.  This makes creating :mod:`argparse` parsers
+faster.  A :file:`.mo` file added or removed after the first search is no
+longer noticed.
