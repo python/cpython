@@ -262,6 +262,23 @@ object)::
 
    d.close()                  # close it
 
+The :func:`shelve.open` function automatically selects an available DBM backend
+implementation. You can explicitly select the DBM backend by using
+:class:`shelve.Shelf` with a specific backend:
+
+.. code-block:: python
+
+   import shelve
+   import dbm
+
+   # Use SQLite3 as DBM backend
+   with shelve.Shelf(dbm.sqlite3.open("data.shelf", "c")) as shelf:
+       shelf["int"] = 4
+
+   # Use GNU DBM as backend
+   with shelve.Shelf(dbm.gnu.open("data.gnu", "c")) as shelf:
+       shelf["foo"] = "bar"
+
 
 Exceptions
 ----------
