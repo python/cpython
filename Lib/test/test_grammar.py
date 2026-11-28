@@ -2063,6 +2063,30 @@ class GrammarTests(unittest.TestCase):
 
         self.assertEqual(test2(), "")
 
+    def test_none_coalescing_operator(self):
+        class A:
+            v1 = "Hello"
+            v2 = None
+
+        a = A()
+        b = "World"
+        c = None
+
+        self.assertEqual(b ?? 2, "World")
+        self.assertEqual(c ?? 2, 2)
+        self.assertEqual(a.v1 ?? 2, "Hello")
+        self.assertEqual(c ?? 0 or None ?? 2 ?? 3, 2)
+        try:
+            self.assertEqual(c ?? 2 ** c ?? 3, 8)
+            self.fail("should produce TypeError")
+        except TypeError:
+            pass
+
+        if (a.v1 ?? 2) == None:
+            self.fail("test should be false")
+        else:
+            self.assertTrue(True)
+
 
 if __name__ == '__main__':
     unittest.main()

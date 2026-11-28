@@ -21,6 +21,7 @@ def any(name, alternates):
 
 def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
+    kw_op = r"(?P<KEYWORD_OP>\?\?)"
     match_softkw = (
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<MATCH_SOFTKW>match)\b" +
@@ -70,7 +71,7 @@ def make_pat():
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
     prog = re.compile("|".join([
                                 type_softkw, builtin, comment, string, kw,
-                                match_softkw, case_default,
+                                kw_op, match_softkw, case_default,
                                 case_softkw_and_pattern, lazy_softkw,
                                 any("SYNC", [r"\n"]),
                                ]),
@@ -81,6 +82,7 @@ def make_pat():
 prog = make_pat()
 idprog = re.compile(r"\s+(\w+)")
 prog_group_name_to_tag = {
+    "KEYWORD_OP": "KEYWORD",
     "MATCH_SOFTKW": "KEYWORD",
     "CASE_SOFTKW": "KEYWORD",
     "CASE_DEFAULT_UNDERSCORE": "KEYWORD",

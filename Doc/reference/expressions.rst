@@ -2313,6 +2313,7 @@ truth value. [#]_
 .. _and:
 .. _or:
 .. _not:
+.. _??:
 
 Boolean operations
 ==================
@@ -2322,6 +2323,7 @@ Boolean operations
    pair: Boolean; operation
 
 .. productionlist:: python-grammar
+   coalesce_test: `or_test` | `coalesce_test` "??" `or_test`
    or_test: `and_test` | `or_test` "or" `and_test`
    and_test: `not_test` | `and_test` "and" `not_test`
    not_test: `comparison` | "not" `not_test`
@@ -2348,6 +2350,12 @@ returned; otherwise, *y* is evaluated and the resulting value is returned.
 The expression ``x or y`` first evaluates *x*; if *x* is true, its value is
 returned; otherwise, *y* is evaluated and the resulting value is returned.
 
+.. index:: pair: operator; ??
+
+The expression ``x ?? y`` first evaluates *x*; if *x* is not ``None``, its
+value is returned; otherwise, *y* is evaluated and the resulting value is
+returned.
+
 Note that neither :keyword:`and` nor :keyword:`or` restrict the value and type
 they return to ``False`` and ``True``, but rather return the last evaluated
 argument.  This is sometimes useful, e.g., if ``s`` is a string that should be
@@ -2355,6 +2363,9 @@ replaced by a default value if it is empty, the expression ``s or 'foo'`` yields
 the desired value.  Because :keyword:`not` has to create a new value, it
 returns a boolean value regardless of the type of its argument
 (for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
+
+.. versionadded:: 3.16
+   Added the ``None``-coalescing operator :keyword:`??`.
 
 
 .. index::
@@ -2613,6 +2624,8 @@ precedence and have a left-to-right chaining feature as described in the
 | :keyword:`and`                                | Boolean AND                         |
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`or`                                 | Boolean OR                          |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`??`                                 | Boolean COALESCE                    |
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`if <if_expr>` -- :keyword:`!else`   | Conditional expression              |
 +-----------------------------------------------+-------------------------------------+

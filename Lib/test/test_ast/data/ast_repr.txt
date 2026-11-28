@@ -216,3 +216,4 @@ Module(body=[Expr(value=TemplateStr(values=[Interpolation(...)]))], type_ignores
 Module(body=[Expr(value=TemplateStr(values=[Interpolation(...)]))], type_ignores=[])
 Module(body=[Expr(value=TemplateStr(values=[Interpolation(...)]))], type_ignores=[])
 Module(body=[Expr(value=TemplateStr(values=[Constant(...), ..., Constant(...)]))], type_ignores=[])
+Module(body=[Expr(value=BoolOp(op=Coalesce(), values=[Name(...), Name(...)]))], type_ignores=[])

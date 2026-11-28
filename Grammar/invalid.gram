@@ -40,8 +40,8 @@ invalid_kwarg:
 
 # IMPORTANT: Note that the "_without_invalid" suffix causes the rule to not call invalid rules under it
 expression_without_invalid[expr_ty]:
-    | a=disjunction 'if' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
-    | disjunction
+    | a=coalesce 'if' b=coalesce 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
+    | coalesce
     | lambdef
 invalid_legacy_expression:
     | a=NAME !'(' b=star_expressions {
@@ -66,12 +66,12 @@ invalid_expression:
         "invalid syntax. Is this intended to be part of the string?") }
     # !(NAME STRING) is not matched so we don't show this error with some invalid string prefixes like: kf"dsfsdf"
     # Soft keywords need to also be ignored because they can be parsed as NAME NAME
-   | !(NAME STRING | SOFT_KEYWORD) a=disjunction b=expression_without_invalid {
+   | !(NAME STRING | SOFT_KEYWORD) a=coalesce b=expression_without_invalid {
         _PyPegen_raise_error_for_missing_comma(p, a, b) }
-   | a=disjunction 'if' b=disjunction !('else'|':') { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected 'else' after 'if' expression") }
-   | a=disjunction 'if' b=disjunction 'else' !expression {
+   | a=coalesce 'if' b=coalesce !('else'|':') { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected 'else' after 'if' expression") }
+   | a=coalesce 'if' b=coalesce 'else' !expression {
         RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("expected expression after 'else', but statement is given") }
-   | a[stmt_ty]=(pass_stmt|break_stmt|continue_stmt) 'if' b=disjunction 'else' c=simple_stmt {
+   | a[stmt_ty]=(pass_stmt|break_stmt|continue_stmt) 'if' b=coalesce 'else' c=simple_stmt {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION (a, "expected expression before 'if', but statement is given") }
    | a='lambda' [lambda_params] b=':' &FSTRING_MIDDLE  {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "f-string: lambda expressions are not allowed without parentheses") }
@@ -79,9 +79,9 @@ invalid_expression:
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "t-string: lambda expressions are not allowed without parentheses") }
 
 invalid_if_expression:
-   | disjunction 'if' b=disjunction 'else' a='*' {
+   | coalesce 'if' b=coalesce 'else' a='*' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot unpack only part of a conditional expression") }
-   | disjunction 'if' b=disjunction 'else' a='**' {
+   | coalesce 'if' b=coalesce 'else' a='**' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use dict unpacking on only part of a conditional expression") }
 
 invalid_named_expression(memo):

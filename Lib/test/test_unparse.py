@@ -307,6 +307,11 @@ class UnparseTestCase(ASTTestCase):
             '''t"{'foo'!r}"''',
         )
 
+    def test_none_coalescing_operator(self):
+        self.check_ast_roundtrip("a ?? c")
+        self.check_ast_roundtrip("a or b.func() ?? c")
+        self.check_ast_roundtrip("(a if True else b.func()) ?? c ?? c")
+
     def test_strings(self):
         self.check_ast_roundtrip("u'foo'")
         self.check_ast_roundtrip("r'foo'")

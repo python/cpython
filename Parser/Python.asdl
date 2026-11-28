@@ -99,7 +99,7 @@ module Python
 
     expr_context = Load | Store | Del
 
-    boolop = And | Or
+    boolop = And | Or | Coalesce
 
     operator = Add | Sub | Mult | MatMult | Div | Mod | Pow | LShift
                  | RShift | BitOr | BitXor | BitAnd | FloorDiv

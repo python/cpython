@@ -2672,6 +2672,9 @@ class TestBooleanExpression(unittest.TestCase):
     class No(Value):
         value = False
 
+    class NoneValue(Value):
+        value = None
+
     def test_short_circuit_and(self):
         v = [self.Yes(), self.No(), self.Yes()]
         res = v[0] and v[1] and v[0]
@@ -2684,6 +2687,11 @@ class TestBooleanExpression(unittest.TestCase):
         self.assertIs(res, v[1])
         self.assertEqual([e.called for e in v], [1, 1, 0])
 
+    def test_short_circuit_coalesce(self):
+        v = [None, self.No(), self.Yes()]
+        res = v[0] ?? v[1] ?? v[2]
+        self.assertIs(res, v[1])
+
     def test_compound(self):
         # See gh-124285
         v = [self.No(), self.Yes(), self.Yes(), self.Yes()]
@@ -2695,6 +2703,13 @@ class TestBooleanExpression(unittest.TestCase):
         res = v[0] or v[1] and v[2] or v[3] or v[4]
         self.assertIs(res, v[3])
         self.assertEqual([e.called for e in v], [1, 1, 0, 1, 0])
+
+        v = [None, self.No(), self.Yes()]
+        res = v[0] ?? v[1] or v[2]
+        self.assertIs(res, v[2])
+
+        res = v[0] or v[1] ?? v[2]
+        self.assertIs(res, v[1])
 
     def test_exception(self):
         # See gh-137288

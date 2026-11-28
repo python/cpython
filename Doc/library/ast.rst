@@ -613,10 +613,10 @@ Expressions
 
 .. class:: BoolOp(op, values)
 
-   A boolean operation, 'or' or 'and'. ``op`` is :class:`Or` or :class:`And`.
-   ``values`` are the values involved. Consecutive operations with the same
-   operator, such as ``a or b or c``, are collapsed into one node with several
-   values.
+   A boolean operation, 'and', 'or' or '??'. ``op`` is :class:`And`,
+   :class:`Or` or :class:`Coalesce`. ``values`` are the values involved.
+   Consecutive operations with the same operator, such as ``a or b or c``,
+   are collapsed into one node with several values.
 
    This doesn't include ``not``, which is a :class:`UnaryOp`.
 
@@ -633,6 +633,7 @@ Expressions
 
 .. class:: And
            Or
+           Coalesce
 
    Boolean operator tokens.
 

@@ -118,6 +118,7 @@ append_repr(PyUnicodeWriter *writer, PyObject *obj)
 enum {
     PR_TUPLE,
     PR_TEST,            /* 'if'-'else', 'lambda' */
+    PR_COALESCE,        /* '??' */
     PR_OR,              /* 'or' */
     PR_AND,             /* 'and' */
     PR_NOT,             /* 'not' */
@@ -141,8 +142,24 @@ append_ast_boolop(PyUnicodeWriter *writer, expr_ty e, int level)
 {
     Py_ssize_t i, value_count;
     asdl_expr_seq *values;
-    const char *op = (e->v.BoolOp.op == And) ? " and " : " or ";
-    int pr = (e->v.BoolOp.op == And) ? PR_AND : PR_OR;
+    const char *op;
+    int pr;
+    switch (e->v.BoolOp.op) {
+        case And:
+            op = " and ";
+            pr = PR_AND;
+            break;
+        case Or:
+            op = " or ";
+            pr = PR_OR;
+            break;
+        case Coalesce:
+            op = " ?? ";
+            pr = PR_COALESCE;
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
 
     APPEND_STR_IF(level > pr, "(");
 

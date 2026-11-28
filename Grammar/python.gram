@@ -721,11 +721,11 @@ expression[expr_ty] (memo):
     | invalid_expression
     | invalid_legacy_expression
     | if_expression
-    | disjunction
+    | coalesce
     | lambdef
 
 if_expression[expr_ty]:
-    | a=disjunction 'if' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
+    | a=coalesce 'if' b=coalesce 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
 
 yield_expr[expr_ty]:
     | 'yield' 'from' a=expression { _PyAST_YieldFrom(a, EXTRA) }
@@ -757,7 +757,16 @@ named_expression[expr_ty]:
     | invalid_named_expression
     | expression !':='
 
-disjunction[expr_ty] (memo, fastpath=_PyPegen_atom_fast_path):
+coalesce[expr_ty] (memo, fastpath=_PyPegen_atom_fast_path):
+    | a=disjunction b=('??' c=disjunction { c })+ { CHECK_VERSION(
+        expr_ty, 16, "Coalesce expressions are",
+        _PyAST_BoolOp(
+            Coalesce,
+            CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)),
+            EXTRA)) }
+    | disjunction
+
+disjunction[expr_ty] (memo):
     | a=conjunction b=('or' c=conjunction { c })+ { _PyAST_BoolOp(
         Or,
         CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)),
@@ -1042,9 +1051,9 @@ for_if_clauses[asdl_comprehension_seq*]:
     | a[asdl_comprehension_seq*]=for_if_clause+ { a }
 
 for_if_clause[comprehension_ty]:
-    | 'async' 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
+    | 'async' 'for' a=star_targets 'in' ~ b=coalesce c[asdl_expr_seq*]=('if' z=coalesce { z })* {
         CHECK_VERSION(comprehension_ty, 6, "Async comprehensions are", _PyAST_comprehension(a, b, c, 1, p->arena)) }
-    | 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
+    | 'for' a=star_targets 'in' ~ b=coalesce c[asdl_expr_seq*]=('if' z=coalesce { z })* {
         _PyAST_comprehension(a, b, c, 0, p->arena) }
     | invalid_for_if_clause
     | invalid_for_target
