@@ -81,11 +81,20 @@ control_flow_in_finally_warning(const char *kw, stmt_ty n, _PyASTPreprocessState
 static int
 before_return(_PyASTPreprocessState *state, stmt_ty node_)
 {
-    if (state->enable_warnings && state->cf_finally_used > 0) {
-        ControlFlowInFinallyContext *ctx = get_cf_finally_top(state);
-        if (ctx->in_finally && ! ctx->in_funcdef) {
-            if (!control_flow_in_finally_warning("return", node_, state)) {
-                return 0;
+    if (state->enable_warnings) {
+        ControlFlowInFinallyContext *contexts =
+            (ControlFlowInFinallyContext *)state->cf_finally.array;
+        /* A return also leaves all enclosing loops, so look past them. */
+        for (int idx = state->cf_finally_used; idx > 0; idx--) {
+            ControlFlowInFinallyContext *ctx = &contexts[idx];
+            if (ctx->in_funcdef) {
+                break;
+            }
+            if (ctx->in_finally) {
+                if (!control_flow_in_finally_warning("return", node_, state)) {
+                    return 0;
+                }
+                break;
             }
         }
     }
