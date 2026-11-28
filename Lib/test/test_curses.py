@@ -1142,6 +1142,8 @@ class TestCurses(unittest.TestCase):
         # A string of cells cannot hold a NUL: it would end a batch write.
         self.assertRaises(ValueError, curses.complexstr, 'a\0b')
         self.assertRaises(ValueError, curses.complexstr, '\0')
+        self.assertRaises(ValueError, curses.complexstr, ['a', '\0', 'b'])
+        self.assertRaises(ValueError, curses.complexstr, [cell, 'b'])
 
     def test_add_string_behavior(self):
         # addstr() advances the cursor past the written text; addnstr()

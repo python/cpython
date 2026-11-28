@@ -1,0 +1,2 @@
+:class:`curses.complexstr` now rejects a NUL item in an iterable, as it
+already did for a NUL in a string.
