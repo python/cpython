@@ -2361,6 +2361,12 @@ to speed up repeated connections from the same clients.
    :data:`PROTOCOL_TLS_CLIENT` protocol enables hostname checking by default.
    With other protocols, hostname checking must be enabled explicitly.
 
+   Hostname checking only applies to client-side connections.  A context
+   with hostname checking enabled cannot be used for server-side
+   connections: :meth:`~SSLContext.wrap_socket` and
+   :meth:`~SSLContext.wrap_bio` raise :exc:`ValueError` if *server_side*
+   is true.  Use a separate context for servers.
+
    Example::
 
       import socket, ssl

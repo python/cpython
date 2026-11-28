@@ -1,0 +1,3 @@
+Improve the error raised when a context with
+:attr:`ssl.SSLContext.check_hostname` enabled is used with
+``server_side=True``.

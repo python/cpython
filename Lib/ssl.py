@@ -396,6 +396,10 @@ def _check_sslobject_params(server_side, context=None, server_hostname=None,
         if ech_config is not None:
             raise ValueError("ech_config can only be specified in "
                              "client mode")
+        if context.check_hostname:
+            raise ValueError("check_hostname cannot be used with "
+                             "server_side=True; use a separate server "
+                             "context or disable check_hostname")
     if ech_config is not None and not HAS_ECH:
         raise NotImplementedError("ECH is not supported by the OpenSSL library")
     if context.check_hostname and not server_hostname:
