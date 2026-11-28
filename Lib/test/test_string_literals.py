@@ -351,7 +351,9 @@ class TestLiterals(unittest.TestCase):
             f.write(extra)
         finally:
             f.close()
-        __import__(modname)
+        # TEMPLATE's k = '\ä' is an invalid escape in every encoding.
+        with self.assertWarnsRegex(SyntaxWarning, r'"\\ä" is an invalid escape'):
+            __import__(modname)
         del sys.modules[modname]
 
     def test_file_utf_8(self):
