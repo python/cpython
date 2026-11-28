@@ -7186,6 +7186,14 @@ _curses_newterm_impl(PyObject *module, const char *type, PyObject *fd,
     }
 
     SCREEN *screen = newterm((char *)type, outfp, infp);
+    cursesmodule_state *state = get_cursesmodule_state(module);
+    if (state->prescreen != NULL) {
+        PyCursesScreenObject *prescreen =
+            _PyCursesScreenObject_CAST(state->prescreen);
+        assert(screen == NULL || prescreen->screen == screen);
+        prescreen->screen = NULL;
+        Py_CLEAR(state->prescreen);
+    }
     if (screen == NULL) {
         curses_set_null_error(module, "newterm", NULL);
         fclose(outfp);
@@ -7196,16 +7204,8 @@ _curses_newterm_impl(PyObject *module, const char *type, PyObject *fd,
        to its standard window. */
     curses_initscr_called = curses_setupterm_called = TRUE;
 
-    cursesmodule_state *state = get_cursesmodule_state(module);
     /* The screen object owns the SCREEN and the streams; deleting it (when it
        is no longer referenced) calls delscreen() and closes the streams. */
-    if (state->prescreen != NULL) {
-        PyCursesScreenObject *prescreen =
-            _PyCursesScreenObject_CAST(state->prescreen);
-        assert(prescreen->screen == screen);
-        prescreen->screen = NULL;
-        Py_CLEAR(state->prescreen);
-    }
     PyObject *screenobj = PyCursesScreen_New(state, screen, outfp, infp, NULL);
     if (screenobj == NULL) {
         delscreen(screen);
