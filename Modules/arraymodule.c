@@ -133,7 +133,9 @@ enum machine_format_code {
  * Must come after arrayobject, arrayiterobject,
  * and enum machine_code_type definitions.
  */
+#define clinic_state() (find_array_state_by_type(type))
 #include "clinic/arraymodule.c.h"
+#undef clinic_state
 
 #define array_Check(op, state) PyObject_TypeCheck(op, state->ArrayType)
 
@@ -757,9 +759,9 @@ static const struct arraydescr descriptors[] = {
 Implementations of array object methods.
 ****************************************************************************/
 /*[clinic input]
-class array.array "arrayobject *" "ArrayType"
+class array.array "arrayobject *" "clinic_state()->ArrayType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a5c29edf59f176a3]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f7199c1c2db75905]*/
 
 static PyObject *
 newarrayobject_untracked(PyTypeObject *type, Py_ssize_t size,
@@ -2166,47 +2168,6 @@ typecode_to_mformat_code(const char *typecode)
     }
 }
 
-/* Forward declaration. */
-static PyObject *array_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
-
-/*
- * Internal: This function wraps the array constructor--i.e., array_new()--to
- * allow the creation of array objects from C code without having to deal
- * directly the tuple argument of array_new(). The typecode argument is a
- * string, like "i" or "f" for example, representing an array
- * type code. The items argument is a bytes or a list object from which
- * contains the initial value of the array.
- *
- * On success, this functions returns the array object created. Otherwise,
- * NULL is returned to indicate a failure.
- */
-static PyObject *
-make_array(PyTypeObject *arraytype, const char *typecode, PyObject *items)
-{
-    PyObject *new_args;
-    PyObject *array_obj;
-    PyObject *typecode_obj;
-
-    assert(arraytype != NULL);
-    assert(items != NULL);
-
-    typecode_obj = PyUnicode_FromString(typecode);
-    if (typecode_obj == NULL)
-        return NULL;
-
-    new_args = _PyTuple_FromPairSteal(typecode_obj, Py_NewRef(items));
-    if (new_args == NULL) {
-        return NULL;
-    }
-
-    array_obj = array_new(arraytype, new_args, NULL);
-    Py_DECREF(new_args);
-    if (array_obj == NULL)
-        return NULL;
-
-    return array_obj;
-}
-
 /*
  * This functions is a special constructor used when unpickling an array. It
  * provides a portable way to rebuild an array from its memory representation.
@@ -2273,7 +2234,7 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
     /* Fast path: No decoding has to be done. */
     if (mformat_code == typecode_to_mformat_code(typecode) ||
         mformat_code == UNKNOWN_FORMAT) {
-        return make_array(arraytype, typecode, items);
+        return array_new_impl(arraytype, typecode, items);
     }
 
     /* Slow path: Decode the byte string according to the given machine
@@ -2486,7 +2447,7 @@ array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
         return NULL;
     }
 
-    result = make_array(arraytype, typecode, converted_items);
+    result = array_new_impl(arraytype, typecode, converted_items);
     Py_DECREF(converted_items);
     return result;
 }
@@ -2930,21 +2891,79 @@ array_buffer_relbuf(PyObject *op, Py_buffer *Py_UNUSED(view))
     self->ob_exports--;
 }
 
+/*[clinic input]
+@vectorcall
+@classmethod
+array.array.__new__ as array_new
+    typecode as s: str
+    initializer as initial: object(c_default="NULL") = ()
+    /
+
+Create array object.
+
+Return a new array whose items are restricted by typecode, and
+initialized from the optional initializer value, which must be a list,
+string or iterable over elements of the appropriate type.
+
+Arrays represent basic values and behave very much like lists, except
+the type of objects stored in them is constrained. The type is specified
+at object creation time by using a type code, which is a string.
+The following type codes are defined:
+
+    Type code   C Type             Minimum size in bytes
+    'b'         signed integer     1
+    'B'         unsigned integer   1
+    'w'         Py_UCS4            4
+    'h'         signed integer     2
+    'H'         unsigned integer   2
+    'i'         signed integer     2
+    'I'         unsigned integer   2
+    'l'         signed integer     4
+    'L'         unsigned integer   4
+    'q'         signed integer     8 (see note)
+    'Q'         unsigned integer   8 (see note)
+    'e'         16-bit IEEE floats 2
+    'f'         floating-point     4
+    'd'         floating-point     8
+    'Zf'        float complex      8
+    'Zd'        double complex     16
+
+NOTE: The 'q' and 'Q' type codes are only available if the platform
+C compiler used to build Python supports 'long long', or, on Windows,
+'__int64'.
+
+Methods:
+
+append() -- append a new item to the end of the array
+buffer_info() -- return information giving the current memory info
+byteswap() -- byteswap all the items of the array
+count() -- return number of occurrences of an object
+extend() -- extend array by appending multiple elements from an iterable
+fromfile() -- read items from a file object
+fromlist() -- append items from the list
+frombytes() -- append items from the string
+index() -- return index of first occurrence of an object
+insert() -- insert a new item into the array at a provided position
+pop() -- remove and return item (default last)
+remove() -- remove first occurrence of an object
+reverse() -- reverse the order of the items in the array
+tofile() -- write all items to a file object
+tolist() -- return the array converted to an ordinary list
+tobytes() -- return the array converted to a string
+
+Attributes:
+
+typecode -- the typecode character used to create the array
+itemsize -- the length in bytes of one array item
+[clinic start generated code]*/
+
 static PyObject *
-array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+array_new_impl(PyTypeObject *type, const char *s, PyObject *initial)
+/*[clinic end generated code: output=4b6a68b7540f8f3f input=23a2e91f05deccff]*/
 {
     array_state *state = find_array_state_by_type(type);
-    const char *s;
-    PyObject *initial = NULL, *it = NULL;
+    PyObject *it = NULL;
     const struct arraydescr *descr;
-
-    if ((type == state->ArrayType ||
-         type->tp_init == state->ArrayType->tp_init) &&
-        !_PyArg_NoKeywords("array.array", kwds))
-        return NULL;
-
-    if (!PyArg_ParseTuple(args, "s|O:array", &s, &initial))
-        return NULL;
 
     if (PySys_Audit("array.__new__", "sO",
                     s, initial ? initial : Py_None) < 0) {
@@ -3094,65 +3113,6 @@ an array of basic values: characters, integers, floating-point\n\
 numbers, complex numbers.  Arrays are sequence types and behave very much like lists,\n\
 except that the type of objects stored in them is constrained.\n");
 
-PyDoc_STRVAR(arraytype_doc,
-"array(typecode [, initializer]) -> array\n\
-\n\
-Return a new array whose items are restricted by typecode, and\n\
-initialized from the optional initializer value, which must be a list,\n\
-string or iterable over elements of the appropriate type.\n\
-\n\
-Arrays represent basic values and behave very much like lists, except\n\
-the type of objects stored in them is constrained. The type is specified\n\
-at object creation time by using a type code, which is a string.\n\
-The following type codes are defined:\n\
-\n\
-    Type code   C Type             Minimum size in bytes\n\
-    'b'         signed integer     1\n\
-    'B'         unsigned integer   1\n\
-    'w'         Py_UCS4            4\n\
-    'h'         signed integer     2\n\
-    'H'         unsigned integer   2\n\
-    'i'         signed integer     2\n\
-    'I'         unsigned integer   2\n\
-    'l'         signed integer     4\n\
-    'L'         unsigned integer   4\n\
-    'q'         signed integer     8 (see note)\n\
-    'Q'         unsigned integer   8 (see note)\n\
-    'e'         16-bit IEEE floats 2\n\
-    'f'         floating-point     4\n\
-    'd'         floating-point     8\n\
-    'Zf'        float complex      8\n\
-    'Zd'        double complex     16\n\
-\n\
-NOTE: The 'q' and 'Q' type codes are only available if the platform\n\
-C compiler used to build Python supports 'long long', or, on Windows,\n\
-'__int64'.\n\
-\n\
-Methods:\n\
-\n\
-append() -- append a new item to the end of the array\n\
-buffer_info() -- return information giving the current memory info\n\
-byteswap() -- byteswap all the items of the array\n\
-count() -- return number of occurrences of an object\n\
-extend() -- extend array by appending multiple elements from an iterable\n\
-fromfile() -- read items from a file object\n\
-fromlist() -- append items from the list\n\
-frombytes() -- append items from the string\n\
-index() -- return index of first occurrence of an object\n\
-insert() -- insert a new item into the array at a provided position\n\
-pop() -- remove and return item (default last)\n\
-remove() -- remove first occurrence of an object\n\
-reverse() -- reverse the order of the items in the array\n\
-tofile() -- write all items to a file object\n\
-tolist() -- return the array converted to an ordinary list\n\
-tobytes() -- return the array converted to a string\n\
-\n\
-Attributes:\n\
-\n\
-typecode -- the typecode character used to create the array\n\
-itemsize -- the length in bytes of one array item\n\
-");
-
 static PyObject *array_iter(PyObject *op);
 
 static struct PyMemberDef array_members[] = {
@@ -3164,7 +3124,7 @@ static PyType_Slot array_slots[] = {
     {Py_tp_dealloc, array_dealloc},
     {Py_tp_repr, array_repr},
     {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_doc, (void *)arraytype_doc},
+    {Py_tp_doc, (void *)array_new__doc__},
     {Py_tp_richcompare, array_richcompare},
     {Py_tp_iter, array_iter},
     {Py_tp_methods, array_methods},
@@ -3173,6 +3133,7 @@ static PyType_Slot array_slots[] = {
     {Py_tp_alloc, _PyType_AllocNoTrack},
     {Py_tp_new, array_new},
     {Py_tp_traverse, _PyObject_VisitType},
+    {Py_tp_vectorcall, array_vectorcall},
 
     /* as sequence */
     {Py_sq_length, array_length},
