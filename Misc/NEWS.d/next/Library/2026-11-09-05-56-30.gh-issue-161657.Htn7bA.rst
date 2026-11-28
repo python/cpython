@@ -1,0 +1,3 @@
+Fix :meth:`socket.socket.setsockopt` and :meth:`socket.socket.getsockopt`
+rejecting buffered ``SOL_SOCKET`` options on ``AF_VSOCK`` sockets. Apply
+VSOCK-specific integer handling only to the ``AF_VSOCK`` option level.
