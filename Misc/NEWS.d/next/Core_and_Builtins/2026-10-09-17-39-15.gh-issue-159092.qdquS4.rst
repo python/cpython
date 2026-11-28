@@ -1,0 +1,1 @@
+Speed up ``x in list`` for lists of integers, floats and strings by specializing the per-item equality check.
