@@ -114,6 +114,21 @@ invalid_assignment:
             "'%s' is an illegal expression for augmented assignment",
             _PyPegen_get_expr_name(a)
         )}
+    | star_expressions a='=' b='<' {
+        _PyPegen_tokens_are_adjacent(a, b)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '<=' instead of '=<'?")
+        : NULL
+    }
+    | star_expressions a='=' b='>' {
+        _PyPegen_tokens_are_adjacent(a, b)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '>=' instead of '=>'?")
+        : NULL
+    }
+    | star_expressions a='=' b='!' {
+        _PyPegen_tokens_are_adjacent(a, b)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '!=' instead of '=!'?")
+        : NULL
+    }
 invalid_ann_assign_target[expr_ty]:
     | list
     | tuple
@@ -464,4 +479,11 @@ invalid_noteq:
       _PyPegen_tokens_are_adjacent(a, b)
       ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '!=' instead of '<>'?")
       : NULL
+    }
+
+invalid_eqeqeq:
+    | a='==' b='=' {
+        _PyPegen_tokens_are_adjacent(a, b)
+        ? RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax.  Maybe you meant '==' instead of '==='?")
+        : NULL
     }

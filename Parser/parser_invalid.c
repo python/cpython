@@ -89,95 +89,96 @@
 #define invalid_bitwise_and_type 1262  // Left-recursive
 #define invalid_bitwise_or_type 1263  // Left-recursive
 #define invalid_noteq_type 1264
-#define _tmp_106_type 1370
-#define _loop0_107_type 1371
-#define _gather_108_type 1372
-#define _tmp_109_type 1373
-#define _tmp_110_type 1374
-#define _tmp_111_type 1375
-#define _tmp_112_type 1376
-#define _loop1_113_type 1377
-#define _tmp_114_type 1378
-#define _tmp_115_type 1379
-#define _tmp_116_type 1380
-#define _tmp_117_type 1381
-#define _tmp_118_type 1382
-#define _loop0_119_type 1383
-#define _loop0_120_type 1384
-#define _tmp_121_type 1385
-#define _tmp_122_type 1386
-#define _loop0_123_type 1387
-#define _loop0_124_type 1388
-#define _loop1_125_type 1389
-#define _tmp_126_type 1390
-#define _loop1_127_type 1391
-#define _tmp_128_type 1392
-#define _tmp_129_type 1393
-#define _tmp_130_type 1394
-#define _tmp_131_type 1395
-#define _loop1_132_type 1396
-#define _tmp_133_type 1397
-#define _loop0_134_type 1398
-#define _loop0_135_type 1399
-#define _loop0_136_type 1400
-#define _gather_137_type 1401
-#define _tmp_138_type 1402
-#define _loop1_139_type 1403
-#define _loop1_140_type 1404
-#define _tmp_141_type 1405
-#define _tmp_142_type 1406
-#define _tmp_143_type 1407
-#define _tmp_144_type 1408
-#define _loop0_145_type 1409
-#define _gather_146_type 1410
-#define _tmp_147_type 1411
-#define _loop0_148_type 1412
-#define _loop0_149_type 1413
-#define _gather_150_type 1414
-#define _loop0_151_type 1415
-#define _gather_152_type 1416
-#define _tmp_153_type 1417
-#define _loop0_154_type 1418
-#define _loop1_155_type 1419
-#define _tmp_156_type 1420
-#define _loop1_157_type 1421
-#define _tmp_158_type 1422
-#define _tmp_159_type 1423
-#define _tmp_160_type 1424
-#define _tmp_161_type 1425
-#define _tmp_162_type 1426
-#define _tmp_163_type 1427
-#define _loop0_164_type 1428
-#define _gather_165_type 1429
-#define _tmp_166_type 1430
-#define _tmp_167_type 1431
-#define _tmp_168_type 1432
-#define _tmp_169_type 1433
-#define _tmp_170_type 1434
-#define _tmp_171_type 1435
-#define _loop0_172_type 1436
-#define _loop1_173_type 1437
-#define _loop1_174_type 1438
-#define _tmp_175_type 1439
-#define _tmp_176_type 1440
-#define _tmp_177_type 1441
-#define _tmp_189_type 1453
-#define _tmp_190_type 1454
-#define _tmp_191_type 1455
-#define _tmp_192_type 1456
-#define _tmp_193_type 1457
-#define _tmp_194_type 1458
-#define _loop0_195_type 1459
-#define _tmp_196_type 1460
-#define _tmp_197_type 1461
-#define _tmp_198_type 1462
-#define _tmp_199_type 1463
-#define _loop0_201_type 1465
-#define _gather_202_type 1466
-#define _tmp_203_type 1467
-#define _tmp_204_type 1468
-#define _tmp_205_type 1469
-#define _tmp_206_type 1470
+#define invalid_eqeqeq_type 1265
+#define _tmp_106_type 1371
+#define _loop0_107_type 1372
+#define _gather_108_type 1373
+#define _tmp_109_type 1374
+#define _tmp_110_type 1375
+#define _tmp_111_type 1376
+#define _tmp_112_type 1377
+#define _loop1_113_type 1378
+#define _tmp_114_type 1379
+#define _tmp_115_type 1380
+#define _tmp_116_type 1381
+#define _tmp_117_type 1382
+#define _tmp_118_type 1383
+#define _loop0_119_type 1384
+#define _loop0_120_type 1385
+#define _tmp_121_type 1386
+#define _tmp_122_type 1387
+#define _loop0_123_type 1388
+#define _loop0_124_type 1389
+#define _loop1_125_type 1390
+#define _tmp_126_type 1391
+#define _loop1_127_type 1392
+#define _tmp_128_type 1393
+#define _tmp_129_type 1394
+#define _tmp_130_type 1395
+#define _tmp_131_type 1396
+#define _loop1_132_type 1397
+#define _tmp_133_type 1398
+#define _loop0_134_type 1399
+#define _loop0_135_type 1400
+#define _loop0_136_type 1401
+#define _gather_137_type 1402
+#define _tmp_138_type 1403
+#define _loop1_139_type 1404
+#define _loop1_140_type 1405
+#define _tmp_141_type 1406
+#define _tmp_142_type 1407
+#define _tmp_143_type 1408
+#define _tmp_144_type 1409
+#define _loop0_145_type 1410
+#define _gather_146_type 1411
+#define _tmp_147_type 1412
+#define _loop0_148_type 1413
+#define _loop0_149_type 1414
+#define _gather_150_type 1415
+#define _loop0_151_type 1416
+#define _gather_152_type 1417
+#define _tmp_153_type 1418
+#define _loop0_154_type 1419
+#define _loop1_155_type 1420
+#define _tmp_156_type 1421
+#define _loop1_157_type 1422
+#define _tmp_158_type 1423
+#define _tmp_159_type 1424
+#define _tmp_160_type 1425
+#define _tmp_161_type 1426
+#define _tmp_162_type 1427
+#define _tmp_163_type 1428
+#define _loop0_164_type 1429
+#define _gather_165_type 1430
+#define _tmp_166_type 1431
+#define _tmp_167_type 1432
+#define _tmp_168_type 1433
+#define _tmp_169_type 1434
+#define _tmp_170_type 1435
+#define _tmp_171_type 1436
+#define _loop0_172_type 1437
+#define _loop1_173_type 1438
+#define _loop1_174_type 1439
+#define _tmp_175_type 1440
+#define _tmp_176_type 1441
+#define _tmp_177_type 1442
+#define _tmp_189_type 1454
+#define _tmp_190_type 1455
+#define _tmp_191_type 1456
+#define _tmp_192_type 1457
+#define _tmp_193_type 1458
+#define _tmp_194_type 1459
+#define _loop0_195_type 1460
+#define _tmp_196_type 1461
+#define _tmp_197_type 1462
+#define _tmp_198_type 1463
+#define _tmp_199_type 1464
+#define _loop0_201_type 1466
+#define _gather_202_type 1467
+#define _tmp_203_type 1468
+#define _tmp_204_type 1469
+#define _tmp_205_type 1470
+#define _tmp_206_type 1471
 
 // Rules shared between the C files of this parser
 #define simple_stmt_rule _PyPegen_simple_stmt_rule
@@ -442,6 +443,8 @@ Py_LOCAL_SYMBOL void *invalid_bitwise_and_rule(Parser *p);
 Py_LOCAL_SYMBOL void *invalid_bitwise_or_rule(Parser *p);
 #define invalid_noteq_rule _PyPegen_invalid_noteq_rule
 Py_LOCAL_SYMBOL void *invalid_noteq_rule(Parser *p);
+#define invalid_eqeqeq_rule _PyPegen_invalid_eqeqeq_rule
+Py_LOCAL_SYMBOL void *invalid_eqeqeq_rule(Parser *p);
 
 static expr_ty expression_without_invalid_rule(Parser *p);
 static expr_ty invalid_ann_assign_target_rule(Parser *p);
@@ -1730,6 +1733,9 @@ invalid_named_expression_rule(Parser *p)
 //     | ((star_targets '='))* star_expressions '='
 //     | ((star_targets '='))* yield_expr '='
 //     | star_expressions augassign annotated_rhs
+//     | star_expressions '=' '<'
+//     | star_expressions '=' '>'
+//     | star_expressions '=' '!'
 Py_LOCAL_SYMBOL void *
 invalid_assignment_rule(Parser *p)
 {
@@ -1927,6 +1933,96 @@ invalid_assignment_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_assignment[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_expressions augassign annotated_rhs"));
+    }
+    { // star_expressions '=' '<'
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expressions '=' '<'"));
+        Token * a;
+        Token * b;
+        expr_ty star_expressions_var;
+        if (
+            (star_expressions_var = star_expressions_rule(p))  // star_expressions
+            &&
+            (a = _PyPegen_expect_token(p, 22))  // token='='
+            &&
+            (b = _PyPegen_expect_token(p, 20))  // token='<'
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_expressions '=' '<'"));
+            _res = _PyPegen_tokens_are_adjacent ( a , b ) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax.  Maybe you meant '<=' instead of '=<'?" ) : NULL;
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_assignment[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_expressions '=' '<'"));
+    }
+    { // star_expressions '=' '>'
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expressions '=' '>'"));
+        Token * a;
+        Token * b;
+        expr_ty star_expressions_var;
+        if (
+            (star_expressions_var = star_expressions_rule(p))  // star_expressions
+            &&
+            (a = _PyPegen_expect_token(p, 22))  // token='='
+            &&
+            (b = _PyPegen_expect_token(p, 21))  // token='>'
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_expressions '=' '>'"));
+            _res = _PyPegen_tokens_are_adjacent ( a , b ) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax.  Maybe you meant '>=' instead of '=>'?" ) : NULL;
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_assignment[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_expressions '=' '>'"));
+    }
+    { // star_expressions '=' '!'
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_assignment[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "star_expressions '=' '!'"));
+        Token * a;
+        Token * b;
+        expr_ty star_expressions_var;
+        if (
+            (star_expressions_var = star_expressions_rule(p))  // star_expressions
+            &&
+            (a = _PyPegen_expect_token(p, 22))  // token='='
+            &&
+            (b = _PyPegen_expect_token(p, 54))  // token='!'
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "star_expressions '=' '!'"));
+            _res = _PyPegen_tokens_are_adjacent ( a , b ) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax.  Maybe you meant '!=' instead of '=!'?" ) : NULL;
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_assignment[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "star_expressions '=' '!'"));
     }
     _res = NULL;
   done:
@@ -8210,6 +8306,52 @@ invalid_noteq_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_noteq[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'<' '>'"));
+    }
+    _res = NULL;
+  done:
+    p->level--;
+    return _res;
+}
+
+// invalid_eqeqeq: '==' '='
+Py_LOCAL_SYMBOL void *
+invalid_eqeqeq_rule(Parser *p)
+{
+    if (p->level++ == MAXSTACK || _PyPegen_stack_exhausted(p)) {
+        _Pypegen_stack_overflow(p);
+    }
+    if (p->error_indicator) {
+        p->level--;
+        return NULL;
+    }
+    void * _res = NULL;
+    int _mark = p->mark;
+    { // '==' '='
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_eqeqeq[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'==' '='"));
+        Token * a;
+        Token * b;
+        if (
+            (a = _PyPegen_expect_token(p, 27))  // token='=='
+            &&
+            (b = _PyPegen_expect_token(p, 22))  // token='='
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_eqeqeq[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'==' '='"));
+            _res = _PyPegen_tokens_are_adjacent ( a , b ) ? RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "invalid syntax.  Maybe you meant '==' instead of '==='?" ) : NULL;
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_eqeqeq[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'==' '='"));
     }
     _res = NULL;
   done:
