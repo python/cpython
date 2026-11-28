@@ -1,0 +1,3 @@
+Fix :func:`dataclasses.dataclass` raising :exc:`TypeError` about field
+ordering when a subclass defines its own :meth:`~object.__init__` and
+inherits from a dataclass that has fields with default values.
