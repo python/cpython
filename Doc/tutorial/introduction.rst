@@ -166,6 +166,10 @@ Alternatively, we can use the other type of quotation marks::
    '"Yes," they said.'
    >>> "\"Yes,\" they said."
    '"Yes," they said.'
+
+When both types of quotes are used, use the ``\`` escape. The output will
+also show a backslash::
+
    >>> '"Isn\'t," they said.'
    '"Isn\'t," they said.'
 
