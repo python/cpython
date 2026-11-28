@@ -4,8 +4,6 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _PyEval_SetProfile()
-#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
@@ -982,13 +980,6 @@ profiler_dealloc(PyObject *op)
 {
     ProfilerObject *self = ProfilerObject_CAST(op);
     PyObject_GC_UnTrack(self);
-    if (self->flags & POF_ENABLED) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
-            PyErr_FormatUnraisable("Exception ignored while "
-                                   "destroying _lsprof profiler");
-        }
-    }
 
     /* Drop the external timer before flushing: it is Python code, and the
        profiler can be deallocated by the garbage collector. */
