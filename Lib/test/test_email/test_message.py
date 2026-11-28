@@ -582,7 +582,7 @@ class TestEmailMessageBase:
             ('From', 'bar@foo.com'),
             ]
         if subtype != 'no_content':
-            ('content-shadow', 'Logrus'),
+            msg_headers.append(('content-shadow', 'Logrus'))
         msg_headers.append(('X-Random-Header', 'Corwin'))
         if subtype == 'text':
             payload = ''
