@@ -181,8 +181,12 @@ _PyObject_MergePerThreadRefcounts(_PyThreadStateImpl *tstate)
         Py_ssize_t refcnt = tstate->refcounts.values[i];
         if (refcnt != 0) {
             PyObject *obj = pool->table[i].obj;
+            /* `refcnt` is a per-thread delta, so it is routinely negative,
+               and shifting a negative value left is undefined behaviour.
+               Shift in the unsigned domain instead. */
             _Py_atomic_add_ssize(&obj->ob_ref_shared,
-                                 refcnt << _Py_REF_SHARED_SHIFT);
+                                 (Py_ssize_t)((size_t)refcnt
+                                              << _Py_REF_SHARED_SHIFT));
             tstate->refcounts.values[i] = 0;
         }
     }
