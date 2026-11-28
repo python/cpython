@@ -454,9 +454,9 @@ class BasicInterpolation(Interpolation):
     _KEYCRE = re.compile(r"%\(([^)]+)\)s")
 
     def before_get(self, parser, section, option, value, defaults):
-        L = []
-        self._interpolate_some(parser, option, L, value, section, defaults, 1)
-        return ''.join(L)
+        return ''.join(
+            self._interpolate_some(parser, section, option, value, defaults, 1)
+        )
 
     def before_set(self, parser, section, option, value):
         tmp_value = value.replace('%%', '')  # escaped percent signs
@@ -468,51 +468,59 @@ class BasicInterpolation(Interpolation):
             )
         return value
 
-    def _interpolate_some(self, parser, option, accum, rest, section, map, depth):
+    def _interpolate_some(self, parser, section, option, rest, map, depth):
         rawval = parser.get(section, option, raw=True, fallback=rest)
         if depth > MAX_INTERPOLATION_DEPTH:
             raise InterpolationDepthError(option, section, rawval)
-        while rest:
-            p = rest.find("%")
-            if p < 0:
-                accum.append(rest)
-                return
-            if p > 0:
-                accum.append(rest[:p])
-                rest = rest[p:]
-            # p is no longer used
-            c = rest[1:2]
-            if c == "%":
-                accum.append("%")
+        while (pos := rest.find("%")) >= 0:
+            if pos > 0:
+                yield rest[:pos]
+                rest = rest[pos:]
+            next_char = rest[1:2]
+            if next_char == "%":
+                yield "%"
                 rest = rest[2:]
-            elif c == "(":
-                m = self._KEYCRE.match(rest)
-                if m is None:
-                    raise InterpolationSyntaxError(
-                        option,
-                        section,
-                        f"bad interpolation variable reference {rest!r}",
-                    )
-                var = parser.optionxform(m.group(1))
-                rest = rest[m.end() :]
-                try:
-                    v = map[var]
-                except KeyError:
-                    raise InterpolationMissingOptionError(
-                        option, section, rawval, var
-                    ) from None
+            elif next_char == "(":
+                v, rest, _, _ = self._do_one_interpolation(
+                    parser, section, option, rest, rawval, map
+                )
                 if "%" in v:
-                    self._interpolate_some(
-                        parser, option, accum, v, section, map, depth + 1
+                    yield from self._interpolate_some(
+                        parser, section, option, v, map, depth + 1
                     )
                 else:
-                    accum.append(v)
+                    yield v
             else:
                 raise InterpolationSyntaxError(
                     option,
                     section,
                     f"'%' must be followed by '%' or '(', found: {rest!r}",
                 )
+        if rest:
+            yield rest
+
+    def _do_one_interpolation(
+        self, parser, section, option, value, rawval, map
+    ):
+        m = self._KEYCRE.match(value)
+        if m is None:
+            raise InterpolationSyntaxError(
+                option,
+                section,
+                f"bad interpolation variable reference {value!r}",
+            )
+
+        remainder = value[m.end() :]
+        ref_section = section
+        ref_option = parser.optionxform(m.group(1))
+        try:
+            result = map[ref_option]
+        except KeyError:
+            raise InterpolationMissingOptionError(
+                option, section, rawval, ref_option
+            ) from None
+
+        return (result, remainder, ref_section, ref_option)
 
 
 class ExtendedInterpolation(Interpolation):
@@ -522,9 +530,9 @@ class ExtendedInterpolation(Interpolation):
     _KEYCRE = re.compile(r"\$\{([^}]+)\}")
 
     def before_get(self, parser, section, option, value, defaults):
-        L = []
-        self._interpolate_some(parser, option, L, value, section, defaults, 1)
-        return ''.join(L)
+        return ''.join(
+            self._interpolate_some(parser, section, option, value, defaults, 1)
+        )
 
     def before_set(self, parser, section, option, value):
         tmp_value = value.replace('$$', '')  # escaped dollar signs
@@ -536,80 +544,75 @@ class ExtendedInterpolation(Interpolation):
             )
         return value
 
-    def _interpolate_some(
-        self,
-        parser,
-        option,  # noqa: C901  # gh-159686
-        accum,
-        rest,
-        section,
-        map,
-        depth,
-    ):
+    def _interpolate_some(self, parser, section, option, rest, map, depth):
         rawval = parser.get(section, option, raw=True, fallback=rest)
         if depth > MAX_INTERPOLATION_DEPTH:
             raise InterpolationDepthError(option, section, rawval)
-        while rest:
-            p = rest.find("$")
-            if p < 0:
-                accum.append(rest)
-                return
-            if p > 0:
-                accum.append(rest[:p])
-                rest = rest[p:]
-            # p is no longer used
-            c = rest[1:2]
-            if c == "$":
-                accum.append("$")
+        while (pos := rest.find("$")) >= 0:
+            if pos > 0:
+                yield rest[:pos]
+                rest = rest[pos:]
+            next_char = rest[1:2]
+            if next_char == "$":
+                yield "$"
                 rest = rest[2:]
-            elif c == "{":
-                m = self._KEYCRE.match(rest)
-                if m is None:
-                    raise InterpolationSyntaxError(
-                        option,
-                        section,
-                        f"bad interpolation variable reference {rest!r}",
-                    )
-                path = m.group(1).split(':')
-                rest = rest[m.end() :]
-                sect = section
-                opt = option
-                try:
-                    if len(path) == 1:
-                        opt = parser.optionxform(path[0])
-                        v = map[opt]
-                    elif len(path) == 2:
-                        sect = path[0]
-                        opt = parser.optionxform(path[1])
-                        v = parser.get(sect, opt, raw=True)
-                    else:
-                        raise InterpolationSyntaxError(
-                            option, section, f"More than one ':' found: {rest!r}"
-                        )
-                except (KeyError, NoSectionError, NoOptionError):
-                    raise InterpolationMissingOptionError(
-                        option, section, rawval, ":".join(path)
-                    ) from None
+            elif next_char == "{":
+                v, rest, ref_section, ref_option = self._do_one_interpolation(
+                    parser, section, option, rest, rawval, map
+                )
                 if v is None:
                     continue
                 if "$" in v:
-                    self._interpolate_some(
+                    yield from self._interpolate_some(
                         parser,
-                        opt,
-                        accum,
+                        ref_section,
+                        ref_option,
                         v,
-                        sect,
-                        dict(parser.items(sect, raw=True)),
+                        dict(parser.items(ref_section, raw=True)),
                         depth + 1,
                     )
                 else:
-                    accum.append(v)
+                    yield v
             else:
                 raise InterpolationSyntaxError(
                     option,
                     section,
                     f"'$' must be followed by '$' or '{{', found: {rest!r}",
                 )
+        if rest:
+            yield rest
+
+    def _do_one_interpolation(
+        self, parser, section, option, value, rawval, map
+    ):
+        m = self._KEYCRE.match(value)
+        if m is None:
+            raise InterpolationSyntaxError(
+                option,
+                section,
+                f"bad interpolation variable reference {value!r}",
+            )
+
+        path = m.group(1).split(":")
+        remainder = value[m.end() :]
+        try:
+            if len(path) == 1:
+                option = parser.optionxform(path[0])
+                result = map[option]
+            elif len(path) == 2:
+                section, option = path
+                option = parser.optionxform(option)
+                result = parser.get(section, option, raw=True)
+            else:
+                raise InterpolationSyntaxError(
+                    option, section, f"More than one ':' found: {remainder!r}"
+                )
+        except (KeyError, NoSectionError, NoOptionError):
+            raise InterpolationMissingOptionError(
+                option, section, rawval, ":".join(path)
+            ) from None
+
+        return (result, remainder, section, option)
 
 
 class _ReadState:
