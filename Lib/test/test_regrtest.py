@@ -29,10 +29,12 @@ from xml.etree import ElementTree
 
 from test.libregrtest.findtests import collect_cases
 from test.libregrtest.filter import set_match_tests
+from test.libregrtest.parallel_case import ParallelTestCase
 from test.libregrtest.run_workers import MultiprocessIterator
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import threading_helper
 from test.libregrtest import cmdline
 from test.libregrtest import main
 from test.libregrtest import setup
@@ -2745,6 +2747,61 @@ class FindTestsTestCase(BaseTestCase):
                                                    test_dir=self.tmptestdir)
         self.assertEqual(cases_by_module, {})
         self.assertIn(testname, skipped)
+
+
+@threading_helper.requires_working_threading()
+class ParallelTestCaseTestCase(unittest.TestCase):
+    def test_cleanups_are_thread_local(self):
+        num_threads = 4
+        barrier = threading.Barrier(num_threads)
+        cases = []
+        lock = threading.Lock()
+
+        class Test(unittest.TestCase):
+            def setUp(self):
+                self.cleanup_calls = []
+                with lock:
+                    cases.append(self)
+                thread = threading.get_ident()
+                self.addCleanup(self.cleanup, thread, 1)
+                self.addCleanup(self.cleanup, thread, 2)
+
+            def cleanup(self, thread, value):
+                self.assertEqual(threading.get_ident(), thread)
+                self.cleanup_calls.append(value)
+
+            def test(self):
+                # All workers must register their cleanups before any runs them.
+                barrier.wait(timeout=support.SHORT_TIMEOUT)
+
+        case = Test('test')
+        result = unittest.TestResult()
+        ParallelTestCase(case, num_threads).run(result)
+        self.assertTrue(result.wasSuccessful(), (result.errors, result.failures))
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(len(cases), num_threads)
+        self.assertEqual(len({id(case._cleanups) for case in cases}), num_threads)
+        for worker_case in cases:
+            self.assertEqual(worker_case.cleanup_calls, [2, 1])
+            self.assertEqual(worker_case._cleanups, [])
+        self.assertEqual(case._cleanups, [])
+
+    def test_existing_cleanups_are_preserved(self):
+        num_threads = 4
+        cleanup_calls = []
+        case = unittest.FunctionTestCase(lambda: None)
+        case.addCleanup(cleanup_calls.append, 1)
+        case.addCleanup(cleanup_calls.append, 2)
+        cleanups = case._cleanups.copy()
+
+        for _ in range(2):
+            cleanup_calls.clear()
+            result = unittest.TestResult()
+            ParallelTestCase(case, num_threads).run(result)
+            self.assertTrue(result.wasSuccessful(),
+                            (result.errors, result.failures))
+            self.assertCountEqual(cleanup_calls, [1, 2] * num_threads)
+            self.assertEqual(case._cleanups, cleanups)
 
 
 class MultiprocessIteratorTestCase(unittest.TestCase):
