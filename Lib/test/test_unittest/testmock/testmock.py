@@ -687,6 +687,11 @@ class MockTest(unittest.TestCase):
             )
             self.assertRaisesRegex(
                 AttributeError,
+                'Mock object has no attribute "a\'b"',
+                getattr, mock, "a'b"
+            )
+            self.assertRaisesRegex(
+                AttributeError,
                 "Mock object has no attribute '__foobar__'",
                 getattr, mock, '__foobar__'
             )
