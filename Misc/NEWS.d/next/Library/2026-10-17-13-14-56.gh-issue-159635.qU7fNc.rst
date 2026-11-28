@@ -1,0 +1,5 @@
+In ``csv.Sniffer.sniff()``, break ties between quote characters which fit
+the sample equally well by the number of fields starting with each quote
+character, instead of always preferring ``'"'``.  This prevents misdetection
+of the quote character for files quoted with ``"'"`` that contain a row of
+double-quoted fields.

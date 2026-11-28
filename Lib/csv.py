@@ -361,6 +361,7 @@ class Sniffer:
 
         best = None
         best_score = None
+        best_field_start_count = None
         for combo, rows in sorted(parsed):
             if rows is None:
                 continue
@@ -379,6 +380,18 @@ class Sniffer:
             if best_score is None or score > best_score:
                 best_score = score
                 best = combo[1:]
+                best_field_start_count = None
+            elif (score == best_score and delimiter == best[0]
+                  and escapechar == best[2] and quotechar != best[1]):
+                # Do not let quote frequency affect delimiter or escape choice.
+                if best_field_start_count is None:
+                    best_field_start_count = self._field_start_count(
+                        lines, best[1], best[0], best[2], cut)
+                field_start_count = self._field_start_count(
+                    lines, quotechar, delimiter, escapechar, cut)
+                if field_start_count > best_field_start_count:
+                    best = combo[1:]
+                    best_field_start_count = field_start_count
 
         if best is None:
             raise Error("Could not determine delimiter")
@@ -400,6 +413,109 @@ class Sniffer:
         dialect.skipinitialspace = skipinitialspace
 
         return dialect
+
+    def _field_start_count(self, lines, quotechar, delimiter, escapechar,
+                           cut):
+        """
+        The number of fields in the sample starting with *quotechar*:
+        at the start of a field.  Used for breaking ties between quote
+        characters.
+        """
+        if not quotechar:
+            return 0
+
+        class LineIterator:
+            def __init__(self, lines):
+                self.lines = iter(lines)
+                self.position = 0
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                line = next(self.lines)
+                self.position += 1
+                return line
+
+        source = LineIterator(lines)
+        record_counts = []
+        start = 0
+        # Keep the scan boundaries identical to the candidate reader's.
+        reader = self._make_reader(source, delimiter, quotechar, escapechar)
+        parse_error = False
+        try:
+            while True:
+                next(reader)
+                end = source.position
+                record = ''.join(lines[start:end])
+                record_counts.append(
+                    self._record_field_start_count(
+                        record, quotechar, delimiter, escapechar))
+                start = end
+        except StopIteration:
+            pass
+        except Error:
+            # Match _try_dialect(): a failing row is not counted.
+            parse_error = True
+        if not parse_error and cut and len(record_counts) > 1:
+            record_counts.pop()
+        return sum(record_counts)
+
+    def _record_field_start_count(self, record, quotechar, delimiter,
+                                  escapechar):
+        if not record:
+            return 0
+        skipinitialspace = delimiter != ' '
+        count = 0
+        field_start = True
+        skip_spaces = skipinitialspace
+        active_quote = None
+        pos = 0
+        # The candidate reader fixes record boundaries; recognize either
+        # quote mark within a record so embedded delimiters do not vote.
+        while pos < len(record):
+            char = record[pos]
+            if active_quote is not None:
+                if escapechar and char == escapechar:
+                    pos += 2
+                    continue
+                if char == active_quote:
+                    if pos + 1 < len(record) and record[pos + 1] == char:
+                        pos += 2
+                        continue
+                    active_quote = None
+                pos += 1
+                continue
+
+            if escapechar and char == escapechar:
+                field_start = False
+                pos += 2
+                continue
+            if field_start:
+                if skip_spaces and char == ' ':
+                    pos += 1
+                    continue
+                if char in "\"'":
+                    if char == quotechar:
+                        count += 1
+                    active_quote = char
+                    field_start = False
+                    pos += 1
+                    continue
+                if char in '\r\n':
+                    break
+                if char == delimiter:
+                    skip_spaces = skipinitialspace
+                    pos += 1
+                    continue
+                field_start = False
+            elif char == delimiter:
+                field_start = True
+                skip_spaces = skipinitialspace
+            elif char in '\r\n':
+                break
+            pos += 1
+        return count
 
     def _parses_as_single_column(self, sample):
         """
