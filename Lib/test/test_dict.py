@@ -465,17 +465,32 @@ class DictTest(unittest.TestCase):
             self.assertEqual(gc.is_tracked(d), gc.is_tracked(d2))
 
     def test_copy_noncompact(self):
-        # Dicts don't compact themselves on del/pop operations.
-        # Copy will use a slow merging strategy that produces
-        # a compacted copy when roughly 33% of dict is a non-used
-        # keys-space (to optimize memory footprint).
-        # In this test we want to hit the slow/compacting
-        # branch of dict.copy() and make sure it works OK.
-        d = {k: k for k in range(1000)}
-        for k in range(950):
-            del d[k]
-        d2 = d.copy()
-        self.assertEqual(d2, d)
+        # Dicts don't compact themselves on del/pop operations. Check
+        # copying a sparse table with both unicode and generic keys.
+        class Key(CustomHash):
+            hash_calls = 0
+
+            def __hash__(self):
+                self.hash_calls += 1
+                return super().__hash__()
+
+        for keys in ([str(i) for i in range(100)],
+                     [Key(i % 5) for i in range(100)]):
+            with self.subTest(key_type=type(keys[0])):
+                d = dict(zip(keys, range(100)))
+                for i, key in enumerate(keys):
+                    if i not in (1, 50, 98):
+                        del d[key]
+                expected = list(d.items())
+                if isinstance(keys[0], Key):
+                    calls = [key.hash_calls for key in d]
+                copies = (d.copy(), dict(d), {**d}, frozendict(d))
+                if isinstance(keys[0], Key):
+                    self.assertEqual([key.hash_calls for key in d], calls)
+                for copy in copies:
+                    self.assertEqual(list(copy.items()), expected)
+                    for key, value in expected:
+                        self.assertEqual(copy[key], value)
 
     @support.nomemtest
     def test_copy_empty_no_memory(self):
