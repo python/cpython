@@ -15,7 +15,7 @@
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_function.h"
 #include "pycore_instruments.h"
-#include "pycore_interpolation.h" // _PyInterpolation_Build()
+#include "pycore_interpolation.h" // _PyInterpolation_BuildSteal()
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_ExactDealloc(), _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject
@@ -29,7 +29,7 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_stackref.h"
-#include "pycore_template.h"      // _PyTemplate_Build()
+#include "pycore_template.h"      // _PyTemplate_BuildSteal()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 

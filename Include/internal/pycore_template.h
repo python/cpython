@@ -17,7 +17,8 @@ extern PyTypeObject _PyTemplateIter_Type;
 
 extern PyObject *_PyTemplate_Concat(PyObject *self, PyObject *other);
 
-PyAPI_FUNC(PyObject *) _PyTemplate_Build(PyObject *strings, PyObject *interpolations);
+// Steals references to strings and interpolations (even on failure).
+PyAPI_FUNC(PyObject *) _PyTemplate_BuildSteal(PyObject *strings, PyObject *interpolations);
 
 #ifdef __cplusplus
 }

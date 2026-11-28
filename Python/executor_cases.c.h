@@ -10904,42 +10904,21 @@
             format = &stack_pointer[-(oparg & 1)];
             str = stack_pointer[-1 - (oparg & 1)];
             value = stack_pointer[-2 - (oparg & 1)];
-            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            PyObject *str_o = PyStackRef_AsPyObjectBorrow(str);
+            PyObject *value_o = PyStackRef_AsPyObjectSteal(value);
+            PyObject *str_o = PyStackRef_AsPyObjectSteal(str);
             int conversion = oparg >> 2;
             PyObject *format_o;
             if (oparg & 1) {
-                format_o = PyStackRef_AsPyObjectBorrow(format[0]);
+                format_o = PyStackRef_AsPyObjectSteal(format[0]);
             }
             else {
-                format_o = &_Py_STR(empty);
+                format_o = Py_NewRef(&_Py_STR(empty));
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyFrame_StackPointerValidate(frame);
-            PyObject *interpolation_o = _PyInterpolation_Build(value_o, str_o, conversion, format_o);
-            _PyFrame_StackPointerInvalidate(frame);
-            if (oparg & 1) {
-                stack_pointer += -(oparg & 1);
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyFrame_StackPointerValidate(frame);
-                PyStackRef_CLOSE(format[0]);
-                _PyFrame_StackPointerInvalidate(frame);
-            }
-            else {
-                stack_pointer += -(oparg & 1);
-            }
-            stack_pointer += -1;
+            stack_pointer += -2 - (oparg & 1);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
-            PyStackRef_CLOSE(str);
-            _PyFrame_StackPointerInvalidate(frame);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyFrame_StackPointerValidate(frame);
-            PyStackRef_CLOSE(value);
+            PyObject *interpolation_o = _PyInterpolation_BuildSteal(value_o, str_o, conversion, format_o);
             _PyFrame_StackPointerInvalidate(frame);
             if (interpolation_o == NULL) {
                 SET_CURRENT_CACHED_VALUES(0);
@@ -10964,27 +10943,11 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             interpolations = _stack_item_1;
             strings = _stack_item_0;
-            PyObject *strings_o = PyStackRef_AsPyObjectBorrow(strings);
-            PyObject *interpolations_o = PyStackRef_AsPyObjectBorrow(interpolations);
-            stack_pointer[0] = strings;
-            stack_pointer[1] = interpolations;
-            stack_pointer += 2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            PyObject *strings_o = PyStackRef_AsPyObjectSteal(strings);
+            PyObject *interpolations_o = PyStackRef_AsPyObjectSteal(interpolations);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyFrame_StackPointerValidate(frame);
-            PyObject *template_o = _PyTemplate_Build(strings_o, interpolations_o);
-            _PyFrame_StackPointerInvalidate(frame);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyFrame_StackPointerValidate(frame);
-            PyStackRef_CLOSE(interpolations);
-            _PyFrame_StackPointerInvalidate(frame);
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyFrame_StackPointerValidate(frame);
-            PyStackRef_CLOSE(strings);
+            PyObject *template_o = _PyTemplate_BuildSteal(strings_o, interpolations_o);
             _PyFrame_StackPointerInvalidate(frame);
             if (template_o == NULL) {
                 SET_CURRENT_CACHED_VALUES(0);
