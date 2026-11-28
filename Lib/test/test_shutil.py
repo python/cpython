@@ -3357,7 +3357,6 @@ class TestCopyFile(unittest.TestCase):
             with self.assertRaises(OSError):
                 shutil.copyfile('srcfile', 'destfile')
 
-    @unittest.skipIf(MACOS, "skipped on macOS")
     def test_w_dest_open_fails(self):
         srcfile = self.Faux()
 
@@ -3375,7 +3374,6 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot open "destfile"',))
 
-    @unittest.skipIf(MACOS, "skipped on macOS")
     def test_w_dest_close_fails(self):
         srcfile = self.Faux()
         destfile = self.Faux(True)
@@ -3396,7 +3394,6 @@ class TestCopyFile(unittest.TestCase):
         self.assertEqual(srcfile._exited_with[1].args,
                          ('Cannot close',))
 
-    @unittest.skipIf(MACOS, "skipped on macOS")
     def test_w_source_close_fails(self):
 
         srcfile = self.Faux(True)
