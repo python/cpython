@@ -1208,7 +1208,6 @@ approaches to creating C, C++ and Rust extensions for Python:
 
 * `Cython <https://cython.org/>`_
 * `cffi <https://cffi.readthedocs.io>`_
-* `HPy <https://hpyproject.org/>`_
 * `nanobind <https://github.com/wjakob/nanobind>`_ (C++)
 * `Numba <https://numba.pydata.org/>`_
 * `pybind11 <https://pybind11.readthedocs.io/>`_ (C++)
