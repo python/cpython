@@ -1,0 +1,1 @@
+Add ``skip_file_prefixes`` parameter to :deco:`warnings.deprecated`, mirroring the parameter of the same name for :func:`warnings.warn`.
