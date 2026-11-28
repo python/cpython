@@ -266,8 +266,8 @@ _replace_dialog_spec = {
     'file': 'replace',
     'kwds': {},
     'msg': "Click the 'Replace' button.\n"
-           "Test various replace options in the 'Replace dialog'.\n"
-           "Click [Close] or [X] to close the 'Replace Dialog'."
+           "Test various replace options in the 'Replace' dialog.\n"
+           "Click [Close] or [X] to close the 'Replace' dialog."
     }
 
 _scrolled_list_spec = {
@@ -283,14 +283,14 @@ _search_dialog_spec = {
     'file': 'search',
     'kwds': {},
     'msg': "Click the 'Search' button.\n"
-           "Test various search options in the 'Search dialog'.\n"
-           "Click [Close] or [X] to close the 'Search Dialog'."
+           "Test various search options in the 'Find' dialog.\n"
+           "Click [Close] or [X] to close the 'Find' dialog."
     }
 
 _searchbase_spec = {
     'file': 'searchbase',
     'kwds': {},
-    'msg': "Check the appearance of the base search dialog\n"
+    'msg': "Check the appearance of the base search dialog.\n"
            "Its only action is to close."
     }
 
