@@ -1,0 +1,8 @@
+Fix :class:`asyncio.SelectorEventLoop` spinning at 100% CPU forever when the
+event loop's self-pipe socketpair reaches EOF.  The loopback connection can
+be torn down underneath the running process by a system power or session
+state change and by other unlogged events, and nothing on the sockets
+themselves reports the teardown.  The loop now rebuilds the self-pipe
+(moving any registered signal wakeup fd to the new socket) and re-registers
+the reader on the new socket instead of leaving it on a socket that is
+readable forever.
