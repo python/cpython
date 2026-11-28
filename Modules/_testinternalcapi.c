@@ -2042,6 +2042,9 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     else {
         mode = PyUnicode_AsUTF8(modeobj);
+        if (mode == NULL) {
+            return NULL;
+        }
         if (strlen(mode) == 0) {
             mode = "xidata";
         }
