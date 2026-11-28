@@ -2095,7 +2095,6 @@ def _levenshtein_distance(a, b, max_cost):
 
 def _find_incompatible_extension_module(module_name):
     import importlib.machinery
-    import importlib.resources.readers
 
     if not module_name or not importlib.machinery.EXTENSION_SUFFIXES:
         return
@@ -2111,11 +2110,14 @@ def _find_incompatible_extension_module(module_name):
 
     parent, _, child = module_name.rpartition('.')
     if parent:
-        traversable = importlib.resources.files(parent)
+        from importlib.resources import files
+        traversable = files(parent)
     else:
-        traversable = importlib.resources.readers.MultiplexedPath(
-            *map(pathlib.Path, filter(os.path.isdir, sys.path))
-        )
+        paths = [pathlib.Path(path) for path in sys.path if os.path.isdir(path)]
+        if not paths:
+            return
+        from importlib.resources.readers import MultiplexedPath
+        traversable = MultiplexedPath(*paths)
 
     for entry in traversable.iterdir():
         if entry.name.startswith(child + '.') and entry.name.endswith(untagged_suffix):
