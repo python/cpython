@@ -39,6 +39,19 @@
 #define LZMA_FILTER_RISCV       LZMA_VLI_C(0x0B)
 #endif
 
+/*
+ * liblzma's internal maximum supported dictionary size (1.5 GiB).  It is
+ * not exposed through lzma.h, so define it here to bound the amount of
+ * memory a (potentially attacker-controlled) LZMA stream can make us
+ * allocate up front: liblzma allocates the full dictionary when a
+ * decompressor is created, so an unbounded dict_size allows a tiny
+ * compressed stream to trigger a multi-gigabyte allocation (a memory
+ * denial of service, e.g. through zipfile or tarfile).
+ */
+#ifndef LZMA_DICT_SIZE_MAX
+#define LZMA_DICT_SIZE_MAX      ((UINT32_C(1) << 30) + (UINT32_C(1) << 29))
+#endif
+
 /* On success, return value >= 0
    On failure, return -1 */
 static inline Py_ssize_t
@@ -291,6 +304,14 @@ parse_filter_spec_lzma(_lzma_state *state, PyObject *spec)
                                      _PyLong_UInt32_Converter, &options->depth)) {
         PyErr_SetString(PyExc_ValueError,
                         "Invalid filter specifier for LZMA filter");
+        PyMem_Free(options);
+        return NULL;
+    }
+
+    if (options->dict_size > LZMA_DICT_SIZE_MAX) {
+        PyErr_Format(state->error,
+                     "LZMA dictionary size too large: %u",
+                     (unsigned int)options->dict_size);
         PyMem_Free(options);
         return NULL;
     }
@@ -1213,7 +1234,14 @@ _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
 {
     Decompressor *self;
     const uint32_t decoder_flags = LZMA_TELL_ANY_CHECK | LZMA_TELL_NO_CHECK;
-    uint64_t memlimit_ = UINT64_MAX;
+    /* Bound the default memory usage of a decompressor to the maximum
+       dictionary size supported by liblzma (1.5 GiB).  Without a limit,
+       a stream whose header declares a huge dictionary (e.g. an LZMA1
+       "alone" stream, whose dictionary size is only parsed by liblzma)
+       makes liblzma allocate that much memory up front, allowing a tiny
+       untrusted stream to exhaust memory.  Callers can pass an explicit
+       memlimit to raise or lower the bound. */
+    uint64_t memlimit_ = LZMA_DICT_SIZE_MAX;
     lzma_ret lzret;
     _lzma_state *state = PyType_GetModuleState(type);
     assert(state != NULL);

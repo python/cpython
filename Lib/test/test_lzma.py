@@ -88,6 +88,32 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         lzd = LZMADecompressor(lzma.FORMAT_ALONE, memlimit=1024)
         self.assertRaises(LZMAError, lzd.decompress, COMPRESSED_ALONE)
 
+    def test_decompressor_rejects_huge_dictionary(self):
+        # A dictionary size beyond the maximum supported by liblzma must be
+        # rejected up front: liblzma allocates the full dictionary when the
+        # decompressor is created, so an unbounded dict_size lets a tiny
+        # untrusted stream trigger a multi-gigabyte allocation.
+        huge = 1 << 31
+        with self.assertRaises(LZMAError):
+            LZMADecompressor(lzma.FORMAT_RAW,
+                             filters=[{"id": lzma.FILTER_LZMA1,
+                                       "dict_size": huge}])
+        with self.assertRaises(LZMAError):
+            LZMACompressor(filters=[{"id": lzma.FILTER_LZMA1,
+                                     "dict_size": huge}])
+
+    def test_decompressor_alone_huge_dictionary_rejected(self):
+        # The 13-byte LZMA1 "alone" header declares the dictionary size.
+        # With the default memory limit, a stream demanding more than the
+        # maximum supported dictionary size must fail without allocating.
+        header = b"\x66\xff\xff\xff\xff" + b"\xff" * 8  # ~4 GiB dict
+        lzd = LZMADecompressor()
+        with self.assertRaises(LZMAError):
+            lzd.decompress(header)
+        lzd = LZMADecompressor(lzma.FORMAT_ALONE)
+        with self.assertRaises(LZMAError):
+            lzd.decompress(header)
+
     # Test LZMADecompressor on known-good input data.
 
     def _test_decompressor(self, lzd, data, check, unused_data=b""):
