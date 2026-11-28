@@ -532,6 +532,9 @@ Directory and files operations
       or ends with an extension that is in ``PATHEXT``; and filenames that
       have no extension can now be found.
 
+   .. versionchanged:: next
+      Accepts a :term:`path-like object` for *cmd*.
+
 .. exception:: Error
 
    Subclass of :exc:`OSError` collecting exceptions raised during a multi-file

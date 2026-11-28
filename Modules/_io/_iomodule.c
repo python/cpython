@@ -94,10 +94,7 @@ mode.  Other common values are 'w' for writing (truncating the file if
 it already exists), 'x' for creating and writing to a new file, and
 'a' for appending (which on some Unix systems, means that all writes
 append to the end of the file regardless of the current seek position).
-In text mode, if encoding is not specified the encoding used is platform
-dependent: locale.getencoding() is called to get the current locale
-encoding.  (For reading and writing raw bytes use binary mode and leave
-encoding unspecified.)  The available modes are:
+The available modes are:
 
 ========= ==========================================================
 Character Meaning
@@ -122,8 +119,7 @@ even when the underlying operating system doesn't.  Files opened in
 binary mode (appending 'b' to the mode argument) return contents as
 bytes objects without any decoding.  In text mode (the default, or when
 't' is appended to the mode argument), the contents of the file are
-returned as strings, the bytes having been first decoded using a
-platform-dependent encoding or using the specified encoding if given.
+decoded using the encoding described below and returned as strings.
 
 buffering is an optional integer used to set the buffering policy.
 Pass 0 to switch buffering off (only allowed in binary mode), 1 to
@@ -140,10 +136,11 @@ argument is given, the default buffering policy works as follows:
   use line buffering.  Other text files use the policy described above
   for binary files.
 
-encoding is the name of the encoding used to decode or encode the
-file.  This should only be used in text mode.  The default encoding is
-platform dependent, but any encoding supported by Python can be
-passed.  See the codecs module for the list of supported encodings.
+encoding is the name of the encoding used to decode or encode the file.
+This should only be used in text mode.  The default encoding is UTF-8;
+if UTF-8 Mode is disabled, the encoding returned by
+locale.getencoding() is used instead.  See the codecs module for the
+list of supported encodings.
 
 errors is an optional string that specifies how encoding errors are to
 be handled---this argument should not be used in binary mode.  Pass
@@ -200,7 +197,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=b3cefa70bef404b3]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=5a005681afa02242]*/
 {
     size_t i;
 

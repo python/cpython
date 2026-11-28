@@ -1,0 +1,1 @@
+Fix quadratic-time cost in :meth:`urllib.robotparser.RobotFileParser.parse` when a single group contains many identical ``User-agent:`` lines.

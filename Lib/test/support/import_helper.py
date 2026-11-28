@@ -88,6 +88,10 @@ def import_module(name, deprecated=False, *, required_on=()):
     compared against sys.platform.
     """
     with _ignore_deprecated_imports(deprecated):
+        f = sys._getframe(1)
+        if f.f_globals is f.f_locals:
+            from test.support import mark_module
+            mark_module(f'requires_{name}', globals=f.f_globals)
         try:
             return importlib.import_module(name)
         except ImportError as msg:
@@ -156,6 +160,7 @@ def multi_interp_extensions_check(enabled=True):
 def import_fresh_module(name, fresh=(), blocked=(), *,
                         deprecated=False,
                         usefrozen=False,
+                        eager_imports=True,
                         ):
     """Import and return a module, deliberately bypassing sys.modules.
 
@@ -187,7 +192,12 @@ def import_fresh_module(name, fresh=(), blocked=(), *,
     """
     # NOTE: test_heapq, test_json and test_warnings include extra sanity checks
     # to make sure that this utility function is working as expected
-    with _ignore_deprecated_imports(deprecated):
+    eager_imports_context = (
+        force_eager_imports
+        if eager_imports
+        else contextlib.nullcontext
+    )
+    with eager_imports_context(), _ignore_deprecated_imports(deprecated):
         # Keep track of modules saved for later restoration as well
         # as those which just need a blocking entry removed
         fresh = list(fresh)

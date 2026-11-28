@@ -1,3 +1,4 @@
+from test import support
 from test.support import import_helper, Py_GIL_DISABLED, refleak_helper
 import unittest
 
@@ -227,6 +228,19 @@ class TypeTests(unittest.TestCase):
         class H2(int): pass
         with self.assertRaises(TypeError):
             _testcapi.pytype_getmodulebytoken(H2, token)
+
+    def test_get_module_by_token_in_dealloc(self):
+        # gh-160840: PyType_GetModuleByToken() called from tp_dealloc
+        # of a subclass instance that's in a reference cycle with its class
+        # (and with itself, so it outlives the class's tp_clear)
+        class C(_testlimitedcapi.GetModuleByTokenInDealloc):
+            pass
+        C.inst = C()
+        C.inst.self = C.inst
+        with support.catch_unraisable_exception() as cm:
+            del C
+            support.gc_collect()
+            self.assertIsNone(cm.unraisable)
 
     def test_freeze(self):
         # test PyType_Freeze()

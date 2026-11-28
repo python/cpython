@@ -2537,25 +2537,43 @@ _PyType_NewManagedObject(PyTypeObject *type)
 PyObject *
 _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
 {
-    PyObject *obj;
+#ifdef Py_DEBUG
+    if (nitems < 0) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+#endif
+
     /* The +1 on nitems is needed for most types but not all. We could save a
      * bit of space by allocating one less item in certain cases, depending on
      * the type. However, given the extra complexity (e.g. an additional type
      * flag to indicate when that is safe) it does not seem worth the memory
      * savings. An example type that doesn't need the +1 is a subclass of
      * tuple. See GH-100659 and GH-81381. */
-    size_t size = _PyObject_VAR_SIZE(type, nitems+1);
-
-    const size_t presize = _PyType_PreHeaderSize(type);
-    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-        assert(type->tp_itemsize == 0);
-        size += _PyInlineValuesSize(type);
-    }
-    char *alloc = _PyObject_MallocWithType(type, size + presize);
-    if (alloc  == NULL) {
+    if (nitems > PY_SSIZE_T_MAX - 1) {
         return PyErr_NoMemory();
     }
-    obj = (PyObject *)(alloc + presize);
+    size_t size = _PyObject_VAR_SIZE(type, nitems+1);
+
+    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        assert(type->tp_itemsize == 0);
+        size_t inline_values_size = _PyInlineValuesSize(type);
+        if (size > (size_t)PY_SSIZE_T_MAX - inline_values_size) {
+            return PyErr_NoMemory();
+        }
+        size += inline_values_size;
+    }
+
+    const size_t presize = _PyType_PreHeaderSize(type);
+    if (size > (size_t)PY_SSIZE_T_MAX - presize) {
+        return PyErr_NoMemory();
+    }
+
+    char *alloc = _PyObject_MallocWithType(type, size + presize);
+    if (alloc == NULL) {
+        return PyErr_NoMemory();
+    }
+    PyObject *obj = (PyObject *)(alloc + presize);
     if (presize) {
         ((PyObject **)alloc)[0] = NULL;
         ((PyObject **)alloc)[1] = NULL;
@@ -5906,6 +5924,29 @@ PyType_GetModuleState(PyTypeObject *type)
     return _PyModule_GetState(m);
 }
 
+static PyObject *
+get_module_by_token_recursive(PyObject *bases, const void *token)
+{
+    assert(bases != NULL);
+    Py_ssize_t n = PyTuple_GET_SIZE(bases);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+            continue;
+        }
+        PyObject *module = ((PyHeapTypeObject*)base)->ht_module;
+        if (module && _PyModule_GetToken(module) == token) {
+            return module;
+            break;
+        }
+        module = get_module_by_token_recursive(lookup_tp_bases(base), token);
+        if (module != NULL) {
+            return module;
+        }
+    }
+    return NULL;
+}
+
 /* Return borrowed ref to the module of the first superclass where the module
  * has the given token.
  */
@@ -5931,28 +5972,33 @@ PyType_GetModuleByToken_DuringGC(PyTypeObject *type, const void *token)
     BEGIN_TYPE_LOCK();
 
     PyObject *mro = lookup_tp_mro(type);
-    // The type must be ready
-    assert(mro != NULL);
-    assert(PyTuple_Check(mro));
-    // mro_invoke() ensures that the type MRO cannot be empty.
-    assert(PyTuple_GET_SIZE(mro) >= 1);
-    // Also, the first item in the MRO is the type itself, which
-    // we already checked above. We skip it in the loop.
-    assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
+    if (mro == NULL) {
+        // If the MRO is already cleared during garbage collection, fall
+        // back to walking tp_bases.
+        res = get_module_by_token_recursive(lookup_tp_bases(type), token);
+    }
+    else {
+        assert(PyTuple_Check(mro));
+        // mro_invoke() ensures that the type MRO cannot be empty.
+        assert(PyTuple_GET_SIZE(mro) >= 1);
+        // Also, the first item in the MRO is the type itself, which
+        // we already checked above. We skip it in the loop.
+        assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
 
-    Py_ssize_t n = PyTuple_GET_SIZE(mro);
-    for (Py_ssize_t i = 1; i < n; i++) {
-        PyObject *super = PyTuple_GET_ITEM(mro, i);
-        if (!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
-            // Static types in the MRO need to be skipped
-            continue;
-        }
+        Py_ssize_t n = PyTuple_GET_SIZE(mro);
+        for (Py_ssize_t i = 1; i < n; i++) {
+            PyObject *super = PyTuple_GET_ITEM(mro, i);
+            if (!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
+                // Static types in the MRO need to be skipped
+                continue;
+            }
 
-        PyHeapTypeObject *ht = (PyHeapTypeObject*)super;
-        PyObject *module = ht->ht_module;
-        if (module && _PyModule_GetToken(module) == token) {
-            res = module;
-            break;
+            PyHeapTypeObject *ht = (PyHeapTypeObject*)super;
+            PyObject *module = ht->ht_module;
+            if (module && _PyModule_GetToken(module) == token) {
+                res = module;
+                break;
+            }
         }
     }
     END_TYPE_LOCK();

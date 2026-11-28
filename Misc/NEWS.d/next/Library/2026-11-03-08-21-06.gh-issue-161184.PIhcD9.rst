@@ -1,0 +1,6 @@
+Speed up attribute access on instances of :mod:`io` classes and their
+subclasses by storing instance attributes and weak references in the object
+pre-header. The ``__dictoffset__`` and ``__weakrefoffset__`` attributes
+of these classes now report the managed offsets, and C extension types that
+subclass an :mod:`io` class can no longer declare their own ``__dictoffset__``
+or ``__weaklistoffset__`` member.
