@@ -763,11 +763,12 @@ class CallStackTestBase:
             'T<inner>',
             ['s capture_test_stack', 'a inner'],
             [
-                ['T<anon>',
-                    ['a get', 'a _wait_for_one', 'a main',
-                     'a test_stack_as_completed'],
-                    []
-                ]
+                ['F', [], [
+                    ['T<anon>',
+                     ['a get', 'a _wait_for_one', 'a main',
+                      'a test_stack_as_completed'],
+                     []],
+                ]],
             ]
         ])
 
@@ -796,13 +797,86 @@ class CallStackTestBase:
             'T<inner>',
             ['s capture_test_stack', 'a inner'],
             [
-                ['T<anon>',
-                    ['a get', 'a _wait_for_one', 'a main',
-                     'a test_stack_as_completed_timeout'],
-                    []
-                ]
+                ['F', [], [
+                    ['T<anon>',
+                     ['a get', 'a _wait_for_one', 'a main',
+                      'a test_stack_as_completed_timeout'],
+                     []],
+                ]],
             ]
         ])
+
+    async def test_as_completed_awaited_by_different_task(self):
+        for get_next in (anext, next):
+            with self.subTest(iterator=get_next.__name__):
+                child = asyncio.get_running_loop().create_future()
+                iterator = asyncio.as_completed([child])
+                consumer = asyncio.create_task(
+                    get_next(iterator), eager_start=True)
+                graph = asyncio.capture_call_graph(child, limit=0)
+                child.set_result(None)
+                await consumer
+
+                waiter, = graph.awaited_by
+                self.assertEqual([node.future for node in waiter.awaited_by],
+                                 [consumer])
+                graph = asyncio.capture_call_graph(waiter.future, limit=0)
+                self.assertFalse(graph.awaited_by)
+
+    async def test_as_completed_discards_awaited_by_on_cancel(self):
+        for get_next in (anext, next):
+            with self.subTest(iterator=get_next.__name__):
+                loop = asyncio.get_running_loop()
+                first, second = loop.create_future(), loop.create_future()
+                iterator = asyncio.as_completed([first, second])
+                cancelled = asyncio.create_task(
+                    get_next(iterator), eager_start=True)
+                remaining = asyncio.create_task(
+                    get_next(iterator), eager_start=True)
+
+                before = asyncio.capture_call_graph(second, limit=0)
+                cancelled.cancel()
+                with self.assertRaises(asyncio.CancelledError):
+                    await cancelled
+                after = asyncio.capture_call_graph(second, limit=0)
+
+                first.set_result(None)
+                second.set_result(None)
+                await remaining
+                await get_next(iterator)
+
+                before_waiter, = before.awaited_by
+                after_waiter, = after.awaited_by
+                self.assertCountEqual(
+                    [node.future for node in before_waiter.awaited_by],
+                    [cancelled, remaining])
+                self.assertEqual(
+                    [node.future for node in after_waiter.awaited_by],
+                    [remaining])
+
+    async def test_as_completed_discards_awaited_by_on_timeout(self):
+        for get_next in (anext, next):
+            with self.subTest(iterator=get_next.__name__):
+                loop = asyncio.get_running_loop()
+                first, second = loop.create_future(), loop.create_future()
+                iterator = asyncio.as_completed([first, second], timeout=0)
+
+                graph = asyncio.capture_call_graph(first, limit=0)
+                self.assertEqual(len(graph.awaited_by), 1)
+                waiter = graph.awaited_by[0].future
+                graph = asyncio.capture_call_graph(second, limit=0)
+                self.assertEqual([node.future for node in graph.awaited_by],
+                                 [waiter])
+
+                with self.assertRaises(TimeoutError):
+                    await get_next(iterator)
+
+                for child in (first, second):
+                    self.assertFalse(child.done())
+                    graph = asyncio.capture_call_graph(child, limit=0)
+                    self.assertFalse(graph.awaited_by)
+                self.assertFalse(
+                    asyncio.capture_call_graph(waiter, limit=0).awaited_by)
 
     async def test_stack_task(self):
 
