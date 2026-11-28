@@ -3355,7 +3355,10 @@ codegen_nameop(compiler *c, location loc,
             }
             break;
         case Store: op = STORE_DEREF; break;
-        case Del: op = DELETE_DEREF; break;
+        case Del:
+            ADDOP(c, loc, PUSH_NULL);
+            op = STORE_DEREF;
+            break;
         }
         break;
     case COMPILE_OP_FAST:

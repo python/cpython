@@ -1,0 +1,2 @@
+Remove the ``DELETE_DEREF`` bytecode instruction. Deletion of closure
+variables is now implemented using ``PUSH_NULL`` + ``STORE_DEREF``.

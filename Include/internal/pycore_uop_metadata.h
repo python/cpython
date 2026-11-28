@@ -200,10 +200,9 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_BUILTINS_IS_CANONICAL] = HAS_DEOPT_FLAG,
     [_DELETE_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_CELL] = HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
-    [_DELETE_DEREF] = HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_FROM_DICT_OR_DEREF] = HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_DEREF] = HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_STORE_DEREF] = HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ESCAPES_FLAG,
+    [_STORE_DEREF] = HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_COPY_FREE_VARS] = HAS_ARG_FLAG,
     [_BUILD_STRING] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BUILD_INTERPOLATION] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -1927,15 +1926,6 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 0, 0, 0, 0 },
         .entries = {
             { 0, 0, _MAKE_CELL_r00 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
-        },
-    },
-    [_DELETE_DEREF] = {
-        .best = { 0, 0, 0, 0 },
-        .entries = {
-            { 0, 0, _DELETE_DEREF_r00 },
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
@@ -4342,7 +4332,6 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_GUARD_BUILTINS_IS_CANONICAL_r33] = _GUARD_BUILTINS_IS_CANONICAL,
     [_DELETE_FAST_r00] = _DELETE_FAST,
     [_MAKE_CELL_r00] = _MAKE_CELL,
-    [_DELETE_DEREF_r00] = _DELETE_DEREF,
     [_LOAD_FROM_DICT_OR_DEREF_r11] = _LOAD_FROM_DICT_OR_DEREF,
     [_LOAD_DEREF_r01] = _LOAD_DEREF,
     [_STORE_DEREF_r10] = _STORE_DEREF,
@@ -5179,8 +5168,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_COPY_FREE_VARS_r33] = "_COPY_FREE_VARS_r33",
     [_CREATE_INIT_FRAME] = "_CREATE_INIT_FRAME",
     [_CREATE_INIT_FRAME_r01] = "_CREATE_INIT_FRAME_r01",
-    [_DELETE_DEREF] = "_DELETE_DEREF",
-    [_DELETE_DEREF_r00] = "_DELETE_DEREF_r00",
     [_DELETE_FAST] = "_DELETE_FAST",
     [_DELETE_FAST_r00] = "_DELETE_FAST_r00",
     [_DELETE_SUBSCR] = "_DELETE_SUBSCR",
@@ -6527,8 +6514,6 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _DELETE_FAST:
             return 0;
         case _MAKE_CELL:
-            return 0;
-        case _DELETE_DEREF:
             return 0;
         case _LOAD_FROM_DICT_OR_DEREF:
             return 1;

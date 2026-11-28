@@ -2353,18 +2353,6 @@ dummy_func(
             PyStackRef_XCLOSE(tmp);
         }
 
-        inst(DELETE_DEREF, (--)) {
-            PyObject *cell = PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
-            // Can't use ERROR_IF here.
-            // Fortunately we don't need its superpower.
-            PyObject *oldobj = PyCell_SwapTakeRef((PyCellObject *)cell, NULL);
-            if (oldobj == NULL) {
-                _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
-                ERROR_NO_POP();
-            }
-            Py_DECREF(oldobj);
-        }
-
         inst(LOAD_FROM_DICT_OR_DEREF, (class_dict_st -- value)) {
             PyObject *name;
             PyObject *class_dict = PyStackRef_AsPyObjectBorrow(class_dict_st);
@@ -2407,7 +2395,22 @@ dummy_func(
 
         inst(STORE_DEREF, (v --)) {
             PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
-            PyCell_SetTakeRef(cell, PyStackRef_AsPyObjectSteal(v));
+            int err = 0;
+            if (PyStackRef_IsNull(v)) {
+                DEAD(v);
+                PyObject *oldobj = PyCell_SwapTakeRef(cell, NULL);
+                if (oldobj == NULL) {
+                    _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
+                    err = -1;
+                }
+                else {
+                    Py_DECREF(oldobj);
+                }
+            }
+            else {
+                PyCell_SetTakeRef(cell, PyStackRef_AsPyObjectSteal(v));
+            }
+            ERROR_IF(err < 0);
         }
 
         inst(COPY_FREE_VARS, (--)) {

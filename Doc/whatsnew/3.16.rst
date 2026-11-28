@@ -1209,6 +1209,14 @@ uuid
   (Contributed by Yury Selivanov in :gh:`139123`.)
 
 
+CPython bytecode changes
+========================
+
+* Removed the :opcode:`!DELETE_DEREF` opcode. Deletion of closure variables
+  is now compiled as :opcode:`PUSH_NULL`, :opcode:`STORE_DEREF`.
+  (Contributed by Aleksandr Tseluyko in :gh:`145858`.)
+
+
 Removed
 ========
 
