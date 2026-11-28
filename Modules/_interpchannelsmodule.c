@@ -162,26 +162,6 @@ _get_current_module(void)
 }
 
 static PyObject *
-get_module_from_owned_type(PyTypeObject *cls)
-{
-    assert(cls != NULL);
-    return _get_current_module();
-    // XXX Use the more efficient API now that we use heap types:
-    //return PyType_GetModule(cls);
-}
-
-static struct PyModuleDef moduledef;
-
-static PyObject *
-get_module_from_type(PyTypeObject *cls)
-{
-    assert(cls != NULL);
-    return _get_current_module();
-    // XXX Use the more efficient API now that we use heap types:
-    //return PyType_GetModuleByDef(cls, &moduledef);
-}
-
-static PyObject *
 add_new_exception(PyObject *mod, const char *name, PyObject *base)
 {
     assert(!PyObject_HasAttrStringWithError(mod, name));
@@ -263,6 +243,23 @@ get_module_state(PyObject *mod)
     module_state *state = PyModule_GetState(mod);
     assert(state != NULL);
     return state;
+}
+
+static struct PyModuleDef moduledef;
+
+static inline PyObject *
+get_module_from_type(PyTypeObject *tp)
+{
+    assert(tp != NULL);
+    PyObject *mod = PyType_GetModuleByDef(tp, &moduledef);
+    assert(mod != NULL);
+    return mod;
+}
+
+static inline module_state *
+get_module_state_from_type(PyTypeObject *tp)
+{
+    return get_module_state(get_module_from_type(tp));
 }
 
 static module_state *
@@ -363,9 +360,7 @@ static int
 exceptions_init(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
-    if (state == NULL) {
-        return -1;
-    }
+    assert(state != NULL);
 
 #define ADD(NAME, BASE) \
     do { \
@@ -2245,9 +2240,7 @@ static PyObject *
 new_channel_info(PyObject *mod, struct channel_info *info)
 {
     module_state *state = get_module_state(mod);
-    if (state == NULL) {
-        return NULL;
-    }
+    assert(state != NULL);
 
     assert(state->ChannelInfoType != NULL);
     PyObject *self = PyStructSequence_New(state->ChannelInfoType);
@@ -2505,14 +2498,8 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    PyObject *mod = get_module_from_type(Py_TYPE(self));
-    if (mod == NULL) {
-        return NULL;
-    }
-    module_state *state = get_module_state(mod);
-    if (state == NULL) {
-        goto done;
-    }
+    module_state *state = get_module_state_from_type(Py_TYPE(self));
+    assert(state != NULL);
 
     if (!PyObject_TypeCheck(self, state->ChannelIDType)) {
         res = Py_NewRef(Py_NotImplemented);
@@ -2556,7 +2543,6 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
     }
 
 done:
-    Py_DECREF(mod);
     return res;
 }
 
@@ -2596,9 +2582,7 @@ _channelid_from_xid(_PyXIData_t *data)
     }
     assert(mod != Py_None);
     module_state *state = get_module_state(mod);
-    if (state == NULL) {
-        goto done;
-    }
+    assert(state != NULL);
 
     // Note that we do not preserve the "resolve" flag.
     int err = newchannelid(state->ChannelIDType, xid->cid, xid->end,
@@ -2823,9 +2807,7 @@ static int
 set_channelend_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
 {
     module_state *state = get_module_state(mod);
-    if (state == NULL) {
-        return -1;
-    }
+    assert(state != NULL);
 
     // Clear the old values if the .py module was reloaded.
     if (state->send_channel_type != NULL) {
@@ -2951,9 +2933,7 @@ channelsmod_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     module_state *state = get_module_state(self);
-    if (state == NULL) {
-        return NULL;
-    }
+    assert(state != NULL);
     channelid *cidobj = NULL;
     int err = newchannelid(state->ChannelIDType, cid, 0,
                            &_globals.channels, 0, 0,
@@ -3018,11 +2998,7 @@ channelsmod_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
         goto finally;
     }
     module_state *state = get_module_state(self);
-    if (state == NULL) {
-        Py_DECREF(ids);
-        ids = NULL;
-        goto finally;
-    }
+    assert(state != NULL);
     struct channel_id_and_info *cur = cids;
     for (int64_t i=0; i < count; cur++, i++) {
         PyObject *cidobj = NULL;
@@ -3485,16 +3461,8 @@ static PyObject *
 channelsmod__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
 {
     module_state *state = get_module_state(self);
-    if (state == NULL) {
-        return NULL;
-    }
-    PyTypeObject *cls = state->ChannelIDType;
-
-    PyObject *mod = get_module_from_owned_type(cls);
-    assert(mod == self);
-    Py_DECREF(mod);
-
-    return _channelid_new(self, cls, args, kwds);
+    assert(state != NULL);
+    return _channelid_new(self, state->ChannelIDType, args, kwds);
 }
 
 static PyObject *
