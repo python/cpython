@@ -10,14 +10,14 @@
 //// STRING HANDLING FUNCTIONS ////
 
 static int
-warn_invalid_escape_sequence(Parser *p, const char* buffer, const char *first_invalid_escape, Token *t)
+warn_invalid_escape_sequence(Parser *p, const char* buffer, const char *first_invalid_escape,
+                             Py_UCS4 c, Token *t)
 {
     if (p->call_invalid_rules) {
         // Do not report warnings if we are in the second pass of the parser
         // to avoid showing the warning twice.
         return 0;
     }
-    unsigned char c = (unsigned char)*first_invalid_escape;
     if ((t->type == FSTRING_MIDDLE || t->type == FSTRING_END || t->type == TSTRING_MIDDLE || t->type == TSTRING_END)
             && (c == '{' || c == '}')) {
         // in this case the tokenizer has already emitted a warning,
@@ -37,7 +37,7 @@ warn_invalid_escape_sequence(Parser *p, const char* buffer, const char *first_in
               "\"\\%c\" is an invalid escape sequence. "
               "Such sequences will not work in the future. "
               "Did you mean \"\\\\%c\"? A raw string is also an option.",
-              c, c);
+              (int)c, (int)c);
     if (msg == NULL) {
         return -1;
     }
@@ -108,7 +108,7 @@ warn_invalid_escape_sequence(Parser *p, const char* buffer, const char *first_in
                 RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, lineno, col_offset-1, lineno, col_offset+1,
                     "\"\\%c\" is an invalid escape sequence. "
                     "Did you mean \"\\\\%c\"? A raw string is also an option.",
-                    c, c);
+                    (int)c, (int)c);
             }
         }
         Py_DECREF(msg);
@@ -151,10 +151,19 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
     }
     p = buf;
     end = s + len;
+    // A backslash before a non-ASCII character becomes "\u005c" below, which
+    // the decoder does not report as an invalid escape, so remember it here.
+    const char *nonascii_escape_ptr = NULL;
+    Py_UCS4 nonascii_escape_char = 0;
     while (s < end) {
+        int escaped_nonascii = 0;
         if (*s == '\\') {
             *p++ = *s++;
             if (s >= end || *s & 0x80) {
+                if (s < end && nonascii_escape_ptr == NULL) {
+                    nonascii_escape_ptr = p;
+                    escaped_nonascii = 1;
+                }
                 memcpy(p, "u005c", 5);
                 p += 5;
                 if (s >= end) {
@@ -176,6 +185,9 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
             kind = PyUnicode_KIND(w);
             data = PyUnicode_DATA(w);
             w_len = PyUnicode_GET_LENGTH(w);
+            if (escaped_nonascii) {
+                nonascii_escape_char = PyUnicode_READ(kind, data, 0);
+            }
             for (i = 0; i < w_len; i++) {
                 // sprintf() writes a null byte: the buffer is large enough
                 // for that thanks to the overallocation.
@@ -202,10 +214,21 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
                                                 &first_invalid_escape_char,
                                                 &first_invalid_escape_ptr);
 
+    Py_UCS4 c = 0;
+    if (first_invalid_escape_ptr != NULL) {
+        c = (unsigned char)*first_invalid_escape_ptr;
+    }
+    if (nonascii_escape_ptr != NULL &&
+        (first_invalid_escape_ptr == NULL ||
+         nonascii_escape_ptr < first_invalid_escape_ptr)) {
+        first_invalid_escape_ptr = nonascii_escape_ptr;
+        c = nonascii_escape_char;
+    }
+
     // HACK: later we can simply pass the line no, since we don't preserve the tokens
     // when we are decoding the string but we preserve the line numbers.
     if (v != NULL && first_invalid_escape_ptr != NULL && t != NULL && !incomplete) {
-        if (warn_invalid_escape_sequence(parser, buf, first_invalid_escape_ptr, t) < 0) {
+        if (warn_invalid_escape_sequence(parser, buf, first_invalid_escape_ptr, c, t) < 0) {
             /* We have not deallocated the buffer before because
              * first_invalid_escape_ptr points inside buf. */
             PyMem_Free(buf);
@@ -230,7 +253,8 @@ decode_bytes_with_escapes(Parser *p, const char *s, Py_ssize_t len, Token *t)
     }
 
     if (first_invalid_escape_ptr != NULL) {
-        if (warn_invalid_escape_sequence(p, s, first_invalid_escape_ptr, t) < 0) {
+        if (warn_invalid_escape_sequence(p, s, first_invalid_escape_ptr,
+                                         (unsigned char)*first_invalid_escape_ptr, t) < 0) {
             Py_DECREF(result);
             return NULL;
         }

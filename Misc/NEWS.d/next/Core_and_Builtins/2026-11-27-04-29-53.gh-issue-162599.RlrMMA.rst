@@ -1,0 +1,2 @@
+A backslash followed by a non-ASCII character in a string literal now emits
+the same :exc:`SyntaxWarning` as other invalid escape sequences.

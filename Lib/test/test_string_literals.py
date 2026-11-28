@@ -130,6 +130,10 @@ class TestLiterals(unittest.TestCase):
                 continue
             with self.assertWarns(SyntaxWarning):
                 self.assertEqual(eval(r"'\%c'" % b), '\\' + chr(b))
+        for c in '\xe9\u20ac\U0001f600':
+            for src in (r"'\%s'", r"f'\%s'", r"'\%s\z'"):
+                with self.assertWarnsRegex(SyntaxWarning, r'"\\%s" is an invalid' % c):
+                    self.assertEqual(eval(src % c)[:2], '\\' + c)
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('always', category=SyntaxWarning)
@@ -347,7 +351,9 @@ class TestLiterals(unittest.TestCase):
             f.write(extra)
         finally:
             f.close()
-        __import__(modname)
+        # TEMPLATE's k = '\ä' is an invalid escape in every encoding.
+        with self.assertWarnsRegex(SyntaxWarning, r'"\\ä" is an invalid escape'):
+            __import__(modname)
         del sys.modules[modname]
 
     def test_file_utf_8(self):
