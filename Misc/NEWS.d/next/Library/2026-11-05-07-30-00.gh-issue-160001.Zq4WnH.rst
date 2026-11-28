@@ -1,0 +1,4 @@
+:mod:`zlib`: Fix ``zlib._ZlibDecompressor`` failing with :exc:`SystemError`
+instead of decompressing when a ``zdict`` is passed for a zlib-wrapped stream.
+A stream that requires a dictionary which was not provided now raises
+:exc:`zlib.error`, matching ``zlib.Decompress``.

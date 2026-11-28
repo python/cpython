@@ -1153,6 +1153,45 @@ class ZlibDecompressorTest(unittest.TestCase):
         text = zlibd.decompress(self.DATA)
         self.assertEqual(text, self.TEXT)
 
+    def testDecompressZdictWrapped(self):
+        # gh-160001: for a zlib-wrapped stream zlib only announces the
+        # dictionary (``Z_NEED_DICT``) after the header, so it has to be
+        # applied from the decompression loop rather than the constructor.
+        zdict = b"hello world " * 10
+        compressor = zlib.compressobj(zdict=zdict)
+        data = compressor.compress(b"hello world hello") + compressor.flush()
+
+        decompressor = zlib._ZlibDecompressor(zdict=zdict)
+        self.assertEqual(decompressor.decompress(data), b"hello world hello")
+
+    def testDecompressZdictWrappedChunks(self):
+        zdict = b"hello world " * 10
+        compressor = zlib.compressobj(zdict=zdict)
+        data = compressor.compress(b"hello world hello") + compressor.flush()
+
+        decompressor = zlib._ZlibDecompressor(zdict=zdict)
+        result = b""
+        for index in range(0, len(data), 3):
+            result += decompressor.decompress(data[index:index + 3])
+
+        self.assertEqual(result, b"hello world hello")
+
+    def testDecompressZdictRaw(self):
+        zdict = b"hello world " * 10
+        compressor = zlib.compressobj(wbits=-zlib.MAX_WBITS, zdict=zdict)
+        data = compressor.compress(b"hello world hello") + compressor.flush()
+
+        decompressor = zlib._ZlibDecompressor(-zlib.MAX_WBITS, zdict=zdict)
+        self.assertEqual(decompressor.decompress(data), b"hello world hello")
+
+    def testDecompressFdictHeaderWithoutZdict(self):
+        # A zlib header with the FDICT flag set asks for a dictionary that was
+        # never provided; that is a zlib error, not an internal error.
+        fdict_header = b"\x78\xbb" + b"\x00\x00\x00\x01\x03\x00"
+
+        with self.assertRaises(zlib.error):
+            zlib._ZlibDecompressor().decompress(fdict_header)
+
     def testDecompressChunks10(self):
         zlibd = zlib._ZlibDecompressor()
         text = b''
