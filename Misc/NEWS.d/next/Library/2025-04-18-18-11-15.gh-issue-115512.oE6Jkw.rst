@@ -1,0 +1,5 @@
+Substantially improved memory usage and performance when parsing email text
+in :mod:`email`. Primarily reduces memory usage in
+:func:`email.message_from_bytes`, :func:`email.message_from_string`,
+:class:`email.parser.Parser`, :class:`email.parser.BytesParser`,
+:class:`email.parser.FeedParser`, :class:`email.parser.BytesFeedParser`
