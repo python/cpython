@@ -1113,6 +1113,31 @@ class TextIOWrapperTest:
             t = self.TextIOWrapper(self.BytesIO(b'foo'), encoding="rot13")
         self.assertRaises(TypeError, t.write, 'bar')
 
+    def test_encoder_returns_str(self):
+        # gh-161518: an encoder returning its non-ASCII input str must be
+        # rejected, not have its internal storage written as bytes.
+        class Encoder(codecs.IncrementalEncoder):
+            def encode(self, input, final=False):
+                return input
+
+        info = codecs.CodecInfo(
+            None, None, incrementalencoder=Encoder,
+            incrementaldecoder=codecs.getincrementaldecoder('utf-8'),
+            name='test_str_encoder')
+        search = lambda name: info if name == 'test_str_encoder' else None
+        codecs.register(search)
+        self.addCleanup(codecs.unregister, search)
+
+        t = self.TextIOWrapper(self.BytesIO(), encoding='test_str_encoder')
+        self.assertRaises(TypeError, t.write, 'caf\xe9')
+
+        # The ASCII fast path still works.
+        raw = self.BytesIO()
+        t = self.TextIOWrapper(raw, encoding='utf-8')
+        t.write('cafe')
+        t.flush()
+        self.assertEqual(raw.getvalue(), b'cafe')
+
     def test_illegal_decoder(self):
         # Issue #17106
         # Bypass the early encoding check added in issue 20404
