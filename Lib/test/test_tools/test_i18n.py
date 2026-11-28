@@ -7,7 +7,7 @@ import unittest
 from textwrap import dedent
 from pathlib import Path
 
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_failure, assert_python_ok
 from test.test_tools import imports_under_tool, skip_if_missing, toolsdir
 from test.support.os_helper import temp_cwd, temp_dir
 
@@ -122,7 +122,8 @@ class Test_pygettext(unittest.TestCase):
            http://www.gnu.org/software/gettext/manual/gettext.html#Header-Entry
         """
         with temp_cwd(None) as cwd:
-            assert_python_ok('-Xutf8', self.script)
+            Path('test.py').touch()
+            assert_python_ok('-Xutf8', self.script, 'test.py')
             with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
             header = self.get_header(data)
@@ -149,7 +150,8 @@ class Test_pygettext(unittest.TestCase):
         """ Match the date format from xgettext for POT-Creation-Date """
         from datetime import datetime
         with temp_cwd(None) as cwd:
-            assert_python_ok('-Xutf8', self.script)
+            Path('test.py').touch()
+            assert_python_ok('-Xutf8', self.script, 'test.py')
             with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
             header = self.get_header(data)
@@ -165,10 +167,21 @@ class Test_pygettext(unittest.TestCase):
     def test_output_option(self):
         for opt in ('-o', '--output='):
             with temp_cwd():
-                assert_python_ok(self.script, f'{opt}test')
+                Path('test.py').touch()
+                assert_python_ok(self.script, f'{opt}test', 'test.py')
                 self.assertTrue(os.path.exists('test'))
-                res = assert_python_ok(self.script, f'{opt}-')
+                res = assert_python_ok(self.script, f'{opt}-', 'test.py')
                 self.assertIn(b'Project-Id-Version: PACKAGE VERSION', res.out)
+
+    def test_no_input_file(self):
+        """Like xgettext, require at least one input file."""
+        for args in ((), ('-o', '-')):
+            with self.subTest(args=args), temp_cwd(None):
+                res = assert_python_failure('-Xutf8', self.script, *args)
+                self.assertEqual(res.rc, 1)
+                self.assertEqual(res.out, b'')
+                self.assertIn(b'No input file given', res.err)
+                self.assertFalse(os.path.exists('messages.pot'))
 
     def test_funcdocstring(self):
         for doc in ('"""doc"""', "r'''doc'''", "R'doc'", 'u"doc"'):
