@@ -726,7 +726,9 @@ def correlation(x, y, /, *, method='linear'):
 
     else:
         xbar = fsum(x) / n
+        xbar += fsum(xi - xbar for xi in x) / n
         ybar = fsum(y) / n
+        ybar += fsum(yi - ybar for yi in y) / n
         x = [xi - xbar for xi in x]
         y = [yi - ybar for yi in y]
 

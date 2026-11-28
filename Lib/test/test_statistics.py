@@ -2850,6 +2850,14 @@ class TestCorrelationAndCovariance(unittest.TestCase):
         x = [0.0, 0.0, 0.0, a]
         self.assertEqual(statistics.correlation(x, x), 1.0)
 
+    def test_correlation_large_timestamp_precision(self):
+        # gh-162743: mean rounding should not corrupt correlation for
+        # large timestamp-like values with small differences.
+        epoch = 1_700_000_000_000_000_000
+        event = [epoch + offset for offset in (256, 512, 768)]
+        received = [t + 1024 for t in event]
+        self.assertEqual(statistics.correlation(event, received), 1.0)
+
     @requires_IEEE_754
     @skip_if_double_rounding
     @support.cpython_only    # Allow for a weaker sumprod() implementation
