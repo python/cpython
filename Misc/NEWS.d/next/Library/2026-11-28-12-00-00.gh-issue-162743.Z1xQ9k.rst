@@ -1,0 +1,3 @@
+:func:`statistics.correlation` now compensates for floating-point
+rounding in the mean when centering data, preventing incorrect results
+for large values with small differences.
