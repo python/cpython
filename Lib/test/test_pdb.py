@@ -1,20 +1,21 @@
 # A test suite for pdb; not very comprehensive at the moment.
 
 import _colorize
+import bdb
+import codecs
 import doctest
 import gc
 import io
+import linecache
 import os
 import pdb
 import re
 import signal
-import sys
-import types
-import codecs
-import unittest
 import subprocess
+import sys
 import textwrap
-import linecache
+import types
+import unittest
 import zipapp
 import zipfile
 
@@ -3645,9 +3646,53 @@ def test_pdb_commands_last_breakpoint():
     """
 
 
+def setUpPdb(test):
+    test.original_sigint_handler = signal.getsignal(signal.SIGINT)
+    test.previous_sigint_handler = pdb.Pdb._previous_sigint_handler
+
+
+def tearDownPdb(test):
+    # Restore signal state even if a SIGINT doctest fails.
+    signal.signal(signal.SIGINT, test.original_sigint_handler)
+    pdb.Pdb._previous_sigint_handler = test.previous_sigint_handler
+
+    # Ensure that asyncio state has been cleared at the end of the test.
+    # This prevents a "test altered the execution environment" warning if
+    # asyncio features are used.
+    set_event_loop(None)
+
+    # A doctest of pdb could have residues. For example, pdb could still
+    # be running, or breakpoints might be left uncleared. These residues
+    # could potentially interfere with the following test, especially
+    # when we switch backends. Here we clear all the residues to restore
+    # to its pre-test state.
+
+    # clear all the breakpoints left
+    bdb.Breakpoint.clearBreakpoints()
+
+    # Stop tracing and clear the pdb instance cache
+    if pdb.Pdb._last_pdb_instance:
+        pdb.Pdb._last_pdb_instance.stop_trace()
+        pdb.Pdb._last_pdb_instance = None
+
+    # If garbage objects are collected right after we start tracing, we
+    # could stop at __del__ of the object which would fail the test.
+    gc.collect()
+
+
+class BaseTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        setUpPdb(cls)
+
+    @classmethod
+    def tearDownClass(cls):
+        tearDownPdb(cls)
+
+
 @support.force_not_colorized_test_class
 @support.requires_subprocess()
-class PdbTestCase(unittest.TestCase):
+class PdbTestCase(BaseTestCase):
     def tearDown(self):
         os_helper.unlink(os_helper.TESTFN)
 
@@ -4950,7 +4995,7 @@ def bœr():
                 self.assertTrue(pdb._pyrepl_available())
 
 
-class ChecklineTests(unittest.TestCase):
+class ChecklineTests(BaseTestCase):
     def setUp(self):
         linecache.clearcache()  # Pdb.checkline() uses linecache.getline()
 
@@ -4988,7 +5033,7 @@ class ChecklineTests(unittest.TestCase):
 
 
 @support.requires_subprocess()
-class PdbTestInline(unittest.TestCase):
+class PdbTestInline(BaseTestCase):
     @unittest.skipIf(sys.flags.safe_path,
                      'PYTHONSAFEPATH changes default sys.path')
     def _run_script(self, script, commands,
@@ -5147,7 +5192,7 @@ class PdbTestInline(unittest.TestCase):
 
 
 @support.force_colorized_test_class
-class PdbTestColorize(unittest.TestCase):
+class PdbTestColorize(BaseTestCase):
     def setUp(self):
         self._original_can_colorize = _colorize.can_colorize
         # Force colorize to be enabled because we are sending data
@@ -5215,7 +5260,7 @@ class PdbTestColorize(unittest.TestCase):
 
 @support.force_not_colorized_test_class
 @support.requires_subprocess()
-class TestREPLSession(unittest.TestCase):
+class TestREPLSession(BaseTestCase):
     def test_return_from_inline_mode_to_REPL(self):
         # GH-124703: Raise BdbQuit when exiting pdb in REPL session.
         # This allows the REPL session to continue.
@@ -5238,10 +5283,11 @@ class TestREPLSession(unittest.TestCase):
 
 @support.force_not_colorized_test_class
 @support.requires_subprocess()
-class PdbTestReadline(unittest.TestCase):
+class PdbTestReadline(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
         # Ensure that the readline module is loaded
         # If this fails, the test is skipped because SkipTest will be raised
         readline = import_module('readline')
@@ -5495,38 +5541,11 @@ def load_tests(loader, tests, pattern):
         def setUp(test):
             import pdb
             pdb.set_default_backend(backend)
-            test.original_sigint_handler = signal.getsignal(signal.SIGINT)
-            test.previous_sigint_handler = pdb.Pdb._previous_sigint_handler
+            setUpPdb(test)
         return setUp
 
     def tearDown(test):
-        # Restore signal state even if a SIGINT doctest fails.
-        signal.signal(signal.SIGINT, test.original_sigint_handler)
-        pdb.Pdb._previous_sigint_handler = test.previous_sigint_handler
-
-        # Ensure that asyncio state has been cleared at the end of the test.
-        # This prevents a "test altered the execution environment" warning if
-        # asyncio features are used.
-        set_event_loop(None)
-
-        # A doctest of pdb could have residues. For example, pdb could still
-        # be running, or breakpoints might be left uncleared. These residues
-        # could potentially interfere with the following test, especially
-        # when we switch backends. Here we clear all the residues to restore
-        # to its pre-test state.
-
-        # clear all the breakpoints left
-        import bdb
-        bdb.Breakpoint.clearBreakpoints()
-
-        # Stop tracing and clear the pdb instance cache
-        if pdb.Pdb._last_pdb_instance:
-            pdb.Pdb._last_pdb_instance.stop_trace()
-            pdb.Pdb._last_pdb_instance = None
-
-        # If garbage objects are collected right after we start tracing, we
-        # could stop at __del__ of the object which would fail the test.
-        gc.collect()
+        tearDownPdb(test)
 
     tests.addTest(
         doctest.DocTestSuite(
