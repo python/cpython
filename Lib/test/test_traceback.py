@@ -3438,6 +3438,19 @@ class TestStack(unittest.TestCase):
             ['  File "foo.py", line 1, in fred\n    line\n'],
             s.format())
 
+    @support.subTests("extracted_list", [
+        [('foo.py', 1, 'fred', 'line')],
+        [traceback.FrameSummary('foo.py', 1, 'fred', line='line')],
+        traceback.StackSummary.from_list([('foo.py', 1, 'fred', 'line')]),
+    ])
+    def test_print_list_matches_format_list(self, extracted_list):
+        file = StringIO()
+        traceback.print_list(extracted_list, file=file)
+        self.assertEqual(
+            file.getvalue(),
+            ''.join(traceback.format_list(extracted_list)),
+        )
+
     def test_locals(self):
         linecache.updatecache('/foo.py', globals())
         c = test_code('/foo.py', 'method')
