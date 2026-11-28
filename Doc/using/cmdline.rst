@@ -720,9 +720,11 @@ Miscellaneous options
      .. versionadded:: 3.14
 
    * :samp:`-X lazy_imports={all,normal}` controls lazy import behavior.
-     ``all`` makes all imports lazy by default, and ``normal`` (the default)
-     respects the ``lazy`` keyword in source code.
-     See also :envvar:`PYTHON_LAZY_IMPORTS`.
+     ``all`` makes eligible module-scope imports lazy by default.
+     ``normal`` (the default) respects :keyword:`lazy` and
+     :attr:`module.__lazy_modules__`.
+     The :ref:`lazy import restrictions <lazy-imports>` apply in both modes.
+     See also :envvar:`PYTHON_LAZY_IMPORTS` and :func:`sys.set_lazy_imports`.
 
      .. versionadded:: 3.15
 
@@ -1428,9 +1430,11 @@ conflict.
 
 .. envvar:: PYTHON_LAZY_IMPORTS
 
-   Controls lazy import behavior. Accepts two values: ``all`` makes all
-   imports lazy by default, and ``normal`` (the default) respects the
-   ``lazy`` keyword in source code.
+   Control lazy import behavior. The variable accepts two values.
+   ``all`` makes eligible module-scope imports lazy by default.
+   ``normal`` (the default) respects :keyword:`lazy` and
+   :attr:`module.__lazy_modules__`.
+   The :ref:`lazy import restrictions <lazy-imports>` apply in both modes.
 
    See also the :option:`-X lazy_imports <-X>` command-line option.
 

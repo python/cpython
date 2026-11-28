@@ -1362,10 +1362,22 @@ iterations of the loop.
 
 .. opcode:: IMPORT_NAME (namei)
 
-   Imports the module ``co_names[namei]``.  ``STACK[-1]`` and ``STACK[-2]`` are
-   popped and provide the *fromlist* and *level* arguments of :func:`__import__`.
-   The module object is pushed onto the stack.  The current namespace is not affected: for a proper import statement, a subsequent :opcode:`STORE_FAST` instruction
-   modifies the namespace.
+   Imports the module ``co_names[namei >> 2]``. ``STACK[-1]`` and
+   ``STACK[-2]`` supply the *fromlist* and *level* arguments of the import.
+   The instruction removes both values from the stack.
+   The result is a module object or a
+   :class:`lazy import proxy <types.LazyImportType>`.
+   The instruction pushes the result onto the stack.
+
+   The instruction does not change the current namespace.
+   For ``import spam``, a subsequent store instruction binds the result.
+
+   The two lowest bits of *namei* control :ref:`lazy imports <lazy-imports>`.
+   Bit ``0`` marks an explicit lazy import. Bit ``1`` forces an eager import.
+   If both bits are zero, the runtime lazy import controls apply.
+
+   .. versionchanged:: 3.15
+      The two lowest bits encode lazy import flags.
 
 
 .. opcode:: IMPORT_FROM (namei)
@@ -1373,6 +1385,12 @@ iterations of the loop.
    Loads the attribute ``co_names[namei]`` from the module found in ``STACK[-1]``.
    The resulting object is pushed onto the stack, to be subsequently stored by a
    :opcode:`STORE_FAST` instruction.
+
+   For a :class:`lazy import proxy <types.LazyImportType>`, the result can
+   be another proxy that represents the requested attribute.
+
+   .. versionchanged:: 3.15
+      Added support for lazy import proxies.
 
 
 .. opcode:: JUMP_FORWARD (delta)

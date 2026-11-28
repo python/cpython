@@ -929,6 +929,11 @@ Glossary
       which is evaluated when the function is called.  The syntax to create
       a lambda function is ``lambda [parameters]: expression``
 
+   lazy import
+      An import that delays module search and execution until the first use
+      of the imported name. A proxy represents the imported object until
+      resolution. See :ref:`lazy-imports`.
+
    LBYL
       Look before you leap.  This coding style explicitly tests for
       pre-conditions before making calls or lookups.  This style contrasts with

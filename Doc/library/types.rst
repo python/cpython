@@ -345,19 +345,38 @@ Standard names are defined for the following types:
 
 .. class:: LazyImportType
 
-   The type of lazy import proxy objects. These objects are created when a
-   module is lazily imported and serve as placeholders until the module is
-   actually accessed. This type can be used to detect lazy imports
-   programmatically.
+   The type of :ref:`lazy import proxies <lazy-imports>`.
+   A proxy represents a module or an imported attribute until resolution.
+   You cannot create instances of this type directly.
+
+   A direct read of an imported global name resolves its proxy.
+   Access through :func:`globals` or
+   :attr:`module.__dict__` returns the proxy itself::
+
+      import types
+      lazy import json
+
+      isinstance(globals()["json"], types.LazyImportType)  # True
+      json.dumps({"key": "value"})  # Resolves the import.
+      isinstance(globals()["json"], types.LazyImportType)  # False
 
    .. versionadded:: 3.15
 
-   .. seealso:: :pep:`810`
+   .. seealso:: :ref:`lazy-imports`
 
    .. method:: resolve()
 
-      Reify the lazy import and return the "real" object being imported.
+      Resolve the lazy import and return the imported module or attribute.
+      This method can leave the proxy in its namespace.
+      To replace the proxy explicitly, assign the result to the imported name::
 
+         lazy import json
+         json = globals()["json"].resolve()
+
+      Each call to :func:`!resolve` call does a fresh import.
+      The proxy itself does not store :func:`!resolve`'s result,
+      relying on the import mechanism to use :attr:`sys.modules`
+      to reuse modules that have already been imported.
 
 .. class:: GetSetDescriptorType
 
