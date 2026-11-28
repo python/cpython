@@ -1054,6 +1054,10 @@ Reader_iternext_impl(ReaderObj *self)
                 if (self->dialect->strict)
                     PyErr_SetString(module_state->error_obj,
                                     "unexpected end of data");
+                else if (self->fields == NULL)
+                    PyErr_SetString(module_state->error_obj,
+                                    "iterator has already advanced "
+                                    "the reader");
                 else if (parse_save_field(self) >= 0)
                     break;
             }
