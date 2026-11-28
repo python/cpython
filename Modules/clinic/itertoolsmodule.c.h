@@ -812,6 +812,11 @@ product_new_helper(PyTypeObject *type, PyObject *const *args,
             goto exit;
         }
         repeat = ival;
+        if (repeat < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "repeat cannot be negative");
+            goto exit;
+        }
     }
 skip_optional_kwonly:
     iterables = args;
@@ -1759,4 +1764,4 @@ zip_longest_next(PyObject *self)
 
     return return_value;
 }
-/*[clinic end generated code: output=e7b0783cc2edf0c0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1760692789f9e193 input=a9049054013a1b77]*/

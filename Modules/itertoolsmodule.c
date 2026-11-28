@@ -2094,25 +2094,19 @@ struct productobject {
 @classmethod
 itertools.product.__new__ as product_new
     *iterables: array
-    repeat: Py_ssize_t = 1
+    repeat: Py_ssize_t(allow_negative=False) = 1
 [clinic start generated code]*/
 
 static PyObject *
 product_new_impl(PyTypeObject *type, PyObject * const *iterables,
                  Py_ssize_t iterables_length, Py_ssize_t repeat)
-/*[clinic end generated code: output=b0881d40e6be4c00 input=2d0325c612c678a1]*/
+/*[clinic end generated code: output=b0881d40e6be4c00 input=189ab566d53a8ea9]*/
 {
     productobject *lz;
     Py_ssize_t nargs, npools;
     PyObject *pools = NULL;
     Py_ssize_t *indices = NULL;
     Py_ssize_t i;
-
-    if (repeat < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "repeat argument cannot be negative");
-        return NULL;
-    }
 
     if (repeat == 0) {
         nargs = 0;
