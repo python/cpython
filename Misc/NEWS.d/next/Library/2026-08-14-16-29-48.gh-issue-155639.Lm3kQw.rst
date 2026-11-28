@@ -1,0 +1,2 @@
+Reject ZIP archives whose end of central directory records indicate that
+the archive spans multiple disks.
