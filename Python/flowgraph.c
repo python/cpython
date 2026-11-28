@@ -2954,6 +2954,13 @@ optimize_load_fast(cfg_builder *g)
             int opcode = instr->i_opcode;
             int oparg = instr->i_oparg;
             assert(opcode != EXTENDED_ARG);
+            if (instr->i_except != NULL) {
+                // Exception handlers are only reachable through the
+                // exception edges once the SETUP_* pseudo-instructions
+                // have been converted, so make sure we analyze them too.
+                basicblock *handler = instr->i_except;
+                load_fast_push_block(&sp, handler, handler->b_startdepth);
+            }
             switch (opcode) {
                 // Opcodes that load and store locals
                 case DELETE_FAST: {
@@ -3058,6 +3065,17 @@ optimize_load_fast(cfg_builder *g)
                     for (int i = 0; i < net_popped; i++) {
                         ref_stack_pop(&refs);
                     }
+                    break;
+                }
+
+                case END_ASYNC_FOR: {
+                    // The target of END_ASYNC_FOR is only used for
+                    // monitoring, it is not a jump (see
+                    // calculate_stackdepth()).
+                    assert(_PyOpcode_num_popped(opcode, oparg) == 2);
+                    assert(_PyOpcode_num_pushed(opcode, oparg) == 0);
+                    ref_stack_pop(&refs);
+                    ref_stack_pop(&refs);
                     break;
                 }
 
