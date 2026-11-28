@@ -170,5 +170,31 @@ if not is_pypi:
         target_ground = LocalPathGround(Path)
 
 
+class CopyFileobjFallbackTest(unittest.TestCase):
+    def test_ficlone_eperm_falls_back(self):
+        # FICLONE can fail with EPERM on filesystems that block reflinks
+        # (e.g. overlayfs, or an ioctl blocked by SELinux). copyfileobj
+        # must fall back to another copy method instead of failing.
+        import errno
+        import tempfile
+        import unittest.mock
+        from pathlib import _os as pathlib_os
+
+        def failing_ficlone(source_fd, target_fd):
+            raise OSError(errno.EPERM, 'Operation not permitted')
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            source = f'{tmpdir}/source.txt'
+            target = f'{tmpdir}/target.txt'
+            with open(source, 'wb') as f:
+                f.write(b'hello world')
+            with open(source, 'rb') as source_f, open(target, 'wb') as target_f:
+                with unittest.mock.patch.object(
+                        pathlib_os, '_ficlone', failing_ficlone):
+                    pathlib_os.copyfileobj(source_f, target_f)
+            with open(target, 'rb') as f:
+                self.assertEqual(f.read(), b'hello world')
+
+
 if __name__ == "__main__":
     unittest.main()
