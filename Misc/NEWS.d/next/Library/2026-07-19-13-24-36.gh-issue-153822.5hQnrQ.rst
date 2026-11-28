@@ -1,0 +1,4 @@
+Introduced structure for keeping raw header with whitespaces, to properly recreate headers for payloads that are PGP signed.
+Raw header value overrides the default header folding of :meth:`email.policy.EmailPolicy.fold` and :meth:`email.policy.Compat32.fold`
+in :meth:`email.generator.Generator.flatten` and bytes equivalents, preserving message and allowing for successfull signature validation.
+Contributed by Michał Karol.
