@@ -348,6 +348,24 @@ Android platform
 
    .. versionadded:: 3.13
 
+OpenHarmony platform
+--------------------
+
+.. function:: ohos_ver(release="", api_level=0)
+
+   Get OpenHarmony device information. Returns a :func:`~collections.namedtuple`
+   with the following attributes. Values which cannot be determined are set to
+   the defaults given as parameters.
+
+   * ``release`` - OpenHarmony version, as a string
+     (e.g. ``"7.0.0.109"``).
+
+   * ``api_level`` - OpenHarmony base API level of the running device, as an
+     integer (e.g. ``26``). To get the API level which Python was built against,
+     see ``sysconfig.get_config_var("OHOS_API_LEVEL")``.
+
+   .. versionadded:: 3.16
+
 .. _platform-cli:
 
 Command-line usage

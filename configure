@@ -4212,6 +4212,9 @@ then
 	*-*-linux-android*)
 		ac_sys_system=Linux-android
 		;;
+	*-*-linux-ohos*)
+		ac_sys_system=Linux-ohos
+		;;
 	*-*-linux*)
 		ac_sys_system=Linux
 		;;
@@ -4252,7 +4255,14 @@ then
 	esac
 	ac_sys_release=
     else
-	ac_sys_system=`uname -s`
+	case "$host" in
+	*-*-linux-ohos*)
+	    ac_sys_system=Linux-ohos
+	    ;;
+	*)
+	    ac_sys_system=`uname -s`
+	    ;;
+	esac
 	if test "$ac_sys_system" = "AIX"; then
 		ac_sys_release=`uname -v`
 	else
@@ -4269,6 +4279,7 @@ then
 	aix*) MACHDEP="aix";;
 	freebsd*) MACHDEP="freebsd";;
 	linux-android*) MACHDEP="android";;
+	linux-ohos*) MACHDEP="ohos";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
@@ -7802,6 +7813,46 @@ else
 printf "%s\n" "not Android" >&6; }
 fi
 rm -f conftest.c conftest.out
+
+case $ac_sys_system in #(
+  Linux-ohos) :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for the OpenHarmony API level" >&5
+printf %s "checking for the OpenHarmony API level... " >&6; }
+    OHOS_LIBC=`$CC -print-file-name=libc.so`
+    if test ! -f "$OHOS_LIBC"
+then :
+
+        as_fn_error $? "could not locate the OHOS libc through the compiler" "$LINENO" 5
+
+fi
+    OHOS_SDK_NATIVE=`cd "$(dirname "$OHOS_LIBC")/../../../.." && pwd`
+    OH_UNI_PACKAGE_JSON="$OHOS_SDK_NATIVE/oh-uni-package.json"
+    if test ! -f "$OH_UNI_PACKAGE_JSON"
+then :
+
+        as_fn_error $? "OpenHarmony SDK metadata file oh-uni-package.json was not found" "$LINENO" 5
+
+fi
+    OHOS_API_LEVEL=`awk -F '"' '$0 ~ /apiVersion/ { print $4; exit }' "$OH_UNI_PACKAGE_JSON"`
+    if test "$OHOS_API_LEVEL" -gt 0 2>/dev/null
+then :
+
+else case e in #(
+  e)
+        as_fn_error $? "apiVersion in oh-uni-package.json must be a positive integer" "$LINENO" 5
+     ;;
+esac
+fi
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $OHOS_API_LEVEL" >&5
+printf "%s\n" "$OHOS_API_LEVEL" >&6; }
+
+printf "%s\n" "#define OHOS_API_LEVEL $OHOS_API_LEVEL" >>confdefs.h
+
+ ;; #(
+  *) :
+     ;;
+esac
 
 # Check for unsupported systems
 case $ac_sys_system/$ac_sys_release in #(

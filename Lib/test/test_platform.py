@@ -679,6 +679,28 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(res.device, "delta")
             self.assertEqual(res.is_emulator, True)
 
+    def test_ohos_ver(self):
+        res = platform.ohos_ver()
+        self.assertIsInstance(res, tuple)
+        self.assertEqual(res, (res.release, res.api_level))
+
+        if sys.platform == "ohos":
+            self.assertIsInstance(res.release, str)
+            self.assertNotEqual(res.release, "")
+            self.assertFalse(res.release.startswith("OpenHarmony-"))
+            self.assertIsInstance(res.api_level, int)
+            self.assertGreater(res.api_level, 0)
+
+        # When not running on OHOS, it should return the default values.
+        else:
+            self.assertEqual(res.release, "")
+            self.assertEqual(res.api_level, 0)
+
+            # Default values may also be overridden using parameters.
+            res = platform.ohos_ver("7.0.0.109", 26)
+            self.assertEqual(res.release, "7.0.0.109")
+            self.assertEqual(res.api_level, 26)
+
     @support.cpython_only
     def test__comparable_version(self):
         from platform import _comparable_version as V

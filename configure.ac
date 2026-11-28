@@ -347,6 +347,9 @@ then
 	*-*-linux-android*)
 		ac_sys_system=Linux-android
 		;;
+	*-*-linux-ohos*)
+		ac_sys_system=Linux-ohos
+		;;
 	*-*-linux*)
 		ac_sys_system=Linux
 		;;
@@ -387,7 +390,14 @@ then
 	esac
 	ac_sys_release=
     else
-	ac_sys_system=`uname -s`
+	case "$host" in
+	*-*-linux-ohos*)
+	    ac_sys_system=Linux-ohos
+	    ;;
+	*)
+	    ac_sys_system=`uname -s`
+	    ;;
+	esac
 	if test "$ac_sys_system" = "AIX"; then
 		ac_sys_release=`uname -v`
 	else
@@ -404,6 +414,7 @@ then
 	aix*) MACHDEP="aix";;
 	freebsd*) MACHDEP="freebsd";;
 	linux-android*) MACHDEP="android";;
+	linux-ohos*) MACHDEP="ohos";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
@@ -1510,6 +1521,26 @@ else
   AC_MSG_RESULT([not Android])
 fi
 rm -f conftest.c conftest.out
+
+AS_CASE([$ac_sys_system], [Linux-ohos], [
+    AC_MSG_CHECKING([for the OpenHarmony API level])
+    OHOS_LIBC=`$CC -print-file-name=libc.so`
+    AS_IF([test ! -f "$OHOS_LIBC"], [
+        AC_MSG_ERROR([could not locate the OHOS libc through the compiler])
+    ])
+    OHOS_SDK_NATIVE=`cd "$(dirname "$OHOS_LIBC")/../../../.." && pwd`
+    OH_UNI_PACKAGE_JSON="$OHOS_SDK_NATIVE/oh-uni-package.json"
+    AS_IF([test ! -f "$OH_UNI_PACKAGE_JSON"], [
+        AC_MSG_ERROR([OpenHarmony SDK metadata file oh-uni-package.json was not found])
+    ])
+    OHOS_API_LEVEL=`awk -F '"' '$0 ~ /apiVersion/ { print $4; exit }' "$OH_UNI_PACKAGE_JSON"`
+    AS_IF([test "$OHOS_API_LEVEL" -gt 0 2>/dev/null], [], [
+        AC_MSG_ERROR([apiVersion in oh-uni-package.json must be a positive integer])
+    ])
+    AC_MSG_RESULT([$OHOS_API_LEVEL])
+    AC_DEFINE_UNQUOTED([OHOS_API_LEVEL], [$OHOS_API_LEVEL],
+                       [The OpenHarmony API level.])
+])
 
 # Check for unsupported systems
 AS_CASE([$ac_sys_system/$ac_sys_release],
