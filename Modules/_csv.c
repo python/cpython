@@ -477,15 +477,15 @@ _csv_state_from_type(PyTypeObject *type, const char *name)
 @vectorcall
 @classmethod
 _csv.Dialect.__new__ as dialect_new
-    dialect: object(c_default="NULL") = None
-    delimiter: object(c_default="NULL") = None
-    doublequote: object(c_default="NULL") = None
-    escapechar: object(c_default="NULL") = None
-    lineterminator: object(c_default="NULL") = None
-    quotechar: object(c_default="NULL") = None
-    quoting: object(c_default="NULL") = None
-    skipinitialspace: object(c_default="NULL") = None
-    strict: object(c_default="NULL") = None
+    dialect: object = NULL
+    delimiter: object = NULL
+    doublequote: object = NULL
+    escapechar: object = NULL
+    lineterminator: object = NULL
+    quotechar: object = NULL
+    quoting: object = NULL
+    skipinitialspace: object = NULL
+    strict: object = NULL
 [clinic start generated code]*/
 
 static PyObject *
@@ -494,7 +494,7 @@ dialect_new_impl(PyTypeObject *type, PyObject *dialect, PyObject *delimiter,
                  PyObject *lineterminator, PyObject *quotechar,
                  PyObject *quoting, PyObject *skipinitialspace,
                  PyObject *strict)
-/*[clinic end generated code: output=123393bdc71ddaa6 input=a9977678df813ece]*/
+/*[clinic end generated code: output=123393bdc71ddaa6 input=469f47d5890022f7]*/
 {
     DialectObj *self;
     PyObject *ret = NULL;
