@@ -278,7 +278,7 @@ backslashes; the whitespace up to the first backslash determines the
 indentation.
 
 Indentation is rejected as inconsistent if a source file mixes tabs and spaces
-in a way that makes the meaning dependent on the worth of a tab in spaces; a
+in a way that makes the meaning dependent on the width of a tab in spaces; a
 :exc:`TabError` is raised in that case.
 
 **Cross-platform compatibility note:** because of the nature of text editors on
