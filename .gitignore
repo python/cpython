@@ -17,7 +17,6 @@
 *.orig
 *.pyc
 *.pyd
-*.pyo
 *.rej
 *.swp
 *.pickle

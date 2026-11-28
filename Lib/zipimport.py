@@ -237,9 +237,7 @@ class zipimporter(_bootstrap_external._LoaderBasics):
 
 # _zip_searchorder defines how we search for a module in the Zip
 # archive: we first search for a package __init__, then for
-# non-package .pyc, and .py entries. The .pyc entries
-# are swapped by initzipimport() if we run in optimized mode. Also,
-# '/' is replaced by path_sep there.
+# non-package .pyc, and .py entries.
 _zip_searchorder = (
     (path_sep + '__init__.pyc', True, True),
     (path_sep + '__init__.py', False, True),
@@ -570,7 +568,7 @@ def _get_zlib_decompress_func():
 
     global _importing_zlib
     if _importing_zlib:
-        # Someone has a zlib.py[co] in their Zip file
+        # Someone has a zlib.pyc in their Zip file
         # let's avoid a stack overflow.
         _bootstrap._verbose_message('zipimport: zlib UNAVAILABLE')
         raise ZipImportError("can't decompress data; zlib not available")
@@ -601,7 +599,7 @@ def _get_zstd_decompressor_class():
 
     global _importing_zstd
     if _importing_zstd:
-        # Someone has a _zstd.py[co] in their Zip file
+        # Someone has a _zstd.pyc in their Zip file
         # let's avoid a stack overflow.
         _bootstrap._verbose_message("zipimport: zstd UNAVAILABLE")
         raise ZipImportError("can't decompress data; zstd not available")
@@ -705,9 +703,9 @@ def _eq_mtime(t1, t2):
     return abs(t1 - t2) <= 1
 
 
-# Given the contents of a .py[co] file, unmarshal the data
-# and return the code object. Raises ImportError it the magic word doesn't
-# match, or if the recorded .py[co] metadata does not match the source.
+# Given the contents of a .pyc file, unmarshal the data
+# and return the code object. Raises ImportError if the magic word doesn't
+# match, or if the recorded .pyc hash fails validation.
 def _unmarshal_code(self, pathname, fullpath, fullname, data):
     exc_details = {
         'name': fullname,
@@ -781,8 +779,8 @@ def _parse_dostime(d, t):
 # or (0, 0) if no source is available.
 def _get_mtime_and_size_of_source(self, path):
     try:
-        # strip 'c' or 'o' from *.py[co]
-        assert path[-1:] in ('c', 'o')
+        # strip 'c' from *.pyc
+        assert path.endswith('.pyc')
         path = path[:-1]
         toc_entry = self._get_files()[path]
         # fetch the time stamp of the .py file for comparison
@@ -799,8 +797,8 @@ def _get_mtime_and_size_of_source(self, path):
 # contents of the matching .py file, or None if no source
 # is available.
 def _get_pyc_source(self, path):
-    # strip 'c' or 'o' from *.py[co]
-    assert path[-1:] in ('c', 'o')
+    # strip 'c' from *.pyc
+    assert path.endswith('.pyc')
     path = path[:-1]
 
     try:

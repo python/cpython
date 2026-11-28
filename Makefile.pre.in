@@ -2891,7 +2891,7 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 		do \
 			case $$i in \
 			*CVS) ;; \
-			*.py[co]) ;; \
+			*.pyc) ;; \
 			*.orig) ;; \
 			*~) ;; \
 			*) \
@@ -3360,7 +3360,7 @@ TAGS::
 .PHONY: pycremoval
 pycremoval:
 	-find $(srcdir) -depth -name '__pycache__' -exec rm -rf {} ';'
-	-find $(srcdir) -name '*.py[co]' -exec rm -f {} ';'
+	-find $(srcdir) -name '*.pyc' -exec rm -f {} ';'
 
 .PHONY: rmtestturds
 rmtestturds:
@@ -3388,7 +3388,7 @@ clean-retain-profile: pycremoval
 	find . -name '*.lst' -exec rm -f {} ';'
 	find build -name 'fficonfig.h' -exec rm -f {} ';' || true
 	find build -name '*.py' -exec rm -f {} ';' || true
-	find build -name '*.py[co]' -exec rm -f {} ';' || true
+	find build -name '*.pyc' -exec rm -f {} ';' || true
 	-rm -f pybuilddir.txt
 	-rm -f _bootstrap_python
 	-rm -rf web_example web_embed_test python.mjs python.wasm python*.symbols python*.map
