@@ -1903,6 +1903,7 @@ static int test_initconfig_get_api(void)
     char **items;
     assert(PyInitConfig_GetStrList(config, "xoptions", &length, &items) == 0);
     assert(length == 0);
+    PyInitConfig_FreeStrList(length, items);
 
     char* xoptions[] = {"faulthandler"};
     assert(PyInitConfig_SetStrList(config, "xoptions",
