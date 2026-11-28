@@ -1,0 +1,2 @@
+Fix a :exc:`ValueError` in :mod:`multiprocessing` on Windows when several
+threads write to the same pipe simultaneously.
