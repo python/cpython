@@ -1,0 +1,3 @@
+Fix :class:`http.client.HTTPConnection` leaking its socket when connecting
+fails at setting the ``TCP_NODELAY`` option, which happens on macOS when the
+server resets the connection right after accepting it.
