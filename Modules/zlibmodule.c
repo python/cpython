@@ -1541,6 +1541,13 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
                 }
             }
         } while (self->zst.avail_out == 0);
+        /* Stop when the output limit is reached: no more input is needed,
+           and re-running arrange_input_buffer() would overwrite
+           zst.avail_in without crediting its unconsumed remainder to
+           avail_in_real, silently dropping that input (see gh-162153). */
+        if (obuflen == -2) {
+            break;
+        }
     } while(err != Z_STREAM_END && self->avail_in_real != 0);
 
     if (err == Z_STREAM_END) {
