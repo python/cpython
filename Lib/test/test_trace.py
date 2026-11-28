@@ -305,6 +305,33 @@ class TestFuncs(unittest.TestCase):
         }
         self.assertEqual(self.tracer.results().calledfuncs, expected)
 
+    def test_ignore_mods(self):
+        tracer = trace.Trace(ignoremods=['testmod'],
+                             count=0, trace=0, countfuncs=1)
+        tracer.runfunc(traced_func_importing_caller, 1)
+
+        expected = {
+            self.filemod + ('traced_func_simple_caller',): 1,
+            self.filemod + ('traced_func_linear',): 1,
+            self.filemod + ('traced_func_importing_caller',): 1,
+            self.filemod + ('traced_func_importing',): 1,
+        }
+        self.assertEqual(tracer.results().calledfuncs, expected)
+
+    def test_ignore_dirs(self):
+        testmod_dir = os.path.dirname(testmod.__file__)
+        tracer = trace.Trace(ignoredirs=[testmod_dir],
+                             count=0, trace=0, countfuncs=1)
+        tracer.runfunc(traced_func_importing_caller, 1)
+
+        expected = {
+            self.filemod + ('traced_func_simple_caller',): 1,
+            self.filemod + ('traced_func_linear',): 1,
+            self.filemod + ('traced_func_importing_caller',): 1,
+            self.filemod + ('traced_func_importing',): 1,
+        }
+        self.assertEqual(tracer.results().calledfuncs, expected)
+
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'pre-existing trace function throws off measurements')
     def test_inst_method_calling(self):
@@ -356,6 +383,45 @@ class TestCallers(unittest.TestCase):
                 (fix_ext_py(testmod.__file__), 'testmod', 'func')): 1,
         }
         self.assertEqual(self.tracer.results().callers, expected)
+
+    @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
+                     'pre-existing trace function throws off measurements')
+    def test_ignore_mods(self):
+        tracer = trace.Trace(ignoremods=['testmod'],
+                             count=0, trace=0, countcallers=1)
+        tracer.runfunc(traced_func_importing_caller, 1)
+
+        expected = {
+            ((os.path.splitext(trace.__file__)[0] + '.py', 'trace', 'Trace.runfunc'),
+                (self.filemod + ('traced_func_importing_caller',))): 1,
+            ((self.filemod + ('traced_func_simple_caller',)),
+                (self.filemod + ('traced_func_linear',))): 1,
+            ((self.filemod + ('traced_func_importing_caller',)),
+                (self.filemod + ('traced_func_simple_caller',))): 1,
+            ((self.filemod + ('traced_func_importing_caller',)),
+                (self.filemod + ('traced_func_importing',))): 1,
+        }
+        self.assertEqual(tracer.results().callers, expected)
+
+    @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
+                     'pre-existing trace function throws off measurements')
+    def test_ignore_dirs(self):
+        testmod_dir = os.path.dirname(testmod.__file__)
+        tracer = trace.Trace(ignoredirs=[testmod_dir],
+                             count=0, trace=0, countcallers=1)
+        tracer.runfunc(traced_func_importing_caller, 1)
+
+        expected = {
+            ((os.path.splitext(trace.__file__)[0] + '.py', 'trace', 'Trace.runfunc'),
+                (self.filemod + ('traced_func_importing_caller',))): 1,
+            ((self.filemod + ('traced_func_simple_caller',)),
+                (self.filemod + ('traced_func_linear',))): 1,
+            ((self.filemod + ('traced_func_importing_caller',)),
+                (self.filemod + ('traced_func_simple_caller',))): 1,
+            ((self.filemod + ('traced_func_importing_caller',)),
+                (self.filemod + ('traced_func_importing',))): 1,
+        }
+        self.assertEqual(tracer.results().callers, expected)
 
 
 # Created separately for issue #3821

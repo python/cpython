@@ -1,0 +1,3 @@
+Fix the :mod:`trace` command-line tool not applying ``--ignore-module`` and
+``--ignore-dir`` in the ``--listfuncs`` and ``--trackcalls`` modes. Original
+patch by Tom Hines.
