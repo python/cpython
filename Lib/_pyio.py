@@ -727,6 +727,8 @@ class BufferedIOBase(IOBase):
     def _readinto(self, b, read1):
         if not isinstance(b, memoryview):
             b = memoryview(b)
+        if b.readonly:
+            raise TypeError("readinto() argument must be read-write bytes-like object")
         b = b.cast('B')
 
         if read1:
