@@ -1293,6 +1293,71 @@ error:
 }
 
 
+/* Raise a TypeError with a formatted message, replacing exc and preserving
+   its information.
+
+   If exc has a traceback or a cause, chain it as the cause of the new
+   exception.  Otherwise, chaining would only repeat its message, so just copy
+   its notes, if any.  If formatting the message fails, its error is reported
+   instead of being raised, and the original exception is raised. */
+void
+_PyErr_ReplaceTypeError(PyObject *exc, const char *format, ...)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    va_list vargs;
+    va_start(vargs, format);
+    PyObject *msg = PyUnicode_FromFormatV(format, vargs);
+    va_end(vargs);
+    if (msg == NULL) {
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "formatting the TypeError message");
+        _PyErr_SetRaisedException(tstate, Py_NewRef(exc));
+        return;
+    }
+
+    PyObject *new_exc = PyObject_CallOneArg(PyExc_TypeError, msg);
+    Py_DECREF(msg);
+    if (new_exc == NULL) {
+        /* caller will expect error to be set anyway */
+        return;
+    }
+
+    PyObject *tb = PyException_GetTraceback(exc);
+    PyObject *cause = PyException_GetCause(exc);
+    int chain = (tb != NULL || cause != NULL);
+    Py_XDECREF(tb);
+    Py_XDECREF(cause);
+
+    if (chain) {
+        PyException_SetCause(new_exc, Py_NewRef(exc));
+    }
+    else {
+        PyObject *notes;
+        if (PyObject_GetOptionalAttr(exc, &_Py_ID(__notes__), &notes) < 0) {
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "copying the exception notes");
+        }
+        else if (notes != NULL) {
+            // A list is copied to not share it with exc.  Other values are
+            // not supported by add_note() and are kept as they are.
+            if (PyList_Check(notes)) {
+                Py_SETREF(notes,
+                    PyList_GetSlice(notes, 0, PY_SSIZE_T_MAX));
+            }
+            if (notes == NULL
+                || PyObject_SetAttr(new_exc, &_Py_ID(__notes__), notes) < 0)
+            {
+                PyErr_FormatUnraisable("Exception ignored while "
+                                       "copying the exception notes");
+            }
+            Py_XDECREF(notes);
+        }
+    }
+    _PyErr_SetObject(tstate, (PyObject*)Py_TYPE(new_exc), new_exc);
+    Py_DECREF(new_exc);
+}
+
+
 PyObject *
 PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
 {
