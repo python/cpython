@@ -1,0 +1,4 @@
+The C implementation of :class:`uuid.UUID` now raises :exc:`ValueError` with
+the message "badly formed hexadecimal UUID string" for hex strings that
+decode to more or fewer than 16 bytes, matching the pure-Python
+implementation.
