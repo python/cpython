@@ -420,6 +420,9 @@ def localcontext(ctx=None, **kwargs):
     for key, value in kwargs.items():
         if key not in _context_attributes:
             raise TypeError(f"'{key}' is an invalid keyword argument for this function")
+        if key in ('flags', 'traps') and not isinstance(value, dict):
+            # Accept a list of signals, like the Context constructor.
+            value = dict((s, int(s in value)) for s in _signals + value)
         setattr(ctx_manager.new_context, key, value)
     return ctx_manager
 
