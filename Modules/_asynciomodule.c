@@ -1320,6 +1320,31 @@ _asyncio_Future_get_loop_impl(FutureObj *self, PyTypeObject *cls)
     return Py_NewRef(self->fut_loop);
 }
 
+static int
+future_is_done(PyObject *future)
+{
+    PyObject *done = PyObject_CallMethodNoArgs(future, &_Py_ID(done));
+    if (done == NULL) {
+        return -1;
+    }
+    int is_done = PyObject_IsTrue(done);
+    Py_DECREF(done);
+    return is_done;
+}
+
+static int
+future_awaited_by_add_if_pending(PyObject *set, PyObject *waiter)
+{
+    int is_done = future_is_done(waiter);
+    if (is_done < 0) {
+        return -1;
+    }
+    if (is_done) {
+        return 0;
+    }
+    return PySet_Add(set, waiter);
+}
+
 /*[clinic input]
 @critical_section
 @getter
@@ -1334,21 +1359,43 @@ _asyncio_Future__asyncio_awaited_by_get_impl(FutureObj *self)
     if (self->fut_awaited_by == NULL) {
         Py_RETURN_NONE;
     }
-    if (self->fut_awaited_by_is_set) {
-        /* Already a set, just wrap it into a frozen set and return. */
-        assert(PySet_CheckExact(self->fut_awaited_by));
-        return PyFrozenSet_New(self->fut_awaited_by);
-    }
-
-    PyObject *set = PyFrozenSet_New(NULL);
+    PyObject *set = PySet_New(NULL);
     if (set == NULL) {
         return NULL;
     }
-    if (PySet_Add(set, self->fut_awaited_by)) {
-        Py_DECREF(set);
-        return NULL;
+    if (self->fut_awaited_by_is_set) {
+        assert(PySet_CheckExact(self->fut_awaited_by));
+        PyObject *iterator = PyObject_GetIter(self->fut_awaited_by);
+        if (iterator == NULL) {
+            Py_DECREF(set);
+            return NULL;
+        }
+        PyObject *waiter;
+        while ((waiter = PyIter_Next(iterator)) != NULL) {
+            int res = future_awaited_by_add_if_pending(set, waiter);
+            Py_DECREF(waiter);
+            if (res < 0) {
+                Py_DECREF(iterator);
+                Py_DECREF(set);
+                return NULL;
+            }
+        }
+        Py_DECREF(iterator);
+        if (PyErr_Occurred()) {
+            Py_DECREF(set);
+            return NULL;
+        }
     }
-    return set;
+    else {
+        PyObject *waiter = self->fut_awaited_by;
+        if (future_awaited_by_add_if_pending(set, waiter) < 0) {
+            Py_DECREF(set);
+            return NULL;
+        }
+    }
+    PyObject *result = PyFrozenSet_New(set);
+    Py_DECREF(set);
+    return result;
 }
 
 
