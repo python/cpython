@@ -2125,6 +2125,82 @@ class StreamReaderTest(unittest.TestCase):
                 with self.assertRaisesRegex(TypeError, 'StreamReader'):
                     pickle.dumps(f, proto)
 
+    def test_incomplete_final_character_strict(self):
+        # gh-160309: An incomplete character at end of stream must raise
+        # UnicodeDecodeError in strict mode rather than being silently dropped.
+        cases = (
+            ('utf-8', b'ab\xe2'),
+            ('utf-8-sig', b'\xef\xbb\xbfa\xe2'),
+            ('utf-8-sig', b'\xef\xbb'),
+            ('utf-16', b'\xff\xfea\x00B'),
+            ('utf-16-le', b'a\x00\xe2'),
+            ('utf-32', b'\xff\xfe\x00\x00a\x00\x00\x00\xe2'),
+            ('utf-32-le', b'a\x00\x00\x00\xe2'),
+            ('unicode-escape', b'a\\'),
+            ('raw-unicode-escape', b'a\\u30'),
+        )
+        for encoding, data in cases:
+            with self.subTest(encoding=encoding, data=data):
+                reader = codecs.getreader(encoding)(io.BytesIO(data), errors='strict')
+                with self.assertRaises(UnicodeDecodeError):
+                    reader.read()
+
+    def test_incomplete_final_character_readline(self):
+        # gh-160309: readline() returns complete preceding lines before raising
+        # on an incomplete trailing character at EOF.
+        reader = codecs.getreader('utf-8')(io.BytesIO(b'line1\nline2\n\xe2'), errors='strict')
+        self.assertEqual(reader.readline(), 'line1\n')
+        self.assertEqual(reader.readline(), 'line2\n')
+        with self.assertRaises(UnicodeDecodeError):
+            reader.readline()
+
+    def test_incomplete_final_character_non_iobase_stream(self):
+        # Custom non-IOBase streams (like Queue) may return b"" temporarily
+        # before more bytes arrive, and raise once a read sees no new bytes.
+        q = Queue(b'\xe2')
+        reader = codecs.getreader('utf-8')(q, errors='strict')
+        self.assertEqual(reader.read(), '')
+        q.write(b'\x82\xac')
+        self.assertEqual(reader.read(), '\u20ac')
+
+        q2 = Queue(b'ab\xe2')
+        reader2 = codecs.getreader('utf-8')(q2, errors='strict')
+        self.assertEqual(reader2.read(), 'ab')
+        with self.assertRaises(UnicodeDecodeError):
+            reader2.read()
+
+    def test_incomplete_final_character_replace(self):
+        # gh-160309: In replace mode, an incomplete final character must produce
+        # the replacement character.
+        reader = codecs.getreader('utf-8')(io.BytesIO(b'abc\xe2\x82'), errors='replace')
+        self.assertEqual(reader.read(), 'abc\ufffd')
+
+        # Chunked reading (size > 0)
+        reader = codecs.getreader('utf-8')(io.BytesIO(b'abc\xe2\x82'), errors='replace')
+        chunks = []
+        while True:
+            c = reader.read(2)
+            if not c:
+                break
+            chunks.append(c)
+        self.assertEqual(''.join(chunks), 'abc\ufffd')
+
+    def test_incomplete_final_character_ignore(self):
+        # gh-160309: In ignore mode, the incomplete final bytes are dropped.
+        reader = codecs.getreader('utf-8')(io.BytesIO(b'abc\xe2\x82'), errors='ignore')
+        self.assertEqual(reader.read(), 'abc')
+        self.assertEqual(reader.bytebuffer, b'')
+
+    def test_custom_two_arg_streamreader_subclass(self):
+        # Custom StreamReader subclasses whose decode() method only accepts
+        # 2 arguments (input, errors='strict') should continue to work.
+        class CustomReader(codecs.StreamReader):
+            def decode(self, input, errors='strict'):
+                return input.decode('latin1', errors), len(input)
+
+        reader = CustomReader(io.BytesIO(b'hello'))
+        self.assertEqual(reader.read(), 'hello')
+
 
 class StreamWriterTest(unittest.TestCase):
 

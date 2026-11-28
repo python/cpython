@@ -29,8 +29,8 @@ class StreamWriter(Codec,codecs.StreamWriter):
     pass
 
 class StreamReader(Codec,codecs.StreamReader):
-    def decode(self, input, errors='strict'):
-        return codecs.unicode_escape_decode(input, errors, False)
+    def decode(self, input, errors='strict', final=False):
+        return codecs.unicode_escape_decode(input, errors, final)
 
 ### encodings module API
 

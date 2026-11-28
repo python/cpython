@@ -494,6 +494,7 @@ class StreamReader(Codec):
             # single argument
             chars = size
 
+        saw_data = False
         # read until we get the required number of characters (if available)
         while True:
             # can the request be satisfied from the character buffer?
@@ -524,8 +525,40 @@ class StreamReader(Codec):
             self.bytebuffer = data[decodedbytes:]
             # put new characters in the character buffer
             self.charbuffer += newchars
+            if newdata:
+                saw_data = True
             # there was no data available
             if not newdata:
+                # The stream returned no more bytes.  If leftover bytes remain
+                # in bytebuffer, decode them with final=True so incomplete
+                # sequences raise or apply the error handler.  For io.IOBase
+                # streams, b"" always indicates EOF; for custom non-IOBase
+                # streams (e.g. incremental byte queues), only finalize when a
+                # read() call receives no new bytes at all.
+                if self.bytebuffer:
+                    if not saw_data:
+                        is_eof = True
+                    else:
+                        import io
+                        is_eof = isinstance(self.stream, io.IOBase)
+                    if is_eof:
+                        try:
+                            newchars, decodedbytes = self.decode(
+                                self.bytebuffer, self.errors, True)
+                        except TypeError:
+                            newchars, decodedbytes = self.decode(
+                                self.bytebuffer, self.errors)
+                        except UnicodeDecodeError:
+                            lines = (self.charbuffer.splitlines(keepends=True)
+                                     if firstline else ())
+                            if not (lines and (
+                                len(lines) > 1 or
+                                lines[0] != lines[0].splitlines(keepends=False)[0]
+                            )):
+                                raise
+                        else:
+                            self.bytebuffer = self.bytebuffer[decodedbytes:]
+                            self.charbuffer += newchars
                 break
         if chars < 0:
             # Return everything we've got

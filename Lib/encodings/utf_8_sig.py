@@ -102,19 +102,22 @@ class StreamReader(codecs.StreamReader):
         except AttributeError:
             pass
 
-    def decode(self, input, errors='strict'):
+    def decode(self, input, errors='strict', final=False):
         if len(input) < 3:
             if codecs.BOM_UTF8.startswith(input):
+                if final:
+                    self.decode = codecs.utf_8_decode
+                    return codecs.utf_8_decode(input, errors, final)
                 # not enough data to decide if this is a BOM
                 # => try again on the next call
                 return ("", 0)
         elif input[:3] == codecs.BOM_UTF8:
             self.decode = codecs.utf_8_decode
-            (output, consumed) = codecs.utf_8_decode(input[3:],errors)
+            (output, consumed) = codecs.utf_8_decode(input[3:], errors, final)
             return (output, consumed+3)
         # (else) no BOM present
         self.decode = codecs.utf_8_decode
-        return codecs.utf_8_decode(input, errors)
+        return codecs.utf_8_decode(input, errors, final)
 
 ### encodings module API
 

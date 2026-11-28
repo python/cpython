@@ -130,9 +130,9 @@ class StreamReader(codecs.StreamReader):
         except AttributeError:
             pass
 
-    def decode(self, input, errors='strict'):
+    def decode(self, input, errors='strict', final=False):
         (object, consumed, byteorder) = \
-            codecs.utf_16_ex_decode(input, errors, 0, False)
+            codecs.utf_16_ex_decode(input, errors, 0, final)
         if byteorder == -1:
             self.decode = codecs.utf_16_le_decode
         elif byteorder == 1:
