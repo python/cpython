@@ -262,6 +262,29 @@ int _PyUnicode_ToFoldedFull(Py_UCS4 ch, Py_UCS4 *res)
     return _PyUnicode_ToLowerFull(ch, res);
 }
 
+/* The lowercase of the simple case folding of ch: the full case folding when
+   that is a single character, else ch itself, lowercased in both cases.
+   Equivalent to _PyUnicode_ToLowercase() of the result of
+   _PyUnicode_ToFoldedFull() of length 1, but reads the type record once
+   except for the few characters having a special single-character
+   folding. */
+Py_UCS4 _PyUnicode_ToFoldedLowercase(Py_UCS4 ch)
+{
+    const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
+
+    if (!(ctype->flags & EXTENDED_CASE_MASK)) {
+        return ch + ctype->lower;
+    }
+    if (((ctype->lower >> 20) & 7) == 1) {
+        /* A single-character folding.  It can be an uppercase character --
+           Cherokee letters fold to their uppercase -- so lowercase it. */
+        int index = (ctype->lower & 0xFFFF) + (ctype->lower >> 24);
+        return _PyUnicode_ToLowercase(_PyUnicode_ExtendedCase[index]);
+    }
+    /* No folding, or a multi-character one: the simple lowercase of ch. */
+    return _PyUnicode_ExtendedCase[ctype->lower & 0xFFFF];
+}
+
 int _PyUnicode_IsCased(Py_UCS4 ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
