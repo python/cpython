@@ -436,6 +436,8 @@ static int
 framelocalsproxy_merge(PyObject* self, PyObject* other)
 {
     if (!PyDict_Check(other) && !PyFrameLocalsProxy_Check(other)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "update() argument must be dict or another FrameLocalsProxy");
         return -1;
     }
 
@@ -713,7 +715,7 @@ framelocalsproxy_inplace_or(PyObject *self, PyObject *other)
     }
 
     if (framelocalsproxy_merge(self, other) < 0) {
-        Py_RETURN_NOTIMPLEMENTED;
+        return NULL;
     }
 
     return Py_NewRef(self);
@@ -948,7 +950,6 @@ static PyObject*
 framelocalsproxy_update(PyObject *self, PyObject *other)
 {
     if (framelocalsproxy_merge(self, other) < 0) {
-        PyErr_SetString(PyExc_TypeError, "update() argument must be dict or another FrameLocalsProxy");
         return NULL;
     }
 
