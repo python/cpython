@@ -27,3 +27,12 @@ gh search issues --repo python/cpython "<symptom keywords>"
 gh search issues --repo python/cpython "<function, module or option name>"
 gh issue list --repo python/cpython --state all --label "<topic label>" --search "<short area keywords>"
 ```
+
+## Commit messages
+
+Do not add a `Co-authored-by` trailer, or any other attribution trailer, that
+names an AI tool or agent. `Co-authored-by` should be reserved for human
+contributors.
+
+If you disclose the use of AI tools, do it in the pull request description,
+not in a commit trailer.
