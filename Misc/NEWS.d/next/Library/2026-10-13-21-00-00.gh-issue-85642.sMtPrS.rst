@@ -1,0 +1,2 @@
+Reset the previous server's greeting and capabilities when an :mod:`smtplib`
+client connects to a new server.
