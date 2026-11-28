@@ -1,0 +1,3 @@
+Fix :func:`asyncio.print_call_graph` showing incorrect stacks or raising
+:exc:`AttributeError` for finished :func:`anext` tasks. Patch by Timofey
+Ivankov.
