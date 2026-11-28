@@ -1,0 +1,2 @@
+Fix :func:`binascii.a2b_base32` accepting invalid padding when padding
+characters are included in ``ignorechars``.
