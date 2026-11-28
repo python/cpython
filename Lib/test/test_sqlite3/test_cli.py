@@ -299,6 +299,11 @@ class Completion(unittest.TestCase):
                    ON _Attached_table BEGIN SELECT 1; END;
             CREATE VIEW attached._Attached_view AS SELECT 1;
 
+            ATTACH ':memory:' AS "double""quote";
+            CREATE TABLE "double""quote"._Double_quote (id);
+            ATTACH ':memory:' AS "single'quote";
+            CREATE TABLE "single'quote"._Single_quote (id);
+
             SELECT id FROM _\t\tta\t;
             .quit\n""").encode()
         output = self.write_input(input_)
@@ -313,7 +318,9 @@ class Completion(unittest.TestCase):
                 "_Attached_table",
                 "_Attached_trigger",
                 "_Attached_view",
+                "_Double_quote",
                 "_Index",
+                "_Single_quote",
                 "_Table",
                 "_Temp_index",
                 "_Temp_table",
@@ -340,6 +347,11 @@ class Completion(unittest.TestCase):
             ATTACH ':memory:' AS attached;
             CREATE TABLE attached._attached_table (_col_attached);
 
+            ATTACH ':memory:' AS "double""quote";
+            CREATE TABLE "double""quote"._double_quote (_col_double_quote);
+            ATTACH ':memory:' AS "single'quote";
+            CREATE TABLE "single'quote"._single_quote (_col_single_quote);
+
             SELECT _col_\t\tta\tFROM _table;
             .quit\n""").encode()
         output = self.write_input(input_)
@@ -352,7 +364,14 @@ class Completion(unittest.TestCase):
 
         self.assertEqual(
             candidates,
-            ["_col_attached", "_col_table", "_col_table_alias", "_col_temp"],
+            [
+                "_col_attached",
+                "_col_double_quote",
+                "_col_single_quote",
+                "_col_table",
+                "_col_table_alias",
+                "_col_temp",
+            ],
         )
     @unittest.skipIf(sqlite3.sqlite_version_info < (3, 30, 0),
                      "PRAGMA function_list is not available until "
