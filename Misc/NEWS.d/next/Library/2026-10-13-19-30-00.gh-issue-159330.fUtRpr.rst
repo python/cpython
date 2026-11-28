@@ -1,0 +1,3 @@
+Fix the representation of :class:`concurrent.futures.Future` objects with
+exceptions that have a false boolean value or raise an exception from
+:meth:`~object.__bool__`.
