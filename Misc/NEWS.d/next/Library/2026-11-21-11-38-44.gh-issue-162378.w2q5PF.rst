@@ -1,0 +1,2 @@
+Fix :func:`os.sendfile` skipping file data on macOS when called with headers
+and a zero *count*. Patch by Maurycy Pawłowski-Wieroński.
