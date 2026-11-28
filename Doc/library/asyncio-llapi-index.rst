@@ -78,6 +78,19 @@ See also the main documentation section about the
       - Get the current debug mode.
 
 
+.. rubric:: Loop settings
+.. list-table::
+    :widths: 50 50
+    :class: full-width-table
+
+    * - :meth:`loop.set_settings`
+      - Set the :ref:`eager callback processing <asyncio-eager-callbacks>`
+        settings.
+
+    * - :meth:`loop.get_settings`
+      - Get the current :class:`EventLoopSettings`.
+
+
 .. rubric:: Scheduling Callbacks
 .. list-table::
     :widths: 50 50

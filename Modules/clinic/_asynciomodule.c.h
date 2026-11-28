@@ -1032,7 +1032,7 @@ PyDoc_STRVAR(_asyncio_Task_cancel__doc__,
 "Request that this task cancel itself.\n"
 "\n"
 "This arranges for a CancelledError to be thrown into the\n"
-"wrapped coroutine on the next cycle through the event loop.\n"
+"wrapped coroutine the next time the task runs.\n"
 "The coroutine then has a chance to clean up or even deny\n"
 "the request using try/except/finally.\n"
 "\n"
@@ -2194,4 +2194,4 @@ _asyncio__clear_caches(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #define _ASYNCIO_TASK__FUT_WAITER_GETSETDEF {"_fut_waiter", (getter)_asyncio_Task__fut_waiter_get, (setter)NULL, NULL},
 
-/*[clinic end generated code: output=32aeff4f33bb2087 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=63cc7803083ab06a input=a9049054013a1b77]*/
