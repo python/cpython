@@ -384,8 +384,13 @@ static void dtrace_function_return(_PyInterpreterFrame *);
     } while (0);
 #endif
 
-#ifdef ENABLE_SPECIALIZATION
-/* Multiple threads may execute these concurrently if thread-local bytecode is
+#if defined(ENABLE_SPECIALIZATION) && defined(_Py_TIER2)
+/* The branch history is only used by the tier 2 optimizer. Don't record it
+ * otherwise: in the free-threaded build the main thread's bytecode is stored
+ * inline in the code object, so the store would cause false sharing with
+ * threads reading the code object's other fields.
+ *
+ * Multiple threads may execute these concurrently if thread-local bytecode is
  * disabled and they all execute the main copy of the bytecode. Specialization
  * is disabled in that case so the value is unused, but the RMW cycle should be
  * free of data races.
