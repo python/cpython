@@ -35,6 +35,13 @@
 #  undef _Py_HACL_CAN_COMPILE_VEC256
 #endif
 
+#ifndef _Py_HACL_CAN_COMPILE_VEC128
+#  define _Py_HACL_CAN_COMPILE_VEC128 0
+#endif
+#ifndef _Py_HACL_CAN_COMPILE_VEC256
+#  define _Py_HACL_CAN_COMPILE_VEC256 0
+#endif
+
 // HACL* expects HACL_CAN_COMPILE_VEC* macros to be set in order to enable
 // the corresponding SIMD instructions so we need to "forward" the values
 // we just deduced above.
