@@ -247,17 +247,8 @@ objects::
         >>> decistmt(s)
         "print (+Decimal ('21.3e-5')*-Decimal ('.1234')/Decimal ('81.7'))"
 
-        The format of the exponent is inherited from the platform C library.
-        Known cases are "e-007" (Windows) and "e-07" (not Windows).  Since
-        we're only showing 12 digits, and the 13th isn't close to 5, the
-        rest of the output should be platform-independent.
-
-        >>> exec(s)  #doctest: +ELLIPSIS
-        -3.21716034272e-0...7
-
-        Output from calculations with Decimal should be identical across all
-        platforms.
-
+        >>> exec(s)
+        -3.217160342717258e-07
         >>> exec(decistmt(s))
         -3.217160342717258261933904529E-7
         """
