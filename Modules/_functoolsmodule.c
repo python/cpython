@@ -118,11 +118,16 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    /* keyword Placeholder prohibition */
+    /* keyword Placeholder prohibition and key type validation */
     if (kw != NULL) {
         PyObject *key, *val;
         Py_ssize_t pos = 0;
         while (PyDict_Next(kw, &pos, &key, &val)) {
+            if (!PyUnicode_Check(key)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "keywords must be strings");
+                return NULL;
+            }
             if (val == phold) {
                 PyErr_SetString(PyExc_TypeError,
                                 "Placeholder cannot be passed as a keyword argument");
@@ -428,18 +433,29 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
             PyTuple_SET_ITEM(tot_kwnames, pto_nkwds + i, key);
         }
 
-        /* Copy pto_keywords with overlapping call keywords merged
-         * Note, tail is already coppied. */
+        /* Copy pto_keywords with overlapping call keywords merged.
+         * Note, tail is already copied. */
         Py_ssize_t pos = 0, i = 0;
         PyObject *keyword_dict = n_merges ? pto_kw_merged : partial_keywords;
+        int valid_kwargs = 1;
         Py_BEGIN_CRITICAL_SECTION(keyword_dict);
         while (PyDict_Next(keyword_dict, &pos, &key, &val)) {
+            if (!PyUnicode_Check(key)) {
+                valid_kwargs = 0;
+                break;
+            }
             assert(i < pto_nkwds);
             PyTuple_SET_ITEM(tot_kwnames, i, Py_NewRef(key));
             stack[tot_nargs + i] = val;
             i++;
         }
         Py_END_CRITICAL_SECTION();
+        if (!valid_kwargs) {
+            PyErr_SetString(PyExc_TypeError, "keywords must be strings");
+            Py_XDECREF(pto_kw_merged);
+            Py_DECREF(tot_kwnames);
+            goto clean_stack;
+        }
         assert(i == pto_nkwds);
         Py_XDECREF(pto_kw_merged);
 
@@ -743,6 +759,16 @@ partial_setstate(PyObject *self, PyObject *state)
     {
         PyErr_SetString(PyExc_TypeError, "invalid partial state");
         return NULL;
+    }
+    if (kw != Py_None) {
+        Py_ssize_t pos = 0;
+        PyObject *key, *val;
+        while (PyDict_Next(kw, &pos, &key, &val)) {
+            if (!PyUnicode_Check(key)) {
+                PyErr_SetString(PyExc_TypeError, "keywords must be strings");
+                return NULL;
+            }
+        }
     }
 
     Py_ssize_t nargs = PyTuple_GET_SIZE(fnargs);
