@@ -1,0 +1,3 @@
+:class:`xmlrpc.client.Fault` and :class:`xmlrpc.client.ProtocolError`
+exceptions can now be unpickled. Previously, unpickling them raised
+:exc:`TypeError`.
