@@ -5153,9 +5153,14 @@ class PdbTestColorize(unittest.TestCase):
         # Force colorize to be enabled because we are sending data
         # to a StringIO
         _colorize.can_colorize = lambda *args, **kwargs: True
+        # The tests end with 'continue', which installs pdb's SIGINT handler.
+        self._original_sigint_handler = signal.getsignal(signal.SIGINT)
+        self._previous_sigint_handler = pdb.Pdb._previous_sigint_handler
 
     def tearDown(self):
         _colorize.can_colorize = self._original_can_colorize
+        signal.signal(signal.SIGINT, self._original_sigint_handler)
+        pdb.Pdb._previous_sigint_handler = self._previous_sigint_handler
 
     def test_code_display(self):
         output = io.StringIO()
