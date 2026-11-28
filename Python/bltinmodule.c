@@ -300,15 +300,15 @@ __lazy_import__ as builtin___lazy_import__
 
 Lazily imports a module.
 
-Returns either the module to be imported or a imp.lazy_module object
-which indicates the module to be lazily imported.
+Returns either the eagerly imported module (of type types.ModuleType)
+or lazily imported module (of type types.LazyImportType).
 [clinic start generated code]*/
 
 static PyObject *
 builtin___lazy_import___impl(PyObject *module, PyObject *name,
                              PyObject *globals, PyObject *locals,
                              PyObject *fromlist, int level)
-/*[clinic end generated code: output=300f1771094b9e8c input=9c85cccd6a885b9b]*/
+/*[clinic end generated code: output=300f1771094b9e8c input=b1895e4d57eb1c44]*/
 {
     PyObject *builtins;
     PyThreadState *tstate = PyThreadState_GET();
