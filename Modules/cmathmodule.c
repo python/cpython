@@ -634,7 +634,6 @@ c_log(Py_complex z)
         }
     }
     r.imag = atan2(z.imag, z.real);
-    errno = 0;
     return r;
 }
 
