@@ -1,0 +1,3 @@
+Fix :meth:`zipfile.ZipFile.testzip` to validate every member in a ZIP
+archive with duplicate names. It could previously miss corruption in an
+earlier member.
