@@ -1,0 +1,1 @@
+Garbage collection in builds with the GIL now skips reachability traversal for exact tuple survivors that can be untracked immediately.
