@@ -3171,7 +3171,7 @@ class Signature:
                         break
                     elif param.name in kwargs:
                         if param.kind == _POSITIONAL_ONLY:
-                            if param.default is _empty:
+                            if not partial and param.default is _empty:
                                 msg = f'missing a required positional-only argument: {param.name!r}'
                                 raise TypeError(msg)
                             # Raise a TypeError once we are sure there is no
@@ -3234,18 +3234,23 @@ class Signature:
         # keyword arguments
         kwargs_param = None
         for param in itertools.chain(parameters_ex, parameters):
-            if param.kind == _VAR_KEYWORD:
+            kind = param.kind
+            if kind == _VAR_KEYWORD:
                 # Memorize that we have a '**kwargs'-like parameter
                 kwargs_param = param
                 continue
 
-            if param.kind == _VAR_POSITIONAL:
+            if kind == _VAR_POSITIONAL:
                 # Named arguments don't refer to '*args'-like parameters.
                 # We only arrive here if the positional arguments ended
                 # before reaching the last parameter before *args.
                 continue
 
             param_name = param.name
+            if kind == _POSITIONAL_ONLY and param_name in kwargs:
+                pos_only_param_in_kwargs.append(param)
+                continue
+
             try:
                 arg_val = kwargs.pop(param_name)
             except KeyError:
@@ -3253,7 +3258,7 @@ class Signature:
                 # if it has a default value, or it is an '*args'-like
                 # parameter, left alone by the processing of positional
                 # arguments.
-                if (not partial and param.kind != _VAR_POSITIONAL and
+                if (not partial and kind != _VAR_POSITIONAL and
                                                     param.default is _empty):
                     raise TypeError('missing a required argument: {arg!r}'. \
                                     format(arg=param_name)) from None

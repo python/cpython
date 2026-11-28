@@ -1,0 +1,2 @@
+Fix :meth:`inspect.Signature.bind` and :meth:`~inspect.Signature.bind_partial`
+when a keyword matches an omitted positional-only parameter.
