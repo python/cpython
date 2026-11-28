@@ -1,0 +1,5 @@
+Fixed :mod:`!_pydecimal` losing the context flags of companion conditions
+when a signal was trapped. After an operation that signals several
+conditions at once (for example an overflowing multiplication), the flags
+for *all* encountered conditions are now set, matching :mod:`!_decimal`;
+the exception raised is unchanged.
