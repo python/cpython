@@ -121,7 +121,7 @@ elif os.name == "posix" and sys.platform in {"darwin", "ios", "tvos", "visionos"
     # https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man3/dyld.3.html
     import ctypes
 
-    _libc = ctypes.CDLL(find_library("c"))
+    _libc = ctypes.CDLL(None)
     _dyld_get_image_name = _libc["_dyld_get_image_name"]
     _dyld_get_image_name.restype = ctypes.c_char_p
 
