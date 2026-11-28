@@ -16,12 +16,10 @@ def encode(input, errors='strict'):
             len(input))
 
 def decode(input, errors='strict'):
-    prefix = 0
     if input[:3] == codecs.BOM_UTF8:
-        input = input[3:]
-        prefix = 3
-    (output, consumed) = codecs.utf_8_decode(input, errors, True)
-    return (output, consumed+prefix)
+        (output, consumed) = codecs.utf_8_decode(input, errors, True)
+        return (output[1:], consumed)
+    return codecs.utf_8_decode(input, errors, True)
 
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def __init__(self, errors='strict'):
@@ -64,8 +62,8 @@ class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
                 self.first = 0
                 if input[:3] == codecs.BOM_UTF8:
                     (output, consumed) = \
-                       codecs.utf_8_decode(input[3:], errors, final)
-                    return (output, consumed+3)
+                       codecs.utf_8_decode(input, errors, final)
+                    return (output[1:], consumed)
         return codecs.utf_8_decode(input, errors, final)
 
     def reset(self):
@@ -110,8 +108,8 @@ class StreamReader(codecs.StreamReader):
                 return ("", 0)
         elif input[:3] == codecs.BOM_UTF8:
             self.decode = codecs.utf_8_decode
-            (output, consumed) = codecs.utf_8_decode(input[3:],errors)
-            return (output, consumed+3)
+            (output, consumed) = codecs.utf_8_decode(input, errors)
+            return (output[1:], consumed)
         # (else) no BOM present
         self.decode = codecs.utf_8_decode
         return codecs.utf_8_decode(input, errors)
