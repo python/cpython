@@ -147,6 +147,14 @@ typedef struct {
     // for a more detailed explanation.
     PyEvent thread_is_exiting;
 
+    // Set by the thread when its Python-level bootstrap has signalled
+    // startup (see threading.Thread._bootstrap_inner), or on thread exit
+    // if the bootstrap terminated before doing so.  threading.Thread.start()
+    // waits on this event rather than on the Python-level started event
+    // alone, so that it cannot hang forever if the thread dies during its
+    // bootstrap (e.g. a MemoryError, see gh-140746).
+    PyEvent thread_started;
+
     // Serializes calls to `join` and `set_done`.
     _PyOnceFlag once;
 
@@ -233,6 +241,7 @@ ThreadHandle_new(void)
     self->os_handle = 0;
     self->has_os_handle = 0;
     self->thread_is_exiting = (PyEvent){0};
+    self->thread_started = (PyEvent){0};
     self->mutex = (PyMutex){_Py_UNLOCKED};
     self->once = (_PyOnceFlag){0};
     self->state = THREAD_HANDLE_NOT_STARTED;
@@ -324,6 +333,7 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
         handle->once = (_PyOnceFlag){_Py_ONCE_INITIALIZED};
         handle->mutex = (PyMutex){_Py_UNLOCKED};
         _PyEvent_Notify(&handle->thread_is_exiting);
+        _PyEvent_Notify(&handle->thread_started);
         llist_remove(node);
         remove_from_shutdown_handles(handle);
     }
@@ -409,6 +419,12 @@ thread_run(void *boot_raw)
 exit:
     // Don't need to wait for this thread anymore
     remove_from_shutdown_handles(handle);
+
+    // gh-140746: Unblock any thread waiting in Thread.start().  If the
+    // bootstrap function terminated before signalling startup (e.g. a
+    // MemoryError while calling it), this is the only notification the
+    // waiter will get.  If startup was already signalled, this is a no-op.
+    _PyEvent_Notify(&handle->thread_started);
 
     _PyEvent_Notify(&handle->thread_is_exiting);
     ThreadHandle_decref(handle);
@@ -719,6 +735,38 @@ _thread__ThreadHandle_join_impl(PyObject *self, PyObject *timeout_obj)
 }
 
 /*[clinic input]
+_thread._ThreadHandle._set_started
+[clinic start generated code]*/
+
+static PyObject *
+_thread__ThreadHandle__set_started_impl(PyObject *self)
+/*[clinic end generated code: output=9751c29ebaf1762a input=70abc4fd252a8829]*/
+{
+    PyThreadHandleObject *handle = PyThreadHandleObject_CAST(self);
+    _PyEvent_Notify(&handle->handle->thread_started);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_thread._ThreadHandle._wait_for_started
+[clinic start generated code]*/
+
+static PyObject *
+_thread__ThreadHandle__wait_for_started_impl(PyObject *self)
+/*[clinic end generated code: output=4d56065f9ab2aa60 input=55e67a0995b059a4]*/
+{
+    PyThreadHandleObject *handle = PyThreadHandleObject_CAST(self);
+    while (!PyEvent_WaitTimed(&handle->handle->thread_started, -1,
+                              /*detach=*/1)) {
+        // Interrupted
+        if (Py_MakePendingCalls() < 0) {
+            return NULL;
+        }
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 _thread._ThreadHandle.is_done
 [clinic start generated code]*/
 
@@ -762,6 +810,8 @@ static PyGetSetDef ThreadHandle_getsetlist[] = {
 static PyMethodDef ThreadHandle_methods[] = {
     _THREAD__THREADHANDLE_JOIN_METHODDEF
     _THREAD__THREADHANDLE__SET_DONE_METHODDEF
+    _THREAD__THREADHANDLE__SET_STARTED_METHODDEF
+    _THREAD__THREADHANDLE__WAIT_FOR_STARTED_METHODDEF
     _THREAD__THREADHANDLE_IS_DONE_METHODDEF
     {0, 0}
 };
