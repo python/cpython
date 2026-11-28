@@ -21,6 +21,7 @@ PyAPI_FUNC(PyObject *) _PyLazyImport_New(
 extern PyObject *_PyLazyImport_LoadChild(
     PyThreadState *tstate, PyObject *declaration, PyObject *name);
 extern int _PyLazyImport_IsActive(PyObject *declaration);
+extern int _PyLazyImport_ImportsModule(PyObject *placeholder, PyObject *name);
 
 extern int _PyLazyImport_IsResolving(PyThreadState *tstate, PyObject *op);
 
