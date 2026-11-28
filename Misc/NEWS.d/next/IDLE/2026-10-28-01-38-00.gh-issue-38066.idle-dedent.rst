@@ -1,0 +1,1 @@
+Add smart-dedent bound to Shift-Tab in IDLE to dedent selected lines or the current line.

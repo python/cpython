@@ -141,6 +141,7 @@ class EditorWindow:
         text.bind("<<smart-backspace>>",self.smart_backspace_event)
         text.bind("<<newline-and-indent>>",self.newline_and_indent_event)
         text.bind("<<smart-indent>>",self.smart_indent_event)
+        text.bind("<<smart-dedent>>", self.smart_dedent_event)
         self.fregion = fregion = self.FormatRegion(self)
         # self.fregion used in smart_indent_event to access indent_region.
         text.bind("<<indent-region>>", fregion.indent_region_event)
@@ -1421,6 +1422,23 @@ class EditorWindow:
                     n = self.indentwidth
                     pad = ' ' * (n - effective % n)
                 text.insert("insert", pad, self.user_input_insert_tags)
+            text.see("insert")
+            return "break"
+        finally:
+            text.undo_block_stop()
+
+    def smart_dedent_event(self, event):
+        text = self.text
+        first, last = self.get_selection_indices()
+        text.undo_block_start()
+        try:
+            if first and last:
+                if index2line(first) != index2line(last):
+                    return self.fregion.dedent_region_event(event)
+            prefix = text.get("insert linestart", "insert")
+            raw, effective = get_line_indent(prefix, self.tabwidth)
+            if raw == len(prefix) and effective > 0:
+                self.reindent_to(max(0, effective - self.indentwidth))
             text.see("insert")
             return "break"
         finally:
