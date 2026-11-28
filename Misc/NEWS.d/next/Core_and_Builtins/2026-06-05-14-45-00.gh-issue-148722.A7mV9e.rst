@@ -1,0 +1,2 @@
+Fix a reference leak when a code object's constants contain a reference cycle
+back to the code object.
