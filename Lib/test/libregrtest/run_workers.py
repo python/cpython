@@ -111,6 +111,7 @@ class WorkerThread(threading.Thread):
         self.worker_id = worker_id
         self.runtests = runner.runtests
         self.pending = runner.pending
+        self.worker_gate = runner.worker_gate
         self.output = runner.output
         self.timeout = runner.worker_timeout
         self.log = runner.log
@@ -418,6 +419,8 @@ class WorkerThread(threading.Thread):
                 for test_name in case_ids:
                     if self._stopped:
                         break
+                    if self.worker_gate is not None and not self.worker_gate.acquire():
+                        raise ExitThread
                     self.start_time = time.monotonic()
                     self.test_name = test_name
                     try:
@@ -428,6 +431,8 @@ class WorkerThread(threading.Thread):
                         mp_result = exc.mp_result
                     finally:
                         self.test_name = _NOT_RUNNING
+                        if self.worker_gate is not None:
+                            self.worker_gate.release()
                     mp_result.result.duration = time.monotonic() - self.start_time
                     if single_process_per_case:
                         # Report the test case, not the test module
@@ -504,7 +509,7 @@ def get_running(workers: list[WorkerThread]) -> str | None:
 class RunWorkers:
     def __init__(self, num_workers: int, runtests: RunTests,
                  logger: Logger, results: TestResults,
-                 reporter: Reporter) -> None:
+                 reporter: Reporter, adaptive_target: float | None = None) -> None:
         self.num_workers = num_workers
         self.runtests = runtests
         self.logger = logger
@@ -532,6 +537,13 @@ class RunWorkers:
             # these worker threads would never get anything to do.
             self.num_workers = min(self.num_workers, jobs)
 
+        self.worker_gate = None
+        if adaptive_target is not None:
+            from .adaptive_workers import AdaptiveWorkerGate
+            self.worker_gate = AdaptiveWorkerGate(
+                adaptive_target, max(1, self.num_workers), logger)
+            self.next_worker_update = time.monotonic() + self.worker_gate.update_interval
+
     def start_workers(self) -> None:
         self.workers = [WorkerThread(index, self)
                         for index in range(1, self.num_workers + 1)]
@@ -548,6 +560,9 @@ class RunWorkers:
             msg += (" (timeout: %s, worker timeout: %s)"
                     % (format_duration(self.timeout),
                        format_duration(self.worker_timeout)))
+        if self.worker_gate is not None:
+            msg += (f' (Load target: {self.worker_gate.target:.0%}, adaptive workers; '
+                    f'load average {self.worker_gate.load_target:.2f})')
         self.log(msg)
         for worker in self.workers:
             worker.start()
@@ -555,6 +570,8 @@ class RunWorkers:
 
     def stop_workers(self) -> None:
         start_time = time.monotonic()
+        if self.worker_gate is not None:
+            self.worker_gate.stop()
         for worker in self.workers:
             worker.stop()
         for worker in self.workers:
@@ -571,9 +588,17 @@ class RunWorkers:
                 faulthandler.dump_traceback_later(MAIN_PROCESS_TIMEOUT,
                                                   exit=True)
 
+            timeout = PROGRESS_UPDATE
+            if self.worker_gate is not None:
+                now = time.monotonic()
+                if now >= self.next_worker_update:
+                    self.worker_gate.update()
+                    self.next_worker_update = now + self.worker_gate.update_interval
+                timeout = min(timeout, self.next_worker_update - now)
+
             # wait for a thread
             try:
-                result = self.output.get(timeout=PROGRESS_UPDATE)
+                result = self.output.get(timeout=timeout)
                 if isinstance(result, WorkerThreadExited):
                     self.live_worker_count -= 1
                     continue
@@ -650,6 +675,8 @@ class RunWorkers:
         fail_fast = self.runtests.fail_fast
         fail_env_changed = self.runtests.fail_env_changed
         self.logger.get_mem_usage = self.get_mem_usage
+        if self.worker_gate is not None:
+            self.logger.get_active_workers = self.worker_gate.get_active_workers
 
         self.start_workers()
 
@@ -675,3 +702,4 @@ class RunWorkers:
             self.pending.stop()
             self.stop_workers()
             self.logger.get_mem_usage = None
+            self.logger.get_active_workers = None

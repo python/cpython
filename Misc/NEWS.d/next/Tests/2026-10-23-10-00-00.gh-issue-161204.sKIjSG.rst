@@ -1,0 +1,2 @@
+Add a percentage form of regrtest's ``-j`` option to adjust worker concurrency
+toward a system load-average target using the existing load tracker.
