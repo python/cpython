@@ -1,3 +1,4 @@
+import sys
 from code import InteractiveConsole
 from functools import partial
 from typing import Iterable
@@ -8,6 +9,39 @@ from _pyrepl.render import RenderLine, RenderedScreen
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.simple_interact import _strip_final_indent
 from _pyrepl.utils import unbracket, ANSI_ESCAPE_SEQUENCE
+
+
+INPUT_SUBMITTED_HOOK_MARKER = "\x1b]633;C\x07"
+_LAST_EXCEPTION_ATTRIBUTES = (
+    "last_exc", "last_type", "last_value", "last_traceback",
+)
+
+
+def report_submitted_input(source):
+    print(INPUT_SUBMITTED_HOOK_MARKER + repr(source), flush=True)
+
+
+def fail_submitted_input(source):
+    raise RuntimeError("hook failed")
+
+
+def last_exception_attributes():
+    return {
+        name: getattr(sys, name)
+        for name in _LAST_EXCEPTION_ATTRIBUTES
+        if hasattr(sys, name)
+    }
+
+
+def last_exception_attributes_preserved(previous):
+    return (
+        len(previous) == len(_LAST_EXCEPTION_ATTRIBUTES)
+        and isinstance(previous["last_exc"], ZeroDivisionError)
+        and all(
+            hasattr(sys, name) and getattr(sys, name) is value
+            for name, value in previous.items()
+        )
+    )
 
 
 class ScreenEqualMixin:

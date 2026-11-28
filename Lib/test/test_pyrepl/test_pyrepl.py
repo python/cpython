@@ -29,6 +29,7 @@ from test.support.os_helper import EnvironmentVarGuard, unlink
 
 from .support import (
     FakeConsole,
+    INPUT_SUBMITTED_HOOK_MARKER,
     ScreenEqualMixin,
     handle_all_events,
     handle_events_narrow_console,
@@ -2111,6 +2112,58 @@ class TestMain(ReplTestCase):
         patcher = patch('os.environ', new=make_clean_env())
         self.addCleanup(patcher.stop)
         patcher.start()
+
+    def test_input_submitted_hook(self):
+        env = os.environ.copy()
+        env["PYTHON_COLORS"] = "0"
+        output, exit_code = self.run_repl(
+            [
+                "from _pyrepl import simple_interact as si",
+                "from test.test_pyrepl import support",
+                "si.input_submitted_hook = support.report_submitted_input",
+                "if True:",
+                "print('block executed')",
+                "",
+                "exit",
+            ],
+            env=env,
+            skip=True,
+        )
+        output = output.replace("\r\n", "\n")
+        self.assertEqual(exit_code, 0)
+        submitted_input = "if True:\n    print('block executed')\n"
+        hook_output = f"{INPUT_SUBMITTED_HOOK_MARKER}{submitted_input!r}"
+        self.assertEqual(output.count(INPUT_SUBMITTED_HOOK_MARKER), 1)
+        self.assertIn(hook_output, output)
+        self.assertIn("block executed\n", output)
+        self.assertLess(output.index(hook_output), output.index("block executed\n"))
+
+    def test_input_submitted_hook_exception(self):
+        env = make_clean_env()
+        env["NO_COLOR"] = "1"
+        output, exit_code = self.run_repl(
+            [
+                "from _pyrepl import simple_interact as si",
+                "from test.test_pyrepl import support",
+                "print('initially unset:', not support.last_exception_attributes())",
+                "si.input_submitted_hook = support.fail_submitted_input",
+                "print('still unset:', not support.last_exception_attributes())",
+                "1 / 0",
+                "previous = support.last_exception_attributes()",
+                "print('last preserved:', support.last_exception_attributes_preserved(previous))",
+                "exit",
+            ],
+            env=env,
+            skip=True,
+        )
+        output = output.replace("\r\n", "\n")
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(output.count("Error in input_submitted_hook:\n"), 4)
+        self.assertEqual(output.count("RuntimeError: hook failed"), 4)
+        self.assertIn("initially unset: True\n", output)
+        self.assertIn("still unset: True\n", output)
+        self.assertIn("ZeroDivisionError: division by zero\n", output)
+        self.assertIn("last preserved: True\n", output)
 
     @force_not_colorized
     def test_exposed_globals_in_repl(self):
