@@ -668,6 +668,17 @@ class CoroutineTest(unittest.TestCase):
 
             run_async(foo())
 
+    def test_throw_stopiteration_not_started(self):
+        # gh-152685: StopIteration thrown into a coroutine that hasn't
+        # started yet is wrapped in a RuntimeError, like for a started one.
+        async def foo():
+            return 1
+
+        coro = foo()
+        with self.assertRaisesRegex(
+                RuntimeError, "coroutine raised StopIteration"):
+            coro.throw(StopIteration)
+
     def test_func_3(self):
         async def foo():
             raise StopIteration

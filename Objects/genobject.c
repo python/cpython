@@ -317,9 +317,30 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult, int exc)
         }
     }
     else {
-        assert(!PyErr_ExceptionMatches(PyExc_StopIteration));
-        assert(!PyAsyncGen_CheckExact(gen) ||
-            !PyErr_ExceptionMatches(PyExc_StopAsyncIteration));
+        /* The frame propagated an exception. A StopIteration (or, in an async
+         * generator, a StopAsyncIteration) raised inside the frame is normally
+         * turned into a RuntimeError by the frame's own PEP 479 handler. That
+         * handler does not cover the prologue where a not-yet-started generator
+         * resumes, so throwing such an exception into one reaches here
+         * unconverted (gh-152685). Apply the conversion so PEP 479 still
+         * holds. */
+        const char *msg = NULL;
+        if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+            msg = "generator raised StopIteration";
+            if (PyAsyncGen_CheckExact(gen)) {
+                msg = "async generator raised StopIteration";
+            }
+            else if (PyCoro_CheckExact(gen)) {
+                msg = "coroutine raised StopIteration";
+            }
+        }
+        else if (PyAsyncGen_CheckExact(gen) &&
+                 _PyErr_ExceptionMatches(tstate, PyExc_StopAsyncIteration)) {
+            msg = "async generator raised StopAsyncIteration";
+        }
+        if (msg != NULL) {
+            _PyErr_FormatFromCauseTstate(tstate, PyExc_RuntimeError, "%s", msg);
+        }
     }
 
     *presult = result;
