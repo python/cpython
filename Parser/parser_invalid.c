@@ -1601,6 +1601,7 @@ invalid_if_expression_rule(Parser *p)
 }
 
 // invalid_named_expression:
+//     | 'lambda' lambda_params? ':' NAME ':=' expression
 //     | expression ':=' expression
 //     | NAME '=' bitwise_or !('=' | ':=')
 //     | !(list | tuple | genexp | 'True' | 'None' | 'False') bitwise_or '=' bitwise_or !('=' | ':=')
@@ -1620,6 +1621,46 @@ invalid_named_expression_rule(Parser *p)
         return _res;
     }
     int _mark = p->mark;
+    { // 'lambda' lambda_params? ':' NAME ':=' expression
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_named_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'lambda' lambda_params? ':' NAME ':=' expression"));
+        Token * _keyword;
+        Token * _literal;
+        Token * _literal_1;
+        void *_opt_var;
+        UNUSED(_opt_var); // Silence compiler warnings
+        expr_ty a;
+        expr_ty b;
+        if (
+            (_keyword = _PyPegen_expect_token(p, 534))  // token='lambda'
+            &&
+            (_opt_var = lambda_params_rule(p), !p->error_indicator)  // lambda_params?
+            &&
+            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (a = _PyPegen_name_token(p))  // NAME
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 53))  // token=':='
+            &&
+            (b = expression_rule(p))  // expression
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'lambda' lambda_params? ':' NAME ':=' expression"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "cannot use named expression without parentheses here" );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_named_expression[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'lambda' lambda_params? ':' NAME ':=' expression"));
+    }
     { // expression ':=' expression
         if (p->error_indicator) {
             p->level--;
