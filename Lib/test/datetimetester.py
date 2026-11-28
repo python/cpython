@@ -3974,7 +3974,8 @@ class TestDateTime(TestDate):
                            tzinfo=timezone(timedelta(seconds=10)))),
             ('2025-01-02T24:00:00', self.theclass(2025, 1, 3, 0, 0, 0)),
             ('2025-01-31T24:00:00', self.theclass(2025, 2, 1, 0, 0, 0)),
-            ('2025-12-31T24:00:00', self.theclass(2026, 1, 1, 0, 0, 0))
+            ('2025-12-31T24:00:00', self.theclass(2026, 1, 1, 0, 0, 0)),
+            ('0000-12-31T24:00:00', self.theclass(1, 1, 1, 0, 0, 0)),
         ]
 
         for input_str, expected in examples:
@@ -4076,9 +4077,12 @@ class TestDateTime(TestDate):
                     self.theclass.fromisoformat(bad_str)
 
         # days out of range have their own error message, see issue 70647
-        with self.assertRaises(ValueError) as msg:
-            self.theclass.fromisoformat("2009-04-32T24:00:00")
-        self.assertIn(f"day 32 must be in range 1..30 for month 4 in year 2009", str(msg.exception))
+        for day in (0, 32):
+            with self.subTest(day=day):
+                with self.assertRaises(ValueError) as msg:
+                    self.theclass.fromisoformat(f"2009-04-{day:02d}T24:00:00")
+                self.assertIn(f"day {day} must be in range 1..30 for month 4 in year 2009",
+                              str(msg.exception))
 
     def test_fromisoformat_fails_surrogate(self):
         # Test that when fromisoformat() fails with a surrogate character as
