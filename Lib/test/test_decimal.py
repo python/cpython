@@ -3300,21 +3300,23 @@ class ContextAPItests:
         Inexact = self.decimal.Inexact
         Rounded = self.decimal.Rounded
 
-        # The quotient 300 fits in prec digits but not in Emax.
-        c = Context(prec=3, Emin=-1, Emax=1)
-        a, b = Decimal(75), Decimal('0.25')
-        for op in (c.divide_int, lambda x, y: c.divmod(x, y)[0]):
-            c.traps[Overflow] = True
-            self.assertRaises(Overflow, op, a, b)
+        # The quotient 300 fits in prec digits but not in Emax.  The
+        # operators read the active context, so make it the one under test.
+        with self.decimal.localcontext(Context(prec=3, Emin=-1, Emax=1)) as c:
+            a, b = Decimal(75), Decimal('0.25')
+            for op in (c.divide_int, lambda x, y: c.divmod(x, y)[0],
+                       operator.floordiv, lambda x, y: divmod(x, y)[0]):
+                c.traps[Overflow] = True
+                self.assertRaises(Overflow, op, a, b)
 
-            c.traps[Overflow] = False
+                c.traps[Overflow] = False
+                c.clear_flags()
+                self.assertEqual(op(a, b), Decimal('Infinity'))
+                for flag in (Overflow, Inexact, Rounded):
+                    self.assertTrue(c.flags[flag])
             c.clear_flags()
-            self.assertEqual(op(a, b), Decimal('Infinity'))
-            for flag in (Overflow, Inexact, Rounded):
-                self.assertTrue(c.flags[flag])
-        c.clear_flags()
-        self.assertEqual(c.remainder(a, b), Decimal('0.00'))
-        self.assertFalse(any(c.flags.values()))
+            self.assertEqual(c.remainder(a, b), Decimal('0.00'))
+            self.assertFalse(any(c.flags.values()))
 
     def test_exp(self):
         Decimal = self.decimal.Decimal
