@@ -1,0 +1,5 @@
+Fix a crash in :mod:`sqlite3` when the connection is closed while
+:meth:`~sqlite3.Cursor.execute` or :meth:`~sqlite3.Cursor.executemany` is
+looking up the prepared statement, for example from the
+:meth:`~object.__hash__` of a :class:`str` subclass or from another thread.
+A :exc:`~sqlite3.ProgrammingError` is now raised instead.
