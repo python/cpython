@@ -1,0 +1,2 @@
+Fix a race condition in :meth:`winreg.PyHKEY.Close` and
+:meth:`winreg.PyHKEY.Detach` on the :term:`free-threaded build`.

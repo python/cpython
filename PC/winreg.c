@@ -15,6 +15,7 @@
 #include "Python.h"
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_moduleobject.h"
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_PTR_RELAXED()
 
 #include <windows.h>
 
@@ -167,21 +168,22 @@ PyHKEY_deallocFunc(PyObject *ob)
 static int
 PyHKEY_boolFunc(PyObject *ob)
 {
-    return ((PyHKEYObject *)ob)->hkey != 0;
+    return FT_ATOMIC_LOAD_PTR_RELAXED(((PyHKEYObject *)ob)->hkey) != 0;
 }
 
 static PyObject *
 PyHKEY_intFunc(PyObject *ob)
 {
     PyHKEYObject *pyhkey = (PyHKEYObject *)ob;
-    return PyLong_FromVoidPtr(pyhkey->hkey);
+    return PyLong_FromVoidPtr(FT_ATOMIC_LOAD_PTR_RELAXED(pyhkey->hkey));
 }
 
 static PyObject *
 PyHKEY_strFunc(PyObject *ob)
 {
     PyHKEYObject *pyhkey = (PyHKEYObject *)ob;
-    return PyUnicode_FromFormat("<PyHKEY:%p>", pyhkey->hkey);
+    return PyUnicode_FromFormat("<PyHKEY:%p>",
+                                FT_ATOMIC_LOAD_PTR_RELAXED(pyhkey->hkey));
 }
 
 static PyObject *
@@ -194,8 +196,8 @@ PyHKEY_richcompare(PyObject *ob1, PyObject *ob2, int op)
 
     PyHKEYObject *pyhkey1 = (PyHKEYObject *)ob1;
     PyHKEYObject *pyhkey2 = (PyHKEYObject *)ob2;
-    HKEY hkey1 = pyhkey1->hkey;
-    HKEY hkey2 = pyhkey2->hkey;
+    HKEY hkey1 = FT_ATOMIC_LOAD_PTR_RELAXED(pyhkey1->hkey);
+    HKEY hkey2 = FT_ATOMIC_LOAD_PTR_RELAXED(pyhkey2->hkey);
     int result;
 
     switch (op) {
@@ -310,11 +312,11 @@ winreg_HKEYType_Detach_impl(PyHKEYObject *self)
 /*[clinic end generated code: output=dda5a9e1a01ae78f input=dd2cc09e6c6ba833]*/
 {
     void* ret;
-    if (PySys_Audit("winreg.PyHKEY.Detach", "n", (Py_ssize_t)self->hkey) < 0) {
+    if (PySys_Audit("winreg.PyHKEY.Detach", "n",
+                    (Py_ssize_t)FT_ATOMIC_LOAD_PTR_RELAXED(self->hkey)) < 0) {
         return NULL;
     }
-    ret = (void*)self->hkey;
-    self->hkey = 0;
+    ret = _Py_atomic_exchange_ptr(&self->hkey, NULL);
     return PyLong_FromVoidPtr(ret);
 }
 
@@ -420,11 +422,12 @@ PyHKEY_Close(winreg_state *st, PyObject *ob_handle)
     LONG rc;
     HKEY key;
 
-    if (!PyHKEY_AsHKEY(st, ob_handle, &key, TRUE)) {
-        return FALSE;
-    }
     if (PyHKEY_Check(st, ob_handle)) {
-        ((PyHKEYObject*)ob_handle)->hkey = 0;
+        key = _Py_atomic_exchange_ptr(&((PyHKEYObject *)ob_handle)->hkey,
+                                      NULL);
+    }
+    else if (!PyHKEY_AsHKEY(st, ob_handle, &key, TRUE)) {
+        return FALSE;
     }
     Py_BEGIN_ALLOW_THREADS
     rc = key ? RegCloseKey(key) : ERROR_SUCCESS;
@@ -448,7 +451,7 @@ PyHKEY_AsHKEY(winreg_state *st, PyObject *ob, HKEY *pHANDLE, BOOL bNoneOK)
     }
     else if (PyHKEY_Check(st ,ob)) {
         PyHKEYObject *pH = (PyHKEYObject *)ob;
-        *pHANDLE = pH->hkey;
+        *pHANDLE = FT_ATOMIC_LOAD_PTR_RELAXED(pH->hkey);
     }
     else if (PyLong_Check(ob)) {
         /* We also support integers */
