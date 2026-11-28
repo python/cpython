@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_freelist.h"   // _PyObject_ClearFreeLists()
+#include "pycore_obmalloc.h"   // _PyMem_ClearBlockCaches()
 
 #ifndef Py_GIL_DISABLED
 
@@ -12,6 +13,7 @@ void
 _PyGC_ClearAllFreeLists(PyInterpreterState *interp)
 {
     _PyObject_ClearFreeLists(&interp->object_state.freelists, 0);
+    _PyMem_ClearBlockCaches(interp);
 }
 
 #endif
