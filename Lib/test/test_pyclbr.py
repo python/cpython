@@ -3,13 +3,14 @@
    Nick Mathewson
 '''
 
-import importlib.machinery
+import os
 import sys
-from contextlib import contextmanager
 from textwrap import dedent
-from types import FunctionType, MethodType, BuiltinFunctionType
+from types import FunctionType, MethodType, BuiltinFunctionType, ModuleType
 import pyclbr
 from unittest import TestCase, main as unittest_main
+from unittest.mock import patch
+from test.support import os_helper
 from test.test_importlib import util as test_importlib_util
 
 
@@ -22,28 +23,6 @@ ClassMethodType = type(classmethod(lambda c: None))
 # of pyclbr with the introspected members of a module.  Because pyclbr
 # is imperfect (as designed), testModule is called with a set of
 # members to ignore.
-
-
-@contextmanager
-def temporary_main_spec():
-    """
-    A context manager that temporarily sets the `__spec__` attribute
-    of the `__main__` module if it's missing.
-    """
-    main_mod = sys.modules.get("__main__")
-    if main_mod is None:
-        yield  # Do nothing if __main__ is not present
-        return
-
-    original_spec = getattr(main_mod, "__spec__", None)
-    if original_spec is None:
-        main_mod.__spec__ = importlib.machinery.ModuleSpec(
-            name="__main__", loader=None, origin="built-in"
-        )
-    try:
-        yield
-    finally:
-        main_mod.__spec__ = original_spec
 
 
 class PyclbrTest(TestCase):
@@ -169,9 +148,8 @@ class PyclbrTest(TestCase):
         self.checkModule('pyclbr')
         # XXX: Metaclasses are not supported
         # self.checkModule('ast')
-        with temporary_main_spec():
-            self.checkModule('doctest', ignore=("TestResults", "_SpoofOut",
-                                                "DocTestCase", '_DocTestSuite'))
+        self.checkModule('doctest', ignore=("TestResults", "_SpoofOut",
+                                            "DocTestCase", '_DocTestSuite'))
         self.checkModule('difflib', ignore=("Match",))
 
     def test_cases(self):
@@ -245,13 +223,12 @@ class PyclbrTest(TestCase):
         # These were once some of the longest modules.
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
         cm('pickle', ignore=('partial', 'PickleBuffer'))
-        with temporary_main_spec():
-            cm(
-                'pdb',
-                # pyclbr does not handle elegantly `typing` or properties
-                ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'curframe_locals',
-                        '_InteractState', 'rlcompleter'),
-            )
+        cm(
+            'pdb',
+            # pyclbr does not handle elegantly `typing` or properties
+            ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'curframe_locals',
+                    '_InteractState', 'rlcompleter'),
+        )
         cm('pydoc', ignore=('input', 'output',  # properties
                             'getpager', 'plainpager', )) # aliases
 
@@ -282,6 +259,96 @@ class ReadmoduleTests(TestCase):
         with test_importlib_util.uncache(module_name):
             with self.assertRaises(ModuleNotFoundError):
                 pyclbr.readmodule_ex(module_name)
+
+    def test_import_main_without_spec(self):
+        # gh-87465: traversing "import __main__" when __main__.__spec__ is None
+        # should not raise ValueError.
+        with (
+            os_helper.temp_dir() as d,
+            patch.object(sys, "path", []),
+            patch.object(sys.modules["__main__"], "__spec__", None),
+        ):
+            mod_file = os.path.join(d, "mod.py")
+            with open(mod_file, "w", encoding="utf-8") as f:
+                f.write(dedent("""\
+                    import __main__
+                    from __main__ import missing_symbol
+
+                    class A:
+                        pass
+
+                    def func():
+                        pass
+                """))
+
+            tree = pyclbr.readmodule_ex("mod", path=[d])
+            self.assertEqual(tree.keys(), {"A", "func"})
+            self.assertIsInstance(tree["A"], pyclbr.Class)
+            self.assertIsInstance(tree["func"], pyclbr.Function)
+
+            with self.assertRaises(ModuleNotFoundError):
+                pyclbr.readmodule_ex("__main__", path=[d])
+
+    def test_import_main_from_search_path(self):
+        # gh-87465: __main__.py on the search path should be used instead of
+        # whatever __main__ module is cached in sys.modules.
+        with os_helper.temp_dir() as d:
+            main_file = os.path.join(d, "__main__.py")
+            with open(main_file, "w", encoding="utf-8") as f:
+                f.write("class Base:\n    pass\n")
+
+            mod_file = os.path.join(d, "mod.py")
+            with open(mod_file, "w", encoding="utf-8") as f:
+                f.write(dedent("""\
+                    import __main__
+
+                    class Sub(__main__.Base):
+                        pass
+                """))
+
+            for main_spec in (pyclbr.__spec__, None):
+                with self.subTest(main_spec=main_spec):
+                    pyclbr._modules.clear()
+                    with patch.object(sys.modules["__main__"], "__spec__", main_spec):
+                        tree = pyclbr.readmodule_ex("mod", path=[d])
+                    self.assertIn("Sub", tree)
+                    bases = tree["Sub"].super
+                    self.assertEqual(len(bases), 1)
+                    self.assertIsInstance(bases[0], pyclbr.Class)
+                    self.assertEqual(bases[0].name, "Base")
+                    self.assertEqual(bases[0].module, "__main__")
+                    self.assertEqual(bases[0].file, main_file)
+
+    def test_import_cached_module_without_spec(self):
+        # gh-87465: synthetic modules in sys.modules with __spec__ set to None
+        # or missing __spec__ should not cause ValueError.
+        mod_none = ModuleType("pyclbr_synthetic_none")
+        mod_none.__spec__ = None
+        mod_unset = ModuleType("pyclbr_synthetic_unset")
+        del mod_unset.__spec__
+
+        for name, mod in (
+            ("pyclbr_synthetic_none", mod_none),
+            ("pyclbr_synthetic_unset", mod_unset),
+        ):
+            with (
+                self.subTest(module=name),
+                test_importlib_util.uncache(name),
+                os_helper.temp_dir() as d,
+            ):
+                pyclbr._modules.clear()
+                sys.modules[name] = mod
+
+                mod_file = os.path.join(d, "mod.py")
+                with open(mod_file, "w", encoding="utf-8") as f:
+                    f.write(f"import {name}\nclass C:\n    pass\n")
+
+                tree = pyclbr.readmodule_ex("mod", path=[d])
+                self.assertEqual(list(tree), ["C"])
+                self.assertIsInstance(tree["C"], pyclbr.Class)
+
+                with self.assertRaises(ModuleNotFoundError):
+                    pyclbr.readmodule_ex(name, path=[d])
 
 
 if __name__ == "__main__":
