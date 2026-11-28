@@ -57,9 +57,9 @@ of the new API.
    begins with angle brackets, they are stripped off.
 
 
-.. function:: parseaddr(address, *, strict=True)
+.. function:: parseaddr(addr, *, strict=True)
 
-   Parse address -- which should be the value of some address-containing field such
+   Parse *addr* -- which should be the value of some address-containing field such
    as :mailheader:`To` or :mailheader:`Cc` -- into its constituent *realname* and
    *email address* parts.  Returns a tuple of that information, unless the parse
    fails, in which case a 2-tuple of ``('', '')`` is returned.
@@ -115,18 +115,18 @@ of the new API.
       Add *strict* optional parameter and reject malformed inputs by default.
 
 
-.. function:: parsedate(date)
+.. function:: parsedate(data)
 
    Attempts to parse a date according to the rules in :rfc:`2822#section-3.3`. However,
    some mailers don't follow that format as specified, so :func:`parsedate` tries to
-   guess correctly in such cases.  *date* is a string containing an :rfc:`2822`
+   guess correctly in such cases.  *data* is a string containing an :rfc:`2822`
    date, such as ``"Mon, 20 Nov 1995 19:12:08 -0500"``.  If it succeeds in parsing
    the date, :func:`parsedate` returns a 9-tuple that can be passed directly to
    :func:`time.mktime`; otherwise ``None`` will be returned.  Note that indexes 6,
    7, and 8 of the result tuple are not usable.
 
 
-.. function:: parsedate_tz(date)
+.. function:: parsedate_tz(data)
 
    Performs the same function as :func:`parsedate`, but returns either ``None`` or
    a 10-tuple; the first 9 elements make up a tuple that can be passed directly to
@@ -136,11 +136,11 @@ of the new API.
    UTC. Note that indexes 6, 7, and 8 of the result tuple are not usable.
 
 
-.. function:: parsedate_to_datetime(date)
+.. function:: parsedate_to_datetime(data)
 
    The inverse of :func:`format_datetime`.  Performs the same function as
    :func:`parsedate`, but on success returns a :class:`~datetime.datetime`;
-   otherwise :exc:`ValueError` is raised if *date* contains an invalid value such
+   otherwise :exc:`ValueError` is raised if *data* contains an invalid value such
    as an hour greater than 23 or a timezone offset not between -24 and 24 hours.
    If the input date has a timezone of ``-0000``, the ``datetime`` will be a naive
    ``datetime``, and if the date conforms to the RFCs it will represent a
@@ -153,7 +153,7 @@ of the new API.
    .. versionadded:: 3.3
 
 
-.. function:: mktime_tz(tuple)
+.. function:: mktime_tz(data)
 
    Turn a 10-tuple as returned by :func:`parsedate_tz` into a UTC
    timestamp (seconds since the Epoch).  If the timezone item in the
