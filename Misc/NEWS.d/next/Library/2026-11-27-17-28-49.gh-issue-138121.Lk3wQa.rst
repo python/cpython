@@ -1,0 +1,4 @@
+Fix :meth:`asyncio.Lock.locked` returning ``False`` for a lock that has been
+released while other tasks are still waiting to acquire it.  It now returns
+``True`` whenever the lock cannot be acquired immediately, like
+:meth:`asyncio.Semaphore.locked`.

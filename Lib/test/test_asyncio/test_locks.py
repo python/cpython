@@ -186,10 +186,12 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
         tb.cancel()
         self.assertTrue(lock._waiters[0].cancelled())
         await asyncio.sleep(0)
-        self.assertFalse(lock.locked())
+        # A released the lock, and it is now reserved for C.
+        self.assertTrue(lock.locked())
         self.assertTrue(ta.done())
         self.assertTrue(tb.cancelled())
         await tc
+        self.assertFalse(lock.locked())
 
     async def test_cancel_release_race(self):
         # Issue 32734
@@ -271,6 +273,31 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
 
         lock.release()
         self.assertFalse(lock.locked())
+
+    async def test_locked_with_waiters(self):
+        lock = asyncio.Lock()
+        await lock.acquire()
+
+        t1 = asyncio.create_task(lock.acquire())
+        t2 = asyncio.create_task(lock.acquire())
+        await asyncio.sleep(0)
+        self.assertEqual(len(lock._waiters), 2)
+
+        # The lock is released, but it is reserved for the first waiter.
+        lock.release()
+        self.assertIs(lock.locked(), True)
+
+        await t1
+        self.assertIs(lock.locked(), True)
+
+        # A cancelled waiter does not keep the lock locked.
+        t2.cancel()
+        lock.release()
+        self.assertIs(lock.locked(), False)
+
+        with self.assertRaises(asyncio.CancelledError):
+            await t2
+        self.assertIs(lock.locked(), False)
 
     async def test_context_manager(self):
         lock = asyncio.Lock()
