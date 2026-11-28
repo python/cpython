@@ -320,6 +320,9 @@ list_new_prealloc(Py_ssize_t size)
         }
     }
 
+    Py_SET_SIZE(op, 0);
+    op->allocated = size;
+
     if (size == 0) {
         op->ob_item = NULL;
     }
@@ -340,8 +343,6 @@ list_new_prealloc(Py_ssize_t size)
         }
 #endif
     }
-    Py_SET_SIZE(op, 0);
-    op->allocated = size;
 
     return (PyObject *) op;
 }

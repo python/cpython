@@ -11,7 +11,7 @@ static PyObject *
 list_get_size(PyObject *Py_UNUSED(module), PyObject *obj)
 {
     NULLABLE(obj);
-    RETURN_SIZE(PyList_GET_SIZE(obj));
+    RETURN_SIZE(PyList_GET_SIZE(obj));  // crash if not list or NULL
 }
 
 
