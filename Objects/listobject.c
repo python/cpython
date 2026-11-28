@@ -4506,11 +4506,15 @@ PyListBuilder_Finish(PyListBuilder *builder)
     }
 
 #if _PyListBuilder_INIT_ITEMS
-    // Make sure that all items have been initialized
+    // Make sure that all list items have been set
     Py_ssize_t size = Py_SIZE(list);
     PyObject **list_items = list->ob_item;
-    for (Py_ssize_t i = 0; i < size; i++) {
-        assert(list_items[i] != NULL);
+    for (Py_ssize_t index = 0; index < size; index++) {
+        if (list_items[index] == NULL) {
+            PyErr_Format(PyExc_SystemError, "list item #%zd is NULL", index);
+            Py_DECREF(list);
+            return NULL;
+        }
     }
 #endif
 
@@ -4527,12 +4531,15 @@ listbuilder_resize(PyListBuilder *builder, Py_ssize_t new_size)
 #if _PyListBuilder_INIT_ITEMS
     Py_ssize_t old_size = Py_SIZE(list);
 #endif
+    assert(Py_SIZE(list) < new_size);
 
     // On Free Threading, it can call _PyObject_GC_SET_SHARED() on the list
     int res = list_resize(list, new_size);
+
 #if _PyListBuilder_INIT_ITEMS
     Py_ssize_t allocated = list->allocated;
     if (res == 0 && allocated > old_size) {
+        // Set newly allocated items to NULL
         memset(&list->ob_item[old_size], 0,
                (allocated - old_size) * sizeof(PyObject*));
     }
@@ -4552,10 +4559,6 @@ PyListBuilder_AppendSteal(PyListBuilder *builder, PyObject *item)
     Py_ssize_t allocated = list->allocated;
     if (index < allocated) {
         Py_SET_SIZE(list, index + 1);
-#if _PyListBuilder_INIT_ITEMS
-        // A list item must be set exactly once
-        assert(list->ob_item[index] == NULL);
-#endif
         list->ob_item[index] = item;
         return 0;
     }
@@ -4565,10 +4568,6 @@ PyListBuilder_AppendSteal(PyListBuilder *builder, PyObject *item)
         return -1;
     }
 
-#if _PyListBuilder_INIT_ITEMS
-    // A list item must be set exactly once
-    assert(list->ob_item[index] == NULL);
-#endif
     list->ob_item[index] = item;
     return 0;
 }
@@ -4612,6 +4611,9 @@ PyListBuilder_Extend(PyListBuilder *builder, PyObject *iterable)
     PyListObject *self = _PyList_CAST(builder);
     assert(_PyObject_CAST(self) != iterable);
 
+#if _PyListBuilder_INIT_ITEMS
+    Py_ssize_t old_allocated = self->allocated;
+#endif
     Py_ssize_t old_size = Py_SIZE(self);
     int res;
     if (PyList_CheckExact(iterable)) {
@@ -4654,6 +4656,16 @@ PyListBuilder_Extend(PyListBuilder *builder, PyObject *iterable)
         res = list_extend_iter_lock_held(self, iterable);
     }
 
+#if _PyListBuilder_INIT_ITEMS
+    Py_ssize_t new_size = Py_SIZE(self);
+    // Check if the list has been resized
+    if (old_allocated < self->allocated && new_size < self->allocated) {
+        // Initialize newly allocated items to NULL
+        memset(&self->ob_item[new_size], 0,
+               (self->allocated - new_size) * sizeof(PyObject*));
+    }
+#endif
+
     if (res < 0) {
         // On error, reset the builder to its previous state:
         // discard added items
@@ -4685,9 +4697,18 @@ listbuilder_extend_array(PyListBuilder *builder,
         return 0;
     }
 
+#ifdef Py_DEBUG
+    for (Py_ssize_t index = 0; index < nitem; index++) {
+        if (items[index] == NULL) {
+            PyErr_Format(PyExc_SystemError, "array item #%zd is NULL", index);
+            return -1;
+        }
+    }
+#endif
+
     PyListObject *list = _PyList_CAST(builder);
-    Py_ssize_t size = Py_SIZE(list);
-    Py_ssize_t new_size = size + nitem;
+    Py_ssize_t old_size = Py_SIZE(list);
+    Py_ssize_t new_size = old_size + nitem;
     if (new_size > list->allocated) {
         if (listbuilder_resize(builder, new_size) < 0) {
             if (steal) {
@@ -4702,7 +4723,7 @@ listbuilder_extend_array(PyListBuilder *builder,
         Py_SET_SIZE(list, new_size);
     }
 
-    PyObject **list_items = &list->ob_item[size];
+    PyObject **list_items = &list->ob_item[old_size];
     if (steal) {
         memcpy(list_items, items, nitem * sizeof(PyObject*));
     }

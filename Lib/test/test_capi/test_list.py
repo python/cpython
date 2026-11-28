@@ -536,6 +536,21 @@ class ListBuilderTests(unittest.TestCase):
         self.list_equal(result, [1])
         self.assertEqual(list_get_allocated(result), alloc)
 
+    def test_combined(self):
+        # Call each method twice: it must not fail/crash.
+        builder = self.create_builder(0)
+        builder.append('a')
+        builder.append_steal('b')
+        builder.extend(('c',))
+        builder.extend_array(('d',))
+        builder.extend_array_steal(('e',))
+        builder.append('A')
+        builder.append_steal('B')
+        builder.extend(('C',))
+        builder.extend_array(('D',))
+        builder.extend_array_steal(('E',))
+        self.list_equal(builder.finish(), list('abcdeABCDE'))
+
     def test_discard(self):
         # Test PyListBuilder_Discard(): must not leak memory
         builder = self.create_builder(0)
