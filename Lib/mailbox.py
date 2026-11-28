@@ -764,11 +764,7 @@ class _singlefileMailbox(Mailbox):
             os.chown(new_file.name, info.st_uid, info.st_gid)
         except (AttributeError, OSError):
             pass
-        try:
-            os.rename(new_file.name, self._path)
-        except FileExistsError:
-            os.remove(self._path)
-            os.rename(new_file.name, self._path)
+        os.replace(new_file.name, self._path)
         self._file = open(self._path, 'rb+')
         self._toc = new_toc
         self._pending = False
