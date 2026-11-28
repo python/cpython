@@ -627,7 +627,7 @@ def request_host(request):
 
     """
     url = request.get_full_url()
-    host = urllib.parse.urlparse(url).netloc
+    host = urllib.parse.urlsplit(url).netloc
     if host == "":
         host = request.get_header("Host", "")
 
