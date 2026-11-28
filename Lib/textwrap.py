@@ -14,6 +14,10 @@ __all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent', 'shorten']
 # some Unicode spaces (like \u00a0) are non-breaking whitespaces.
 _whitespace = '\t\n\x0b\x0c\r '
 
+# Used by TextWrapper._wrap_chunks() to pre-split long words.
+_any_whitespace_re = re.compile(r'\s')
+_whitespace_or_hyphen_re = re.compile(r'[\s-]')
+
 class TextWrapper:
     """
     Object for wrapping/filling text.  The public interface consists of
@@ -279,17 +283,27 @@ class TextWrapper:
             # Maximum width for this line.
             width = self.width - len(indent)
 
-            # This and all following lines have the same width, so split a
-            # long word for all of them at once.  Breaking off one line at a
-            # time would copy the rest of the word each time.
+            # Pre-split a long word for this and the following lines, which
+            # all have the same width, so the rest is not copied for every
+            # line.  Stop before the first whitespace (a piece of it could be
+            # dropped) or hyphen (a break point), and at the line limit.
             word = chunks[-1]
-            if (lines and self.max_lines is None and self.break_long_words and
-                0 < width < len(word) and
-                not (self.break_on_hyphens and '-' in word) and
-                word.split(None, 1) == [word]):
-                del chunks[-1]
-                chunks.extend(word[i:i + width]
-                              for i in reversed(range(0, len(word), width)))
+            if lines and self.break_long_words and 0 < width < len(word):
+                n = len(word)
+                if self.max_lines is not None:
+                    n = min(n, width * (self.max_lines - len(lines)))
+                if self.break_on_hyphens:
+                    m = _whitespace_or_hyphen_re.search(word, 0, n)
+                else:
+                    m = _any_whitespace_re.search(word, 0, n)
+                if m is not None:
+                    n = m.start() // width * width
+                if n:
+                    del chunks[-1]
+                    if n < len(word):
+                        chunks.append(word[n:])
+                    chunks.extend(word[i:i + width]
+                                  for i in reversed(range(0, n, width)))
 
             # First chunk on line is whitespace -- drop it, unless this
             # is the very beginning of the text (ie. no lines started yet).

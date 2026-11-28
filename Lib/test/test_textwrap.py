@@ -631,6 +631,8 @@ How *do* you spell that odd word, anyways?
         self.check_wrap('x ' + 'a' * 25, 10,
                         ['x aaaaaaaa', '  aaaaaaaa', '  aaaaaaaa', '  a'],
                         subsequent_indent='  ')
+        self.check_wrap('a' * 12, 6, ['  aaaa', 'aaaaaa', 'aa'],
+                        initial_indent='  ')
 
         # Each piece is broken after its last hyphen.
         self.check_wrap('12345-67890-12345-67890-12345', 10,
@@ -640,6 +642,35 @@ How *do* you spell that odd word, anyways?
         self.check_wrap('abc-1234567890123-4567890123456', 10,
                         ['abc-123456', '7890123-45', '6789012345', '6'],
                         break_on_hyphens=False)
+        self.check_wrap('x ' + 'a' * 10 + '-bb', 4,
+                        ['x aa', 'aaaa', 'aaaa', '-bb'])
+
+    def test_break_very_long_word_with_whitespace(self):
+        # Non-ASCII whitespace is part of a word.  A piece of the word that
+        # is all whitespace is dropped like any other whitespace.
+        self.check_wrap('x aa' + '\xa0' * 6 + ' z', 4, ['x aa', ' z'])
+        self.check_wrap('x ' + 'a' * 10 + '\xa0' + 'b' * 6, 4,
+                        ['x aa', 'aaaa', 'aaaa', '\xa0bbb', 'bbb'])
+        self.check_wrap('x aa' + '\n' * 6 + 'z', 4, ['x aa', 'z'],
+                        replace_whitespace=False)
+
+    def test_break_very_long_word_wide_indent(self):
+        # An indent as wide as the width leaves one character per line.
+        self.check_wrap('x aaa', 3, ['x', '   a', '   a', '   a'],
+                        subsequent_indent='   ')
+        self.check_wrap('x aaa', 3, ['x', '    a', '    a', '    a'],
+                        subsequent_indent='    ')
+
+    def test_break_very_long_word_max_lines(self):
+        for n, expect in [
+            (9, ['x aa', 'aaaa', 'aaa']),
+            (10, ['x aa', 'aaaa', 'aaaa']),
+            (11, ['x aa', 'aaaa', '..']),
+            (40, ['x aa', 'aaaa', '..']),
+        ]:
+            with self.subTest(n=n):
+                self.check_wrap('x ' + 'a' * n, 4, expect,
+                                max_lines=3, placeholder='..')
 
     def test_nobreak_long(self):
         # Test with break_long_words disabled
