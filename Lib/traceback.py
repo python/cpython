@@ -1523,8 +1523,8 @@ class TracebackException:
                 self.text = token.line
                 self.offset = token.start[1] + 1
                 self.end_offset = token.end[1] + 1
-                self.lineno = start[0]
-                self.end_lineno = end[0]
+                self.lineno = str(start[0])
+                self.end_lineno = str(end[0])
                 self.msg = f"invalid syntax. Did you mean '{suggestion}'?"
                 return
 
