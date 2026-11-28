@@ -2999,11 +2999,11 @@ class TestDateTime(TestDate):
             self.assertEqual(t, zero)
             t = fts(D('0.000_000_5'))
             self.assertEqual(t, zero)
-            t = fts(D('0.000_000_500_000_000_000_000_1'))
+            t = fts(D('0.000_000_500_000_000_000_000_000_000_000_000_000_001'))
             self.assertEqual(t, one)
             t = fts(D('0.000_000_9'))
             self.assertEqual(t, one)
-            t = fts(D('0.999_999_499_999_999_9'))
+            t = fts(D('0.999_999_499_999_999_999_999_999_999_999_999_999_999'))
             self.assertEqual(t.second, 0)
             self.assertEqual(t.microsecond, 999_999)
             t = fts(D('0.999_999_5'))
@@ -3015,6 +3015,21 @@ class TestDateTime(TestDate):
             t = fts(D(1)/2**7)
             self.assertEqual(t.second, 0)
             self.assertEqual(t.microsecond, 7812)
+
+            t = fts(D('2_147_475_000.000_000_5'))
+            self.assertEqual(t.second, 0)
+            self.assertEqual(t.microsecond, 0)
+            t = fts(D('2_147_475_000'
+                      '.000_000_500_000_000_000_000_000_000_000_000_000_001'))
+            self.assertEqual(t.second, 0)
+            self.assertEqual(t.microsecond, 1)
+            t = fts(D('2_147_475_000'
+                      '.999_999_499_999_999_999_999_999_999_999_999_999_999'))
+            self.assertEqual(t.second, 0)
+            self.assertEqual(t.microsecond, 999_999)
+            t = fts(D('2_147_475_000.999_999_5'))
+            self.assertEqual(t.second, 1)
+            self.assertEqual(t.microsecond, 0)
 
     @support.run_with_tz('MSK-03')  # Something east of Greenwich
     def test_microsecond_rounding_fraction(self):
@@ -3046,11 +3061,13 @@ class TestDateTime(TestDate):
             self.assertEqual(t, zero)
             t = fts(F(5, 10_000_000))
             self.assertEqual(t, zero)
-            t = fts(F(5_000_000_000, 9_999_999_999_999_999))
+            t = fts(F(        5_000_000_000_000_000_000_000_000_000_000_000,
+                      9_999_999_999_999_999_999_999_999_999_999_999_999_999))
             self.assertEqual(t, one)
             t = fts(F(9, 10_000_000))
             self.assertEqual(t, one)
-            t = fts(F(9_999_995_000_000_000, 10_000_000_000_000_001))
+            t = fts(F( 9_999_995_000_000_000_000_000_000_000_000_000_000_000,
+                      10_000_000_000_000_000_000_000_000_000_000_000_000_001))
             self.assertEqual(t.second, 0)
             self.assertEqual(t.microsecond, 999_999)
             t = fts(F(9_999_995, 10_000_000))
@@ -3062,6 +3079,48 @@ class TestDateTime(TestDate):
             t = fts(F(1, 2**7))
             self.assertEqual(t.second, 0)
             self.assertEqual(t.microsecond, 7812)
+
+            t = fts(2_147_475_000 + F(5, 10_000_000))
+            self.assertEqual(t.second, 0)
+            self.assertEqual(t.microsecond, 0)
+            t = fts(2_147_475_000 +
+                    F(        5_000_000_000_000_000_000_000_000_000_000_000,
+                      9_999_999_999_999_999_999_999_999_999_999_999_999_999))
+            self.assertEqual(t.second, 0)
+            self.assertEqual(t.microsecond, 1)
+            t = fts(2_147_475_000 +
+                    F( 9_999_995_000_000_000_000_000_000_000_000_000_000_000,
+                      10_000_000_000_000_000_000_000_000_000_000_000_000_001))
+            self.assertEqual(t.second, 0)
+            self.assertEqual(t.microsecond, 999_999)
+            t = fts(2_147_475_000 + F(9_999_995, 10_000_000))
+            self.assertEqual(t.second, 1)
+            self.assertEqual(t.microsecond, 0)
+
+    @support.run_with_tz('MSK-03')  # Something east of Greenwich
+    def test_microsecond_rounding_ratio(self):
+        # A number which only has the numerator and denominator attributes.
+        class Ratio:
+            def __init__(self, fraction):
+                self.numerator = fraction.numerator
+                self.denominator = fraction.denominator
+
+        F = fractions.Fraction
+        fts = self.theclass.fromtimestamp
+        for value in [
+            F(0), F(1, 1_000_000), F(-1, 1_000_000),
+            F(5, 10_000_000), F(-5, 10_000_000), F(15, 10_000_000),
+            2_147_475_000 + F(5, 10_000_000),
+            2_147_475_000 +
+                F(        5_000_000_000_000_000_000_000_000_000_000_000,
+                  9_999_999_999_999_999_999_999_999_999_999_999_999_999),
+            2_147_475_000 +
+                F( 9_999_995_000_000_000_000_000_000_000_000_000_000_000,
+                  10_000_000_000_000_000_000_000_000_000_000_000_000_001),
+            2_147_475_000 + F(9_999_995, 10_000_000),
+        ]:
+            with self.subTest(value=value):
+                self.assertEqual(fts(Ratio(value)), fts(value))
 
     def test_timestamp_limits(self):
         with self.subTest("minimum UTC"):

@@ -424,6 +424,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(default), "default", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(defaultaction), "defaultaction", 13);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(delete), "delete", 6);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(denominator), "denominator", 11);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(depth), "depth", 5);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(desired_access), "desired_access", 14);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(detect_types), "detect_types", 12);
@@ -692,6 +693,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(nt), "nt", 2);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(null), "null", 4);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(number), "number", 6);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(numerator), "numerator", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(obj), "obj", 3);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(object), "object", 6);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(offset), "offset", 6);
