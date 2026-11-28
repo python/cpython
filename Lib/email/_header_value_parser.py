@@ -2253,7 +2253,9 @@ def parse_mime_version(value):
     if not digits.isdigit():
         mime_version.defects.append(errors.InvalidHeaderDefect(
             "Expected MIME major version number but found {!r}".format(digits)))
-        mime_version.append(ValueTerminal(digits, 'xtext'))
+        xtext = ValueTerminal(digits, 'xtext')
+        _validate_xtext(xtext)
+        mime_version.append(xtext)
     else:
         mime_version.major = int(digits)
         mime_version.append(ValueTerminal(digits, 'digits'))
@@ -2265,7 +2267,9 @@ def parse_mime_version(value):
             mime_version.defects.append(errors.InvalidHeaderDefect(
                 "Incomplete MIME version; found only major number"))
         if value:
-            mime_version.append(ValueTerminal(value, 'xtext'))
+            xtext = ValueTerminal(value, 'xtext')
+            _validate_xtext(xtext)
+            mime_version.append(xtext)
         return mime_version
     mime_version.append(ValueTerminal('.', 'version-separator'))
     value = value[1:]
@@ -2284,7 +2288,9 @@ def parse_mime_version(value):
     if not digits.isdigit():
         mime_version.defects.append(errors.InvalidHeaderDefect(
             "Expected MIME minor version number but found {!r}".format(digits)))
-        mime_version.append(ValueTerminal(digits, 'xtext'))
+        xtext = ValueTerminal(digits, 'xtext')
+        _validate_xtext(xtext)
+        mime_version.append(xtext)
     else:
         mime_version.minor = int(digits)
         mime_version.append(ValueTerminal(digits, 'digits'))
@@ -2294,7 +2300,9 @@ def parse_mime_version(value):
     if value:
         mime_version.defects.append(errors.InvalidHeaderDefect(
             "Excess non-CFWS text after MIME version"))
-        mime_version.append(ValueTerminal(value, 'xtext'))
+        xtext = ValueTerminal(value, 'xtext')
+        _validate_xtext(xtext)
+        mime_version.append(xtext)
     return mime_version
 
 def get_invalid_parameter(value):
