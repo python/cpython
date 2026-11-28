@@ -1,0 +1,3 @@
+Fix compilation of Emscripten syscall wrappers when WebAssembly reference
+types are disabled using ``-mno-reference-types``. Synchronous system calls
+remain available without JSPI stack switching.
