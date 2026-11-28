@@ -1,0 +1,3 @@
+Fix quadratic complexity in :func:`!http.cookiejar.split_header_words`,
+which is used by :class:`http.cookiejar.CookieJar` to parse ``Set-Cookie2``
+headers.
