@@ -265,6 +265,12 @@ class up(MotionCommand):
                 r.debug("start of buffer")
                 return
 
+            # Skip prompt-only rows, they hold no buffer positions
+            row = r.layout.rows[new_y]
+            while new_y > 0 and not row.char_widths and not row.buffer_advance:
+                new_y -= 1
+                row = r.layout.rows[new_y]
+
             if (
                 x
                 > (
@@ -296,6 +302,12 @@ class down(MotionCommand):
                 r.pos = len(b)
                 r.debug("end of buffer")
                 return
+
+            # Skip prompt-only rows, they hold no buffer positions
+            row = r.layout.rows[new_y]
+            while new_y < r.layout.max_row() and not row.char_widths and not row.buffer_advance:
+                new_y += 1
+                row = r.layout.rows[new_y]
 
             if (
                 x

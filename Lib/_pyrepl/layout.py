@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Self
 
 from .content import ContentFragment, ContentLine
+from .utils import ANSI_ESCAPE_SEQUENCE, wlen
 
 lazy from .types import CursorXY, ScreenInfoRow
 
@@ -157,6 +158,35 @@ def wrapped_row_end(
     return end if end > start else start + 1
 
 
+def split_prompt(text: str, width: int) -> list[tuple[str, int]]:
+    """Split *text* into rows of at most *width* visible columns.
+
+    Every row but the last is a full terminal row; the last one holds the
+    rest of the prompt and may be empty.
+    """
+    rows: list[tuple[str, int]] = []
+    row_start = 0
+    column = 0
+    index = 0
+    while index < len(text):
+        if match := ANSI_ESCAPE_SEQUENCE.match(text, index):
+            index = match.end()
+            continue
+        char_width = wlen(text[index])
+        if column + char_width > width:
+            rows.append((text[row_start:index], column))
+            row_start = index
+            column = 0
+        column += char_width
+        index += 1
+        if column == width:
+            rows.append((text[row_start:index], column))
+            row_start = index
+            column = 0
+    rows.append((text[row_start:], column))
+    return rows
+
+
 def layout_content_lines(
     lines: tuple[ContentLine, ...],
     width: int,
@@ -192,6 +222,17 @@ def layout_content_lines(
 
         prompt_text = line.prompt.text
         prompt_width = line.prompt.width
+        if prompt_width >= width:
+            *prompt_rows, (prompt_text, prompt_width) = split_prompt(
+                prompt_text, width
+            )
+            for row_text, row_width in prompt_rows:
+                line_end_offsets.append(offset)
+                wrapped_rows.append(
+                    WrappedRow(prompt_text=row_text, prompt_width=row_width)
+                )
+                layout_rows.append(LayoutRow(row_width, ()))
+
         body = tuple(line.body)
         body_widths = tuple(fragment.width for fragment in body)
 
@@ -223,12 +264,23 @@ def layout_content_lines(
         start = 0
         total = len(body)
         while True:
+            available_width = width - current_prompt_width - 1
+            if current_prompt_width and body_widths[start] > available_width:
+                # No room left after the prompt, start the body on a new row.
+                line_end_offsets.append(offset)
+                wrapped_rows.append(
+                    WrappedRow(
+                        prompt_text=current_prompt,
+                        prompt_width=current_prompt_width,
+                    )
+                )
+                layout_rows.append(LayoutRow(current_prompt_width, ()))
+                current_prompt = ""
+                current_prompt_width = 0
+                continue
+
             # Find how many characters fit on this row.
-            end = wrapped_row_end(
-                body_widths,
-                start,
-                width - current_prompt_width - 1,
-            )
+            end = wrapped_row_end(body_widths, start, available_width)
             index_to_wrap_before = end - start
 
             at_line_end = (start + index_to_wrap_before) >= total

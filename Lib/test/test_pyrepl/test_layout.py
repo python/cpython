@@ -229,16 +229,49 @@ class TestLayoutContentLines(TestCase):
 
     def test_wrapping_forces_progress(self):
         # When a single character is wider than available space, force 1 char
-        prompt = _prompt("P", 1)
-        body = (ContentFragment("W", 1),)
+        prompt = _prompt("", 0)
+        body = (ContentFragment("W", 2),)
         source = _source("W", has_newline=False)
         line = ContentLine(source, prompt, body)
-        # width=2 means prompt(1) + char(1) = 2, which fits (< width would be
-        # false for width=2 since 1+1 >= 2), so it wraps but forces progress
+        # width=2 means char(2) >= width, so it wraps but forces progress
         result = layout_content_lines((line,), 2, 0)
 
         self.assertEqual(len(result.wrapped_rows), 1)
         self.assertEqual(result.wrapped_rows[0].buffer_advance, 1)
+
+    def test_prompt_wider_than_terminal(self):
+        line = _content_line("Hello", prompt=_prompt("a" * 65, 65))
+        result = layout_content_lines((line,), 20, 0)
+
+        rows = result.wrapped_rows
+        self.assertEqual(
+            [row.prompt_width for row in rows], [20, 20, 20, 5]
+        )
+        self.assertEqual([row.suffix for row in rows], ["", "", "", ""])
+        self.assertEqual(
+            [row.buffer_advance for row in rows], [0, 0, 0, 6]
+        )
+        self.assertTrue(all(row.width <= 20 for row in result.layout_map.rows))
+        self.assertEqual(result.layout_map.pos_to_xy(0), (5, 3))
+        self.assertEqual(result.layout_map.pos_to_xy(5), (10, 3))
+
+    def test_prompt_wider_than_terminal_empty_body(self):
+        line = _content_line("", prompt=_prompt("a" * 40, 40))
+        result = layout_content_lines((line,), 20, 0)
+
+        self.assertEqual(
+            [row.prompt_width for row in result.wrapped_rows], [20, 20, 0]
+        )
+        self.assertEqual(result.layout_map.pos_to_xy(0), (0, 2))
+
+    def test_prompt_filling_last_row(self):
+        line = _content_line("Hello", prompt=_prompt("a" * 39, 39))
+        result = layout_content_lines((line,), 20, 0)
+
+        rows = result.wrapped_rows
+        self.assertEqual([row.prompt_width for row in rows], [20, 19, 0])
+        self.assertEqual([row.suffix for row in rows], ["", "", ""])
+        self.assertEqual(result.layout_map.pos_to_xy(0), (0, 2))
 
     def test_layout_map_matches_wrapped_rows(self):
         line = _content_line("abc")
