@@ -1,0 +1,3 @@
+Fix :func:`traceback.format_exception` raising :exc:`ModuleNotFoundError` when
+formatting an existing :exc:`ModuleNotFoundError` for a submodule whose parent
+package is blocked via ``sys.modules[parent] = None``.
