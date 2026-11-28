@@ -216,6 +216,7 @@ struct pyruntimestate {
     struct _pymem_allocators allocators;
     struct _obmalloc_global_state obmalloc;
     struct pyhash_runtime_state pyhash_state;
+    uint64_t fork_generation;
     struct _pythread_runtime_state threads;
     struct _signals_runtime_state signals;
 

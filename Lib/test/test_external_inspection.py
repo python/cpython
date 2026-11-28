@@ -18,11 +18,12 @@ from test.support import (
     threading_helper,
     SHORT_TIMEOUT,
     busy_retry,
+    requires_fork,
     requires_gil_enabled,
     requires_remote_subprocess_debugging,
 )
 from test.support.import_helper import import_module
-from test.support.script_helper import make_script
+from test.support.script_helper import assert_python_ok, make_script
 from test.support.socket_helper import find_unused_port
 
 import subprocess
@@ -474,6 +475,49 @@ sock.connect(('localhost', {port}))
 # ============================================================================
 # Test classes
 # ============================================================================
+
+
+@unittest.skipUnless(sys.platform == "darwin", "requires Mach task ports")
+class TestUnwinderAfterFork(unittest.TestCase):
+    @requires_fork()
+    def test_inherited_unwinder(self):
+        try:
+            RemoteUnwinder(os.getpid())
+        except PermissionError as exc:
+            self.skipTest(f"self-inspection is unavailable: {exc}")
+
+        assert_python_ok("-c", textwrap.dedent("""
+            import os
+            import unittest
+            from _remote_debugging import RemoteUnwinder
+            from test.support import SHORT_TIMEOUT, wait_process
+
+            untouched = RemoteUnwinder(os.getpid())
+            unwinder = RemoteUnwinder(os.getpid(), stats=True)
+            assert untouched.get_stack_trace()
+            assert unwinder.get_stack_trace()
+
+            pid = os.fork()
+            if pid:
+                wait_process(pid, exitcode=0, timeout=SHORT_TIMEOUT)
+                assert unwinder.get_stack_trace()
+            else:
+                check = unittest.TestCase()
+                for name in (
+                    "get_stats", "get_stack_trace", "get_async_stack_trace",
+                    "get_all_awaited_by", "pause_threads", "resume_threads",
+                ):
+                    with check.assertRaisesRegex(
+                        RuntimeError, "after fork", msg=name
+                    ):
+                        getattr(unwinder, name)()
+                with check.assertRaisesRegex(RuntimeError, "after fork"):
+                    unwinder.__init__(os.getpid())
+                fresh = RemoteUnwinder(os.getpid())
+                assert fresh.get_stack_trace()
+                del untouched, unwinder
+                assert fresh.get_stack_trace()
+        """))
 
 
 @requires_remote_subprocess_debugging()
