@@ -1,0 +1,4 @@
+Speed up :mod:`compression.zstd` decompression of frames whose header
+records the decompressed size (as written by the one-shot compression APIs)
+by allocating the output buffer at its exact size up front, instead of
+growing it progressively.

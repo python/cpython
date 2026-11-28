@@ -163,7 +163,18 @@ def decompress(data, zstd_dict=None, options=None):
     """
     return _streams._decompress_all(data, ZstdDecompressor,
                                     truncated_error=ZstdError,
+                                    stream_size=_frame_size,
                                     options=options, zstd_dict=zstd_dict)
+
+
+def _frame_size(data):
+    # The size of the complete frame at the start of *data*, or None.  Fed
+    # whole, a frame that records its content size is decompressed into an
+    # output buffer allocated once, at that size.
+    try:
+        return get_frame_size(data)
+    except ZstdError:
+        return None
 
 
 class CompressionParameter(enum.IntEnum):
