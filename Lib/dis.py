@@ -442,6 +442,9 @@ class Instruction(_Instruction):
         formatter.print_instruction(self, False)
         return output.getvalue()
 
+def _get_dis_theme():
+    from _colorize import get_theme
+    return get_theme().dis
 
 class Formatter:
 
@@ -486,6 +489,7 @@ class Formatter:
 
     def print_instruction_line(self, instr, mark_as_current):
         """Format instruction details for inclusion in disassembly output."""
+        theme = _get_dis_theme()
         lineno_width = self.lineno_width
         offset_width = self.offset_width
         label_width = self.label_width
@@ -503,11 +507,11 @@ class Formatter:
                 # reporting positions instead of just line numbers
                 if instr_positions := instr.positions:
                     if all(p is None for p in instr_positions):
-                        positions_str = _NO_LINENO
+                        positions_str = f"{theme.location_info}{_NO_LINENO}{theme.reset}"
                     else:
                         ps = tuple('?' if p is None else p for p in instr_positions)
                         positions_str = f"{ps[0]}:{ps[2]}-{ps[1]}:{ps[3]}"
-                    fields.append(f'{positions_str:{lineno_width}}')
+                    fields.append(f'{theme.location_info}{positions_str:{lineno_width}}{theme.reset}')
                 else:
                     fields.append(' ' * lineno_width)
             else:
@@ -515,13 +519,14 @@ class Formatter:
                     lineno_fmt = "%%%dd" if instr.line_number is not None else "%%%ds"
                     lineno_fmt = lineno_fmt % lineno_width
                     lineno = _NO_LINENO if instr.line_number is None else instr.line_number
-                    fields.append(lineno_fmt % lineno)
+                    fields.append(f'{theme.location_info}{lineno_fmt % lineno}{theme.reset}')
                 else:
                     fields.append(' ' * lineno_width)
         # Column: Label
         if instr.label is not None:
             lbl = f"L{instr.label}:"
-            fields.append(f"{lbl:>{label_width}}")
+            padded = f"{lbl:>{label_width}}"
+            fields.append(f"{theme.jump_target}{padded}{theme.reset}")
         else:
             fields.append(' ' * label_width)
         # Column: Instruction offset from start of code sequence
@@ -533,14 +538,19 @@ class Formatter:
         else:
             fields.append('   ')
         # Column: Opcode name
-        fields.append(instr.opname.ljust(_OPNAME_WIDTH))
+        if (instr.label is not None) and (theme.opname_with_label is not None):
+            opname_color = theme.opname_with_label
+        else:
+            opname_color = theme.color_from_opname(instr.opname)
+
+        fields.append(f"{opname_color}{instr.opname.ljust(_OPNAME_WIDTH)}{theme.reset}")
         # Column: Opcode argument
         if instr.arg is not None:
             # If opname is longer than _OPNAME_WIDTH, we allow it to overflow into
             # the space reserved for oparg. This results in fewer misaligned opargs
             # in the disassembly output.
             opname_excess = max(0, len(instr.opname) - _OPNAME_WIDTH)
-            fields.append(repr(instr.arg).rjust(_OPARG_WIDTH - opname_excess))
+            fields.append(f"{theme.arg}{repr(instr.arg)}{theme.reset}".rjust(_OPARG_WIDTH - opname_excess))
             # Column: Opcode argument details
             if instr.argrepr:
                 fields.append('(' + instr.argrepr + ')')
@@ -548,6 +558,7 @@ class Formatter:
 
     def print_exception_table(self, exception_entries):
         file = self.file
+        theme = _get_dis_theme()
         if exception_entries:
             print("ExceptionTable:", file=file)
             for entry in exception_entries:
@@ -555,7 +566,12 @@ class Formatter:
                 start = entry.start_label
                 end = entry.end_label
                 target = entry.target_label
-                print(f"  L{start} to L{end} -> L{target} [{entry.depth}]{lasti}", file=file)
+                print(
+                    f"  {theme.exception_label}L{start}{theme.reset} to "
+                    f"{theme.exception_label}L{end}{theme.reset} "
+                    f"-> {theme.exception_label}L{target}{theme.reset} [{entry.depth}]{lasti}",
+                    file=file,
+                )
 
 
 class ArgResolver:
@@ -581,6 +597,7 @@ class ArgResolver:
         return self.labels_map.get(offset, None)
 
     def get_argval_argrepr(self, op, arg, offset):
+        theme = _get_dis_theme()
         get_name = None if self.names is None else self.names.__getitem__
         argval = None
         argrepr = ''
@@ -619,7 +636,7 @@ class ArgResolver:
                 lbl = self.get_label_for_offset(argval)
                 assert lbl is not None
                 preposition = "from" if deop == END_ASYNC_FOR else "to"
-                argrepr = f"{preposition} L{lbl}"
+                argrepr = f"{preposition} {theme.jump_target}L{lbl}{theme.reset}"
             elif deop in (LOAD_FAST_LOAD_FAST, LOAD_FAST_BORROW_LOAD_FAST_BORROW, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
                 arg1 = arg >> 4
                 arg2 = arg & 15
@@ -856,10 +873,11 @@ def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adap
     if depth is None or depth > 0:
         if depth is not None:
             depth = depth - 1
+        theme = _get_dis_theme()
         for x in co.co_consts:
             if hasattr(x, 'co_code'):
                 print(file=file)
-                print("Disassembly of %r:" % (x,), file=file)
+                print(f"Disassembly of {theme.disassembly_header}{x!r}{theme.reset}:", file=file)
                 _disassemble_recursive(
                     x, file=file, depth=depth, show_caches=show_caches,
                     adaptive=adaptive, show_offsets=show_offsets,
