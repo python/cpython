@@ -4676,7 +4676,8 @@ PyListBuilder_Extend(PyListBuilder *builder, PyObject *iterable)
 }
 
 
-// Force inlining to optimize "if (steal)" at build time
+// Force inlining to optimize "if (steal)" at build time.
+// On error if steal is non-zero, the caller must clear the array.
 static inline Py_ALWAYS_INLINE int
 listbuilder_extend_array(PyListBuilder *builder,
                          PyObject *const *items, Py_ssize_t nitem,
@@ -4711,11 +4712,6 @@ listbuilder_extend_array(PyListBuilder *builder,
     Py_ssize_t new_size = old_size + nitem;
     if (new_size > list->allocated) {
         if (listbuilder_resize(builder, new_size) < 0) {
-            if (steal) {
-                for (Py_ssize_t i = 0; i < nitem; i++) {
-                    Py_DECREF(items[i]);
-                }
-            }
             return -1;
         }
     }
@@ -4748,5 +4744,11 @@ int
 PyListBuilder_ExtendArraySteal(PyListBuilder *builder,
                               PyObject *const *items, Py_ssize_t nitem)
 {
-    return listbuilder_extend_array(builder, items, nitem, 1);
+    int res = listbuilder_extend_array(builder, items, nitem, 1);
+    if (res < 0) {
+        for (Py_ssize_t index = 0; index < nitem; index++) {
+            Py_DECREF(items[index]);
+        }
+    }
+    return res;
 }

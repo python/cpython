@@ -314,6 +314,8 @@ On Free Threading, it's more efficient than the ``PyList`` C API to create a
    On success, return ``0``.
    On error, set an exception, leave the builder unchanged, and return ``-1``.
 
+   *nitem* must not be negative.
+
    If resizing the builder fails (memory allocation failure), the builder is
    restored to its previous state: discard added items.
 
