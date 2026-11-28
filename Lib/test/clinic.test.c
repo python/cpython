@@ -5205,19 +5205,16 @@ Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("Test", kwargs)) {
         goto exit;
     }
-    __clinic_args = Py_NewRef(args);
+    __clinic_args = args;
     return_value = Test___init___impl((TestObj *)self, __clinic_args);
 
 exit:
-    /* Cleanup for args */
-    Py_XDECREF(__clinic_args);
-
     return return_value;
 }
 
 static int
 Test___init___impl(TestObj *self, PyObject *args)
-/*[clinic end generated code: output=0e5836c40dbc2397 input=a615a4485c0fc3e2]*/
+/*[clinic end generated code: output=9bc0cdebce4c710f input=a615a4485c0fc3e2]*/
 
 /*[clinic input]
 @vectorcall

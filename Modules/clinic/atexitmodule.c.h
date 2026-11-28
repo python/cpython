@@ -39,15 +39,13 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
     if (!__clinic_args) {
         goto exit;
     }
-    __clinic_kwargs = Py_XNewRef(kwargs);
+    __clinic_kwargs = kwargs;
     return_value = atexit_register_impl(module, func, __clinic_args, __clinic_kwargs);
 
 exit:
     /* Cleanup for args */
     Py_XDECREF(__clinic_args);
-    /* Cleanup for kwargs */
-    Py_XDECREF(__clinic_kwargs);
 
     return return_value;
 }
-/*[clinic end generated code: output=ab4b375d516aa59b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dd82692b8d449aef input=a9049054013a1b77]*/

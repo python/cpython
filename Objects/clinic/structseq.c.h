@@ -87,13 +87,10 @@ structseq___replace__(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!_PyArg_NoPositional("__replace__", args)) {
         goto exit;
     }
-    changes = Py_XNewRef(kwargs);
+    changes = kwargs;
     return_value = structseq___replace___impl((PyStructSequence *)self, changes);
 
 exit:
-    /* Cleanup for changes */
-    Py_XDECREF(changes);
-
     return return_value;
 }
-/*[clinic end generated code: output=f0231faecca9248b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aa7a3836224651f2 input=a9049054013a1b77]*/

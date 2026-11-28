@@ -1352,7 +1352,16 @@ class varpos_tuple_converter(VarPosCConverter):
     type = 'PyObject *'
     c_init_default = 'NULL'
 
+    @property
+    def borrowed(self) -> bool:
+        f = self.function
+        return (not f.fastcall and not f.vectorcall
+                # skip self, next is this converter
+                and list(f.parameters.values())[1].is_vararg())
+
     def cleanup(self) -> str:
+        if self.borrowed:
+            return ''
         return f"""Py_XDECREF({self.parser_name});\n"""
 
     def parse_vararg(self, *, pos_only: int, min_pos: int, max_pos: int,
@@ -1400,6 +1409,8 @@ class varpos_tuple_converter(VarPosCConverter):
                         goto exit;
                     }}}}
                     """
+            elif self.borrowed:
+                return f"{paramname} = args;\n"
             else:
                 return f"{paramname} = Py_NewRef(args);\n"
 
@@ -1446,6 +1457,9 @@ class var_keyword_dict_converter(VarKeywordCConverter):
     c_init_default = 'NULL'
 
     def cleanup(self) -> str:
+        # Only the vectorcall builds a dict.
+        if not self.function.vectorcall:
+            return ''
         return f'Py_XDECREF({self.parser_name});\n'
 
     def parse_var_keyword(self, *, stackargs: bool) -> str:
@@ -1460,4 +1474,6 @@ class var_keyword_dict_converter(VarKeywordCConverter):
                     }}}}
                 }}}}
                 """
+        if not self.function.vectorcall:
+            return f"{param_name} = kwargs;\n"
         return f"{param_name} = Py_XNewRef(kwargs);\n"

@@ -50,13 +50,10 @@ _interpreters_new_config(PyObject *module, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional:
-    overrides = Py_XNewRef(kwargs);
+    overrides = kwargs;
     return_value = _interpreters_new_config_impl(module, name, overrides);
 
 exit:
-    /* Cleanup for overrides */
-    Py_XDECREF(overrides);
-
     return return_value;
 }
 
@@ -1252,4 +1249,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ad79d44c2b139a83 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6f5664bfd1064aed input=a9049054013a1b77]*/

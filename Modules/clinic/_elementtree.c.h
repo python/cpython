@@ -51,13 +51,10 @@ _elementtree_SubElement(PyObject *module, PyObject *args, PyObject *kwargs)
     }
     attrib = PyTuple_GET_ITEM(args, 2);
 skip_optional:
-    extra = Py_XNewRef(kwargs);
+    extra = kwargs;
     return_value = _elementtree_SubElement_impl(module, parent, tag, attrib, extra);
 
 exit:
-    /* Cleanup for extra */
-    Py_XDECREF(extra);
-
     return return_value;
 }
 
@@ -1474,4 +1471,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d454d27e90eb399e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fc56f4c3b3331182 input=a9049054013a1b77]*/

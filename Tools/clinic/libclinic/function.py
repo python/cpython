@@ -247,6 +247,12 @@ class Function:
         return '|'.join(flags)
 
     @property
+    def fastcall(self) -> bool:
+        # __new__, __init__ and **kwargs get a tuple and a dict.
+        return not (self.disable_fastcall or self.kind.new_or_init or
+                    any(p.is_var_keyword() for p in self.parameters.values()))
+
+    @property
     def docstring_line_width(self) -> int:
         """Return the maximum line width for docstring lines.
 
