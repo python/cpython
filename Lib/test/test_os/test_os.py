@@ -3,6 +3,7 @@
 # portable than they had been thought to be.
 
 import asyncio
+import builtins
 import codecs
 import contextlib
 import decimal
@@ -28,6 +29,7 @@ import threading
 import time
 import types
 import unittest
+import unittest.mock
 import uuid
 import warnings
 from test import support
@@ -4681,6 +4683,153 @@ class CPUCountTests(unittest.TestCase):
         # test process_cpu_count()
         affinity2 = os.process_cpu_count()
         self.assertEqual(affinity2, affinity1 - 1)
+
+    @unittest.skipUnless(sys.platform == "linux", "Requires Linux")
+    def test_missing_cgroups_files(self):
+        original_open = builtins.open
+        original_exists = os.path.exists
+
+        def force_proc_mounts_parsing_exists(path):
+            if path == "/sys/fs/cgroup/cgroup.controllers":
+                return False
+            return original_exists(path)
+
+        with unittest.mock.patch(
+            "os.path.exists",
+            force_proc_mounts_parsing_exists
+        ):
+            # /proc/mounts parsing correctly identifies where cgroup sysfs is
+            # mounted
+            sysfs_cgroup_path = os._get_cgroup2_mount_point()
+            if sysfs_cgroup_path is None:
+                # 99% of the time will be /sys/fs/cgroup, so if we failed to
+                # find it, that better not exist!
+                self.assertFalse(original_exists("/sys/fs/cgroup"))
+            else:
+                self.assertTrue(
+                    original_exists(
+                        os.path.join(sysfs_cgroup_path, "cgroup.controllers")
+                    )
+                )
+
+            for path_to_fail in [
+                "/proc/self/cgroup",
+                "/proc/mounts",
+                os._get_cgroup2_mount_point()
+            ]:
+                def might_fail_to_open(path, *args, **kwargs):
+                    if path.startswith(path_to_fail):
+                        raise OSError("disabled for test")
+                    else:
+                        return original_open(path, *args, **kwargs)
+                with unittest.mock.patch("builtins.open", might_fail_to_open):
+                    self.assertIsNone(os._cpu_count_cgroups())
+
+    @unittest.skipUnless(sys.platform == "linux", "Requires Linux")
+    def test_cpu_count_parse_cpu_max(self):
+        for cpu_max_contents, expected_n_cpus in [
+            # max means all cores
+            ("max 100000", os.cpu_count()),
+            # garbage
+            ("garbage garbage", None),
+            # too many numbers
+            ("123 123 123", None),
+            # less than one core means one core
+            ("1000 100000", 1),
+            # One or more cores, rounding up:
+            ("100000 100000", 1),
+            ("200000 100000", 2),
+            ("230000 100000", 3),
+            # Divide by quota:
+            ("100000  50000", 2),
+        ]:
+            with tempfile.NamedTemporaryFile("w") as f:
+                f.write(cpu_max_contents)
+                f.flush()
+                result = os._parse_cgroup2_cpu_max(f.name)
+                self.assertEqual(result, expected_n_cpus)
+
+    @unittest.skipUnless(
+        sys.platform == "linux" and shutil.which("systemd-run") is not None,
+        "testing cgroups requires Linux with systemd-run",
+    )
+    def test_process_cpu_count_cgroups_end_to_end(self):
+        """``os.process_cpu_count()`` respects cgroups v2 limits."""
+        base_count = os.process_cpu_count()
+        if base_count is None:
+            self.skipTest("Could not determine the number of CPUs")
+        if base_count < 2:
+            self.skipTest("require at least 2 CPU cores to test")
+
+        def get_systemd_args(
+            num_cpus,
+            cpu_period_ms=None,
+            python_code="import os; print(os.process_cpu_count())"
+        ):
+            result = [
+                "systemd-run",
+                "--user",
+                # Technically only necessary for nested systemd-run, where we
+                # get the same auto-generat()ed unit name:
+                f"--unit=python-tests-{os.urandom(16).hex()}",
+                "--scope",
+                "--quiet",
+                "--property",
+                f"CPUQuota={int(100 * num_cpus)}%",
+            ]
+            if cpu_period_ms is not None:
+                result.extend([
+                    "--property",
+                    f"CPUQuotaPeriodSec={cpu_period_ms}ms"
+                ])
+            result.extend([
+                "--",
+                sys.executable,
+                "-c",
+                python_code,
+            ])
+            return result
+
+        def run_and_get_int(command_args):
+            return int(
+                subprocess.check_output(command_args, encoding="utf-8").strip()
+            )
+
+        # Base setting of number of cores:
+        result = run_and_get_int(get_systemd_args(1))
+        self.assertEqual(result, 1)
+        result = run_and_get_int(get_systemd_args(2))
+        self.assertEqual(result, 2)
+
+        # Changes to the quota's period are taken into account:
+        result = run_and_get_int(get_systemd_args(1, cpu_period_ms=30))
+        self.assertEqual(result, 1)
+
+        # Result is minimum of sched affinity and quota:
+        for affinity_cores, cgroups_cores, expected in [
+            (1, 2, 1),
+            (2, 1, 1),
+            (2, 2, 2),
+        ]:
+            code = f"""\
+import os
+mask = os.sched_getaffinity(0)
+os.sched_setaffinity(0, list(mask)[:{affinity_cores}])
+print(os.process_cpu_count())
+"""
+            result = run_and_get_int(
+                get_systemd_args(cgroups_cores, python_code=code)
+            )
+            self.assertEqual(result, expected)
+
+    @unittest.skipUnless(
+        sys.platform == "linux", "Linux-specific functionality",
+    )
+    def test_unquote_mount_path(self):
+        """``os._unquote_mount_path()`` decodes correctly."""
+        original_path = "/foo/bar\\\n \t"
+        encoded_path = r"/foo/bar\134\012\040\011"
+        self.assertEqual(os._unquote_mount_path(encoded_path), original_path)
 
 
 # FD inheritance check is only useful for systems with process support.
