@@ -724,7 +724,7 @@ registry_add(PyObject *registry, PyObject *key)
     return rc;
 }
 
-/* Record 'key' and 'altkey' (either may be NULL) in 'registry' for filters
+/* Record 'key' and optional 'altkey' in the module registry for filters
    'version'.  Returns 0 if the warning should be shown, 1 if it was already
    recorded, -1 on error. */
 static int
@@ -735,10 +735,7 @@ record_warning(PyInterpreterState *interp, PyObject *registry,
     Py_BEGIN_CRITICAL_SECTION(registry);
     rc = check_registry_version(interp, registry, version);
     if (rc > 0) {
-        rc = 0;
-        if (key != NULL) {
-            rc = registry_add(registry, key);
-        }
+        rc = registry_add(registry, key);
         if (rc == 0 && altkey != NULL) {
             rc = registry_add(registry, altkey);
         }
@@ -938,7 +935,7 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     if (key == NULL)
         goto cleanup;
 
-    /* The warnings lock is not held.  'version' ties the registry updates
+    /* The warnings lock is not held.  'version' ties the module registry updates
        to the filters searched; a result from filters that changed since is
        never recorded. */
     Py_ssize_t version;
@@ -983,33 +980,32 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
             goto cleanup;
         }
 
-        if (is_once && registry == NULL) {
-            /* WarningsState.once_registry[(text, category)] = 1 */
-            once_registry = get_once_registry(interp);
-            if (once_registry == NULL)
-                goto cleanup;
+        if (is_once || (is_module && registry != NULL)) {
             altkey = _PyTuple_FromPair(text, category);
             if (altkey == NULL)
                 goto cleanup;
-            rc = record_warning(interp, once_registry, NULL, altkey, version);
         }
-        else if (registry != NULL) {
-            /* registry[key] = 1, and for "once" and "module" also
-               registry[(text, category)] = 1 */
-            if (is_once || is_module) {
-                altkey = _PyTuple_FromPair(text, category);
-                if (altkey == NULL)
-                    goto cleanup;
-            }
-            rc = record_warning(interp, registry, key, altkey, version);
+        if (registry != NULL) {
+            rc = record_warning(interp, registry, key,
+                                is_module ? altkey : NULL, version);
+            if (rc < 0)
+                goto cleanup;
+            if (rc > 0)
+                goto return_none;
         }
-        else {
-            rc = 0;
+        if (is_once) {
+            /* The once registry is shared across modules and filter changes. */
+            once_registry = get_once_registry(interp);
+            if (once_registry == NULL)
+                goto cleanup;
+            Py_BEGIN_CRITICAL_SECTION(once_registry);
+            rc = registry_add(once_registry, altkey);
+            Py_END_CRITICAL_SECTION();
+            if (rc < 0)
+                goto cleanup;
+            if (rc > 0)
+                goto return_none;
         }
-        if (rc == -1)
-            goto cleanup;
-        if (rc == 1)  /* Already warned for this module. */
-            goto return_none;
     }
 
     if (call_show_warning(tstate, category, text, message, filename,
