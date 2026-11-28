@@ -610,6 +610,41 @@ class TestPartial:
         expected = ("new_function", ("new_arg",), {"new_keyword": None})
         self.assertEqual(result, expected)
 
+    def test_call_keywords_mutation_during_merge(self):
+        p = self.partial(lambda **k: len(k), a=1)
+        armed = True
+
+        class S(str):
+            def __hash__(self):
+                return hash('a')
+            def __eq__(self, o):
+                nonlocal armed
+                if armed:
+                    armed = False
+                    for i in range(2000):
+                        p.keywords['k%d' % i] = i
+                return False
+
+        res = p(**{S('b'): 2})
+        self.assertEqual(res, 2)
+
+    def test_call_keywords_clear_during_merge(self):
+        p = self.partial(lambda **k: len(k), a=1)
+        armed = True
+
+        class S(str):
+            def __hash__(self):
+                return hash('a')
+            def __eq__(self, o):
+                nonlocal armed
+                if armed:
+                    armed = False
+                    p.keywords.clear()
+                return False
+
+        res = p(**{S('b'): 2})
+        self.assertEqual(res, 2)
+
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestPartialC(TestPartial, unittest.TestCase):
     if c_functools:
