@@ -416,6 +416,50 @@ static Tcl_ThreadDataKey excInCmd_key;
 #define excInCmd \
     (*(PyObject **)Tcl_GetThreadData(&excInCmd_key, sizeof(PyObject *)))
 
+/* The number of live Tcl interpreters created in the current thread. */
+static Tcl_ThreadDataKey interp_count_key;
+#define interp_count \
+    (*(int *)Tcl_GetThreadData(&interp_count_key, sizeof(int)))
+
+/* Tcl allocates per-thread resources (for example an event handle on
+   Windows for every thread which waits for a call to a Tcl interpreter in
+   other thread), which are only freed by Tcl_FinalizeThread().  Call it
+   when the Python thread state is cleared at the end of the thread, unless
+   the thread still has a Tcl interpreter. */
+
+#define THREAD_FINALIZER_NAME "_tkinter.thread_finalizer"
+
+static void
+thread_finalizer(PyObject *capsule)
+{
+    void *thread_id = PyCapsule_GetPointer(capsule, THREAD_FINALIZER_NAME);
+    if (thread_id == (void *)Tcl_GetCurrentThread() && interp_count == 0) {
+        Tcl_FinalizeThread();
+    }
+}
+
+static int
+register_thread_finalizer(void)
+{
+    PyObject *dict = PyThreadState_GetDict();
+    if (dict == NULL) {
+        return 0;
+    }
+    int r = PyDict_ContainsString(dict, THREAD_FINALIZER_NAME);
+    if (r != 0) {
+        return r < 0 ? -1 : 0;
+    }
+    PyObject *capsule = PyCapsule_New((void *)Tcl_GetCurrentThread(),
+                                      THREAD_FINALIZER_NAME,
+                                      thread_finalizer);
+    if (capsule == NULL) {
+        return -1;
+    }
+    r = PyDict_SetItemString(dict, THREAD_FINALIZER_NAME, capsule);
+    Py_DECREF(capsule);
+    return r;
+}
+
 
 static PyObject *Tkapp_UnicodeResult(TkappObject *);
 
@@ -670,6 +714,11 @@ Tkapp_New(const char *screenName, const char *className,
     v->interp = Tcl_CreateInterp();
     PyMutex_Unlock(&tcl_create_mutex);
     v->thread_id = Tcl_GetCurrentThread();
+    interp_count++;
+    if (register_thread_finalizer() < 0) {
+        Py_DECREF(v);
+        return NULL;
+    }
 #if TCL_MAJOR_VERSION < 9  /* Tcl 9.x is always threaded */
     threaded = Tcl_GetVar2Ex(v->interp,
                              "tcl_platform",
@@ -1745,6 +1794,9 @@ _tkinter_tkapp_call_impl(TkappObject *self, PyObject *args)
         PyObject *exc = NULL;  // init to make static analyzers happy
         if (!WaitForMainloop(self))
             return NULL;
+        if (register_thread_finalizer() < 0) {
+            return NULL;
+        }
         ev = (Tkapp_CallEvent*)attemptckalloc(sizeof(Tkapp_CallEvent));
         if (ev == NULL) {
             PyErr_NoMemory();
@@ -2026,6 +2078,9 @@ var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
         if (!WaitForMainloop(self))
             return NULL;
 
+        if (register_thread_finalizer() < 0) {
+            return NULL;
+        }
         ev = (VarEvent*)attemptckalloc(sizeof(VarEvent));
         if (ev == NULL) {
             PyErr_NoMemory();
@@ -2705,7 +2760,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     }
 
     if (self->thread_id != Tcl_GetCurrentThread() &&
-        !WaitForMainloop(self))
+        (!WaitForMainloop(self) || register_thread_finalizer() < 0))
         return NULL;
 
     TRACE(self, ("((ss()O))", "proc", name, func));
@@ -2781,6 +2836,9 @@ _tkinter_tkapp_deletecommand_impl(TkappObject *self, const char *name)
 
         Tcl_Condition cond = NULL;
         CommandEvent *ev;
+        if (register_thread_finalizer() < 0) {
+            return NULL;
+        }
         ev = (CommandEvent*)attemptckalloc(sizeof(CommandEvent));
         if (ev == NULL) {
             PyErr_NoMemory();
@@ -3385,6 +3443,7 @@ Tkapp_Dealloc(PyObject *op)
         ENTER_TCL
         Tcl_DeleteInterp(Tkapp_Interp(self));
         LEAVE_TCL
+        interp_count--;
     }
     DisableEventHook(self);
     (void)Tkapp_Clear(op);

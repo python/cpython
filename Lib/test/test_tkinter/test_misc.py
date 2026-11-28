@@ -1042,7 +1042,6 @@ class MainloopThreadsTest(unittest.TestCase):
                 del self.roots[name]
                 root.destroy()
                 del root
-                _tkinter._finalize_thread()
         return threading.Thread(target=run)
 
     def wait_mainloop(self, name):

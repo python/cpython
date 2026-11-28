@@ -1,0 +1,3 @@
+Fix a leak of per-thread Tcl resources (an event handle on Windows) in
+:mod:`tkinter` when a thread which made calls to a Tcl interpreter in other
+thread, or which created a Tcl interpreter, exits.
