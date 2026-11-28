@@ -192,7 +192,14 @@ else:
             name = encoding[len('iconv:'):]
         else:
             name = encoding
-        if not name:
+        # glibc's iconv_open() strips trailing '/', ',', '//SUFFIX' options,
+        # and any non-ASCII-alphanumeric characters outside '_-.,:', treating
+        # a resulting empty charset name as the current locale encoding.
+        # Require at least one ASCII alphanumeric before the first '/' or ','.
+        charset, _, _ = name.partition('/')
+        charset, _, _ = charset.partition(',')
+        if not any('0' <= c <= '9' or 'A' <= c <= 'Z' or 'a' <= c <= 'z'
+                   for c in charset):
             return None
         # Test if the encoding is supported by iconv.
         try:

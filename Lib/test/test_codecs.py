@@ -3955,6 +3955,38 @@ class IconvTest(unittest.TestCase):
         self.assertEqual(pair.encode('iconv:' + latin1, 'backslashreplace'),
                          rb'\ud83c\udf89')
 
+    def test_empty_stripped_charset(self):
+        # gh-161924: glibc's iconv_open() strips non-ASCII-alphanumeric
+        # characters and //options, falling back to the locale encoding
+        # if nothing remains. Ensure these raise LookupError.
+        ascii_invalid_names = [
+            '!!!',
+            '@',
+            '()',
+            ',',
+            '/',
+            '//TRANSLIT',
+            '//abc',
+            'iconv://TRANSLIT',
+        ]
+        for name in ascii_invalid_names:
+            with self.subTest(name=name):
+                self.assertRaises(LookupError, codecs.lookup, name)
+                self.assertRaises(LookupError, codecs.iconv_encode, name, 'a')
+                self.assertRaises(LookupError, codecs.iconv_decode, name, b'a')
+
+        non_ascii_invalid_names = [
+            '\xe9',
+            '\ud55c\uae00',
+            'iconv:\ud55c\uae00',
+        ]
+        for name in non_ascii_invalid_names:
+            with self.subTest(name=name):
+                with self.assertWarns(DeprecationWarning):
+                    self.assertRaises(LookupError, codecs.lookup, name)
+                self.assertRaises(LookupError, codecs.iconv_encode, name, 'a')
+                self.assertRaises(LookupError, codecs.iconv_decode, name, b'a')
+
 
 class ASCIITest(unittest.TestCase):
     def test_encode(self):
