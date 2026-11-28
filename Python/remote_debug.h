@@ -173,7 +173,7 @@ typedef struct {
     mach_vm_address_t local_page_base;
     uint64_t access_seq;
     int valid;
-    uint32_t hits_until_probe;
+    uint32_t probe_countdown;
     uint64_t map_objid;
     uint64_t map_offset;
 } alias_page_entry_t;
@@ -1678,7 +1678,7 @@ static int
 alias_maybe_probe_entry(proc_handle_t *handle, alias_page_entry_t *entry)
 {
     alias_read_cache_t *cache = &handle->alias;
-    if (--entry->hits_until_probe != 0) {
+    if (--entry->probe_countdown != 0) {
         return 1;
     }
 
@@ -1696,7 +1696,7 @@ alias_maybe_probe_entry(proc_handle_t *handle, alias_page_entry_t *entry)
         if (cache->probe_mask < ALIAS_PROBE_MAX_MASK) {
             cache->probe_mask = (cache->probe_mask << 1) | 1;
         }
-        entry->hits_until_probe = cache->probe_mask + 1;
+        entry->probe_countdown = cache->probe_mask + 1;
         return 1;
     }
     if (cache->probe_mask > ALIAS_PROBE_MIN_MASK) {
@@ -1785,7 +1785,7 @@ alias_remap_page(proc_handle_t *handle,
 
     entry->remote_page_base = page_base;
     entry->access_seq = ++cache->access_seq;
-    entry->hits_until_probe = cache->probe_mask + 1;
+    entry->probe_countdown = cache->probe_mask + 1;
     entry->valid = 1;
 
     if (alias_query_region(mach_task_self(), entry->local_page_base,
