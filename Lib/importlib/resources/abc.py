@@ -154,8 +154,8 @@ class Traversable(Protocol):
         mode may be 'r' or 'rb' to open as text or binary. Return a handle
         suitable for reading (same as pathlib.Path.open).
 
-        When opening as text, accepts encoding parameters such as those
-        accepted by io.TextIOWrapper.
+        When opening as text, accepts the encoding, errors, and newline
+        keyword arguments with the same meanings as in io.TextIOWrapper.
         """
 
     @property
