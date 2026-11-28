@@ -70,6 +70,26 @@ class DateTimeTests(unittest.TestCase):
         # this test will break around year 2048
         self.assertEqual(parse_date("03-Feb-98"), (1998, 2, 3, 0, 0, 0.0))
 
+    def test_http2time_two_digit_year(self):
+        # RFC 6265 section 5.1.1: two-digit years 00-69 mean 2000-2069 and
+        # 70-99 mean 1970-1999, independent of the current date.
+        cases = [
+            ("01-Jan-00", (2000, 1, 1, 0, 0, 0.0)),
+            ("01-Jan-69", (2069, 1, 1, 0, 0, 0.0)),
+            ("01-Jan-70", (1970, 1, 1, 0, 0, 0.0)),
+            ("01-Jan-99", (1999, 1, 1, 0, 0, 0.0)),
+            ("01-Jan-1970", (1970, 1, 1, 0, 0, 0.0)),
+            ("01-Jan-2069", (2069, 1, 1, 0, 0, 0.0)),
+            ("01-Jan-2070", (2070, 1, 1, 0, 0, 0.0)),
+        ]
+        for text, expected in cases:
+            with self.subTest(text=text):
+                self.assertEqual(time.gmtime(http2time(text))[:6], expected)
+
+        self.assertEqual(http2time(" \tThu, 01-Jan-70 00:00:01 GMT\n"), 1)
+        self.assertEqual(time.gmtime(http2time(" 01-Jan-69 \n"))[:6],
+                         (2069, 1, 1, 0, 0, 0.0))
+
     def test_http2time_formats(self):
         # test http2time for supported dates.  Test cases with 2 digit year
         # will probably break in year 2044.
@@ -1534,6 +1554,19 @@ class CookieTests(unittest.TestCase):
         c = cookiejar_from_cookie_headers(headers)
         cookie = c._cookies["www.example.com"]["/"]["c"]
         self.assertIsNone(cookie.expires)
+
+
+    def test_expiry_with_two_digit_year(self):
+        # A two-digit Expires year of 70 means 1970 (RFC 6265 section 5.1.1),
+        # so this header deletes the stored cookie instead of replacing it
+        # with an empty cookie that would last until 2070.
+        c = CookieJar()
+        url = "http://www.acme.com/"
+        interact_netscape(c, url, "session=abc123; Path=/")
+        self.assertEqual([cookie.name for cookie in c], ["session"])
+        interact_netscape(c, url,
+                          "session=; Path=/; Expires=Thu, 01-Jan-70 00:00:01 GMT")
+        self.assertListEqual(list(c), [])
 
 
 class LWPCookieTests(unittest.TestCase):
