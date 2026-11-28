@@ -35001,6 +35001,12 @@ case "$ac_cv_computed_gotos" in yes*)
 
 printf "%s\n" "#define HAVE_COMPUTED_GOTOS 1" >>confdefs.h
 
+
+  if test "${with_computed_gotos+set}" != set; then
+
+printf "%s\n" "#define USE_COMPUTED_GOTOS 1" >>confdefs.h
+
+  fi
 esac
 
 # Check for --with-tail-call-interp
