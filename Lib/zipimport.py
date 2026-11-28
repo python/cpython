@@ -352,8 +352,13 @@ def _read_directory(archive):
                 central_directory_position = _unpack_uint32(buffer[16:20])
                 num_entries = _unpack_uint16(buffer[8:10])
 
-                # N.b. if someday you want to prefer the standard (non-zip64) EOCD,
-                # you need to adjust position by 76 for arc to be 0.
+                # gh-103051: reject files where the EOCD archive-comment-length
+                # field doesn't match the actual file size (pyc/zip polyglot).
+                comment_size = _unpack_uint16(buffer[20:22])
+                if header_position + END_CENTRAL_DIR_SIZE + comment_size != file_size:
+                    raise ZipImportError(f'not a Zip file: {archive!r}',
+                                         path=archive)
+
             else:
                 raise ZipImportError(f'not a Zip file: {archive!r}',
                                      path=archive)
