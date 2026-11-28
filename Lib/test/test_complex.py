@@ -717,6 +717,26 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             check(complex(complex1(1j)), 0.0, 2.0)
         self.assertRaises(TypeError, complex, complex2(1j))
 
+        class FloatSubclass(float):
+            def __float__(self):
+                return 42.0
+
+        value = FloatSubclass(1.0)
+        for cls in complex, ComplexSubclass:
+            with self.subTest(cls=cls):
+                self.assertEqual(cls(value), 42+0j)
+                self.assertEqual(cls(real=value), 42+0j)
+                self.assertEqual(cls(value, 0), 42+0j)
+
+        class FloatSubclassError(float):
+            def __float__(self):
+                raise ValueError('float conversion failed')
+
+        for cls in complex, ComplexSubclass:
+            with self.subTest(cls=cls):
+                with self.assertRaisesRegex(ValueError, 'float conversion failed'):
+                    cls(FloatSubclassError(1.0))
+
     def test___complex__(self):
         z = 3 + 4j
         self.assertEqual(z.__complex__(), z)
