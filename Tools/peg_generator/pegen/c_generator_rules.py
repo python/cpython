@@ -192,9 +192,12 @@ class CRuleEmitter:
                 self._print(f"int {prefix.end} = 0, {prefix.valid} = 0;")
             if self._rule.uses_locations:
                 self._emit_token_start_metadata()
-            for alt in self._rule.alternatives:
-                with self._alternative(alt):
-                    self._emit_normal_alt(alt)
+            if (dispatch := self._rule.first_set_dispatch) is not None:
+                self._emit_first_set_dispatch(dispatch)
+            else:
+                for alt in self._rule.alternatives:
+                    with self._alternative(alt):
+                        self._emit_normal_alt(alt)
             if self._debug:
                 self._print(f'D(fprintf(stderr, "Fail at %d: {signature.name}\\n", p->mark));')
             self._print("_res = NULL;")
@@ -203,6 +206,86 @@ class CRuleEmitter:
             if memoize:
                 self._print(f"_PyPegen_insert_memo(p, _mark, {signature.name}_type, _res);")
             self._returns.emit("_res")
+
+    def _emit_first_set_dispatch(self, dispatch: tuple[frozenset[int] | None, ...]) -> None:
+        if not self._rule.uses_locations:
+            self._print("if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {")
+            with self._indent():
+                self._print("p->error_indicator = 1;")
+                self._returns.emit("NULL")
+            self._print("}")
+        self._print("int _current_token_type = p->tokens[_mark]->type;")
+        # The second pass tries every alternative in order, so that it reports
+        # the same errors as without dispatch.
+        known = [token_types for token_types in dispatch if token_types is not None]
+        if len(known) == len(dispatch) and sum(map(len, known)) == len(frozenset().union(*known)):
+            # At most one alternative may match the next token.
+            self._emit_first_set_jumps(known)
+        else:
+            self._emit_first_set_mask(dispatch)
+
+    def _emit_first_set_jumps(self, dispatch: list[frozenset[int]]) -> None:
+        self._print("if (!p->call_invalid_rules) {")
+        with self._indent():
+            self._print("switch (_current_token_type) {")
+            with self._indent():
+                for index, token_types in enumerate(dispatch):
+                    if not token_types:
+                        continue
+                    for token_type in sorted(token_types):
+                        self._print(f"case {token_type}:")
+                    with self._indent():
+                        self._print(f"goto _first_set_alt_{index};")
+                self._print("default:")
+                with self._indent():
+                    self._print("goto _first_set_done;")
+            self._print("}")
+        self._print("}")
+        for index, (alt, token_types) in enumerate(zip(self._rule.alternatives, dispatch)):
+            if token_types:
+                self._print(f"_first_set_alt_{index}:")
+            with self._alternative(alt):
+                self._emit_normal_alt(alt)
+            self._print("if (!p->call_invalid_rules) {")
+            with self._indent():
+                self._print("goto _first_set_done;")
+            self._print("}")
+        self._print("_first_set_done:")
+        self._print(";")
+
+    def _emit_first_set_mask(self, dispatch: tuple[frozenset[int] | None, ...]) -> None:
+        # Bits of the alternatives that may match the next token.
+        unknown = sum(
+            1 << index for index, token_types in enumerate(dispatch) if token_types is None
+        )
+        masks: dict[int, int] = {}
+        for index, token_types in enumerate(dispatch):
+            for token_type in token_types or ():
+                masks[token_type] = masks.get(token_type, unknown) | (1 << index)
+        token_types_by_mask: dict[int, list[int]] = {}
+        for token_type, mask in sorted(masks.items()):
+            token_types_by_mask.setdefault(mask, []).append(token_type)
+
+        self._print("unsigned long long _first_set_mask = ~0ULL;")
+        self._print("if (!p->call_invalid_rules) {")
+        with self._indent():
+            self._print("switch (_current_token_type) {")
+            with self._indent():
+                for mask, cases in sorted(token_types_by_mask.items()):
+                    for token_type in cases:
+                        self._print(f"case {token_type}:")
+                    with self._indent():
+                        self._print(f"_first_set_mask = 0x{mask:x}ULL;")
+                        self._print("break;")
+                self._print("default:")
+                with self._indent():
+                    self._print(f"_first_set_mask = 0x{unknown:x}ULL;")
+            self._print("}")
+        self._print("}")
+        for index, alt in enumerate(self._rule.alternatives):
+            self._print(f"if (_first_set_mask & 0x{1 << index:x}ULL)")
+            with self._alternative(alt):
+                self._emit_normal_alt(alt)
 
     def _emit_loop_body(self) -> None:
         rule = self._rule

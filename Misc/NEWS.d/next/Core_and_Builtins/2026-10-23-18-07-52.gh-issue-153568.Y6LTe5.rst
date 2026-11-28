@@ -1,0 +1,3 @@
+Speed up the parser by computing the first set of each rule and skipping
+alternatives that cannot start with the next token based on those first
+sets.
