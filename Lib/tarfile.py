@@ -170,6 +170,47 @@ def nts(s, encoding, errors):
         s = s[:p]
     return s.decode(encoding, errors)
 
+def _nts_deferred(tarinfo, keyword, s, encoding, errors):
+    """Like nts(), but a decoding error is not raised yet, because a GNU
+       longname or the pax header keyword may replace the field.  Until
+       then the field holds the value decoded with "surrogateescape".
+    """
+    try:
+        return nts(s, encoding, errors)
+    except UnicodeDecodeError as exc:
+        try:
+            value = nts(s, encoding, "surrogateescape")
+        except UnicodeError:
+            raise exc from None
+        tarinfo._decode_errors = (getattr(tarinfo, "_decode_errors", ()) +
+                                  ((keyword, exc),))
+        return value
+
+def _read_member(tarinfo, tarfile, dircheck):
+    """Read the next member with tarinfo._fromtarfile(), and raise the first
+       decoding error of a header field that was not replaced, as nts()
+       would have: before any later error and without skipping the member.
+    """
+    offset = tarfile.offset
+    tarfile._member_headers = headers = []
+    try:
+        member = tarinfo._fromtarfile(tarfile, dircheck=dircheck)
+    except Exception:
+        _check_headers(tarfile, headers, offset)
+        raise
+    finally:
+        tarfile._member_headers = None
+    _check_headers(tarfile, headers + [member], offset)
+    return member
+
+def _check_headers(tarfile, headers, offset):
+    """Raise the first decoding error left in headers.
+    """
+    for header in headers:
+        if getattr(header, "_decode_errors", None):
+            tarfile.offset = offset
+            TarInfo._check_decode_errors(header)
+
 def nti(s):
     """Convert a number field to a python number.
     """
@@ -983,6 +1024,7 @@ class TarInfo(object):
         sparse = 'Sparse member information.',
         _sparse_structs = None,
         _link_target = None,
+        _decode_errors = None,
         )
 
     def __init__(self, name=""):
@@ -1342,7 +1384,9 @@ class TarInfo(object):
         To support the old v7 tar format AREGTYPE headers are
         transformed to DIRTYPE headers if their name ends in '/'.
         """
-        return cls._frombuf(buf, encoding, errors)
+        obj = cls._frombuf(buf, encoding, errors)
+        obj._check_decode_errors()
+        return obj
 
     @classmethod
     def _frombuf(cls, buf, encoding, errors, *, dircheck=True):
@@ -1352,6 +1396,10 @@ class TarInfo(object):
         be normalized to ``DIRTYPE`` if the name ends in a trailing slash.
         ``dircheck`` must be set to ``False`` if this function is called
         on a follow-up header such as ``GNUTYPE_LONGNAME``.
+
+        Decoding errors of text fields that "surrogateescape" can decode are
+        kept in the object; frombuf() and fromtarfile() raise them unless
+        the fields are replaced.
         """
         if len(buf) == 0:
             raise EmptyHeaderError("empty header")
@@ -1365,43 +1413,48 @@ class TarInfo(object):
             raise InvalidHeaderError("bad checksum")
 
         obj = cls()
-        obj.name = nts(buf[0:100], encoding, errors)
-        obj.mode = nti(buf[100:108])
-        obj.uid = nti(buf[108:116])
-        obj.gid = nti(buf[116:124])
-        obj.size = nti(buf[124:136])
-        obj.mtime = nti(buf[136:148])
-        obj.chksum = chksum
-        obj.type = buf[156:157]
-        obj.linkname = nts(buf[157:257], encoding, errors)
-        obj.uname = nts(buf[265:297], encoding, errors)
-        obj.gname = nts(buf[297:329], encoding, errors)
-        obj.devmajor = nti(buf[329:337])
-        obj.devminor = nti(buf[337:345])
-        prefix = nts(buf[345:500], encoding, errors)
+        try:
+            obj.name = _nts_deferred(obj, "path", buf[0:100], encoding, errors)
+            obj.mode = nti(buf[100:108])
+            obj.uid = nti(buf[108:116])
+            obj.gid = nti(buf[116:124])
+            obj.size = nti(buf[124:136])
+            obj.mtime = nti(buf[136:148])
+            obj.chksum = chksum
+            obj.type = buf[156:157]
+            obj.linkname = _nts_deferred(obj, "linkpath", buf[157:257], encoding, errors)
+            obj.uname = _nts_deferred(obj, "uname", buf[265:297], encoding, errors)
+            obj.gname = _nts_deferred(obj, "gname", buf[297:329], encoding, errors)
+            obj.devmajor = nti(buf[329:337])
+            obj.devminor = nti(buf[337:345])
+            prefix = _nts_deferred(obj, "path", buf[345:500], encoding, errors)
 
-        # Old V7 tar format represents a directory as a regular
-        # file with a trailing slash.
-        if dircheck and obj.type == AREGTYPE and obj.name.endswith("/"):
-            obj.type = DIRTYPE
+            # Old V7 tar format represents a directory as a regular
+            # file with a trailing slash.
+            if dircheck and obj.type == AREGTYPE and obj.name.endswith("/"):
+                obj.type = DIRTYPE
 
-        # The old GNU sparse format occupies some of the unused
-        # space in the buffer for up to 4 sparse structures.
-        # Save them for later processing in _proc_sparse().
-        if obj.type == GNUTYPE_SPARSE:
-            pos = 386
-            structs = []
-            for i in range(4):
-                try:
-                    offset = nti(buf[pos:pos + 12])
-                    numbytes = nti(buf[pos + 12:pos + 24])
-                except ValueError:
-                    break
-                structs.append((offset, numbytes))
-                pos += 24
-            isextended = bool(buf[482])
-            origsize = nti(buf[483:495])
-            obj._sparse_structs = (structs, isextended, origsize)
+            # The old GNU sparse format occupies some of the unused
+            # space in the buffer for up to 4 sparse structures.
+            # Save them for later processing in _proc_sparse().
+            if obj.type == GNUTYPE_SPARSE:
+                pos = 386
+                structs = []
+                for i in range(4):
+                    try:
+                        offset = nti(buf[pos:pos + 12])
+                        numbytes = nti(buf[pos + 12:pos + 24])
+                    except ValueError:
+                        break
+                    structs.append((offset, numbytes))
+                    pos += 24
+                isextended = bool(buf[482])
+                origsize = nti(buf[483:495])
+                obj._sparse_structs = (structs, isextended, origsize)
+        except Exception:
+            # nts() would have raised the error of a field before.
+            obj._check_decode_errors()
+            raise
 
         # Remove redundant slashes from directories.
         if obj.isdir():
@@ -1417,16 +1470,23 @@ class TarInfo(object):
         """Return the next TarInfo object from TarFile object
            tarfile.
         """
-        return cls._fromtarfile(tarfile)
+        return _read_member(cls, tarfile, dircheck=True)
 
     @classmethod
     def _fromtarfile(cls, tarfile, *, dircheck=True):
         """
         See dircheck documentation in _frombuf().
         """
+        headers = getattr(tarfile, "_member_headers", None)
+        if headers is None:
+            # Called by a fromtarfile() override of a subclass.
+            return _read_member(cls, tarfile, dircheck=dircheck)
         buf = tarfile.fileobj.read(BLOCKSIZE)
         obj = cls._frombuf(buf, tarfile.encoding, tarfile.errors, dircheck=dircheck)
         obj.offset = tarfile.fileobj.tell() - BLOCKSIZE
+        # Check every header, because _proc_member() of a subclass may
+        # return a new object that was created from the fields of obj.
+        headers.append(obj)
         return obj._proc_member(tarfile)
 
     #--------------------------------------------------------------------------
@@ -1479,6 +1539,8 @@ class TarInfo(object):
         """Process the blocks that hold a GNU longname
            or longlink member.
         """
+        # The fields of this header are not used.
+        self._forget_decode_error()
         buf = _safe_read(tarfile.fileobj, self._block(self.size))
 
         # Fetch the next header and process it.
@@ -1492,8 +1554,10 @@ class TarInfo(object):
         next.offset = self.offset
         if self.type == GNUTYPE_LONGNAME:
             next.name = nts(buf, tarfile.encoding, tarfile.errors)
+            next._forget_decode_error("path")
         elif self.type == GNUTYPE_LONGLINK:
             next.linkname = nts(buf, tarfile.encoding, tarfile.errors)
+            next._forget_decode_error("linkpath")
 
         # Remove redundant slashes from directories. This is to be consistent
         # with frombuf().
@@ -1534,6 +1598,8 @@ class TarInfo(object):
         """Process an extended or global header as described in
            POSIX.1-2008.
         """
+        # The fields of this header are not used.
+        self._forget_decode_error()
         # Read the header information.
         buf = _safe_read(tarfile.fileobj, self._block(self.size))
 
@@ -1715,6 +1781,7 @@ class TarInfo(object):
         for keyword, value in pax_headers.items():
             if keyword == "GNU.sparse.name":
                 setattr(self, "path", value)
+                self._forget_decode_error("path")
             elif keyword == "GNU.sparse.size":
                 setattr(self, "size", int(value))
             elif keyword == "GNU.sparse.realsize":
@@ -1728,8 +1795,29 @@ class TarInfo(object):
                 if keyword == "path":
                     value = value.rstrip("/")
                 setattr(self, keyword, value)
+                if keyword in PAX_NAME_FIELDS:
+                    self._forget_decode_error(keyword)
 
         self.pax_headers = pax_headers.copy()
+
+    def _forget_decode_error(self, keyword=None):
+        """Forget the decoding error of a header field that was replaced,
+           or of all fields if keyword is None.
+        """
+        if errors := getattr(self, "_decode_errors", None):
+            errors = tuple(item for item in errors
+                           if keyword is not None and item[0] != keyword)
+            if errors:
+                self._decode_errors = errors
+            else:
+                del self._decode_errors
+
+    def _check_decode_errors(self):
+        """Raise the first decoding error of a header field that was not
+           replaced.
+        """
+        if errors := getattr(self, "_decode_errors", None):
+            raise errors[0][1] from None
 
     def _decode_pax_field(self, value, encoding, fallback_encoding, fallback_errors):
         """Decode a single field from a pax record.
@@ -1824,6 +1912,9 @@ class TarFile(object):
                                  # used by each compression format).
 
     extraction_filter = None    # The default filter for extraction.
+
+    _member_headers = None      # The headers read for the member that
+                                # TarInfo.fromtarfile() is reading.
 
     def __init__(self, name=None, mode="r", fileobj=None, format=None,
             tarinfo=None, dereference=None, ignore_zeros=None, encoding=None,

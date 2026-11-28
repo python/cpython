@@ -1,0 +1,5 @@
+Fix :mod:`tarfile` failing to read an archive with ``errors="strict"`` when a
+name, link name, user or group name in a ustar header is cut in the middle of
+a multibyte character but is replaced by a GNU long name or a pax header.
+Such archives are written for paths longer than 100 bytes, for example with
+:data:`~tarfile.GNU_FORMAT`.
