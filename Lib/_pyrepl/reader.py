@@ -308,6 +308,7 @@ class Reader:
     gen_colors: Callable[[str], Iterator[ColorSpan]] = gen_colors
     threading_hook: Callback | None = None
     invalidation: RefreshInvalidation = field(init=False)
+    yank_span: tuple[int, int] | None = None
 
     ## cached metadata to speed up screen refreshes
     @dataclass

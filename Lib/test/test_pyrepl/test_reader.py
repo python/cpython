@@ -480,6 +480,7 @@ class TestErrorMessages(TestCase):
         *,
         command: str | None = None,
         binding: str | None = None,
+        error_count: int = 1,
         **reader_kwargs,
     ):
         console = prepare_console(code_to_events(keys))
@@ -487,12 +488,12 @@ class TestErrorMessages(TestCase):
         if command is not None:
             reader.bind(binding or keys, command)
 
-        while not reader.msg:
+        while console.beep.call_count < error_count:
             reader.handle1()
 
         self.assertEqual(reader.msg, f"! {expected}")
         self.assertEqual(reader.screen[-1], f"! {expected}")
-        console.beep.assert_called_once()
+        self.assertEqual(console.beep.call_count, error_count)
 
     def test_invalid_key_message(self):
         self._test_error_message("\x1bo", "no command is bound to this key")
@@ -514,6 +515,13 @@ class TestErrorMessages(TestCase):
         self._test_error_message(
             "x\x01\x0b\x1by",
             "previous command was not a yank",
+        )
+
+    def test_yank_pop_after_failed_yank_pop_message(self):
+        self._test_error_message(
+            "x\x01\x0b\x1by\x1by",
+            "previous command was not a yank",
+            error_count=2,
         )
 
     def test_start_of_history_message(self):
