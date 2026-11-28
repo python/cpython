@@ -505,6 +505,8 @@ def configure_emscripten_python(context, working_dir):
         f"--with-build-python={build_python}",
         "--without-pymalloc",
         "--disable-shared",
+        "--disable-gil",
+        "--with-mimalloc",
         "--disable-ipv6",
         "--enable-big-digits=30",
         "--enable-wasm-dynamic-linking",
