@@ -1,0 +1,3 @@
+Avoid allocating the initial match context on the data stack in :mod:`re`.
+Matches that do not need nested contexts or saved marks can avoid allocating
+that stack; backtracking continues to use the existing resizable data stack.
