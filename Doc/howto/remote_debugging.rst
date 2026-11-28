@@ -497,7 +497,10 @@ To locate a thread:
 
 1. Use the offset ``runtime_state.interpreters_head`` to obtain the address of
    the first interpreter in the ``PyRuntime`` structure. This is the entry point
-   to the linked list of active interpreters.
+   to the linked list of active interpreters. New interpreters are prepended to
+   the list, so the head is the most recently created one. Follow
+   ``interpreter_state.next`` until ``interpreter_state.id`` is ``0`` to reach
+   the main interpreter.
 
 2. Use the offset ``interpreter_state.threads_main`` to access the main thread
    state associated with the selected interpreter. This is typically the most
@@ -517,11 +520,21 @@ The following is an example implementation that locates the main thread state::
     def find_main_thread_state(
         pid: int, py_runtime_addr: int, debug_offsets: DebugOffsets,
     ) -> int:
-        # Step 1: Read interpreters_head from PyRuntime
+        # Step 1: Read interpreters_head from PyRuntime and walk the list
+        # to the main interpreter (id 0)
         interp_head_ptr = (
             py_runtime_addr + debug_offsets.runtime_state.interpreters_head
         )
         interp_addr = read_pointer(pid, interp_head_ptr)
+        while interp_addr != 0:
+            interp_id = read_int(
+                pid, interp_addr + debug_offsets.interpreter_state.id
+            )
+            if interp_id == 0:
+                break
+            interp_addr = read_pointer(
+                pid, interp_addr + debug_offsets.interpreter_state.next
+            )
         if interp_addr == 0:
             raise RuntimeError("No interpreter found in the target process")
 
