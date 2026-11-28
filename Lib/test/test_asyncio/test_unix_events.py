@@ -1037,13 +1037,33 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
     @mock.patch('os.write')
     def test__write_ready_again(self, m_write):
         tr = self.write_pipe_transport()
-        self.loop.add_writer(5, tr._write_ready)
-        tr._buffer = bytearray(b'data')
-        m_write.side_effect = BlockingIOError()
+        m_write.side_effect = (BlockingIOError, BlockingIOError, 4)
+        tr.write(b'data')
         tr._write_ready()
-        m_write.assert_called_with(5, bytearray(b'data'))
+        m_write.assert_called_with(5, b'data')
+        self.assertFalse(self.loop.writers)
+        retry, = self.loop._scheduled
+        self.assertGreater(retry.when(), self.loop.time())
+
+        tr.write_eof()
+        retry._run()
         self.loop.assert_writer(5, tr._write_ready)
-        self.assertEqual(bytearray(b'data'), tr._buffer)
+        self.assertEqual(tr._buffer, b'data')
+
+        self.loop.writers[5]._run()
+        self.assertEqual(m_write.call_count, 3)
+        self.assertFalse(tr._buffer)
+        self.protocol.connection_lost.assert_called_once_with(None)
+
+    @mock.patch('os.write', side_effect=BlockingIOError)
+    def test_abort_pending_write_retry(self, m_write):
+        tr = self.write_pipe_transport()
+        tr.write(b'data')
+        tr._write_ready()
+        retry, = self.loop._scheduled
+        tr.abort()
+        retry._run()
+        self.assertFalse(self.loop.writers)
 
     @mock.patch('os.write')
     def test__write_ready_empty(self, m_write):
