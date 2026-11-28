@@ -1,0 +1,2 @@
+:func:`shutil.move` won't copy the source to its destination if it fails
+with errors except EXDEV. Patch by Timothy Poon.
