@@ -304,6 +304,21 @@ class AuditTest(unittest.TestCase):
 
         self.assertEqual(actual, expected)
 
+    def test_sys_monitoring_clear_free_tool_id(self):
+        returncode, events, stderr = self.run_python("test_sys_monitoring_clear_free_tool_id")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [
+            ("sys.monitoring.clear_tool_id", "(1,)"),
+            ("sys.monitoring.free_tool_id", "(1,)"),
+        ]
+
+        self.assertEqual(actual, expected)
+
     def test_winapi_createnamedpipe(self):
         winapi = import_helper.import_module("_winapi")
 
