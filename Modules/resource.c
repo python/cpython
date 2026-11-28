@@ -3,6 +3,8 @@
 #endif
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _Py_UpdateRecursionLimits()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <errno.h>                // errno
 #include <string.h>
 #include <sys/resource.h>         // getrusage()
@@ -283,6 +285,11 @@ resource_setrlimit_impl(PyObject *module, int resource, PyObject *limits)
             PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
+#ifdef RLIMIT_STACK
+    if (resource == RLIMIT_STACK) {
+        _Py_UpdateRecursionLimits(_PyThreadState_GET());
+    }
+#endif
     Py_RETURN_NONE;
 }
 
@@ -335,6 +342,13 @@ resource_prlimit_impl(PyObject *module, pid_t pid, int resource,
         }
         return NULL;
     }
+#ifdef RLIMIT_STACK
+    if (limits != Py_None && resource == RLIMIT_STACK
+        && (pid == 0 || pid == getpid()))
+    {
+        _Py_UpdateRecursionLimits(_PyThreadState_GET());
+    }
+#endif
     return rlimit2py(old_limit);
 }
 #endif /* HAVE_PRLIMIT */

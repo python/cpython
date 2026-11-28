@@ -245,6 +245,7 @@ static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate) {
 }
 
 PyAPI_FUNC(void) _Py_InitializeRecursionLimits(PyThreadState *tstate);
+PyAPI_FUNC(void) _Py_UpdateRecursionLimits(PyThreadState *tstate);
 
 // Export for test_peg_generator
 PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(
