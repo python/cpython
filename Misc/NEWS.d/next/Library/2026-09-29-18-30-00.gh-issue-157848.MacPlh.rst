@@ -1,0 +1,3 @@
+:func:`uuid.getnode` no longer returns the placeholder ``02:00:00:00:00:00``
+that macOS 27 reports instead of the hardware address. When no real address
+is found, a random node is used, as on other systems without one.
