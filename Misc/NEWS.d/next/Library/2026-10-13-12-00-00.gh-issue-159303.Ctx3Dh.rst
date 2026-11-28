@@ -1,0 +1,5 @@
+:meth:`asyncio.loop.call_exception_handler` now runs the default exception
+handler in the context of the task or handle that caused the error,
+as it already did for a custom exception handler. Both handlers now run in a
+copy of that context, so reporting an error from inside the task itself no
+longer fails with :exc:`RuntimeError`.
