@@ -1565,6 +1565,40 @@ class AbstractUnpickleTests:
         self.check_unpickling_error(AttributeError, b'N(\x90.')
         self.check_unpickling_error(TypeError, b'\x8f(]\x90.')  # non-hashable element
 
+    def test_bad_opcode(self):
+        # A printable ASCII byte is reported as is, any other one is escaped.
+        badpickles = [
+            (b'!', "invalid load key, '!'."),
+            (b"'", r"invalid load key, '\x27'."),
+            (b'\\', r"invalid load key, '\x5c'."),
+            (b'\x00', r"invalid load key, '\x00'."),
+            (b'\x7f', r"invalid load key, '\x7f'."),
+            (b'\xff', r"invalid load key, '\xff'."),
+        ]
+        for p, msg in badpickles:
+            with self.subTest(data=p):
+                with self.assertRaises(pickle.UnpicklingError) as cm:
+                    self.loads(p)
+                self.assertEqual(str(cm.exception), msg)
+
+    def test_bad_stack_messages(self):
+        # Reaching past a MARK is reported differently from exhausting the
+        # whole stack.
+        badpickles = [
+            (b'.', 'unpickling stack underflow'),
+            (b'0', 'unpickling stack underflow'),
+            (b'N(.', 'unexpected MARK found'),
+            (b'1', 'could not find MARK'),
+            (b'(Nd', 'odd number of items for DICT'),
+            (b'}(Nu', 'odd number of items for SETITEMS'),
+            (b'((Nu', 'unexpected MARK found'),
+        ]
+        for p, msg in badpickles:
+            with self.subTest(data=p):
+                with self.assertRaises(pickle.UnpicklingError) as cm:
+                    self.loads(p)
+                self.assertEqual(str(cm.exception), msg)
+
     def test_bad_stack(self):
         badpickles = [
             b'.',                       # STOP
@@ -1572,6 +1606,7 @@ class AbstractUnpickleTests:
             b'1',                       # POP_MARK
             b'2',                       # DUP
             b'(2',
+            b'Q',                       # BINPERSID
             b'R',                       # REDUCE
             b')R',
             b'a',                       # APPEND
@@ -1611,6 +1646,7 @@ class AbstractUnpickleTests:
             b'\x93',                    # STACK_GLOBAL
             b'Vlist\n\x93',
             b'\x94',                    # MEMOIZE
+            b'\x98',                    # READONLY_BUFFER
         ]
         for p in badpickles:
             self.check_unpickling_error(self.bad_stack_errors, p)
@@ -1619,6 +1655,7 @@ class AbstractUnpickleTests:
         badpickles = [
             b'N(.',                     # STOP
             b'N(2',                     # DUP
+            b'N(Q',                     # BINPERSID
             b'cbuiltins\nlist\n)(R',    # REDUCE
             b'cbuiltins\nlist\n()R',
             b']N(a',                    # APPEND
@@ -1650,6 +1687,7 @@ class AbstractUnpickleTests:
             b'Vbuiltins\n(Vlist\n\x93',
             b'Vbuiltins\nVlist\n(\x93',
             b'N(\x94',                  # MEMOIZE
+            b'N(\x98',                  # READONLY_BUFFER
         ]
         for p in badpickles:
             self.check_unpickling_error(self.bad_stack_errors, p)
