@@ -198,12 +198,6 @@ bind_tstate(PyThreadState *tstate)
     tstate->native_thread_id = PyThread_get_thread_native_id();
 #endif
 
-#ifdef Py_GIL_DISABLED
-    // Initialize biased reference counting inter-thread queue. Note that this
-    // needs to be initialized from the active thread.
-    _Py_brc_init_thread(tstate);
-#endif
-
     // mimalloc state needs to be initialized from the active thread.
     tstate_mimalloc_bind(tstate);
 
@@ -220,6 +214,15 @@ bind_tstate(PyThreadState *tstate)
     unlink_threadstate(&interp->threads.pending, tstate);
     add_threadstate(interp, tstate, interp->threads.head);
     HEAD_UNLOCK(&_PyRuntime);
+
+#ifdef Py_GIL_DISABLED
+    // Initialize biased reference counting inter-thread queue. Note that this
+    // needs to be initialized from the active thread.  HEAD_LOCK must not be
+    // held here: the bucket mutex can be handed off to a thread that is
+    // suspended by a stop-the-world pause before it re-attaches, and
+    // stopping or starting the world requires HEAD_LOCK.
+    _Py_brc_init_thread(tstate);
+#endif
     return 1;
 }
 
