@@ -379,6 +379,10 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
                 if listener in rfds:
                     # Incoming fork request
                     with listener.accept()[0] as s:
+                        # The listener is non-blocking if the parent's socket
+                        # module was monkey-patched (gevent, eventlet), and on
+                        # macOS and BSD accept() passes O_NONBLOCK on to s.
+                        s.setblocking(True)
                         try:
                             if authkey:
                                 wrapped_s = connection.Connection(s.fileno())
