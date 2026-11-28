@@ -1,0 +1,2 @@
+Fix a crash in :c:func:`PyUnstable_GC_VisitObjects` on the default build
+when the callback releases the last reference to the object it is visiting.
