@@ -656,6 +656,28 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest, CTestCase):
             # Used to crash before gh-143689:
             self.assertEqual(bufio.read1(1), b"h")
 
+    def test_concurrent_close(self):
+        bufio = self.tp(self.MockRawIO())
+
+        class EvilIndex:
+            def __index__(self):
+                bufio.close()
+                return 0
+
+        with self.assertRaisesRegex(ValueError, "seek of closed file"):
+            bufio.seek(EvilIndex())
+
+    def test_concurrent_detach(self):
+        bufio = self.tp(self.MockRawIO())
+
+        class EvilIndex:
+            def __index__(self):
+                bufio.detach()
+                return 0
+
+        with self.assertRaisesRegex(ValueError, "raw stream has been detached"):
+            bufio.seek(EvilIndex())
+
 
 class PyBufferedReaderTest(BufferedReaderTest, PyTestCase):
     tp = pyio.BufferedReader
@@ -1015,6 +1037,28 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest, CTestCase):
         self.assertRaisesRegex(ValueError, "test", bufio.write, b"")
         self.assertRaisesRegex(ValueError, "test", bufio.flush)
         self.assertRaisesRegex(ValueError, "test", bufio.close)
+
+    def test_concurrent_close(self):
+        bufio = self.tp(self.MockRawIO())
+
+        class EvilIndex:
+            def __index__(self):
+                bufio.close()
+                return 0
+
+        with self.assertRaisesRegex(ValueError, "seek of closed file"):
+            bufio.seek(EvilIndex())
+
+    def test_concurrent_detach(self):
+        bufio = self.tp(self.MockRawIO())
+
+        class EvilIndex:
+            def __index__(self):
+                bufio.detach()
+                return 0
+
+        with self.assertRaisesRegex(ValueError, "raw stream has been detached"):
+            bufio.seek(EvilIndex())
 
 
 class PyBufferedWriterTest(BufferedWriterTest, PyTestCase):
@@ -1544,6 +1588,28 @@ class CBufferedRandomTest(BufferedRandomTest, SizeofTest, CTestCase):
         # Issue #17275
         with self.assertRaisesRegex(TypeError, "BufferedRandom"):
             self.tp(self.BytesIO(), 1024, 1024, 1024)
+
+    def test_concurrent_close(self):
+        bufio = self.tp(self.MockRawIO())
+
+        class EvilIndex:
+            def __index__(self):
+                bufio.close()
+                return 0
+
+        with self.assertRaisesRegex(ValueError, "seek of closed file"):
+            bufio.seek(EvilIndex())
+
+    def test_concurrent_detach(self):
+        bufio = self.tp(self.MockRawIO())
+
+        class EvilIndex:
+            def __index__(self):
+                bufio.detach()
+                return 0
+
+        with self.assertRaisesRegex(ValueError, "raw stream has been detached"):
+            bufio.seek(EvilIndex())
 
 
 class PyBufferedRandomTest(BufferedRandomTest, PyTestCase):
