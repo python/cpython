@@ -2457,10 +2457,46 @@ detach_thread(PyThreadState *tstate, int detached_state)
     _PyEval_ReleaseLock(tstate->interp, tstate, 0);
 }
 
+#ifdef Py_GIL_DISABLED
+// Called after the current thread switched to the "detached" state.
+static void
+notify_stw_on_detach(PyThreadState *tstate)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyInterpreterState *interp = tstate->interp;
+
+    if (!_Py_atomic_load_int(&runtime->stoptheworld.requested) &&
+        !_Py_atomic_load_int(&interp->stoptheworld.requested)) {
+        return;
+    }
+
+    HEAD_LOCK(runtime);
+    struct _stoptheworld_state *stw = NULL;
+    if (runtime->stoptheworld.requested) {
+        stw = &runtime->stoptheworld;
+    }
+    else if (interp->stoptheworld.requested) {
+        stw = &interp->stoptheworld;
+    }
+    if (stw != NULL && stw->requester != tstate) {
+        // If the CAS fails, the requester already parked this thread.
+        int expected = _Py_THREAD_DETACHED;
+        if (_Py_atomic_compare_exchange_int(&tstate->state, &expected,
+                                            _Py_THREAD_SUSPENDED)) {
+            decrement_stoptheworld_countdown(stw);
+        }
+    }
+    HEAD_UNLOCK(runtime);
+}
+#endif
+
 void
 _PyThreadState_Detach(PyThreadState *tstate)
 {
     detach_thread(tstate, _Py_THREAD_DETACHED);
+#ifdef Py_GIL_DISABLED
+    notify_stw_on_detach(tstate);
+#endif
 }
 
 void
@@ -2580,7 +2616,7 @@ park_detached_threads(struct _stoptheworld_state *stw)
     int num_parked = 0;
     _Py_FOR_EACH_STW_INTERP(stw, i) {
         _Py_FOR_EACH_TSTATE_UNLOCKED(i, t) {
-            int state = _Py_atomic_load_int_relaxed(&t->state);
+            int state = _Py_atomic_load_int(&t->state);
             // DETACHED_WAITING threads remain counted until they attach and
             // stop, so repeated pauses cannot prevent them from attaching.
             if (state == _Py_THREAD_DETACHED) {
@@ -2590,7 +2626,11 @@ park_detached_threads(struct _stoptheworld_state *stw)
                     num_parked++;
                 }
             }
-            else if (state == _Py_THREAD_ATTACHED && t != stw->requester) {
+            else if ((state == _Py_THREAD_ATTACHED ||
+                      state == _Py_THREAD_DETACHED_WAITING) &&
+                     t != stw->requester) {
+                // Ask attached threads to stop. A DETACHED_WAITING thread
+                // will attach soon, so ask it to stop once it is attached.
                 _Py_set_eval_breaker_bit(t, _PY_EVAL_PLEASE_STOP_BIT);
             }
         }
@@ -2616,7 +2656,7 @@ stop_the_world(struct _stoptheworld_state *stw)
     PyMutex_Lock(&stw->mutex);
 
     HEAD_LOCK(runtime);
-    stw->requested = 1;
+    _Py_atomic_store_int(&stw->requested, 1);
     stw->thread_countdown = 0;
     stw->stop_event = (PyEvent){0};  // zero-initialize (unset)
     stw->requester = _PyThreadState_GET();  // may be NULL
@@ -2665,7 +2705,7 @@ start_the_world(struct _stoptheworld_state *stw)
     assert(PyMutex_IsLocked(&stw->mutex));
 
     HEAD_LOCK(runtime);
-    stw->requested = 0;
+    _Py_atomic_store_int(&stw->requested, 0);
     stw->world_stopped = 0;
     // Switch threads back to the detached state.
     _Py_FOR_EACH_STW_INTERP(stw, i) {
