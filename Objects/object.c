@@ -1144,7 +1144,7 @@ PyObject_RichCompareBool(PyObject *v, PyObject *w, int op)
         return -1;
     if (PyBool_Check(res)) {
         ok = (res == Py_True);
-        assert(_Py_IsImmortal(res));
+        _Py_ASSERT_STATIC_IMMORTAL(res);
     }
     else {
         ok = PyObject_IsTrue(res);
@@ -2801,7 +2801,7 @@ _Py_SetImmortalUntracked(PyObject *op)
     _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, 0);
     _Py_atomic_or_uint8(&op->ob_gc_bits, _PyGC_BITS_DEFERRED);
 #elif SIZEOF_VOID_P > 4
-    op->ob_flags = _Py_IMMORTAL_FLAGS;
+    op->ob_flags |= _Py_IMMORTAL_FLAGS;
     op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #else
     op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;

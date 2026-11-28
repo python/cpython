@@ -1600,7 +1600,7 @@ _asyncio_Future__state_get_impl(FutureObj *self)
     default:
         assert (0);
     }
-    assert(_Py_IsImmortal(ret));
+    _Py_ASSERT_IMMORTAL(ret);
     return ret;
 }
 

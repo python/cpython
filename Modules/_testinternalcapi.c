@@ -3130,6 +3130,21 @@ is_static_immortal(PyObject *self, PyObject *op)
     Py_RETURN_FALSE;
 }
 
+#ifndef Py_GIL_DISABLED
+// Make an immortal object mortal, which old Stable ABI extensions can do.
+static PyObject *
+deimmortalize(PyObject *self, PyObject *op)
+{
+    if (!_Py_IsImmortal(op)) {
+        PyErr_SetString(PyExc_ValueError, "object is not immortal");
+        return NULL;
+    }
+    op->ob_refcnt = _Py_IMMORTAL_MINIMUM_REFCNT - (1 << 20);
+    assert(!_Py_IsImmortal(op) || _Py_IsStaticImmortal(op));
+    Py_RETURN_NONE;
+}
+#endif
+
 static PyObject *
 incref_decref_delayed(PyObject *self, PyObject *op)
 {
@@ -3591,6 +3606,8 @@ static PyMethodDef module_functions[] = {
     {"get_tlbc", get_tlbc, METH_O, NULL},
     {"get_tlbc_id", get_tlbc_id, METH_O, NULL},
     {"get_long_lived_total", get_long_lived_total, METH_NOARGS},
+#else
+    {"deimmortalize", deimmortalize, METH_O},
 #endif
 #ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},

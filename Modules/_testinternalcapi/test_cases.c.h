@@ -376,7 +376,8 @@
                     JUMP_TO_LABEL(error);
                 }
                 assert(d->result_type == NULL || Py_TYPE(res_o) == d->result_type);
-                assert(!d->result_unique || Py_REFCNT(res_o) == 1 || _Py_IsImmortal(res_o));
+                assert(!d->result_unique || Py_REFCNT(res_o) == 1 || _Py_IsImmortal(res_o)
+                   || !_Py_IMMORTALITY_IS_RELIABLE);
                 assert(!PyFloat_CheckExact(res_o) || Py_REFCNT(res_o) == 1);
                 res = PyStackRef_FromPyObjectSteal(res_o);
                 l = left;

@@ -364,7 +364,8 @@ dummy_func(
 
         op(_POP_TOP_NOP, (value --)) {
             assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
-                _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
+                _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value)))
+                || !_Py_IMMORTALITY_IS_RELIABLE);
             DEAD(value);
         }
 
@@ -1056,7 +1057,8 @@ dummy_func(
                 ERROR_NO_POP();
             }
             assert(d->result_type == NULL || Py_TYPE(res_o) == d->result_type);
-            assert(!d->result_unique || Py_REFCNT(res_o) == 1 || _Py_IsImmortal(res_o));
+            assert(!d->result_unique || Py_REFCNT(res_o) == 1 || _Py_IsImmortal(res_o)
+                   || !_Py_IMMORTALITY_IS_RELIABLE);
             // The JIT and tier 2 optimizer assume that float results from
             // binary operations are always uniquely referenced (refcount == 1).
             // If this assertion fails, update the optimizer to stop marking
