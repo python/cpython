@@ -1042,9 +1042,9 @@ def _get_ptext_to_endchars(value, endchars):
     a flag that is True iff there were any quoted printables decoded.
 
     """
-    if not value:
-        return '', '', False
     fragment, *remainder = _wsp_splitter(value, 1)
+    if not fragment:
+        return '', value, False
     vchars = []
     escape = False
     had_qp = False
