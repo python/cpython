@@ -123,12 +123,13 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    methods will fail.
    This mode is useful to limit the number of open file descriptors.
 
-   To ensure validity of the created memory mapping the file specified
-   by the descriptor *fileno* is internally automatically synchronized
-   with the physical backing store on macOS.
-
    .. versionchanged:: 3.13
       The *trackfd* parameter was added.
+
+   .. versionchanged:: next
+      On macOS, the file specified by the descriptor *fileno* is no longer
+      synchronized with the physical backing store when the mapping is
+      created.
 
    This example shows a simple way of using :class:`~mmap.mmap`::
 
