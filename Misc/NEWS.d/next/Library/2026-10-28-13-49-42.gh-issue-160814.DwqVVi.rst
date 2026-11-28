@@ -1,0 +1,2 @@
+Fix crash in :meth:`!_sre.compile` with an ``IN`` opcode whose ``skip`` value
+is smaller than 2.
