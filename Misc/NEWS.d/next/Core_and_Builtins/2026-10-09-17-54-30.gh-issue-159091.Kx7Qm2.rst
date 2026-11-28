@@ -1,0 +1,1 @@
+Fix a data race between :c:func:`PyFunction_GetAnnotations` and assigning to ``__annotations__`` in the free-threaded build.
