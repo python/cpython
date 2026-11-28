@@ -873,6 +873,19 @@ class CalculationTests(unittest.TestCase):
         check('2009 0 6', '%Y %W %w', 2009, 1, 3, 0, 0, 0, 5, 3)
         check('2009 1 7', '%G %V %u', 2009, 1, 4, 0, 0, 0, 6, 4)
 
+    def test_last_week(self):
+        def check(value, format, *expected):
+            self.assertEqual(_strptime._strptime_time(value, format)[:-1], expected)
+        check('2018 53 1', '%Y %W %w', 2018, 12, 31, 0, 0, 0, 0, 365)
+        check('2018 53 2', '%Y %W %w', 2019, 1, 1, 0, 0, 0, 1, 1)
+        check('2015 52 4', '%Y %U %w', 2015, 12, 31, 0, 0, 0, 3, 365)
+        check('2015 52 5', '%Y %U %w', 2016, 1, 1, 0, 0, 0, 4, 1)
+
+        check('2012 53 1', '%Y %U %w', 2012, 12, 31, 0, 0, 0, 0, 366)
+        check('2012 53 2', '%Y %U %w', 2013, 1, 1, 0, 0, 0, 1, 1)
+        check('2016 52 6', '%Y %W %w', 2016, 12, 31, 0, 0, 0, 5, 366)
+        check('2016 52 0', '%Y %W %w', 2017, 1, 1, 0, 0, 0, 6, 1)
+
 
 class CacheTests(unittest.TestCase):
     """Test that caching works properly."""
