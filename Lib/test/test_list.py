@@ -429,5 +429,119 @@ class ListTest(list_tests.CommonTest):
         self.assertEqual(foo(list(range(10))), 45)
 
 
+class ListStoreSliceTests(unittest.TestCase):
+    def test_equal_length(self):
+        for n in (0, 1, 8, 16, 32, 33, 40):
+            for rhs in (list, tuple):
+                with self.subTest(n=n, rhs=rhs):
+                    a = list(range(n + 2))
+                    a[1:1+n] = rhs(a[n:0:-1])
+                    self.assertEqual(a, [0, *range(n, 0, -1), n + 1])
+
+    def test_self_assignment(self):
+        a = [1, 2, 3, 4]
+        a[:] = a
+        self.assertEqual(a, [1, 2, 3, 4])
+        a[1:3] = a
+        self.assertEqual(a, [1, 1, 2, 3, 4, 4])
+
+    def test_index_protocol(self):
+        class Idx:
+            def __index__(self):
+                return -2
+
+        a = [0, 1, 2]
+        a[True:2] = [7]
+        self.assertEqual(a, [0, 7, 2])
+        a[Idx():2] = (8,)
+        self.assertEqual(a, [0, 8, 2])
+
+    def test_bad_index(self):
+        a = [1, 2, 3]
+        msg = "slice indices must be integers or have an __index__ method"
+        for start, stop in ((object(), 2), (1, object())):
+            with self.assertRaises(TypeError) as cm:
+                a[start:stop] = None
+            self.assertEqual(str(cm.exception), msg)
+            self.assertEqual(a, [1, 2, 3])
+
+    def test_non_iterable(self):
+        a = [1, 2, 3]
+        with self.assertRaises(TypeError) as cm:
+            a[:2] = None
+        self.assertEqual(str(cm.exception),
+                         "must assign iterable to extended slice")
+        self.assertEqual(a, [1, 2, 3])
+
+    def test_resize_and_insert(self):
+        a = list(range(6))
+        a[5:2] = [99]
+        self.assertEqual(a, [0, 1, 2, 3, 4, 99, 5])
+        a[1:2] = (7, 8)
+        self.assertEqual(a, [0, 7, 8, 2, 3, 4, 99, 5])
+        a[1:4] = (9,)
+        self.assertEqual(a, [0, 9, 3, 4, 99, 5])
+
+    def test_iterator_mutates_target(self):
+        a = list(range(10))
+
+        def gen():
+            yield 100
+            a.clear()
+            yield 200
+
+        a[2:8] = gen()
+        self.assertEqual(a, [100, 200])
+
+    @cpython_only
+    def test_finalizers_see_replacement(self):
+        seen = []
+
+        class D:
+            def __init__(self, i):
+                self.i = i
+
+            def __del__(self):
+                seen.append((self.i, tuple(a[:3])))
+                a.append(self.i)
+
+        a = [D(i) for i in range(3)]
+        a[:3] = [5, 6, 7]
+        self.assertEqual(seen, [(i, (5, 6, 7)) for i in (2, 1, 0)])
+        self.assertEqual(a, [5, 6, 7, 2, 1, 0])
+
+    @cpython_only
+    def test_bound_finalizer_order(self):
+        seen = []
+
+        class Idx:
+            def __init__(self, i):
+                self.i = i
+
+            def __index__(self):
+                return self.i
+
+            def __del__(self):
+                seen.append(self.i)
+
+        a = [0, 1, 2]
+        a[Idx(0):Idx(1)] = [8]
+        self.assertEqual(a, [8, 1, 2])
+        self.assertEqual(seen, [0, 1])
+
+    def test_list_subclass(self):
+        seen = []
+
+        class MyList(list):
+            def __setitem__(self, key, value):
+                seen.append(key)
+                super().__setitem__(key, value)
+
+        a = MyList([1, 2, 3, 4])
+        a[1:3] = [8, 9]
+        self.assertEqual(a, [1, 8, 9, 4])
+        self.assertEqual(seen, [slice(1, 3)])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -214,6 +214,16 @@ PySlice_GetIndices(PyObject *_r, Py_ssize_t length,
     return 0;
 }
 
+static inline int
+slice_index_fast(PyObject *v, Py_ssize_t *pi)
+{
+    if (PyLong_CheckExact(v) && _PyLong_IsCompact((PyLongObject *)v)) {
+        *pi = _PyLong_CompactValue((PyLongObject *)v);
+        return 1;
+    }
+    return _PyEval_SliceIndex(v, pi);
+}
+
 int
 PySlice_Unpack(PyObject *_r,
                Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step)
@@ -228,7 +238,9 @@ PySlice_Unpack(PyObject *_r,
         *step = 1;
     }
     else {
-        if (!_PyEval_SliceIndex(r->step, step)) return -1;
+        if (!slice_index_fast(r->step, step)) {
+            return -1;
+        }
         if (*step == 0) {
             PyErr_SetString(PyExc_ValueError,
                             "slice step cannot be zero");
@@ -247,14 +259,18 @@ PySlice_Unpack(PyObject *_r,
         *start = *step < 0 ? PY_SSIZE_T_MAX : 0;
     }
     else {
-        if (!_PyEval_SliceIndex(r->start, start)) return -1;
+        if (!slice_index_fast(r->start, start)) {
+            return -1;
+        }
     }
 
     if (r->stop == Py_None) {
         *stop = *step < 0 ? PY_SSIZE_T_MIN : PY_SSIZE_T_MAX;
     }
     else {
-        if (!_PyEval_SliceIndex(r->stop, stop)) return -1;
+        if (!slice_index_fast(r->stop, stop)) {
+            return -1;
+        }
     }
 
     return 0;
@@ -289,6 +305,13 @@ PySlice_AdjustIndices(Py_ssize_t length,
         *stop = (step < 0) ? length - 1 : length;
     }
 
+    /* For unit steps the general formula reduces to a difference. */
+    if (step == 1) {
+        return *start < *stop ? *stop - *start : 0;
+    }
+    if (step == -1) {
+        return *stop < *start ? *start - *stop : 0;
+    }
     if (step < 0) {
         if (*stop < *start) {
             return (*start - *stop - 1) / (-step) + 1;

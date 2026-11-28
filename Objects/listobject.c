@@ -3975,6 +3975,98 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
     }
 }
 
+#define LIST_SMALL_SLICE_INPLACE_MAX 32
+
+static inline void
+list_replace_small_slice_inplace(PyListObject *self, Py_ssize_t start,
+                                 Py_ssize_t len, PyObject *const *src)
+{
+    PyObject *garbage[LIST_SMALL_SLICE_INPLACE_MAX];
+    PyObject **dst = self->ob_item + start;
+    for (Py_ssize_t i = 0; i < len; i++) {
+        garbage[i] = dst[i];
+        FT_ATOMIC_STORE_PTR_RELEASE(dst[i], Py_NewRef(src[i]));
+    }
+    /* A finalizer can inspect or resize the list. */
+    for (Py_ssize_t i = len - 1; i >= 0; i--) {
+        Py_DECREF(garbage[i]);
+    }
+}
+
+static inline int
+list_slice_index_fast(PyObject *obj, Py_ssize_t defval, Py_ssize_t *out)
+{
+    if (Py_IsNone(obj)) {
+        *out = defval;
+        return 1;
+    }
+    if (PyLong_CheckExact(obj) && _PyLong_IsCompact((PyLongObject *)obj)) {
+        *out = _PyLong_CompactValue((PyLongObject *)obj);
+        return 1;
+    }
+    return _PyEval_SliceIndex(obj, out);
+}
+
+static int
+list_store_slice_lock_held(PyListObject *self, Py_ssize_t start,
+                           Py_ssize_t stop, PyObject *value)
+{
+    assert(value != NULL);
+    if ((PyObject *)self != value &&
+        (PyList_CheckExact(value) || PyTuple_CheckExact(value)))
+    {
+        Py_ssize_t len = adjust_slice_indexes(self, &start, &stop, 1);
+        if (len > 0 && len <= LIST_SMALL_SLICE_INPLACE_MAX &&
+            len == Py_SIZE(value))
+        {
+            list_replace_small_slice_inplace(self, start, len,
+                                             PySequence_Fast_ITEMS(value));
+            return 0;
+        }
+        return list_ass_slice_lock_held(self, start, stop, value);
+    }
+
+    PyObject *seq = ((PyObject *)self == value)
+        ? list_slice_lock_held(self, 0, Py_SIZE(self))
+        : PySequence_Fast(value, "must assign iterable to extended slice");
+    if (seq == NULL) {
+        return -1;
+    }
+    /* The iterator may have changed the list length. */
+    adjust_slice_indexes(self, &start, &stop, 1);
+    int res = list_ass_slice_lock_held(self, start, stop, seq);
+    Py_DECREF(seq);
+    return res;
+}
+
+int
+_PyList_StoreSlice(PyObject *container, PyObject *start, PyObject *stop,
+                   PyObject *value)
+{
+    assert(value != NULL);
+    assert(PyList_CheckExact(container));
+    Py_ssize_t istart, istop;
+    if (!list_slice_index_fast(start, 0, &istart) ||
+        !list_slice_index_fast(stop, PY_SSIZE_T_MAX, &istop))
+    {
+        return -1;
+    }
+    PyListObject *self = (PyListObject *)container;
+    int res;
+#ifdef Py_GIL_DISABLED
+    if (PyList_CheckExact(value)) {
+        Py_BEGIN_CRITICAL_SECTION2(container, value);
+        res = list_store_slice_lock_held(self, istart, istop, value);
+        Py_END_CRITICAL_SECTION2();
+        return res;
+    }
+#endif
+    Py_BEGIN_CRITICAL_SECTION(container);
+    res = list_store_slice_lock_held(self, istart, istop, value);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
 static int
 list_ass_subscript(PyObject *self, PyObject *item, PyObject *value)
 {

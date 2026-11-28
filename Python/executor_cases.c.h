@@ -6924,49 +6924,66 @@
             start = _stack_item_1;
             container = _stack_item_0;
             v = stack_pointer[-1];
-            stack_pointer[0] = container;
-            stack_pointer[1] = start;
-            stack_pointer[2] = stop;
-            stack_pointer += 3;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyFrame_StackPointerValidate(frame);
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                PyStackRef_AsPyObjectSteal(stop),
-                Py_None);
-            _PyFrame_StackPointerInvalidate(frame);
+            PyObject *container_o = PyStackRef_AsPyObjectBorrow(container);
+            PyObject *start_o = PyStackRef_AsPyObjectSteal(start);
+            PyObject *stop_o = PyStackRef_AsPyObjectSteal(stop);
+            PyObject *v_o = PyStackRef_AsPyObjectBorrow(v);
             int err;
-            if (slice == NULL) {
-                err = 1;
-            }
-            else {
-                stack_pointer += -2;
+            if (PyList_CheckExact(container_o)) {
+                stack_pointer[0] = container;
+                stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyFrame_StackPointerValidate(frame);
-                err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), slice, PyStackRef_AsPyObjectBorrow(v));
+                err = _PyList_StoreSlice(container_o, start_o, stop_o, v_o);
                 _PyFrame_StackPointerInvalidate(frame);
                 assert(stack_pointer == _PyFrame_GetStackPointer(frame));
                 _PyFrame_StackPointerValidate(frame);
-                Py_DECREF(slice);
+                Py_DECREF(start_o);
                 _PyFrame_StackPointerInvalidate(frame);
-                stack_pointer += 2;
+                assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                _PyFrame_StackPointerValidate(frame);
+                Py_DECREF(stop_o);
+                _PyFrame_StackPointerInvalidate(frame);
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            else {
+                stack_pointer[0] = container;
+                stack_pointer += 1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyFrame_StackPointerValidate(frame);
+                PyObject *slice = _PyBuildSlice_ConsumeRefs(start_o, stop_o,
+                    Py_None);
+                _PyFrame_StackPointerInvalidate(frame);
+                if (slice == NULL) {
+                    err = 1;
+                }
+                else {
+                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                    _PyFrame_StackPointerValidate(frame);
+                    err = PyObject_SetItem(container_o, slice, v_o);
+                    _PyFrame_StackPointerInvalidate(frame);
+                    assert(stack_pointer == _PyFrame_GetStackPointer(frame));
+                    _PyFrame_StackPointerValidate(frame);
+                    Py_DECREF(slice);
+                    _PyFrame_StackPointerInvalidate(frame);
+                }
+            }
+            assert(stack_pointer == _PyFrame_GetStackPointer(frame));
             _PyFrame_StackPointerValidate(frame);
             _PyStackRef tmp = container;
             container = PyStackRef_NULL;
-            stack_pointer[-3] = container;
+            stack_pointer[-1] = container;
             PyStackRef_CLOSE(tmp);
             _PyFrame_StackPointerInvalidate(frame);
             assert(stack_pointer == _PyFrame_GetStackPointer(frame));
             _PyFrame_StackPointerValidate(frame);
             tmp = v;
             v = PyStackRef_NULL;
-            stack_pointer[-4] = v;
+            stack_pointer[-2] = v;
             PyStackRef_CLOSE(tmp);
             _PyFrame_StackPointerInvalidate(frame);
-            stack_pointer += -4;
+            stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             if (err) {
                 SET_CURRENT_CACHED_VALUES(0);

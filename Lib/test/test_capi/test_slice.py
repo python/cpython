@@ -1,3 +1,4 @@
+import itertools
 import sys
 import unittest
 from test.support import import_helper
@@ -179,6 +180,16 @@ class SliceTest(unittest.TestCase):
         # -PY_SSIZE_T_MAX.
         # CRASHES adjust(10, 0, 10, 0)
         # CRASHES adjust(10, 0, 10, SSIZE_MIN)
+
+    def test_adjustindices_unit_step(self):
+        adjust = _testlimitedcapi.slice_adjustindices
+        bounds = range(-12, 12)
+        for start, stop, end in itertools.product(bounds, repeat=3):
+            length = end - bounds.start  # sequence lengths from 0 to 23
+            for step in (-1, 1):
+                lo, hi, _ = slice(start, stop, step).indices(length)
+                self.assertEqual(adjust(length, start, stop, step),
+                                 (len(range(lo, hi, step)), lo, hi))
 
 
 class GetIndicesExMacroTest(unittest.TestCase):

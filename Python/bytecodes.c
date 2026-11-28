@@ -1122,16 +1122,26 @@ dummy_func(
         }
 
         op(_STORE_SLICE, (v, container, start, stop -- )) {
-            PyObject *slice = _PyBuildSlice_ConsumeRefs(PyStackRef_AsPyObjectSteal(start),
-                                                        PyStackRef_AsPyObjectSteal(stop),
-                                                        Py_None);
+            PyObject *container_o = PyStackRef_AsPyObjectBorrow(container);
+            PyObject *start_o = PyStackRef_AsPyObjectSteal(start);
+            PyObject *stop_o = PyStackRef_AsPyObjectSteal(stop);
+            PyObject *v_o = PyStackRef_AsPyObjectBorrow(v);
             int err;
-            if (slice == NULL) {
-                err = 1;
+            if (PyList_CheckExact(container_o)) {
+                err = _PyList_StoreSlice(container_o, start_o, stop_o, v_o);
+                Py_DECREF(start_o);
+                Py_DECREF(stop_o);
             }
             else {
-                err = PyObject_SetItem(PyStackRef_AsPyObjectBorrow(container), slice, PyStackRef_AsPyObjectBorrow(v));
-                Py_DECREF(slice);
+                PyObject *slice = _PyBuildSlice_ConsumeRefs(start_o, stop_o,
+                                                            Py_None);
+                if (slice == NULL) {
+                    err = 1;
+                }
+                else {
+                    err = PyObject_SetItem(container_o, slice, v_o);
+                    Py_DECREF(slice);
+                }
             }
             DECREF_INPUTS();
             ERROR_IF(err);
