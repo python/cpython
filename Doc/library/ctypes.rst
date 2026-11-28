@@ -1584,6 +1584,13 @@ way is to instantiate :py:class:`CDLL` or one of its subclasses:
    they are not added automatically.
    See :ref:`ctypes-finding-shared-libraries` for more information.
 
+   On macOS, :class:`!CDLL` does no searching of its own: *name* is passed
+   to :c:func:`!dlopen`, so the search rules and notes in the macOS
+   ``dlopen`` manual page apply, including any changes in later macOS
+   releases. For example, with current builds of Python, including the
+   python.org installers, a *name* without a full path is not looked up in
+   :file:`/usr/local/lib`; pass the full path instead.
+
    On non-Windows systems, *name* can  be ``None``. In this case,
    :c:func:`!dlopen` is called with ``NULL``, which opens the main program
    as a "library".
