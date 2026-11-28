@@ -181,6 +181,10 @@ def _interleave_addrinfos(addrinfos, first_address_family_count=1):
     return reordered
 
 
+_run_until_complete_running = contextvars.ContextVar(
+    '_run_until_complete_running', default=True)
+
+
 def _run_until_complete_cb(fut):
     if not fut.cancelled():
         exc = fut.exception()
@@ -188,6 +192,8 @@ def _run_until_complete_cb(fut):
             # Issue #22429: run_forever() already finished, no need to
             # stop it.
             return
+    if not _run_until_complete_running.get():
+        return
     futures._get_loop(fut).stop()
 
 
@@ -712,8 +718,12 @@ class BaseEventLoop(events.AbstractEventLoop):
             # is no need to log the "destroy pending task" message
             future._log_destroy_pending = False
 
-        future.add_done_callback(_run_until_complete_cb)
+        # gh-158406: A queued callback can outlive this call. Only let
+        # it stop the loop while this call is running.
+        context = contextvars.copy_context()
+        context.run(_run_until_complete_running.set, True)
         try:
+            future.add_done_callback(_run_until_complete_cb, context=context)
             self.run_forever()
         except:
             if new_task and future.done() and not future.cancelled():
@@ -723,6 +733,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 future.exception()
             raise
         finally:
+            context.run(_run_until_complete_running.set, False)
             future.remove_done_callback(_run_until_complete_cb)
         if not future.done():
             raise RuntimeError('Event loop stopped before Future completed.')
