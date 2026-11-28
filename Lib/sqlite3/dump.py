@@ -57,7 +57,7 @@ def _iterdump(connection, *, filter=None):
     sqlite_sequence = []
     for table_name, type, sql in schema_res.fetchall():
         if table_name == 'sqlite_sequence':
-            rows = cu.execute('SELECT * FROM "sqlite_sequence";')
+            rows = cu.execute('SELECT * FROM main."sqlite_sequence";')
             sqlite_sequence = ['DELETE FROM "sqlite_sequence"']
             sqlite_sequence += [
                 f'INSERT INTO "sqlite_sequence" VALUES({_quote_value(table_name)},{seq_value})'

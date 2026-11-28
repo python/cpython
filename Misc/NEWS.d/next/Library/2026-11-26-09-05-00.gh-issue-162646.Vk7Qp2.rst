@@ -1,0 +1,4 @@
+Fix :meth:`sqlite3.Connection.iterdump` to preserve ``AUTOINCREMENT``
+counters when a temporary table with an ``AUTOINCREMENT`` column was created
+and dropped: the ``sqlite_sequence`` query now explicitly reads the ``main``
+database instead of a leftover empty ``temp.sqlite_sequence`` table.

@@ -189,6 +189,26 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
                     rows = res.fetchall()
                     self.assertEqual(rows[0][0], seq)
 
+    def test_dump_autoincrement_with_temp_table(self):
+        # gh-162646: a dropped temporary AUTOINCREMENT table leaves an empty
+        # temp.sqlite_sequence behind, which must not shadow the main one.
+        self.cu.executescript("\n".join([
+            "CREATE TABLE t1 (id INTEGER PRIMARY KEY AUTOINCREMENT);",
+            "INSERT INTO t1 DEFAULT VALUES;",
+            "INSERT INTO t1 DEFAULT VALUES;",
+            "DELETE FROM t1 WHERE id = 2;",
+            "CREATE TEMP TABLE staging (id INTEGER PRIMARY KEY AUTOINCREMENT);",
+            "DROP TABLE temp.staging;",
+        ]))
+
+        dump = "\n".join(self.cx.iterdump())
+        self.assertEqual(
+            self.cu.execute("INSERT INTO t1 DEFAULT VALUES").lastrowid, 3)
+        with memory_database() as cx2:
+            cx2.executescript(dump)
+            self.assertEqual(
+                cx2.execute("INSERT INTO t1 DEFAULT VALUES").lastrowid, 3)
+
     def test_unorderable_row(self):
         # iterdump() should be able to cope with unorderable row types (issue #15545)
         class UnorderableRow:
