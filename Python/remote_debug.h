@@ -29,6 +29,7 @@ extern "C" {
 
 #include "pyconfig.h"
 #include "internal/pycore_ceval.h"
+#include "internal/pycore_runtime.h"  // _PyRuntime
 
 #ifdef __linux__
 #    include <elf.h>
@@ -193,6 +194,7 @@ typedef struct {
     pid_t pid;
 #if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
     mach_port_t task;
+    uint64_t fork_generation;
     alias_read_cache_t alias;
 #elif defined(MS_WINDOWS)
     HANDLE hProcess;
@@ -258,6 +260,7 @@ UNUSED static int
 _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
     handle->pid = 0;
 #if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
+    handle->fork_generation = _PyRuntime.fork_generation;
     handle->task = 0;
     memset(&handle->alias, 0, sizeof(handle->alias));
 #elif defined(MS_WINDOWS)
@@ -297,6 +300,16 @@ static void
 _Py_RemoteDebug_AliasCacheClear(proc_handle_t *handle);
 #endif
 
+static inline int
+_Py_RemoteDebug_HandleIsInherited(proc_handle_t *handle)
+{
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
+    return handle->fork_generation != _PyRuntime.fork_generation;
+#else
+    return 0;
+#endif
+}
+
 // Clean up the process handle
 UNUSED static void
 _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
@@ -306,11 +319,13 @@ _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
         handle->hProcess = NULL;
     }
 #elif defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
-    _Py_RemoteDebug_AliasCacheClear(handle);
-    if (handle->task != MACH_PORT_NULL) {
-        mach_port_deallocate(mach_task_self(), handle->task);
-        handle->task = MACH_PORT_NULL;
+    if (!_Py_RemoteDebug_HandleIsInherited(handle)) {
+        _Py_RemoteDebug_AliasCacheClear(handle);
+        if (handle->task != MACH_PORT_NULL) {
+            mach_port_deallocate(mach_task_self(), handle->task);
+        }
     }
+    handle->task = MACH_PORT_NULL;
 #elif defined(__linux__)
     if (handle->memfd != -1) {
         close(handle->memfd);
@@ -1655,19 +1670,12 @@ alias_cache_init(proc_handle_t *handle)
     mach_vm_size_t region_size =
         (mach_vm_size_t)MAX_ALIAS_PAGES *
         (mach_vm_size_t)handle->page_size;
-    kern_return_t kr = mach_vm_allocate(mach_task_self(),
-                                        &cache->region_base,
-                                        region_size,
-                                        VM_FLAGS_ANYWHERE);
+    // Neither empty slots nor mapped aliases belong to a fork child.
+    kern_return_t kr = mach_vm_map(mach_task_self(), &cache->region_base,
+                                   region_size, 0, VM_FLAGS_ANYWHERE,
+                                   MACH_PORT_NULL, 0, FALSE, VM_PROT_NONE,
+                                   VM_PROT_NONE, VM_INHERIT_NONE);
     if (kr != KERN_SUCCESS) {
-        cache->disabled = 1;
-        return;
-    }
-    kr = mach_vm_protect(mach_task_self(), cache->region_base, region_size,
-                         FALSE, VM_PROT_NONE);
-    if (kr != KERN_SUCCESS) {
-        (void)mach_vm_deallocate(mach_task_self(), cache->region_base,
-                                 region_size);
         cache->region_base = 0;
         cache->disabled = 1;
         return;

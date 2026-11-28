@@ -278,6 +278,17 @@ class _remote_debugging.RemoteUnwinder "RemoteUnwinderObject *" "&RemoteUnwinder
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=12b4dce200381115]*/
 
+static int
+check_unwinder_process(RemoteUnwinderObject *self)
+{
+    if (self->handle.pid && _Py_RemoteDebug_HandleIsInherited(&self->handle)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Create a new RemoteUnwinder after fork");
+        return -1;
+    }
+    return 0;
+}
+
 /*[clinic input]
 @permit_long_summary
 _remote_debugging.RemoteUnwinder.__init__
@@ -343,6 +354,9 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int stats)
 /*[clinic end generated code: output=acfe554c8a92cf6b input=3b5a5ad153709125]*/
 {
+    if (check_unwinder_process(self) < 0) {
+        return -1;
+    }
     // Validate that all_threads and only_active_thread are not both True
     if (all_threads && only_active_thread) {
         PyErr_SetString(PyExc_ValueError,
@@ -700,6 +714,9 @@ static PyObject *
 _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self)
 /*[clinic end generated code: output=666192b90c69d567 input=86a992b853f48aa9]*/
 {
+    if (check_unwinder_process(self) < 0) {
+        return NULL;
+    }
     STATS_INC(self, total_samples);
 
     PyObject* result = PyList_New(0);
@@ -948,6 +965,9 @@ static PyObject *
 _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *self)
 /*[clinic end generated code: output=6a49cd345e8aec53 input=79e556b3973d21a8]*/
 {
+    if (check_unwinder_process(self) < 0) {
+        return NULL;
+    }
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
     }
@@ -1069,6 +1089,9 @@ static PyObject *
 _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject *self)
 /*[clinic end generated code: output=6433d52b55e87bbe input=0532031a7c495491]*/
 {
+    if (check_unwinder_process(self) < 0) {
+        return NULL;
+    }
     if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
     }
@@ -1147,6 +1170,9 @@ static PyObject *
 _remote_debugging_RemoteUnwinder_get_stats_impl(RemoteUnwinderObject *self)
 /*[clinic end generated code: output=21e36477122be2a0 input=87905c65038fb06e]*/
 {
+    if (check_unwinder_process(self) < 0) {
+        return NULL;
+    }
     if (!self->collect_stats) {
         PyErr_SetString(PyExc_RuntimeError,
                        "Statistics collection was not enabled. "
@@ -1258,6 +1284,9 @@ static PyObject *
 _remote_debugging_RemoteUnwinder_pause_threads_impl(RemoteUnwinderObject *self)
 /*[clinic end generated code: output=aaf2bdc0a725750c input=b91dde5517c9dde2]*/
 {
+    if (check_unwinder_process(self) < 0) {
+        return NULL;
+    }
 #ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
     if (self->threads_stopped) {
         Py_RETURN_FALSE;
@@ -1294,6 +1323,9 @@ static PyObject *
 _remote_debugging_RemoteUnwinder_resume_threads_impl(RemoteUnwinderObject *self)
 /*[clinic end generated code: output=8d6781ea37095536 input=130758d55d46897a]*/
 {
+    if (check_unwinder_process(self) < 0) {
+        return NULL;
+    }
 #ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
     if (!self->threads_stopped) {
         Py_RETURN_FALSE;
@@ -1326,7 +1358,7 @@ RemoteUnwinder_dealloc(PyObject *op)
     PyTypeObject *tp = Py_TYPE(self);
 
 #ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
-    if (self->threads_stopped) {
+    if (self->threads_stopped && !_Py_RemoteDebug_HandleIsInherited(&self->handle)) {
         _Py_RemoteDebug_ResumeAllThreads(self, &self->threads_state);
         self->threads_stopped = 0;
     }
