@@ -363,3 +363,75 @@ require a potentially expensive `gcd` computation. We can use the
 In addition to the above proof, a formal, computer-verified proof
 of correctness (using Lean) of the algorithm can be found here:
 https://github.com/mdickinson/snippets/tree/1f47f8cc33185c646b679647e88cb24f29fd6a4e/proofs/limit_denominator
+
+# Algorithms for rational arithmetic
+
+In following we assume that rational numbers $\frac{p}{q}$ are
+represented by fractions in lowest terms.  That is, $p$ and $q$
+are coprime, $\gcd(p, q) = 1$.  And, the denominator $q$ is positive.
+
+Consider fractions $a/b$ and $c/d$.
+
+## Addition/subtraction
+
+Let $g = \gcd(b, d)$.  Then\
+$$\frac{a}{b} \pm \frac{c}{d} = \frac{a d \pm b c}{b d}
+=\frac{a \left(d/g\right) \pm c \left(b/g\right)}{\left(b d\right)/g}
+=\frac{p}{q}$$
+
+Now, if $g > 1$, we're working with smaller integers.  Also,
+$p$, $b/g$, $d/g$ are pairwise coprime.
+
+Indeed, $b/g$ and $d/g$ share no common factors (they were
+removed) and $b$ is coprime with $a$ (since input fractions are
+in lowest terms), hence $b/g$ and $a$ are coprime.  By symmetry,
+$d/g$ and $c$ are coprime too.  Then\
+$$\gcd\left(p, b/g\right)
+=\gcd\left(a \left(d/g\right) \pm c \left(b/g\right), b/g\right)
+=\gcd\left(a \left(d/g\right), b/g\right) = 1$$
+
+and similarly\
+$$\gcd\left(p, d/g\right) = \gcd\left(c\left(b/g\right), d/g\right) = 1$$
+
+The above allows us optimize reduction of the result to lowest
+terms.  Indeed,\
+$$h = \gcd\left(p, q\right)
+=\gcd\left(p, \left(b/g\right)\left(d/g\right) g\right)
+=\gcd\left(p, g\right)$$
+
+and\
+$$\frac{a}{b}\pm\frac{c}{d}
+=\frac{p/h}{\left(b/g\right)\left(d/g\right)\left(g/h\right)}
+=\frac{\left(a \left(d/g\right) \pm c \left(b/g\right) \right)/h}
+{\left(b/g\right)\left(d/h\right)}$$
+
+is a normalized fraction.  This is useful because the unnormalized
+denominator $q$ could be much larger than $g$.
+
+We should special-case $g = 1$ and $h = 1$, since 61% of randomly-chosen
+integers [are
+integers [are coprime](https://en.wikipedia.org/wiki/Coprime_integers#Probability_of_coprimality).
+Note that second case always holds for fractions, obtained from floats: here
+$g$ is a power of 2 and the unnormalized numerator $p$ is an odd integer.
+
+## Multiplication
+
+Let $g = \gcd(a, d)$ and $h = \gcd\left(b, c\right)$, then\
+$$\frac{a}{b}\times\frac{c}{d}
+=\frac{\left(a/g\right)\left(c/h\right)}
+{\left(d/g\right)\left(b/h\right)}$$
+
+Note that after divisions we're multiplying smaller integers.
+
+Also, the resulting fraction is normalized, because each of
+two factors in the numerator is coprime to each of the two factors
+in the denominator.
+
+Indeed, pick $a/g$.  It's coprime with $b/h$, because input
+fractions are in lowest terms.  It's also coprime with $d/g$,
+because common factors are removed by $g = \gcd\left(a, d\right)$.
+By symmetry, $c/h$ is also coprime with both factors in the denominator.
+
+As for addition/subtraction, we should special-case $g = 1$
+and $h = 1$ for the same reason.  That happens also for multiplying
+rationals, obtained from floats.
