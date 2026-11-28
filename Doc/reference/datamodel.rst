@@ -319,7 +319,8 @@ in the sequence. If it is not, an :exc:`IndexError` is raised.
    single: stop (slice object attribute)
    single: step (slice object attribute)
 
-Sequences also support slicing: ``a[start:stop]`` selects all items with index *k* such
+Sequences may also support slicing (all built-in sequences do):
+``a[start:stop]`` selects all items with index *k* such
 that *start* ``<=`` *k* ``<`` *stop*.  When used as an expression, a slice is a
 sequence of the same type. The comment above about negative subscripts also applies
 to negative slice positions.
