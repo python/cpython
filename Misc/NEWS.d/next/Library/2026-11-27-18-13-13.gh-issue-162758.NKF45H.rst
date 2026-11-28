@@ -1,0 +1,2 @@
+The pure Python :mod:`json` decoder now raises :exc:`ValueError` for a
+negative *idx* in :meth:`~json.JSONDecoder.raw_decode`, like the C decoder.

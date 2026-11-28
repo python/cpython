@@ -168,6 +168,11 @@ class TestDecode:
     def test_negative_index(self):
         d = self.json.JSONDecoder()
         self.assertRaises(ValueError, d.raw_decode, 'a'*42, -50000)
+        for doc, idx in (('1', -1), ('[1]', -1), ('[1]', -3), ('"a"', -3)):
+            with self.subTest(doc=doc, idx=idx):
+                with self.assertRaisesRegex(ValueError,
+                                            'idx cannot be negative'):
+                    d.raw_decode(doc, idx)
 
     def test_unterminated_string(self):
         d = self.json.JSONDecoder()
