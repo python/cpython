@@ -1,0 +1,2 @@
+Preserve the original traceback when :meth:`tarfile.TarFile.next`
+reraises an exception.
