@@ -1,0 +1,1 @@
+Fix :mod:`ssl` message callbacks receiving incorrect TLS record header version values when either version byte has its high bit set.
