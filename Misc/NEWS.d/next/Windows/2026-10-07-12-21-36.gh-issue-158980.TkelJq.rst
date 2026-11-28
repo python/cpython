@@ -1,0 +1,3 @@
+Fix :exc:`TypeError` when reading from the stream reader (for example, one
+returned by :func:`codecs.getreader`) of a "cpXXX" codec that is implemented
+using the Windows code page API.
