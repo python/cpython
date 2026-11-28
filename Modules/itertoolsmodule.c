@@ -2089,38 +2089,29 @@ struct productobject {
 
 #define productobject_CAST(op)  ((productobject *)(op))
 
+/*[clinic input]
+@vectorcall
+@classmethod
+itertools.product.__new__ as product_new
+    *iterables: array
+    repeat: Py_ssize_t(allow_negative=False) = 1
+[clinic start generated code]*/
+
 static PyObject *
-product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+product_new_impl(PyTypeObject *type, PyObject * const *iterables,
+                 Py_ssize_t iterables_length, Py_ssize_t repeat)
+/*[clinic end generated code: output=b0881d40e6be4c00 input=189ab566d53a8ea9]*/
 {
     productobject *lz;
-    Py_ssize_t nargs, npools, repeat=1;
+    Py_ssize_t nargs, npools;
     PyObject *pools = NULL;
     Py_ssize_t *indices = NULL;
     Py_ssize_t i;
 
-    if (kwds != NULL) {
-        char *kwlist[] = {"repeat", 0};
-        PyObject *tmpargs = PyTuple_New(0);
-        if (tmpargs == NULL)
-            return NULL;
-        if (!PyArg_ParseTupleAndKeywords(tmpargs, kwds, "|n:product",
-                                         kwlist, &repeat)) {
-            Py_DECREF(tmpargs);
-            return NULL;
-        }
-        Py_DECREF(tmpargs);
-        if (repeat < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "repeat argument cannot be negative");
-            return NULL;
-        }
-    }
-
-    assert(PyTuple_CheckExact(args));
     if (repeat == 0) {
         nargs = 0;
     } else {
-        nargs = PyTuple_GET_SIZE(args);
+        nargs = iterables_length;
         if ((size_t)nargs > PY_SSIZE_T_MAX/sizeof(Py_ssize_t)/repeat) {
             PyErr_SetString(PyExc_OverflowError, "repeat argument too large");
             return NULL;
@@ -2139,7 +2130,7 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
 
     for (i=0; i < nargs ; ++i) {
-        PyObject *item = PyTuple_GET_ITEM(args, i);
+        PyObject *item = iterables[i];
         PyObject *pool = PySequence_Tuple(item);
         if (pool == NULL)
             goto error;
@@ -2328,6 +2319,7 @@ static PyType_Slot product_slots[] = {
     {Py_tp_iternext, product_next},
     {Py_tp_methods, product_methods},
     {Py_tp_new, product_new},
+    {Py_tp_vectorcall, product_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };
@@ -3881,40 +3873,32 @@ struct ziplongestobject {
 
 #define ziplongestobject_CAST(op)   ((ziplongestobject *)(op))
 
+/*[clinic input]
+@vectorcall
+@classmethod
+itertools.zip_longest.__new__ as zip_longest_new
+    *iterables: array
+    fillvalue: object = None
+[clinic start generated code]*/
+
 static PyObject *
-zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+zip_longest_new_impl(PyTypeObject *type, PyObject * const *iterables,
+                     Py_ssize_t iterables_length, PyObject *fillvalue)
+/*[clinic end generated code: output=9f45c950feb8e18d input=2c4cc9910ee8dab7]*/
 {
     ziplongestobject *lz;
     Py_ssize_t i;
     PyObject *ittuple;  /* tuple of iterators */
     PyObject *result;
-    PyObject *fillvalue = Py_None;
-    Py_ssize_t tuplesize;
+    Py_ssize_t tuplesize = iterables_length;
 
-    if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_GET_SIZE(kwds) > 0) {
-        fillvalue = NULL;
-        if (PyDict_GET_SIZE(kwds) == 1) {
-            fillvalue = PyDict_GetItemWithError(kwds, &_Py_ID(fillvalue));
-        }
-        if (fillvalue == NULL) {
-            if (!PyErr_Occurred()) {
-                PyErr_SetString(PyExc_TypeError,
-                    "zip_longest() got an unexpected keyword argument");
-            }
-            return NULL;
-        }
-    }
-
-    /* args must be a tuple */
-    assert(PyTuple_Check(args));
-    tuplesize = PyTuple_GET_SIZE(args);
 
     /* obtain iterators */
     ittuple = PyTuple_New(tuplesize);
     if (ittuple == NULL)
         return NULL;
     for (i=0; i < tuplesize; i++) {
-        PyObject *item = PyTuple_GET_ITEM(args, i);
+        PyObject *item = iterables[i];
         PyObject *it = PyObject_GetIter(item);
         if (it == NULL) {
             Py_DECREF(ittuple);
@@ -4071,6 +4055,7 @@ static PyType_Slot ziplongest_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, zip_longest_next},
     {Py_tp_new, zip_longest_new},
+    {Py_tp_vectorcall, zip_longest_vectorcall},
     {Py_tp_free, PyObject_GC_Del},
     {0, NULL},
 };

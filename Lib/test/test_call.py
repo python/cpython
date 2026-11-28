@@ -203,7 +203,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, classmethod, func=id)
 
     def test_varargs14_kw(self):
-        msg = r"^product\(\) takes at most 1 keyword argument \(2 given\)$"
+        msg = r"^product\(\) got an unexpected keyword argument 'foo'$"
         self.assertRaisesRegex(TypeError, msg,
                                itertools.product, 0, repeat=1, foo=2)
 
