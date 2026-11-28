@@ -18,7 +18,7 @@
 #define INTRINSIC_TYPEVARTUPLE                   9
 #define INTRINSIC_SUBSCRIPT_GENERIC             10
 #define INTRINSIC_TYPEALIAS                     11
-#define INTRINSIC_BUILD_FROZENSET               12
+#define INTRINSIC_FREEZE_SET                    12
 
 #define MAX_INTRINSIC_1                         12
 
