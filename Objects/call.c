@@ -67,6 +67,9 @@ _Py_CheckFunctionResult(PyThreadState *tstate, PyObject *callable,
             return NULL;
         }
     }
+    if (result) {
+        _Py_RefreshImmortal(result);
+    }
     return result;
 }
 
