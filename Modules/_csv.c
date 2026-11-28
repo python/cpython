@@ -457,19 +457,6 @@ Dialect_dealloc(PyObject *self)
     Py_DECREF(tp);
 }
 
-static char *dialect_kws[] = {
-    "dialect",
-    "delimiter",
-    "doublequote",
-    "escapechar",
-    "lineterminator",
-    "quotechar",
-    "quoting",
-    "skipinitialspace",
-    "strict",
-    NULL
-};
-
 static _csvstate *
 _csv_state_from_type(PyTypeObject *type, const char *name)
 {
@@ -486,33 +473,31 @@ _csv_state_from_type(PyTypeObject *type, const char *name)
     return module_state;
 }
 
+/*[clinic input]
+@vectorcall
+@classmethod
+_csv.Dialect.__new__ as dialect_new
+    dialect: object = NULL
+    delimiter: object = NULL
+    doublequote: object = NULL
+    escapechar: object = NULL
+    lineterminator: object = NULL
+    quotechar: object = NULL
+    quoting: object = NULL
+    skipinitialspace: object = NULL
+    strict: object = NULL
+[clinic start generated code]*/
+
 static PyObject *
-dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+dialect_new_impl(PyTypeObject *type, PyObject *dialect, PyObject *delimiter,
+                 PyObject *doublequote, PyObject *escapechar,
+                 PyObject *lineterminator, PyObject *quotechar,
+                 PyObject *quoting, PyObject *skipinitialspace,
+                 PyObject *strict)
+/*[clinic end generated code: output=123393bdc71ddaa6 input=469f47d5890022f7]*/
 {
     DialectObj *self;
     PyObject *ret = NULL;
-    PyObject *dialect = NULL;
-    PyObject *delimiter = NULL;
-    PyObject *doublequote = NULL;
-    PyObject *escapechar = NULL;
-    PyObject *lineterminator = NULL;
-    PyObject *quotechar = NULL;
-    PyObject *quoting = NULL;
-    PyObject *skipinitialspace = NULL;
-    PyObject *strict = NULL;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "|OOOOOOOOO", dialect_kws,
-                                     &dialect,
-                                     &delimiter,
-                                     &doublequote,
-                                     &escapechar,
-                                     &lineterminator,
-                                     &quotechar,
-                                     &quoting,
-                                     &skipinitialspace,
-                                     &strict))
-        return NULL;
 
     _csvstate *module_state = _csv_state_from_type(type, "dialect_new");
     if (module_state == NULL) {
@@ -676,13 +661,10 @@ static PyObject *
 _csv_Dialect___replace___impl(DialectObj *self, PyObject *changes)
 /*[clinic end generated code: output=8f692c2c63a61b50 input=154beb565fbabd4c]*/
 {
-    PyObject *newargs = PyTuple_Pack(1, self);
-    if (newargs == NULL) {
-        return NULL;
-    }
-    PyObject *result = dialect_new(Py_TYPE(self), newargs, changes);
-    Py_DECREF(newargs);
-    return result;
+    PyObject *const args[1] = {(PyObject *)self};
+    return dialect_new_helper(Py_TYPE(self), args, 1,
+                              changes ? PyDict_GET_SIZE(changes) : 0,
+                              changes, NULL);
 }
 
 static struct PyMethodDef dialect_methods[] = {
@@ -719,6 +701,7 @@ static PyType_Slot Dialect_Type_slots[] = {
     {Py_tp_members, Dialect_memberlist},
     {Py_tp_getset, Dialect_getsetlist},
     {Py_tp_new, dialect_new},
+    {Py_tp_vectorcall, dialect_vectorcall},
     {Py_tp_methods, dialect_methods},
     {Py_tp_dealloc, Dialect_dealloc},
     {Py_tp_clear, Dialect_clear},
