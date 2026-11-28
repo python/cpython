@@ -1,0 +1,4 @@
+:mod:`compileall` now skips up-to-date hash-based ``.pyc`` files and checks
+the source size as well as the modification time of timestamp-based files.
+An up-to-date file is kept even if a different invalidation mode is
+requested; use ``-f`` to recompile it.
