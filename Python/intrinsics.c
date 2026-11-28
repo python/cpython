@@ -7,7 +7,6 @@
 #include "pycore_genobject.h"     // _PyAsyncGenValueWrapperNew
 #include "pycore_interpframe.h"   // _PyFrame_GetLocals()
 #include "pycore_intrinsics.h"    // INTRINSIC_PRINT
-#include "pycore_list.h"          // _PyList_AsTupleAndClear()
 #include "pycore_object.h"        // _PyObject_IsUniquelyReferenced()
 #include "pycore_setobject.h"     // _PySet_Freeze()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
@@ -198,7 +197,7 @@ list_to_tuple(PyThreadState* unused, PyObject *v)
        into the tuple instead of copying them. */
     assert(PyList_CheckExact(v));
     assert(_PyObject_IsUniquelyReferenced(v));
-    return _PyList_AsTupleAndClear((PyListObject *)v);
+    return PyList_AsTupleAndClear(v);
 }
 
 static PyObject *

@@ -51,3 +51,4 @@ PyList_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
 
 PyAPI_FUNC(int) PyList_Extend(PyObject *self, PyObject *iterable);
 PyAPI_FUNC(int) PyList_Clear(PyObject *self);
+PyAPI_FUNC(PyObject*) PyList_AsTupleAndClear(PyObject *v);

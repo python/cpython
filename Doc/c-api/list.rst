@@ -227,3 +227,28 @@ List Objects
 
    Return a new tuple object containing the contents of *list*; equivalent to
    ``tuple(list)``.
+
+
+.. c:function:: PyObject* PyList_AsTupleAndClear(PyObject *list)
+
+   .. index:: pair: built-in function; tuple
+
+   Return a new :class:`tuple` created from the existing :class:`list`
+   instance.
+
+   Transfers all items from *list* to the newly allocated :class:`tuple`.
+   Clears the input *list* on success.
+
+   Return a new :class:`tuple` on success.
+   Set an exception and return ``NULL`` on error.
+
+   This function is intended for building a :class:`tuple` instance via a
+   temporary *list* that is not exposed to user code.
+   To "freeze" an arbitrary list, for example one received from the user as an
+   argument, prefer :c:func:`PyList_AsTuple` to leave the source intact.
+
+   .. impl-detail::
+
+      Works with O(1) complexity.
+
+   .. versionadded:: next

@@ -1,0 +1,3 @@
+Add :c:func:`PyList_AsTupleAndClear` function: similar to
+:c:func:`PyList_AsTuple` but faster, and clear the input list. Patch by
+Victor Stinner.
