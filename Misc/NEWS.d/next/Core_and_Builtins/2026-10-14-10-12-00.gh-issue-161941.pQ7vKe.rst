@@ -1,0 +1,1 @@
+The ``encodings`` package and the codecs that every interpreter imports at startup (``encodings.aliases``, ``encodings.utf_8`` and the platform codecs) are frozen again, which makes interpreter startup faster.

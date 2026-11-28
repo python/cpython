@@ -969,6 +969,7 @@ class FrozenImporter:
             __path__ = spec.submodule_search_locations
             if ispkg:
                 assert __path__ == [], __path__
+                pkgdir = cls._package_dir(spec.name, pkgdir)
                 if pkgdir:
                     spec.submodule_search_locations.insert(0, pkgdir)
             else:
@@ -997,10 +998,6 @@ class FrozenImporter:
                 (__file__, pkgdir,
                  ) = cls._resolve_filename(state.origname, spec.name, ispkg)
                 assert state.filename == __file__, (state.filename, __file__)
-                if pkgdir:
-                    assert __path__ == [pkgdir], (__path__, pkgdir)
-                else:
-                    assert __path__ == ([] if ispkg else None), __path__
             else:
                 __file__ = None
                 assert state.filename is None, state.filename
@@ -1044,6 +1041,25 @@ class FrozenImporter:
         return filename, pkgdir
 
     @classmethod
+    def _package_dir(cls, fullname, pkgdir):
+        """Return the directory of the frozen package 'fullname'.
+
+        Normally this is 'pkgdir', the package's directory in the standard
+        library, so that submodules which were not frozen are found there.
+        When that directory does not exist (e.g. the standard library is
+        zipped), a standard library package is looked up on sys.path
+        instead.
+        """
+        if (_bootstrap_external is None
+                or fullname not in sys.stdlib_module_names
+                or (pkgdir and _bootstrap_external._path_isdir(pkgdir))):
+            return pkgdir
+        spec = _bootstrap_external.PathFinder.find_spec(fullname)
+        if spec is not None and spec.submodule_search_locations:
+            return spec.submodule_search_locations[0]
+        return pkgdir
+
+    @classmethod
     def find_spec(cls, fullname, path=None, target=None):
         info = _call_with_frames_removed(_imp.find_frozen, fullname)
         if info is None:
@@ -1069,6 +1085,8 @@ class FrozenImporter:
             filename=filename,
             origname=origname,
         )
+        if ispkg:
+            pkgdir = cls._package_dir(fullname, pkgdir)
         if pkgdir:
             spec.submodule_search_locations.insert(0, pkgdir)
         return spec
