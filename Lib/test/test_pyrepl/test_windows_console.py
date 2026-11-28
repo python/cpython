@@ -436,6 +436,17 @@ class WindowsConsoleGetEventTests(TestCase):
         event = self.console.get_event(block=False)
         return event
 
+    def get_pending(self, *reads) -> Event:
+        self.console = WindowsConsole(encoding='utf-8')
+        recs = []
+        for read in reads:
+            rec = (len(read) * wc.INPUT_RECORD)(*read)
+            recs.append((rec, len(rec)))
+        self.mock = MagicMock(side_effect=recs)
+        self.console._read_input_bulk = self.mock
+        event = self.console.getpending()
+        return event
+
     def get_input_record(self, unicode_char, vcode=0, control=0):
         return wc.INPUT_RECORD(
             wc.KEY_EVENT,
@@ -647,6 +658,69 @@ class WindowsConsoleGetEventTests(TestCase):
         self.assertFalse(console.event_queue.empty())
         self.assertTrue(console.wait(0.0))
         self.assertEqual(console.wait_for_event.call_count, 0)
+
+    def test_getpending_raw(self):
+        ir_list = [
+            self.get_input_record("a"),
+            self.get_input_record("\ud83d"),
+            self.get_input_record("\ude00"),
+            self.get_input_record("\r")
+        ]
+        event = self.get_pending(ir_list)
+        self.assertEqual(event.data, "a😀\n")
+        self.assertEqual(event.raw, b"a\xf0\x9f\x98\x80\n")
+
+    def test_getpending_split_surrogate_pair(self):
+        ir_list_one = [
+            self.get_input_record("a"),
+            self.get_input_record("\ud83d"),
+        ]
+        ir_list_two = [
+            self.get_input_record("\ude00"),
+            self.get_input_record("\r")
+        ]
+        event = self.get_pending(ir_list_one, ir_list_two)
+        self.assertEqual(event.data, "a😀\n")
+        self.assertEqual(event.raw, b"a\xf0\x9f\x98\x80\n")
+        self.assertEqual(self.mock.call_count, 2)
+
+    def test_push_char(self):
+        self.console = WindowsConsole(encoding='utf-8')
+        self.console.push_char(ord("\n"))
+        event = self.console.get_event(block=False)
+        self.assertEqual(event.data, "\n")
+
+    def test_bracketed_paste_two_pastes_in_one_read(self):
+        # Two complete pastes arrive in a single console read.  The second
+        # one is already queued, so it must be submitted without another
+        # read, which would block on a real console.
+        # See gh-156186.
+
+        self.console = WindowsConsole(encoding='utf-8')
+        self.console._WindowsConsole__vt_support = True
+        self.console._WindowsConsole__original_input_mode = 0
+        self.console.wait = MagicMock(return_value=True)
+        self.console._hide_cursor = MagicMock()
+        self.console._show_cursor = MagicMock()
+        self.console.out = MagicMock()
+        self.console.getheightwidth = MagicMock(return_value=(25, 80))
+
+        # start marker
+        start_marker_records = [self.get_input_record(x) for x in "\x1b[200~"]
+
+        # body 1, end marker \x1b[201~, \r, start marker \x1b[200~, body 2, end marker, \r
+        bulk_records = [self.get_input_record(x) for x in "a\x1b[201~\r\x1b[200~b\x1b[201~\r"]
+        bulk_array = (len(bulk_records) * wc.INPUT_RECORD)(*bulk_records)
+        bulk_reads = [(bulk_array, len(bulk_array))]
+
+        self.console._read_input = MagicMock(side_effect=start_marker_records)
+        self.console._read_input_bulk = MagicMock(side_effect=bulk_reads)
+
+        reader = default_prepare_reader(self.console, paste_mode=False)
+        with patch.object(wc._winapi, "SetConsoleMode"):
+            self.assertEqual(reader.readline(), "a")
+            self.assertEqual(reader.readline(), "b")
+        self.assertEqual(self.console._read_input_bulk.call_count, 1)
 
 
 if __name__ == "__main__":
