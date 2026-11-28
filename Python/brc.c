@@ -197,9 +197,9 @@ _Py_brc_remove_thread(PyThreadState *tstate)
 {
     struct _brc_thread_state *brc = &((_PyThreadStateImpl *)tstate)->brc;
     if (brc->tid == 0) {
-        // The thread state may have been created, but never bound to a native
-        // thread and therefore never added to the hashtable.
-        assert(tstate->_status.bound == 0);
+        // The thread state was never added to the hashtable: either it was
+        // never bound to a native thread, or it is deleted on behalf of a
+        // thread that was still binding it (e.g. in the child after fork).
         return;
     }
 
