@@ -1,0 +1,3 @@
+Fix :func:`os.sendfile` sending duplicate data on macOS, FreeBSD and DragonFly
+BSD when interrupted by a signal after a partial transfer. On macOS, retries
+after an interruption also preserve the requested byte count.
