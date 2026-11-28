@@ -1054,6 +1054,25 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
                  setter(message, name, value)
             self.assertIn(f"{name!r}", str(cm.exception))
 
+    def test_get_body_undecodable_attachment_filename(self):
+        msg = message_from_bytes(
+            b'Content-Type: multipart/mixed; boundary=BOUNDARY\r\n'
+            b'\r\n'
+            b'--BOUNDARY\r\n'
+            b'Content-Type: application/octet-stream\r\n'
+            b"Content-Disposition: attachment; filename*=iso-2022-jp''%1B%24%42%3A\r\n"
+            b'\r\n'
+            b'attachment data\r\n'
+            b'--BOUNDARY\r\n'
+            b'Content-Type: text/plain\r\n'
+            b'\r\n'
+            b'message body\r\n'
+            b'--BOUNDARY--\r\n', policy=policy.default)
+        self.assertEqual(msg.get_body().get_content(), 'message body')
+        attachment, = msg.iter_attachments()
+        self.assertEqual(attachment.get_payload(decode=True), b'attachment data')
+        self.assertEqual(attachment.get_filename(), '\uFFFD')
+
     def test_get_body_malformed(self):
         """test for bpo-42892"""
         msg = textwrap.dedent("""\

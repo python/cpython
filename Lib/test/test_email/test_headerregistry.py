@@ -865,6 +865,18 @@ class TestContentTransferEncoding(TestHeaderBase):
 @parameterize
 class TestContentDisposition(TestHeaderBase):
 
+    def test_rfc2231_undecodable_parameter(self):
+        for charset, value in [('iso-2022-jp', '%1B%24%42%3A'),
+                               ('utf-16', '%00')]:
+            with self.subTest(charset=charset):
+                header = self.make_header(
+                    'Content-Disposition',
+                    f"attachment; filename*={charset}''{value}")
+                self.assertEqual(header.content_disposition, 'attachment')
+                self.assertEqual(header.params['filename'], '\uFFFD')
+                self.assertDefectsEqual(
+                    header.defects, [errors.UndecodableBytesDefect])
+
     def content_disp_as_value(self,
                               source,
                               content_disposition,
