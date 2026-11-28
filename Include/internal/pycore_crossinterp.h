@@ -368,7 +368,7 @@ PyAPI_FUNC(void) _PyXI_ClearResult(_PyXI_session_result *);
 
 PyAPI_FUNC(int) _PyXI_Enter(
     _PyXI_session *session,
-    PyInterpreterState *interp,
+    PyInterpreterView *view,
     PyObject *nsupdates,
     _PyXI_session_result *);
 PyAPI_FUNC(int) _PyXI_Exit(
