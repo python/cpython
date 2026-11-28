@@ -555,6 +555,30 @@ _float_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
     return 0;
 }
 
+// complex
+
+static PyObject *
+_new_complex_object(_PyXIData_t *xidata)
+{
+    Py_complex *value_ptr = xidata->data;
+    return PyComplex_FromCComplex(*value_ptr);
+}
+
+static int
+_complex_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
+{
+    if (_PyXIData_InitWithSize(
+            xidata, tstate->interp, sizeof(Py_complex), NULL,
+            _new_complex_object
+            ) < 0)
+    {
+        return -1;
+    }
+    Py_complex *shared = (Py_complex *)xidata->data;
+    *shared = PyComplex_AsCComplex(obj);
+    return 0;
+}
+
 // None
 
 static PyObject *
@@ -823,6 +847,11 @@ _register_builtins_for_crossinterpreter_data(dlregistry_t *xidregistry)
     // float
     if (REGISTER(&PyFloat_Type, _float_shared) != 0) {
         Py_FatalError("could not register float for cross-interpreter sharing");
+    }
+
+    // complex
+    if (REGISTER(&PyComplex_Type, _complex_shared) != 0) {
+        Py_FatalError("could not register complex for cross-interpreter sharing");
     }
 
     // tuple
