@@ -5926,6 +5926,16 @@ Content-Type: application/x-foo;
         eq(language, 'en-us')
         eq(s, 'My Document For You')
 
+    def test_rfc2231_encode_language_without_charset(self):
+        eq = self.assertEqual
+        eq(utils.encode_rfc2231('abc', language='en'), "'en'abc")
+        msg = Message()
+        msg.add_header('Content-Disposition', 'attachment',
+                       filename=(None, 'en', 'report.txt'))
+        eq(msg['Content-Disposition'],
+           "attachment; filename*='en'report.txt")
+        eq(msg.get_filename(), 'report.txt')
+
     def test_should_not_hang_on_invalid_ew_messages(self):
         messages = ["""From: user@host.com
 To: user@host.com
