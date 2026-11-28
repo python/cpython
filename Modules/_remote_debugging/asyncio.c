@@ -666,7 +666,7 @@ process_task_waiters(
     PyObject *result,
     bool futures_only
 ) {
-    Py_ssize_t initial_count = futures_only ? PyList_GET_SIZE(result) : 0;
+    Py_ssize_t initial_count = PyList_GET_SIZE(result);
     PyObject *visited = PySet_New(NULL);
     if (visited == NULL) {
         return -1;
@@ -704,7 +704,9 @@ process_task_waiters(
                     continue;
                 }
             }
-            if (PyList_GET_SIZE(result) - initial_count >= MAX_TASK_WAITER_WALK_TASKS) {
+            if (futures_only &&
+                PyList_GET_SIZE(result) - initial_count >= MAX_TASK_WAITER_WALK_TASKS)
+            {
                 PyErr_SetString(PyExc_RuntimeError,
                     "Too many task waiters (possible infinite loop)");
                 set_exception_cause(unwinder, PyExc_RuntimeError,
