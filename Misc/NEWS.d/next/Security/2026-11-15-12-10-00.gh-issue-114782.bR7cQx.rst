@@ -1,0 +1,4 @@
+:mod:`http.client` and :mod:`http.server` no longer treat a bare CR in a header
+field line as a line terminator, which allowed one field line to be parsed as
+several header fields. A bare CR is now replaced with a space, as permitted by
+:rfc:`9112#section-2.2`.

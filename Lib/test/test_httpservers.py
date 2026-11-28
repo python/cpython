@@ -1256,6 +1256,15 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertFalse(self.handler.get_called)
         self.assertEqual(self.handler.requestline, 'GET / HTTP/1.1')
 
+    def test_bare_cr_in_header_value(self):
+        # gh-114782: a bare CR must not start a new header field.
+        result = self.send_typical_request(
+            b'GET / HTTP/1.1\r\nVisible: a\rSmuggled: b\r\n\r\n')
+        self.assertEqual(result[0], b'HTTP/1.1 200 OK\r\n')
+        self.verify_get_called()
+        self.assertIsNone(self.handler.headers.get('Smuggled'))
+        self.assertEqual(self.handler.headers['Visible'], 'a Smuggled: b')
+
     def test_html_escape_on_error(self):
         result = self.send_typical_request(
             b'<script>alert("hello")</script> / HTTP/1.1')
