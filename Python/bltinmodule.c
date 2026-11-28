@@ -1426,104 +1426,61 @@ typedef struct {
 
 #define _mapobject_CAST(op)     ((mapobject *)(op))
 
-static PyObject *
-map_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PyObject *it, *iters, *func;
-    mapobject *lz;
-    Py_ssize_t numargs, i;
-    int strict = 0;
+/*[clinic input]
+class map "mapobject *" "&PyMap_Type"
+@permit_long_summary
+@vectorcall
+@classmethod
+map.__new__ as map_new
 
-    if (kwds) {
-        PyObject *empty = PyTuple_New(0);
-        if (empty == NULL) {
-            return NULL;
-        }
-        static char *kwlist[] = {"strict", NULL};
-        int parsed = PyArg_ParseTupleAndKeywords(
-                empty, kwds, "|$p:map", kwlist, &strict);
-        Py_DECREF(empty);
-        if (!parsed) {
-            return NULL;
-        }
-    }
+    function: object
+    iterable: object
+    /
+    *iterables: array
+    strict: bool = False
 
-    numargs = PyTuple_Size(args);
-    if (numargs < 2) {
-        PyErr_SetString(PyExc_TypeError,
-           "map() must have at least two arguments.");
-        return NULL;
-    }
+Make an iterator that computes the function using arguments from each of the iterables.
 
-    iters = PyTuple_New(numargs-1);
-    if (iters == NULL)
-        return NULL;
+Stops when the shortest iterable is exhausted.
 
-    for (i=1 ; i<numargs ; i++) {
-        /* Get iterator. */
-        it = PyObject_GetIter(PyTuple_GET_ITEM(args, i));
-        if (it == NULL) {
-            Py_DECREF(iters);
-            return NULL;
-        }
-        PyTuple_SET_ITEM(iters, i-1, it);
-    }
-
-    /* create mapobject structure */
-    lz = (mapobject *)type->tp_alloc(type, 0);
-    if (lz == NULL) {
-        Py_DECREF(iters);
-        return NULL;
-    }
-    lz->iters = iters;
-    func = PyTuple_GET_ITEM(args, 0);
-    lz->func = Py_NewRef(func);
-    lz->strict = strict;
-
-    return (PyObject *)lz;
-}
+If strict is true and one of the arguments is exhausted before the
+others, raise a ValueError.
+[clinic start generated code]*/
 
 static PyObject *
-map_vectorcall(PyObject *type, PyObject * const*args,
-                size_t nargsf, PyObject *kwnames)
+map_new_impl(PyTypeObject *type, PyObject *function, PyObject *iterable,
+             PyObject * const *iterables, Py_ssize_t iterables_length,
+             int strict)
+/*[clinic end generated code: output=de1354b02d08604b input=8a35a5f93c39cbcf]*/
 {
-    PyTypeObject *tp = _PyType_CAST(type);
-
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (kwnames != NULL && PyTuple_GET_SIZE(kwnames) != 0) {
-        // Fallback to map_new()
-        PyThreadState *tstate = _PyThreadState_GET();
-        return _PyObject_MakeTpCall(tstate, type, args, nargs, kwnames);
-    }
-
-    if (nargs < 2) {
-        PyErr_SetString(PyExc_TypeError,
-           "map() must have at least two arguments.");
-        return NULL;
-    }
-
-    PyObject *iters = PyTuple_New(nargs-1);
+    PyObject *iters = PyTuple_New(iterables_length + 1);
     if (iters == NULL) {
         return NULL;
     }
 
-    for (int i=1; i<nargs; i++) {
-        PyObject *it = PyObject_GetIter(args[i]);
+    PyObject *it = PyObject_GetIter(iterable);
+    if (it == NULL) {
+        Py_DECREF(iters);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(iters, 0, it);
+    for (Py_ssize_t i = 0; i < iterables_length; i++) {
+        it = PyObject_GetIter(iterables[i]);
         if (it == NULL) {
             Py_DECREF(iters);
             return NULL;
         }
-        PyTuple_SET_ITEM(iters, i-1, it);
+        PyTuple_SET_ITEM(iters, i + 1, it);
     }
 
-    mapobject *lz = (mapobject *)tp->tp_alloc(tp, 0);
+    mapobject *lz = (mapobject *)type->tp_alloc(type, 0);
     if (lz == NULL) {
         Py_DECREF(iters);
         return NULL;
     }
     lz->iters = iters;
-    lz->func = Py_NewRef(args[0]);
-    lz->strict = 0;
+    lz->func = Py_NewRef(function);
+    lz->strict = strict;
 
     return (PyObject *)lz;
 }
@@ -1680,16 +1637,6 @@ static PyMethodDef map_methods[] = {
 };
 
 
-PyDoc_STRVAR(map_doc,
-"map(function, iterable, /, *iterables, strict=False)\n\
---\n\
-\n\
-Make an iterator that computes the function using arguments from\n\
-each of the iterables.  Stops when the shortest iterable is exhausted.\n\
-\n\
-If strict is true and one of the arguments is exhausted before the\n\
-others, raise a ValueError.");
-
 PyTypeObject PyMap_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "map",                              /* tp_name */
@@ -1713,7 +1660,7 @@ PyTypeObject PyMap_Type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    map_doc,                            /* tp_doc */
+    map_new__doc__,                     /* tp_doc */
     map_traverse,                       /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */

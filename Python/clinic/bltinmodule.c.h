@@ -857,6 +857,110 @@ builtin_id(PyObject *self, PyObject *v)
     return return_value;
 }
 
+PyDoc_STRVAR(map_new__doc__,
+"map(function, iterable, /, *iterables, strict=False)\n"
+"--\n"
+"\n"
+"Make an iterator that computes the function using arguments from each of the iterables.\n"
+"\n"
+"Stops when the shortest iterable is exhausted.\n"
+"\n"
+"If strict is true and one of the arguments is exhausted before the\n"
+"others, raise a ValueError.");
+
+static PyObject *
+map_new_impl(PyTypeObject *type, PyObject *function, PyObject *iterable,
+             PyObject * const *iterables, Py_ssize_t iterables_length,
+             int strict);
+
+static PyObject *
+map_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(strict), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "", "strict", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "map",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
+    Py_ssize_t noptargs = Py_MIN(nargs, 2) + nkw - 2;
+    PyObject *function;
+    PyObject *iterable;
+    PyObject * const *iterables;
+    Py_ssize_t iterables_length;
+    int strict = 0;
+
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 1, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    function = fastargs[0];
+    iterable = fastargs[1];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    strict = PyObject_IsTrue(fastargs[2]);
+    if (strict < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    iterables = args + 2;
+    iterables_length = nargs - 2;
+    return_value = map_new_impl(type, function, iterable, iterables, iterables_length, strict);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+map_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return map_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+map_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+
+    assert(_PyType_CAST(type)->tp_new == map_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    return map_new_helper(_PyType_CAST(type), args, nargs,
+        kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+        NULL, kwnames);
+}
+
 PyDoc_STRVAR(builtin_setattr__doc__,
 "setattr($module, obj, name, value, /)\n"
 "--\n"
@@ -1661,4 +1765,4 @@ zip_vectorcall(PyObject *type, PyObject *const *args,
         kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
         NULL, kwnames);
 }
-/*[clinic end generated code: output=a67fa5cf74c85d07 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=26ee4ad6d2521b8a input=a9049054013a1b77]*/
