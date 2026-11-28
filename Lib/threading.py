@@ -1141,9 +1141,11 @@ class Thread:
             # Start joinable thread
             _start_joinable_thread(self._bootstrap, handle=self._os_thread_handle,
                                    daemon=self.daemon)
-        except Exception:
-            with _active_limbo_lock:
-                del _limbo[self]
+        except BaseException:
+            # The native call can be interrupted after creating the OS thread.
+            if not self._os_thread_handle.ident:
+                with _active_limbo_lock:
+                    del _limbo[self]
             raise
         self._started.wait()  # Will set ident and native_id
 
