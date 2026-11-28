@@ -1311,6 +1311,58 @@ class CustomInt:
         return 100
 
 
+class OutputBufferTestCase(unittest.TestCase):
+    # Outputs at and around the boundaries of the internal output buffer's
+    # blocks (Include/internal/pycore_blocks_output_buffer.h): the first four
+    # (32 KiB, 64 KiB, 256 KiB and 1 MiB) are one buffer grown by realloc();
+    # the next one (4 MiB) is a separate block on most platforms.
+    HEAD = (32 + 64 + 256 + 1024) * 1024
+    SIZES = [HEAD - 1, HEAD, HEAD + 1,
+             HEAD + 4 * 1024 * 1024 - 1, HEAD + 4 * 1024 * 1024,
+             HEAD + 4 * 1024 * 1024 + 1]
+    # a pattern every codec compresses quickly: 256 varied bytes per 4 KiB
+    PATTERN = bytes(range(256)) + bytes(4096 - 256)
+
+    @classmethod
+    def data(cls, size):
+        return (cls.PATTERN * (size // len(cls.PATTERN) + 1))[:size]
+
+    @classmethod
+    def setUpClass(cls):
+        cls.compressed = {size: zlib.compress(cls.data(size), 1)
+                          for size in cls.SIZES}
+
+    def test_decompress(self):
+        for size in self.SIZES:
+            with self.subTest(size=size):
+                data = self.data(size)
+                compressed = self.compressed[size]
+                # decompress() starts its buffer at bufsize; 32 KiB makes
+                # the blocks the ones SIZES is derived from
+                self.assertEqual(
+                    zlib.decompress(compressed, bufsize=32 * 1024), data)
+                self.assertEqual(zlib.decompress(compressed), data)
+                # an initial buffer larger than the first blocks, which
+                # switches to separate blocks at its first growth
+                self.assertEqual(
+                    zlib.decompress(compressed, bufsize=2 * 1024 * 1024), data)
+
+    def test_decompressobj(self):
+        for size in self.SIZES:
+            with self.subTest(size=size):
+                data = self.data(size)
+                compressed = self.compressed[size]
+                d = zlib.decompressobj()
+                self.assertEqual(d.decompress(compressed) + d.flush(), data)
+                # max_length past the first blocks and short of the next one
+                max_length = self.HEAD + 100 * 1024
+                d = zlib.decompressobj()
+                first = d.decompress(compressed, max_length)
+                self.assertEqual(len(first), min(size, max_length))
+                rest = d.decompress(d.unconsumed_tail) + d.flush()
+                self.assertEqual(first + rest, data)
+
+
 class TestModule(unittest.TestCase):
     def test_deprecated_module_attributes(self):
         support.check_deprecated_module_attributes(
