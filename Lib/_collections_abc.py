@@ -665,13 +665,29 @@ class Set(Collection):
         """
         MAX = sys.maxsize
         MASK = 2 * MAX + 1
+        # Element hash mixer; see _PySet_ShuffleHashBits() in
+        # Include/internal/pycore_setobject.h.
+        if MAX > 0x7FFFFFFF:
+            # SplitMix64 finalizer
+            G, S1, M1, S2, M2, S3 = (0x9e3779b97f4a7c15,
+                                     30, 0xbf58476d1ce4e5b9,
+                                     27, 0x94d049bb133111eb, 31)
+        else:
+            # MurmurHash3 fmix32 finalizer
+            G, S1, M1, S2, M2, S3 = (0x9e3779b9,
+                                     16, 0x85ebca6b,
+                                     13, 0xc2b2ae35, 16)
         n = len(self)
         h = 1927868237 * (n + 1)
         h &= MASK
         for x in self:
-            hx = hash(x)
-            h ^= (hx ^ (hx << 16) ^ 89869747)  * 3644798167
-            h &= MASK
+            hx = (hash(x) + G) & MASK
+            hx ^= hx >> S1
+            hx = (hx * M1) & MASK
+            hx ^= hx >> S2
+            hx = (hx * M2) & MASK
+            hx ^= hx >> S3
+            h ^= hx
         h ^= (h >> 11) ^ (h >> 25)
         h = h * 69069 + 907133923
         h &= MASK
