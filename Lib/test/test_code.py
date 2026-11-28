@@ -195,10 +195,12 @@ None
 """
 
 import copy
+import functools
 import inspect
 import sys
 import threading
 import doctest
+import traceback
 import unittest
 import textwrap
 import weakref
@@ -582,6 +584,48 @@ class CodeTest(unittest.TestCase):
         for line, end_line, column, end_column in positions:
             self.assertIsNone(line)
             self.assertEqual(end_line, new_code.co_firstlineno + 1)
+
+    def test_co_position_at_matches_co_positions(self):
+        # _co_position_at is the single-offset form of co_positions().
+        # The argument is a byte offset, and each instruction is 2 bytes.
+        def func(x):
+            return x + 1
+
+        samples = [
+            func.__code__,
+            (lambda y: y).__code__,
+            func.__code__.replace(co_linetable=b''),
+        ]
+        for code in samples:
+            lookups = (
+                ("code._co_position_at", code._co_position_at),
+                ("inspect._get_code_position",
+                 functools.partial(inspect._get_code_position, code)),
+                ("traceback._get_code_position",
+                 functools.partial(traceback._get_code_position, code)),
+            )
+            with self.subTest(code=code):
+                for index, expected in enumerate(code.co_positions()):
+                    offset = index * 2
+                    for name, lookup in lookups:
+                        with self.subTest(lookup=name, offset=offset):
+                            self.assertEqual(lookup(offset), expected)
+
+    def test_co_position_at_rejects_bad_offsets(self):
+        def func(x):
+            return x + 1
+
+        code = func.__code__
+        co_position_at = code._co_position_at
+        # Negative indexes stay in the Python wrappers. The C method rejects them.
+        self.assertEqual(inspect._get_code_position(code, -1),
+                         (None, None, None, None))
+        self.assertEqual(traceback._get_code_position(code, -1),
+                         (None, None, None, None))
+        self.assertRaises(ValueError, co_position_at, -1)
+        self.assertRaises(ValueError, co_position_at, len(code.co_code))
+        self.assertRaises(TypeError, co_position_at, None)
+        self.assertRaises(OverflowError, co_position_at, 2**100)
 
     def test_code_equality(self):
         def f():

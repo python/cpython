@@ -1,0 +1,2 @@
+Speed up :func:`inspect.getframeinfo` and :mod:`traceback` position lookup
+on large code objects.
