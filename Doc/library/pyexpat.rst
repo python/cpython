@@ -32,8 +32,8 @@ the XML document.
 
 .. index:: pair: module; pyexpat
 
-This module uses the :mod:`pyexpat` module to provide access to the Expat
-parser.  Direct use of the :mod:`pyexpat` module is deprecated.
+This module uses the :mod:`!pyexpat` module to provide access to the Expat
+parser.  Direct use of the :mod:`!pyexpat` module is deprecated.
 
 This module provides the following exception, type object and data items:
 
@@ -46,7 +46,7 @@ This module provides the following exception, type object and data items:
 
 .. exception:: error
 
-   Alias for :exc:`ExpatError`.
+   Alias for :exc:`~xml.parsers.expat.ExpatError`.
 
 
 .. data:: XMLParserType
@@ -139,7 +139,7 @@ The :mod:`!xml.parsers.expat` module contains two functions:
    is considered the same as omission).  When namespace processing is enabled,
    element type names and attribute names that belong to a namespace will be
    expanded.  The element name passed to the element handlers
-   :attr:`StartElementHandler` and :attr:`EndElementHandler` will be the
+   :meth:`~xmlparser.StartElementHandler` and :meth:`~xmlparser.EndElementHandler` will be the
    concatenation of the namespace URI, the namespace separator character, and the
    local part of the name.  If the namespace separator is a zero byte (``chr(0)``)
    then the namespace URI and the local part will be concatenated without any
@@ -157,7 +157,7 @@ The :mod:`!xml.parsers.expat` module contains two functions:
         <elem2 xmlns="" />
       </root>
 
-   :attr:`StartElementHandler` will receive the following strings for each
+   :meth:`~xmlparser.StartElementHandler` will receive the following strings for each
    element::
 
       http://default-namespace.org/ root
@@ -169,7 +169,7 @@ The :mod:`!xml.parsers.expat` module contains two functions:
    and is available as the :attr:`~xmlparser.intern` attribute.
    By default a new empty dictionary is created for every parser.
 
-   Due to limitations in the ``Expat`` library used by :mod:`pyexpat`,
+   Due to limitations in the ``Expat`` library used by :mod:`!pyexpat`,
    the :class:`xmlparser` instance returned can only be used to parse a single
    XML document.  Call ``ParserCreate`` for each document to provide unique
    parser instances.
@@ -184,6 +184,11 @@ The :mod:`!xml.parsers.expat` module contains two functions:
 
 XMLParser Objects
 -----------------
+
+.. class:: xmlparser()
+
+   The type of an XML parser object created by :func:`ParserCreate`.
+
 
 :class:`xmlparser` objects have the following methods:
 
@@ -264,9 +269,9 @@ XMLParser Objects
 .. method:: xmlparser.SetParamEntityParsing(flag)
 
    Control parsing of parameter entities (including the external DTD subset).
-   Possible *flag* values are :const:`XML_PARAM_ENTITY_PARSING_NEVER`,
-   :const:`XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE` and
-   :const:`XML_PARAM_ENTITY_PARSING_ALWAYS`.  Return true if setting the flag
+   Possible *flag* values are :const:`!XML_PARAM_ENTITY_PARSING_NEVER`,
+   :const:`!XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE` and
+   :const:`!XML_PARAM_ENTITY_PARSING_ALWAYS`.  Return true if setting the flag
    was successful.
 
 .. method:: xmlparser.UseForeignDTD([flag])
@@ -281,9 +286,9 @@ XMLParser Objects
    Passing a false value for *flag* will cancel a previous call that passed a true
    value, but otherwise has no effect.
 
-   This method can only be called before the :meth:`Parse` or :meth:`ParseFile`
+   This method can only be called before the :meth:`~xmlparser.Parse` or :meth:`~xmlparser.ParseFile`
    methods are called; calling it after either of those have been called causes
-   :exc:`ExpatError` to be raised with the :attr:`code` attribute set to
+   :exc:`~xml.parsers.expat.ExpatError` to be raised with the :attr:`code` attribute set to
    ``errors.codes[errors.XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING]``.
 
 .. method:: xmlparser.SetReparseDeferralEnabled(enabled)
@@ -336,7 +341,7 @@ against some common XML vulnerabilities.
    Parser objects usually have a protection activation threshold of 8 MiB,
    but the actual default value depends on the underlying Expat library.
 
-   An :exc:`ExpatError` is raised if this method is called on a
+   An :exc:`~xml.parsers.expat.ExpatError` is raised if this method is called on a
    |xml-non-root-parser| parser.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
@@ -372,7 +377,7 @@ against some common XML vulnerabilities.
    Parser objects usually have a maximum amplification factor of 100,
    but the actual default value depends on the underlying Expat library.
 
-   An :exc:`ExpatError` is raised if this method is called on a
+   An :exc:`~xml.parsers.expat.ExpatError` is raised if this method is called on a
    |xml-non-root-parser| parser or if *max_factor* is outside the valid range.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
@@ -398,7 +403,7 @@ against some common XML vulnerabilities.
    Parser objects usually have an allocation activation threshold of 64 MiB,
    but the actual default value depends on the underlying Expat library.
 
-   An :exc:`ExpatError` is raised if this method is called on a
+   An :exc:`~xml.parsers.expat.ExpatError` is raised if this method is called on a
    |xml-non-root-parser| parser.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
@@ -428,7 +433,7 @@ against some common XML vulnerabilities.
    Parser objects usually have a maximum amplification factor of 100,
    but the actual default value depends on the underlying Expat library.
 
-   An :exc:`ExpatError` is raised if this method is called on a
+   An :exc:`~xml.parsers.expat.ExpatError` is raised if this method is called on a
    |xml-non-root-parser| parser or if *max_factor* is outside the valid range.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
@@ -514,7 +519,7 @@ against some common XML vulnerabilities.
 
 The following attributes contain values relating to the most recent error
 encountered by an :class:`xmlparser` object, and will only have correct values
-once a call to :meth:`Parse` or :meth:`ParseFile` has raised an
+once a call to :meth:`~xmlparser.Parse` or :meth:`~xmlparser.ParseFile` has raised an
 :exc:`xml.parsers.expat.ExpatError` exception.
 
 
@@ -728,7 +733,7 @@ otherwise stated.
    This happens when there is an external subset or a reference to a parameter
    entity, but the XML declaration does not set standalone to ``yes`` in an XML
    declaration.  If this handler returns ``0``, then the parser will raise an
-   :const:`XML_ERROR_NOT_STANDALONE` error.  If this handler is not set, no
+   :const:`~xml.parsers.expat.errors.XML_ERROR_NOT_STANDALONE` error.  If this handler is not set, no
    exception is raised by the parser for this condition.
 
 
@@ -754,7 +759,7 @@ otherwise stated.
    ``ExternalEntityParserCreate(context)``, initializing it with the appropriate
    callbacks, and parsing the entity.  This handler should return an integer; if it
    returns ``0``, the parser will raise an
-   :const:`XML_ERROR_EXTERNAL_ENTITY_HANDLING` error, otherwise parsing will
+   :const:`~xml.parsers.expat.errors.XML_ERROR_EXTERNAL_ENTITY_HANDLING` error, otherwise parsing will
    continue.
 
    If this handler is not provided, external entities are reported by the
@@ -776,7 +781,7 @@ otherwise stated.
 ExpatError Exceptions
 ---------------------
 
-:exc:`ExpatError` exceptions have a number of interesting attributes:
+:exc:`~xml.parsers.expat.ExpatError` exceptions have a number of interesting attributes:
 
 
 .. attribute:: ExpatError.code
@@ -936,7 +941,7 @@ Expat error constants
 
 The following constants are provided in the :mod:`!xml.parsers.expat.errors`
 module.  These constants are useful in interpreting some of the attributes of
-the :exc:`ExpatError` exception objects raised when an error has occurred.
+the :exc:`~xml.parsers.expat.ExpatError` exception objects raised when an error has occurred.
 Since for backwards compatibility reasons, the constants' value is the error
 *message* and not the numeric error *code*, you do this by comparing its
 :attr:`code` attribute with
@@ -1067,7 +1072,7 @@ The ``errors`` module has the following attributes:
 .. data:: XML_ERROR_NOT_STANDALONE
 
    The parser determined that the document was not "standalone" though it declared
-   itself to be in the XML declaration, and the :attr:`NotStandaloneHandler` was
+   itself to be in the XML declaration, and the :meth:`~xml.parsers.expat.xmlparser.NotStandaloneHandler` was
    set and returned ``0``.
 
 
@@ -1088,7 +1093,7 @@ The ``errors`` module has the following attributes:
 
    A behavioral change was requested after parsing started that can only be changed
    before parsing has started.  This is (currently) only raised by
-   :meth:`UseForeignDTD`.
+   :meth:`~xml.parsers.expat.xmlparser.UseForeignDTD`.
 
 
 .. data:: XML_ERROR_UNBOUND_PREFIX
