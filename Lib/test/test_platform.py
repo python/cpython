@@ -222,6 +222,12 @@ class PlatformTest(unittest.TestCase):
                 ('CPython', '3.10.8', '', '',
                 ('tags/v3.10.8:aaaf517424', 'Feb 14 2023 16:28:12'), 'GCC 9.4.0'),
 
+            ("3.15.0 (main, Nov 22 2026, 15:47:50) ",
+             None, "linux")
+            :
+                ('CPython', '3.15.0', '', '',
+                ('main', 'Nov 22 2026 15:47:50'), ''),
+
             ("2.5 (trunk:6107, Mar 26 2009, 13:02:18) \n[Java HotSpot(TM) Client VM (\"Apple Computer, Inc.\")]",
             ('Jython', 'trunk', '6107'), "java1.5.0_16")
             :

@@ -1167,7 +1167,7 @@ def _sys_version(sys_version=None):
             r'\(#?([^,]+)'  # "(#buildno"
             r'(?:,\s*([\w ]*)'  # ", builddate"
             r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
-            r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
+            r'(?:\[([^\]]+)\])?', re.ASCII)  # "[compiler]"
         match = cpython_sys_version_parser.match(sys_version)
         if match is None:
             raise ValueError(
@@ -1180,6 +1180,8 @@ def _sys_version(sys_version=None):
             builddate = ''
         elif buildtime:
             builddate = builddate + ' ' + buildtime
+        if compiler is None:
+            compiler = ''
 
     if hasattr(sys, '_git'):
         _, branch, revision = sys._git
