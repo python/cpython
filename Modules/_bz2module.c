@@ -444,15 +444,19 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
         if (bzret == BZ_STREAM_END) {
             FT_ATOMIC_STORE_CHAR_RELAXED(d->eof, 1);
             break;
-        } else if (d->bzs_avail_in_real == 0) {
-            break;
         } else if (bzs->avail_out == 0) {
+            /* Need to check bzs->avail_out before d->bzs_avail_in_real.
+               bzs's internal state may still have output pending after
+               all input was consumed, so grow the output buffer and
+               continue unless max_length has been reached. */
             if (OutputBuffer_GetDataSize(&buffer, bzs->avail_out) == max_length) {
                 break;
             }
             if (OutputBuffer_Grow(&buffer, &bzs->next_out, &bzs->avail_out) < 0) {
                 goto error;
             }
+        } else if (d->bzs_avail_in_real == 0) {
+            break;
         }
     }
 
@@ -538,7 +542,19 @@ decompress(BZ2Decompressor *d, char *data, size_t len, Py_ssize_t max_length)
     }
     else if (d->bzs_avail_in_real == 0) {
         bzs->next_in = NULL;
-        FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 1);
+
+        if (bzs->avail_out == 0) {
+            /* (avail_in==0 && avail_out==0)
+               bzs's internal state may still have output pending,
+               try to output it next time. */
+            FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
+
+            /* If max_length < 0, bzs->avail_out always > 0 */
+            assert(max_length >= 0);
+        } else {
+            /* Input buffer exhausted, output buffer has space. */
+            FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 1);
+        }
     }
     else {
         FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);

@@ -1645,7 +1645,19 @@ decompress(ZlibDecompressor *self, uint8_t *data,
     }
     else if (self->avail_in_real == 0) {
         self->zst.next_in = NULL;
-        FT_ATOMIC_STORE_CHAR_RELAXED(self->needs_input, 1);
+
+        if (self->zst.avail_out == 0) {
+            /* (avail_in==0 && avail_out==0)
+               zst's internal state may still have output pending,
+               try to output it next time. */
+            FT_ATOMIC_STORE_CHAR_RELAXED(self->needs_input, 0);
+
+            /* If max_length < 0, zst.avail_out always > 0 */
+            assert(max_length >= 0);
+        } else {
+            /* Input buffer exhausted, output buffer has space. */
+            FT_ATOMIC_STORE_CHAR_RELAXED(self->needs_input, 1);
+        }
     }
     else {
         FT_ATOMIC_STORE_CHAR_RELAXED(self->needs_input, 0);
