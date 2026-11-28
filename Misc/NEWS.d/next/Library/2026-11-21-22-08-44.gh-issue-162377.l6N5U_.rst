@@ -1,0 +1,2 @@
+Fix :meth:`pathlib.Path.move` failing with "Source and target are the same
+file" when only the case of the name changes on a case-insensitive filesystem.

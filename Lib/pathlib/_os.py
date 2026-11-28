@@ -281,6 +281,23 @@ def ensure_distinct_paths(source, target):
     raise err
 
 
+def is_case_only_rename(source, target):
+    """
+    Return true if *target* differs from *source* only in the case of its
+    name, and the target directory has no separate entry with that name.
+    On a case-insensitive filesystem, both paths then refer to the same
+    file, and renaming one to the other changes the case of its name.
+    """
+    source_name = source.name
+    target_name = target.name
+    if source_name == target_name or source_name.lower() != target_name.lower():
+        return False
+    try:
+        return target_name not in os.listdir(target.parent)
+    except (OSError, ValueError):
+        return False
+
+
 def ensure_different_files(source, target):
     """
     Raise OSError(EINVAL) if both paths refer to the same file.
