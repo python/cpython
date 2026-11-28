@@ -7,6 +7,8 @@ import keyword
 import sys
 import types
 
+lazy import typing
+
 __all__ = [
     "Format",
     "ForwardRef",
@@ -410,6 +412,93 @@ class _Stringifier:
                 elts.append(new_elt)
             ast_class = {list: ast.List, tuple: ast.Tuple, set: ast.Set}[type(other)]
             return ast_class(elts), extra_names
+        elif type(other) is types.GenericAlias:
+            # Builtin generic aliases like list[Unknown]
+            origin = other.__origin__
+            args = other.__args__
+
+            if not (
+                isinstance(origin, _Stringifier)
+                or any(isinstance(arg, _Stringifier) for arg in args)
+            ):
+                # The alias does not contain any forward references, use as-is
+                name = self.__stringifier_dict__.create_unique_name()
+                return ast.Name(id=name), {name: other}
+
+            origin_ast, elts, extra_names = self.__get_ast_origin_elts(origin, args)
+
+            # Generic Alias is not guaranteed to be from subscript
+            alias_ast, alias_names = self.__convert_to_ast(types.GenericAlias)
+            extra_names |= alias_names
+            new_ast = ast.Call(
+                func=alias_ast,
+                args=[origin_ast, elts],
+            )
+            return new_ast, extra_names
+        elif type(other) is types.UnionType:
+            origin = other.__origin__
+            args = other.__args__
+
+            if not any(isinstance(arg, _Stringifier) for arg in args):
+                # The union does not contain any forward references, use as-is
+                name = self.__stringifier_dict__.create_unique_name()
+                return ast.Name(id=name), {name: other}
+
+            origin_ast, elts, extra_names = self.__get_ast_origin_elts(origin, args)
+
+            new_ast = ast.Subscript(
+                value=origin_ast,
+                slice=elts,
+            )
+            return new_ast, extra_names
+        elif _is_typing_generic_alias(type(other)):
+            # User generic aliases
+            origin = typing.get_origin(other)
+            args = typing.get_args(other)
+
+            if not (
+                isinstance(origin, _Stringifier)
+                or any(isinstance(arg, _Stringifier) for arg in args)
+            ):
+                # The alias does not contain any forward references, use as-is
+                name = self.__stringifier_dict__.create_unique_name()
+                return ast.Name(id=name), {name: other}
+
+            alias_inst = other._inst
+            alias_name = other._name
+            origin_ast, elts, extra_names = self.__get_ast_origin_elts(origin, args)
+
+            alias_ast, alias_names = self.__convert_to_ast(typing._GenericAlias)
+            extra_names |= alias_names
+
+            # alias_inst is a bool and alias_name a string or None so they have no extra_names
+            alias_inst_ast, _ = self.__convert_to_ast(alias_inst)
+            alias_name_ast, _ = self.__convert_to_ast(alias_name)
+
+            new_ast = ast.Call(
+                func=alias_ast,
+                args=[origin_ast, elts],
+                keywords=[
+                    ast.keyword(arg="inst", value=alias_inst_ast),
+                    ast.keyword(arg="name", value=alias_name_ast),
+                ],
+            )
+            return new_ast, extra_names
+        elif _is_annotated_alias(other):
+            origin = typing.get_origin(other)
+            args = typing.get_args(other)
+
+            if not any(isinstance(arg, _Stringifier) for arg in args):
+                # The alias does not contain any forward references, use as-is
+                name = self.__stringifier_dict__.create_unique_name()
+                return ast.Name(id=name), {name: other}
+
+            origin_ast, elts, extra_names = self.__get_ast_origin_elts(origin, args)
+            new_ast = ast.Subscript(
+                value=origin_ast,
+                slice=elts,
+            )
+            return new_ast, extra_names
         else:
             name = self.__stringifier_dict__.create_unique_name()
             return ast.Name(id=name), {name: other}
@@ -439,6 +528,28 @@ class _Stringifier:
         if isinstance(node, str):
             return ast.Name(id=node)
         return node
+
+    def __get_ast_origin_elts(self, origin, args):
+        # Handle origin and args for generic syntax
+        extra_names = {}
+        elts = []
+
+        origin_ast, origin_names = self.__convert_to_ast(origin)
+        if origin_names is not None:
+            extra_names |= origin_names
+
+        for elt in args:
+            new_elt, new_extra_names = self.__convert_to_ast(elt)
+            if new_extra_names is not None:
+                extra_names |= new_extra_names
+            elts.append(new_elt)
+
+        if len(elts) == 1:
+            elts = elts[0]
+        else:
+            elts = ast.Tuple(elts=elts)
+
+        return origin_ast, elts, extra_names
 
     def __make_new(self, node, extra_names=None):
         new_extra_names = {}
@@ -1191,7 +1302,55 @@ class _ExtraNameFixer(ast.NodeTransformer):
     def __init__(self, extra_names):
         self.extra_names = extra_names
 
+    def visit_Call(self, node: ast.Call):
+        # Convert calls to `GenericAlias` to their string representation
+        if isinstance((func := node.func), ast.Name) and (t := self.extra_names.get(func.id)):
+            if t is types.GenericAlias:
+                new_node = ast.Subscript(
+                    value=node.args[0],
+                    slice=node.args[1],
+                )
+                self.generic_visit(new_node)
+                return new_node
+
+            elif _is_typing_generic_alias(t):
+                # typing generics like typing.List have origin as the thing they are aliasing
+                # The correct name will be in the 'name' keyword arg in this case
+                name = None
+                for k in node.keywords:
+                    if k.arg == "name":
+                        if isinstance((const := k.value), ast.Constant) and const.value:
+                            name = ast.Name(id=f"typing.{const.value}")
+                            break
+
+                if name is None:
+                    name = node.args[0]
+
+                new_node = ast.Subscript(
+                    value=name,
+                    slice=node.args[1],
+                )
+                self.generic_visit(new_node)
+                return new_node
+
+        self.generic_visit(node)
+        return node
+
     def visit_Name(self, node: ast.Name):
         if (new_name := self.extra_names.get(node.id, _sentinel)) is not _sentinel:
             node = ast.Name(id=type_repr(new_name))
         return node
+
+
+def _is_annotated_alias(obj):
+    return (
+        (typing := sys.modules.get("typing"))
+        and typing.get_origin(obj) is typing.Annotated
+    )
+
+def _is_typing_generic_alias(obj):
+    # Handle the private `typing._GenericAlias`
+    return (
+        (typing := sys.modules.get("typing"))
+        and obj is typing._GenericAlias
+    )
