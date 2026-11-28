@@ -1,0 +1,2 @@
+Speed up reading :class:`mailbox.mbox`, :class:`mailbox.MMDF` and
+:class:`mailbox.Babyl` mailboxes.
