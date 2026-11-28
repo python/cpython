@@ -151,8 +151,12 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
    .. c:member:: char *format
 
       A *NULL* terminated string in :mod:`struct` module style syntax describing
-      the contents of a single item. If this is ``NULL``, ``"B"`` (unsigned bytes)
-      is assumed.
+      the contents of a single item. If this is ``NULL``, the original format
+      is not available to the consumer. For a :c:macro:`PyBUF_SIMPLE` or
+      :c:macro:`PyBUF_WRITABLE` request, the buffer is treated as unsigned bytes
+      (``"B"``). For other requests without :c:macro:`PyBUF_FORMAT`,
+      :c:member:`~Py_buffer.itemsize` still describes the size of each item,
+      even though its format is unknown.
 
       This field is controlled by the :c:macro:`PyBUF_FORMAT` flag.
 
@@ -272,9 +276,12 @@ readonly, format
 Since :c:macro:`PyBUF_SIMPLE` is defined as 0, :c:macro:`PyBUF_WRITABLE`
 can be used as a stand-alone flag to request a simple writable buffer.
 
-:c:macro:`PyBUF_FORMAT` must be \|'d to any of the flags except :c:macro:`PyBUF_SIMPLE`, because
-the latter already implies format ``B`` (unsigned bytes). :c:macro:`!PyBUF_FORMAT` cannot be
-used on its own.
+:c:macro:`PyBUF_FORMAT` is optional and can be \|'d to any of the flags in the
+next section except :c:macro:`PyBUF_SIMPLE`. Without it, the exporter sets
+:c:member:`~Py_buffer.format` to ``NULL``, even when shape information is
+requested. To request the original format, combine :c:macro:`!PyBUF_FORMAT`
+with :c:macro:`PyBUF_ND` or a flag that includes it. It cannot be used on its
+own or combined only with :c:macro:`PyBUF_WRITABLE`.
 
 
 shape, strides, suboffsets
