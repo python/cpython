@@ -1,0 +1,5 @@
+The ``ipaddress`` module now supports slicing for ``_BaseNetwork`` objects.
+
+This enhancement allows for more intuitive indexing. The ``__getitem__`` method of ``_BaseNetwork`` has been extended to additionally support slicing, and the ``hosts`` method has been extended to optionally request a specific count of hosts, with an ``offset`` and ``step`` size.
+
+Currently negative indexes aren't supported for reversed slices.
