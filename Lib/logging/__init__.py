@@ -23,7 +23,8 @@ Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
+import sys, os, time, io, re, warnings, weakref, collections.abc
+lazy import traceback
 
 from types import GenericAlias
 from string import Template
