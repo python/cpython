@@ -3894,6 +3894,16 @@ static void object_dealloc(PyObject *);
 static PyObject *object_new(PyTypeObject *, PyObject *, PyObject *);
 static int object_init(PyObject *, PyObject *, PyObject *);
 static int update_slot(PyTypeObject *, PyObject *);
+#ifdef Py_GIL_DISABLED
+// Limit the work spent checking subclasses (including repeated visits in a
+// diamond). Keep them alive until after releasing the type and dict locks.
+struct slot_update_refs {
+    size_t count;
+    PyTypeObject *types[16];  // Small on-stack budget for subclass visits.
+};
+static int slot_update_is_noop(PyTypeObject *, PyObject *, PyObject *,
+                               struct slot_update_refs *);
+#endif
 static void fixup_slot_dispatchers(PyTypeObject *);
 static int type_ready(PyTypeObject *, int, int);
 static int type_ready_publish(PyTypeObject *, int);
@@ -6717,23 +6727,25 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
     return 0;
 }
 
-static int
-update_slot_after_setattr(PyTypeObject *type, PyObject *name)
-{
-    types_stop_world();
-    int res = update_slot(type, name);
-    types_start_world();
 #ifdef Py_GIL_DISABLED
-    // Invalidate again, after the slots are updated and while TYPE_LOCK is
-    // still held.  Other threads may have assigned new version tags while
-    // the lock was released waiting for the stop-the-world and cached
-    // decisions based on the old slots.  This is a no-op if the tags are
-    // still invalid.
+static int
+update_slot_after_setattr(PyTypeObject *type, PyObject *name, PyObject *value,
+                          struct slot_update_refs *refs)
+{
+    int res = 0;
+    if (!slot_update_is_noop(type, name, value, refs)) {
+        types_stop_world();
+        res = update_slot(type, name);
+        types_start_world();
+    }
+    // Invalidate again even if no slot changed. Comparing a non-str dict
+    // key during the write can cache the old method. Waiting for the world
+    // to stop can also let other threads cache decisions based on old slots.
     ASSERT_TYPE_LOCK_HELD();
     _PyType_Modified_Unlocked(type);
-#endif
     return res;
 }
+#endif
 
 static int
 type_setattro(PyObject *self, PyObject *name, PyObject *value)
@@ -6815,16 +6827,29 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
         }
     }
 
+#ifdef Py_GIL_DISABLED
+    struct slot_update_refs refs;
+    refs.count = 0;
+#endif
     BEGIN_TYPE_DICT_LOCK(dict);
     res = type_update_dict(type, (PyDictObject *)dict, name, value, &old_value);
     assert(_PyType_CheckConsistency(type));
     if (res == 0) {
         if (is_dunder_name(name) && has_slotdef(name)) {
             // The name corresponds to a type slot.
-            res = update_slot_after_setattr(type, name);
+#ifdef Py_GIL_DISABLED
+            res = update_slot_after_setattr(type, name, value, &refs);
+#else
+            res = update_slot(type, name);
+#endif
         }
     }
     END_TYPE_DICT_LOCK();
+#ifdef Py_GIL_DISABLED
+    for (size_t i = 0; i < refs.count; i++) {
+        Py_DECREF(refs.types[i]);
+    }
+#endif
 
 done:
     Py_DECREF(name);
@@ -12335,6 +12360,80 @@ update_slot(PyTypeObject *type, PyObject *name)
     return update_subclasses(type, name,
                              update_slots_callback, (void *)&callback_data);
 }
+
+#ifdef Py_GIL_DISABLED
+/* Check the slots in 'type' and the subclasses update_slot() would visit.  Note
+ * that this must be done without releasing TYPE_LOCK. */
+static int
+slots_are_generic(PyTypeObject *type, PyObject *name, const uint8_t *dups,
+                  struct slot_update_refs *refs)
+{
+    ASSERT_TYPE_LOCK_HELD();
+
+    for (uint8_t k = 1; k <= dups[0]; k++) {
+        pytype_slotdef *p = &slotdefs[dups[k]];
+        void **ptr = slotptr(type, p->offset);
+        if (ptr != NULL && *ptr != p->function) {
+            return 0;
+        }
+        if (p->function == slot_tp_call &&
+            (type->tp_flags & Py_TPFLAGS_HAVE_VECTORCALL)) {
+            return 0;
+        }
+    }
+    PyObject *subclasses = lookup_tp_subclasses(type);  // borrowed ref
+    if (subclasses == NULL) {
+        return 1;
+    }
+    Py_ssize_t i = 0;
+    PyObject *ref;
+    while (PyDict_Next(subclasses, &i, NULL, &ref)) {
+        if (refs->count == Py_ARRAY_LENGTH(refs->types)) {
+            // Another visit would exceed the budget for the whole walk
+            // (including repeat visits). Fall back to the normal slot update.
+            return 0;
+        }
+        PyTypeObject *subclass = type_from_ref(ref);
+        if (subclass == NULL) {
+            return 0;
+        }
+        refs->types[refs->count++] = subclass;
+
+        // Prune at overrides, as in recurse_down_subclasses(). Don't block
+        // on the dict lock: detaching could release TYPE_LOCK mid-walk.
+        PyObject *dict = lookup_tp_dict(subclass);
+        if (dict == NULL || !PyDict_Check(dict) ||
+            !PyMutex_LockFast(&dict->ob_mutex)) {
+            return 0;
+        }
+        int overrides = _PyDict_GetItem_ExactUnicode((PyDictObject *)dict,
+                                                     name) != NULL;
+        PyMutex_Unlock(&dict->ob_mutex);
+        if (!overrides && !slots_are_generic(subclass, name, dups, refs)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/* Return 1 if update_slot() would not change any slot after 'value' was
+   assigned to the slot name 'name' of 'type', so the stop-the-world can be
+   skipped.  Return 0 if slots might change. */
+static int
+slot_update_is_noop(PyTypeObject *type, PyObject *name, PyObject *value,
+                    struct slot_update_refs *refs)
+{
+    ASSERT_TYPE_LOCK_HELD();
+    if (value == NULL || !PyFunction_Check(value)) {
+        return 0;
+    }
+    Py_ssize_t idx = slotname_lookup(name, _PyObject_HashDictKey(name));
+    if (idx < 0) {
+        return 0;
+    }
+    return slots_are_generic(type, name, slotdefs_dups[idx], refs);
+}
+#endif
 
 /* Store the proper functions in the slot dispatches at class (type)
    definition time, based upon which operations the class overrides in its

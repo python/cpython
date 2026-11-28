@@ -1,0 +1,4 @@
+Fix a performance regression in the :term:`free-threaded build` when
+assigning a special method to a class, such as ``C.__getitem__ = f``, while
+other threads are running. Replacing a Python function with another can now
+avoid stopping the world when the type slots are already up to date.

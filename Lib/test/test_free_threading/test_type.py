@@ -358,6 +358,11 @@ class TestType(TestCase):
         self.assertTrue(all(repr(cls()) == "custom repr"
                             for cls in subclasses))
 
+        # This time the slots are already generic. The fast check must
+        # release the subclasses it visited before reaching its budget.
+        Base.__repr__ = lambda self: "replacement"
+        self.assertTrue(all(repr(cls()) == "replacement" for cls in subclasses))
+
         del Base.__repr__
         self.assertTrue(all(repr(cls()) != "custom repr"
                             for cls in subclasses))
@@ -499,6 +504,35 @@ class TestType(TestCase):
 
         C.__bases__ = (B,)
         self.assertEqual(C.__mro__, (C, B, object))
+
+    def test_slot_update_shadowed_branch(self):
+        class Base:
+            def __repr__(self):
+                return "base"
+
+        class Target(Base):
+            pass
+
+        class Override(Target):
+            def __repr__(self):
+                return "override"
+
+        class Native(Base):
+            __repr__ = object.__repr__
+
+        class Inherit(Target, Native):
+            pass
+
+        class Both(Override, Inherit):
+            pass
+
+        # Target's slot is already generic, but Inherit gets its slot from
+        # Native until Target defines __repr__ in its own dict.
+        obj = Inherit()
+        self.assertEqual(repr(obj), object.__repr__(obj))
+        Target.__repr__ = lambda self: "new"
+        self.assertEqual(repr(obj), "new")
+        self.assertEqual(repr(Both()), "override")
 
     def test_slot_update_skips_non_str_keys(self):
         # Slots are computed (with the world stopped, for an update) without
