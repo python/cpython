@@ -155,9 +155,19 @@ long_normalize(PyLongObject *v)
 # define MAX_LONG_DIGITS ((INT64_MAX-1) / PyLong_SHIFT)
 #endif
 
+/* The freelist holds blocks of sizeof(PyLongObject) bytes: the padding
+   after ob_digit[0] can have space for more than one digit. */
+#define MAX_DIGITS_FOR_FREELIST \
+    ((Py_ssize_t)((sizeof(PyLongObject) - \
+                   offsetof(PyLongObject, long_value.ob_digit)) / sizeof(digit)))
+
 static PyLongObject *
 long_alloc(Py_ssize_t size)
 {
+    static_assert(MAX_DIGITS_FOR_FREELIST >= 1,
+                  "int freelist blocks must hold at least one digit");
+    // ints from tp_alloc must be big enough for the freelist too.
+    assert(_PyObject_VAR_SIZE(&PyLong_Type, 1) >= sizeof(PyLongObject));
     assert(size >= 0);
     PyLongObject *result = NULL;
     if (size > (Py_ssize_t)MAX_LONG_DIGITS) {
@@ -169,8 +179,13 @@ long_alloc(Py_ssize_t size)
      * assume that there is always at least one digit present. */
     Py_ssize_t ndigits = size ? size : 1;
 
-    if (ndigits == 1) {
+    Py_ssize_t alloc_digits = ndigits;
+    if (ndigits <= MAX_DIGITS_FOR_FREELIST) {
         result = (PyLongObject *)_Py_FREELIST_POP(PyLongObject, ints);
+        /* The block may later go on the freelist and be reused for any
+           int with up to MAX_DIGITS_FOR_FREELIST digits, so allocate room
+           for that many digits, not just ndigits. */
+        alloc_digits = MAX_DIGITS_FOR_FREELIST;
     }
     if (result == NULL) {
         /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
@@ -179,7 +194,7 @@ long_alloc(Py_ssize_t size)
         incorrect in the presence of padding between the header
         and the digits. */
         result = PyObject_Malloc(offsetof(PyLongObject, long_value.ob_digit) +
-                                ndigits*sizeof(digit));
+                                alloc_digits*sizeof(digit));
         if (!result) {
             PyErr_NoMemory();
             return NULL;
@@ -191,7 +206,7 @@ long_alloc(Py_ssize_t size)
 #ifdef Py_DEBUG
     // gh-147988: Fill digits with an invalid pattern to catch usage
     // of uninitialized digits.
-    memset(result->long_value.ob_digit, 0xFF, ndigits * sizeof(digit));
+    memset(result->long_value.ob_digit, 0xFF, alloc_digits * sizeof(digit));
 #endif
     return result;
 }
@@ -3638,7 +3653,12 @@ _PyLong_ExactDealloc(PyObject *self)
         _Py_SetImmortal(self);
         return;
     }
-    if (_PyLong_IsCompact((PyLongObject *)self)) {
+    if (_PyLong_DigitCount((PyLongObject *)self) <= MAX_DIGITS_FOR_FREELIST) {
+#if defined(Py_DEBUG) || defined(_Py_ADDRESS_SANITIZER)
+        // Use allocator to detect allocations that are too small.
+        memset(((PyLongObject *)self)->long_value.ob_digit, 0xFF,
+               MAX_DIGITS_FOR_FREELIST * sizeof(digit));
+#endif
         _Py_FREELIST_FREE(ints, self, PyObject_Free);
         return;
     }
@@ -3658,7 +3678,14 @@ long_dealloc(PyObject *self)
         _Py_SetImmortal(self);
         return;
     }
-    if (PyLong_CheckExact(self) && _PyLong_IsCompact((PyLongObject *)self)) {
+    if (PyLong_CheckExact(self)
+        && _PyLong_DigitCount((PyLongObject *)self) <= MAX_DIGITS_FOR_FREELIST)
+    {
+#if defined(Py_DEBUG) || defined(_Py_ADDRESS_SANITIZER)
+        // Use allocator to detect allocations that are too small.
+        memset(((PyLongObject *)self)->long_value.ob_digit, 0xFF,
+               MAX_DIGITS_FOR_FREELIST * sizeof(digit));
+#endif
         _Py_FREELIST_FREE(ints, self, PyObject_Free);
         return;
     }
