@@ -27,6 +27,12 @@ Pending removal in Python 3.21
     parameter or pass the dispatch type explicitly instead.
     (Contributed by Bartosz Sławecki in :gh:`143465`.)
 
+* :mod:`mimetypes`:
+
+  * Passing a file path (including path-like objects and bytes paths) to
+    :func:`~mimetypes.guess_type`. Use :func:`~mimetypes.guess_file_type`
+    instead.
+
 * :mod:`struct`:
 
   * Soft-deprecated since Python 3.15, using ``'F'`` and ``'D'`` type codes are now

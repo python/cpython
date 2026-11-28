@@ -277,14 +277,14 @@ class MimeTypesModuleTestCase(unittest.TestCase):
 
     def test_added_types_are_used(self):
         mimetypes.add_type('testing/default-type', '')
-        mime_type, _ = mimetypes.guess_type('')
+        mime_type, _ = mimetypes.guess_file_type('')
         self.assertEqual(mime_type, 'testing/default-type')
 
-        mime_type, _ = mimetypes.guess_type('test.myext')
+        mime_type, _ = mimetypes.guess_file_type('test.myext')
         self.assertEqual(mime_type, None)
 
         mimetypes.add_type('testing/type', '.myext')
-        mime_type, _ = mimetypes.guess_type('test.myext')
+        mime_type, _ = mimetypes.guess_file_type('test.myext')
         self.assertEqual(mime_type, 'testing/type')
 
     def test_add_type_with_undotted_extension_not_supported(self):
@@ -434,25 +434,29 @@ class MimeTypesClassTestCase(unittest.TestCase):
                 path = prefix + name
                 with self.subTest(path=path):
                     eq(self.db.guess_file_type(path), gzip_expected)
-                    eq(self.db.guess_type(path), gzip_expected)
+                    with self.assertWarns(DeprecationWarning):
+                        eq(self.db.guess_type(path), gzip_expected)
             expected = (None, None) if os.name == 'nt' else gzip_expected
             for prefix in ('//', '\\\\', '//share/', '\\\\share\\'):
                 path = prefix + name
                 with self.subTest(path=path):
                     eq(self.db.guess_file_type(path), expected)
-                    eq(self.db.guess_type(path), expected)
+                    with self.assertWarns(DeprecationWarning):
+                        eq(self.db.guess_type(path), expected)
         eq(self.db.guess_file_type(r" \"\`;b&b&c |.tar.gz"), gzip_expected)
-        eq(self.db.guess_type(r" \"\`;b&b&c |.tar.gz"), gzip_expected)
+        with self.assertWarns(DeprecationWarning):
+            eq(self.db.guess_type(r" \"\`;b&b&c |.tar.gz"), gzip_expected)
 
         eq(self.db.guess_file_type(r'foo/.tar.gz'), (None, 'gzip'))
-        eq(self.db.guess_type(r'foo/.tar.gz'), (None, 'gzip'))
+        with self.assertWarns(DeprecationWarning):
+            eq(self.db.guess_type(r'foo/.tar.gz'), (None, 'gzip'))
         expected = (None, 'gzip') if os.name == 'nt' else gzip_expected
         eq(self.db.guess_file_type(r'foo\.tar.gz'), expected)
-        eq(self.db.guess_type(r'foo\.tar.gz'), expected)
+        with self.assertWarns(DeprecationWarning):
+            eq(self.db.guess_type(r'foo\.tar.gz'), expected)
         eq(self.db.guess_type(r'scheme:foo\.tar.gz'), gzip_expected)
 
     def test_url(self):
-        result = self.db.guess_type('http://example.com/host.html')
         result = self.db.guess_type('http://host.html')
         msg = 'URL only has a host name, not a file'
         self.assertSequenceEqual(result, (None, None), msg)
@@ -462,6 +466,13 @@ class MimeTypesClassTestCase(unittest.TestCase):
         result = self.db.guess_type('http://example.com/host.html#x.tar')
         self.assertSequenceEqual(result, ('text/html', None))
         result = self.db.guess_type('http://example.com/host.html?q=x.tar')
+        self.assertSequenceEqual(result, ('text/html', None))
+
+    def test_file_url(self):
+        result = self.db.guess_type('file:///a/b/c/file.txt')
+        self.assertSequenceEqual(result, ('text/plain', None))
+        # a local path URL which looks a bit like a netloc
+        result = self.db.guess_type('file:///host.html')
         self.assertSequenceEqual(result, ('text/html', None))
 
     def test_guess_all_types(self):
@@ -506,16 +517,20 @@ class MimeTypesClassTestCase(unittest.TestCase):
         expected = self.db.guess_file_type(filename)
 
         self.assertEqual(self.db.guess_file_type(filepath), expected)
-        self.assertEqual(self.db.guess_type(filepath), expected)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(self.db.guess_type(filepath), expected)
         self.assertEqual(self.db.guess_file_type(
             filepath_with_abs_dir), expected)
-        self.assertEqual(self.db.guess_type(
-            filepath_with_abs_dir), expected)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(self.db.guess_type(
+                filepath_with_abs_dir), expected)
         self.assertEqual(self.db.guess_file_type(filepath_relative), expected)
-        self.assertEqual(self.db.guess_type(filepath_relative), expected)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(self.db.guess_type(filepath_relative), expected)
 
         self.assertEqual(self.db.guess_file_type(path_dir), (None, None))
-        self.assertEqual(self.db.guess_type(path_dir), (None, None))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(self.db.guess_type(path_dir), (None, None))
 
     def test_bytes_path(self):
         self.assertEqual(self.db.guess_file_type(b'foo.html'),
@@ -555,9 +570,9 @@ class Win32MimeTypesTestCase(unittest.TestCase):
         # Windows registry is undocumented AFAIK.
         # Use file types that should *always* exist:
         eq = self.assertEqual
-        eq(self.db.guess_type("foo.txt"), ("text/plain", None))
-        eq(self.db.guess_type("image.jpg"), ("image/jpeg", None))
-        eq(self.db.guess_type("image.png"), ("image/png", None))
+        eq(self.db.guess_file_type("foo.txt"), ("text/plain", None))
+        eq(self.db.guess_file_type("image.jpg"), ("image/jpeg", None))
+        eq(self.db.guess_file_type("image.png"), ("image/png", None))
 
     def test_default_knownfiles(self):
         self.assertEqual(knownfiles, [])
@@ -584,7 +599,7 @@ class MiscTestCase(unittest.TestCase):
 
     @cpython_only
     def test_lazy_import(self):
-        ensure_lazy_imports("mimetypes", {"os", "posixpath", "urllib.parse", "argparse"})
+        ensure_lazy_imports("mimetypes", {"urllib.parse", "argparse", "warnings"})
 
 
 class CommandLineTest(unittest.TestCase):

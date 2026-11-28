@@ -1378,6 +1378,13 @@ New deprecations
     instead.
     (Contributed by Bartosz Sławecki in :gh:`143465`.)
 
+* :mod:`mimetypes`:
+
+  * Passing a file path (or :term:`path-like object`) to
+    :func:`mimetypes.guess_type` is now deprecated.
+    Use :func:`mimetypes.guess_file_type` instead.
+    (Contributed by Naveen Kumar G and Stephen Rosen in :gh:`151575`.)
+
 * :mod:`struct`:
 
   * The ``'F'`` and ``'D'`` type codes, soft-deprecated since Python 3.15,
