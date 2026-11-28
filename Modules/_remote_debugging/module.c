@@ -373,6 +373,9 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     }
 #endif
 
+    if (self->handle.pid != 0) {
+        _Py_RemoteDebug_CleanupProcHandle(&self->handle);
+    }
     self->native = native;
     self->gc = gc;
     self->opcodes = opcodes;
