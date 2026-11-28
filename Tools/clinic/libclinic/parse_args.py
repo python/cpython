@@ -1484,14 +1484,18 @@ class ParseArgsCodeGen:
             raise ValueError("Slot methods cannot access their defining class.")
 
         if not parses_keywords:
-            self.declarations = '{base_type_ptr}'
+            always_reject = self.self_parameter_converter.always_reject_kwargs
+            # The no-positional check below still exempts subclasses.
+            if not (always_reject and parses_positional):
+                self.declarations = '{base_type_ptr}'
             self.codegen.add_include('pycore_modsupport.h',
                                      '_PyArg_NoKeywords()')
+            type_check = '' if always_reject else '{self_type_check}'
             fields.insert(0, libclinic.normalize_snippet("""
-                if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs)) {{
+                if (%s!_PyArg_NoKeywords("{name}", kwargs)) {{
                     goto exit;
                 }}
-                """, indent=4))
+                """ % type_check, indent=4))
             if not parses_positional:
                 self.codegen.add_include('pycore_modsupport.h',
                                          '_PyArg_NoPositional()')
@@ -1811,6 +1815,10 @@ class ParseArgsCodeGen:
             self.parse_pos_only()
         else:
             self.parse_general(clang)
+
+        if (self.self_parameter_converter.always_reject_kwargs
+                and 'METH_KEYWORDS' in self.flags):
+            fail("always_reject_kwargs is incompatible with keyword parameters")
 
         self.copy_includes()
         if self.is_new_or_init():

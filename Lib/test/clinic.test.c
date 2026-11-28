@@ -5175,6 +5175,7 @@ Test_an_metho_arg_named_arg_impl(TestObj *self, int arg)
 
 /*[clinic input]
 Test.__init__
+    self: self(type="TestObj *", always_reject_kwargs=True)
     *args: tuple
 
 Varargs init method.
@@ -5197,12 +5198,9 @@ static int
 Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    PyTypeObject *base_tp = TestType;
     PyObject *__clinic_args = NULL;
 
-    if ((Py_IS_TYPE(self, base_tp) ||
-         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
-        !_PyArg_NoKeywords("Test", kwargs)) {
+    if (!_PyArg_NoKeywords("Test", kwargs)) {
         goto exit;
     }
     __clinic_args = Py_NewRef(args);
@@ -5217,7 +5215,7 @@ exit:
 
 static int
 Test___init___impl(TestObj *self, PyObject *args)
-/*[clinic end generated code: output=0e5836c40dbc2397 input=a615a4485c0fc3e2]*/
+/*[clinic end generated code: output=d912a2c5da6467d9 input=8e0d779137ce4f66]*/
 
 /*[clinic input]
 @vectorcall

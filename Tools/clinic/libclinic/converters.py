@@ -1226,8 +1226,10 @@ class self_converter(CConverter):
     format_unit = ''
     specified_type: str | None = None
 
-    def converter_init(self, *, type: str | None = None) -> None:
+    def converter_init(self, *, type: str | None = None,
+                       always_reject_kwargs: bool = False) -> None:
         self.specified_type = type
+        self.always_reject_kwargs = always_reject_kwargs
 
     def pre_render(self) -> None:
         f = self.function

@@ -132,6 +132,18 @@ class ClinicWholeFileTest(TestCase):
         )
         self.expect_failure(raw, err, filename="test.c", lineno=3)
 
+    def test_always_reject_kwargs_with_keyword_parameter(self):
+        raw = """
+            /*[clinic input]
+            class Foo "FooObject *" "Foo_Type"
+            Foo.__init__
+                self: self(always_reject_kwargs=True)
+                a: object
+            [clinic start generated code]*/
+        """
+        err = "always_reject_kwargs is incompatible with keyword parameters"
+        self.expect_failure(raw, err)
+
     def test_checksum_mismatch(self):
         raw = """
             /*[clinic input]
