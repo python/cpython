@@ -2147,6 +2147,22 @@ class TestArchives(BaseTest, unittest.TestCase):
                            owner='kjhkjhkjg', group='oihohoh')
         self.assertTrue(os.path.isfile(res))
 
+    @support.requires_zlib()
+    def test_make_archive_zip_unreadable_dir(self):
+        root_dir, base_dir = self._create_files()
+        sub = os.path.join(root_dir, base_dir, 'sub')
+        base_name = os.path.join(self.mkdtemp(), 'archive')
+        orig_scandir = os.scandir
+
+        def fail_scandir(path='.'):
+            if os.path.normpath(str(path)) == os.path.normpath(sub):
+                raise PermissionError(f"Permission denied: {path!r}")
+            return orig_scandir(path)
+
+        with unittest.mock.patch('os.scandir', side_effect=fail_scandir):
+            with self.assertRaises(PermissionError):
+                make_archive(base_name, 'zip', root_dir, base_dir)
+
 
     @support.requires_zlib()
     @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")

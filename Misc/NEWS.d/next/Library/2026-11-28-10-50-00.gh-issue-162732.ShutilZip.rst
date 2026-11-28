@@ -1,0 +1,3 @@
+:func:`shutil.make_archive` with format ``"zip"`` now propagates any
+:exc:`OSError` encountered when traversing source directories instead of
+silently producing an incomplete archive.

@@ -1134,7 +1134,11 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
                 zf.write(base_dir, arcname)
                 if logger is not None:
                     logger.info("adding '%s'", base_dir)
-            for dirpath, dirnames, filenames in os.walk(base_dir):
+
+            def _onerror(err):
+                raise err
+
+            for dirpath, dirnames, filenames in os.walk(base_dir, onerror=_onerror):
                 arcdirpath = dirpath
                 if root_dir is not None:
                     arcdirpath = os.path.relpath(arcdirpath, root_dir)
