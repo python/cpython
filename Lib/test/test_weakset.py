@@ -457,26 +457,14 @@ class TestWeakSet(unittest.TestCase):
     def test_copying(self):
         for cls in WeakSet, WeakSetWithSlots:
             s = cls(self.items)
-            s.x = ['x']
-            s.z = ['z']
-
-            dup = copy.copy(s)
+            with self.assertRaises(TypeError):
+                copy.copy(s)
+            with self.assertRaises(TypeError):
+                copy.deepcopy(s)
+            dup = s.copy()
             self.assertIsInstance(dup, cls)
             self.assertEqual(dup, s)
-            self.assertIsNot(dup, s)
-            self.assertIs(dup.x, s.x)
-            self.assertIs(dup.z, s.z)
-            self.assertNotHasAttr(dup, 'y')
-
-            dup = copy.deepcopy(s)
-            self.assertIsInstance(dup, cls)
-            self.assertEqual(dup, s)
-            self.assertIsNot(dup, s)
-            self.assertEqual(dup.x, s.x)
-            self.assertIsNot(dup.x, s.x)
-            self.assertEqual(dup.z, s.z)
-            self.assertIsNot(dup.z, s.z)
-            self.assertNotHasAttr(dup, 'y')
+            self.assertIsNot(dup.data, s.data)
 
 
 if __name__ == "__main__":
