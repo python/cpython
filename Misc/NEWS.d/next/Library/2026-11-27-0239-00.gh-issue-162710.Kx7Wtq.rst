@@ -1,0 +1,1 @@
+Fix :meth:`zipfile.PyZipFile.writepy` to compile archived bytecode at the optimization level requested by the ``optimize`` argument rather than the builder interpreter's level.

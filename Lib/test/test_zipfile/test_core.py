@@ -3697,6 +3697,35 @@ class PyZipFileTests(unittest.TestCase):
             self.assertIn('email/__init__' + ext, names)
             self.assertIn('email/mime/text' + ext, names)
 
+    def test_write_with_optimization_level(self):
+        # gh-162710: writepy() must compile with the requested optimization
+        # level even when it differs from the builder interpreter's level.
+        source = (
+            '"""module docs"""\n'
+            'DEBUG = __debug__\n'
+        )
+        with temp_cwd(None):
+            with open(TESTFN, "w", encoding="utf-8") as f:
+                f.write(source)
+            archive = TESTFN + ".zip"
+            for level in (0, 1, 2):
+                with zipfile.PyZipFile(archive, "w", optimize=level) as zipfp:
+                    zipfp.writepy(TESTFN)
+                path = archive + os.sep + os.path.basename(TESTFN) + "c"
+                ns = {}
+                with zipfile.ZipFile(archive) as zipfp:
+                    exec(zipfp.read(os.path.basename(TESTFN) + "c"), ns)
+                if level == 0:
+                    self.assertIs(ns["DEBUG"], True)
+                else:
+                    self.assertIs(ns["DEBUG"], False)
+                if level == 2:
+                    self.assertIsNone(ns["__doc__"])
+                else:
+                    self.assertEqual(ns["__doc__"], "module docs")
+            unlink(TESTFN)
+            unlink(archive)
+
     def test_write_python_directory(self):
         os.mkdir(TESTFN2)
         try:
