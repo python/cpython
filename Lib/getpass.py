@@ -110,21 +110,18 @@ def unix_getpass(prompt='Password: ', stream=None, *, echo_char=None):
         if fd is not None:
             try:
                 old = termios.tcgetattr(fd)     # a copy to save
-                new = old[:]
+                # Always leave canonical mode. A long paste with no newline
+                # (for example a JWT) can fill MAX_INPUT while readline()
+                # waits, which deadlocks some terminals (macOS Terminal.app).
+                new = list(old)
+                new[6] = list(old[6])
                 new[3] &= ~termios.ECHO  # 3 == 'lflags'
-                # Extract control characters before changing terminal mode.
-                term_ctrl_chars = None
-                if echo_char:
-                    # ICANON enables canonical (line-buffered) mode where
-                    # the terminal handles line editing. Disable it so we
-                    # can read input char by char and handle editing ourselves.
-                    new[3] &= ~termios.ICANON
-                    # IEXTEN enables implementation-defined input processing
-                    # such as LNEXT (Ctrl+V). Disable it so the terminal
-                    # driver does not intercept these characters before our
-                    # code can handle them.
-                    new[3] &= ~termios.IEXTEN
-                    term_ctrl_chars = _get_terminal_ctrl_chars(fd)
+                new[3] &= ~termios.ICANON
+                new[3] &= ~termios.IEXTEN
+                cc = new[6]
+                cc[termios.VMIN] = 1
+                cc[termios.VTIME] = 0
+                term_ctrl_chars = _get_terminal_ctrl_chars(fd)
                 tcsetattr_flags = termios.TCSAFLUSH
                 if hasattr(termios, 'TCSASOFT'):
                     tcsetattr_flags |= termios.TCSASOFT
@@ -228,7 +225,7 @@ def _raw_input(prompt="", stream=None, input=None, echo_char=None,
             stream.write(prompt)
         stream.flush()
     # NOTE: The Python C API calls flockfile() (and unlock) during readline.
-    if echo_char:
+    if echo_char or term_ctrl_chars is not None:
         return _readline_with_echo_char(stream, input, echo_char,
                                         term_ctrl_chars, prompt)
     line = input.readline()
@@ -277,16 +274,17 @@ class _PasswordLineEditor:
         }
 
     def refresh_display(self, prev_len=None):
-        """Redraw the entire password line with *echo_char*.
-
-        If *prev_len* is not specified, the current password length is used.
-        """
+        """Redraw the prompt and, if set, the echo characters."""
         prompt_len = len(self.prompt)
-        clear_len = prev_len if prev_len is not None else len(self.password)
-        # Clear the entire line (prompt + password) and rewrite.
-        self.stream.write('\r' + ' ' * (prompt_len + clear_len) + '\r')
-        self.stream.write(self.prompt + self.echo_char * len(self.password))
-        if self.cursor_pos < len(self.password):
+        if self.echo_char is None:
+            visible_len = 0
+            visible = ''
+        else:
+            visible_len = prev_len if prev_len is not None else len(self.password)
+            visible = self.echo_char * len(self.password)
+        self.stream.write('\r' + ' ' * (prompt_len + visible_len) + '\r')
+        self.stream.write(self.prompt + visible)
+        if self.echo_char is not None and self.cursor_pos < len(self.password):
             self.stream.write('\b' * (len(self.password) - self.cursor_pos))
         self.stream.flush()
 
@@ -294,8 +292,7 @@ class _PasswordLineEditor:
         """Insert *char* at cursor position."""
         self.password.insert(self.cursor_pos, char)
         self.cursor_pos += 1
-        # Only refresh if inserting in middle.
-        if self.cursor_pos < len(self.password):
+        if self.echo_char is None or self.cursor_pos < len(self.password):
             self.refresh_display()
         else:
             self.stream.write(self.echo_char)
