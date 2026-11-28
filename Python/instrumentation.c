@@ -191,6 +191,16 @@ _PyCode_Deinstrument(uint8_t opcode)
     return DE_INSTRUMENT[opcode];
 }
 
+/* GET_AWAITABLE after an awaited call is never instrumented,
+ * see IS_AWAITED_CALL(). */
+static inline bool
+is_awaited_call_get_awaitable(PyCodeObject *code, int i)
+{
+    _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(code, i);
+    return inst.op.code == GET_AWAITABLE &&
+           (inst.op.arg & GET_AWAITABLE_AWAITED_CALL);
+}
+
 static inline bool
 is_instrumented(int opcode)
 {
@@ -574,6 +584,7 @@ sanity_check_instrumentation(PyCodeObject *code)
             opcode = _PyCode_GetOriginalOpcode(data->lines, i);
             CHECK(valid_opcode(opcode));
             CHECK(opcode != END_FOR);
+            CHECK(!is_awaited_call_get_awaitable(code, i));
             CHECK(opcode != RESUME);
             CHECK(opcode != RESUME_CHECK);
             CHECK(opcode != RESUME_CHECK_JIT);
@@ -1353,8 +1364,13 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
         int prev_opcode = bytecode[prev_index].op.code;
         /* RESUME and INSTRUMENTED_RESUME are needed for the operation of
             * instrumentation, so must never be hidden by an INSTRUMENTED_LINE.
+            * GET_AWAITABLE after an awaited call cannot start a line, so
+            * the SEND after it does.
             */
-        if (prev_opcode != RESUME && prev_opcode != INSTRUMENTED_RESUME) {
+        if (prev_opcode != RESUME && prev_opcode != INSTRUMENTED_RESUME &&
+            !(i == prev_index + 1 &&
+              is_awaited_call_get_awaitable(code, prev_index)))
+        {
             goto done;
         }
     }
@@ -1449,6 +1465,14 @@ _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame*
     assert(instrumentation_data->per_instruction_opcodes);
     int next_opcode = instrumentation_data->per_instruction_opcodes[offset];
     if (tstate->tracing) {
+        return next_opcode;
+    }
+    if (next_opcode == GET_AWAITABLE &&
+        (instr->op.arg & GET_AWAITABLE_AWAITED_CALL) &&
+        !PyStackRef_IsNull(frame->stackpointer[-2]))
+    {
+        /* Instrumented while a lazy coroutine ran: its outcome must reach
+         * GET_AWAITABLE before anything else runs. */
         return next_opcode;
     }
     assert(debug_check_sanity(tstate->interp, code));
@@ -1579,6 +1603,16 @@ initialize_lines(_PyCoLineInstrumentationData *line_data, PyCodeObject *code, in
                     * RESUME and POP_ITER must not be instrumented with INSTRUMENTED_LINE */
                     set_original_opcode(line_data, i, 0);
                     break;
+                case GET_AWAITABLE:
+                    if (is_awaited_call_get_awaitable(code, i)) {
+                        /* GET_AWAITABLE after an awaited call must not be
+                        * instrumented with INSTRUMENTED_LINE, as no events may
+                        * fire before it handles a lazy coroutine.
+                        * The SEND after it starts the line of the await. */
+                        set_original_opcode(line_data, i, 0);
+                        break;
+                    }
+                    _Py_FALLTHROUGH;
                 default:
                     /* Set original_opcode to the opcode iff the instruction
                     * starts a line, and thus should be instrumented.
@@ -1644,7 +1678,9 @@ initialize_lines(_PyCoLineInstrumentationData *line_data, PyCodeObject *code, in
         assert(target >= 0);
         if (get_line_delta(line_data, target) != NO_LINE) {
             int opcode = _Py_GetBaseCodeUnit(code, target).op.code;
-            if (opcode != POP_ITER) {
+            if (opcode != POP_ITER &&
+                !is_awaited_call_get_awaitable(code, target))
+            {
                 set_original_opcode(line_data, target, opcode);
             }
         }
@@ -1990,7 +2026,7 @@ instrument_all_executing_code_objects(PyInterpreterState *interp)
     _Py_FOR_EACH_TSTATE_BEGIN(interp, ts) {
         _PyInterpreterFrame *frame = ts->current_frame;
         while (frame) {
-            if (frame->owner < FRAME_OWNED_BY_INTERPRETER) {
+            if (frame->owner != FRAME_OWNED_BY_INTERPRETER) {
                 err = instrument_lock_held(_PyFrame_GetCode(frame), interp);
                 if (err) {
                     goto done;

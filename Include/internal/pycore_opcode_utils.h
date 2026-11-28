@@ -98,6 +98,10 @@ extern "C" {
 #define GET_ITER_YIELD_FROM_NO_CHECK 2
 #define GET_ITER_YIELD_FROM_CORO_CHECK 3
 
+/* Values used in the oparg for GET_AWAITABLE */
+#define GET_AWAITABLE_WHERE_MASK 0x3
+#define GET_AWAITABLE_AWAITED_CALL 0x4
+
 #ifdef __cplusplus
 }
 #endif

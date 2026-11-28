@@ -522,6 +522,13 @@ codegen_add_yield_from(compiler *c, location loc, int await)
 }
 
 static int
+codegen_await_call_result(compiler *c, location loc, int where)
+{
+    ADDOP_I(c, loc, GET_AWAITABLE, GET_AWAITABLE_AWAITED_CALL | where);
+    return codegen_add_yield_from(c, loc, 1);
+}
+
+static int
 codegen_pop_except_and_reraise(compiler *c, location loc)
 {
     /* Stack contents
@@ -612,13 +619,15 @@ codegen_unwind_fblock(compiler *c, location *ploc,
             *ploc = info->fb_loc;
             ADDOP(c, *ploc, POP_BLOCK);
             if (preserve_tos) {
+                if (info->fb_type == COMPILE_FBLOCK_ASYNC_WITH) {
+                    ADDOP_I(c, *ploc, SWAP, 4);
+                }
                 ADDOP_I(c, *ploc, SWAP, 3);
                 ADDOP_I(c, *ploc, SWAP, 2);
             }
             RETURN_IF_ERROR(codegen_call_exit_with_nones(c, *ploc));
             if (info->fb_type == COMPILE_FBLOCK_ASYNC_WITH) {
-                ADDOP_I(c, *ploc, GET_AWAITABLE, 2);
-                ADD_YIELD_FROM(c, *ploc, 1);
+                RETURN_IF_ERROR(codegen_await_call_result(c, *ploc, 2));
             }
             ADDOP(c, *ploc, POP_TOP);
             /* The exit block should appear to execute after the
@@ -4267,6 +4276,22 @@ codegen_call(compiler *c, expr_ty e)
 }
 
 static int
+codegen_await(compiler *c, expr_ty e)
+{
+    location loc = LOC(e);
+    expr_ty value = e->v.Await.value;
+    if (value->kind != Call_kind) {
+        VISIT(c, expr, value);
+        ADDOP_I(c, loc, GET_AWAITABLE, 0);
+        ADD_YIELD_FROM(c, loc, 1);
+        return SUCCESS;
+    }
+    ADDOP(c, LOC(value), PUSH_NULL);
+    RETURN_IF_ERROR(codegen_call(c, value));
+    return codegen_await_call_result(c, loc, 0);
+}
+
+static int
 codegen_template_str(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
@@ -5234,7 +5259,8 @@ codegen_visit_keyword(compiler *c, keyword_ty k)
 
 
 static int
-codegen_with_except_finish(compiler *c, jump_target_label cleanup) {
+codegen_with_except_finish(compiler *c, jump_target_label cleanup,
+                           int is_async) {
     NEW_JUMP_TARGET_LABEL(c, suppress);
     ADDOP(c, NO_LOCATION, TO_BOOL);
     ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_TRUE, suppress);
@@ -5247,6 +5273,9 @@ codegen_with_except_finish(compiler *c, jump_target_label cleanup) {
     ADDOP(c, NO_LOCATION, POP_TOP);
     ADDOP(c, NO_LOCATION, POP_TOP);
     ADDOP(c, NO_LOCATION, POP_TOP);
+    if (is_async) {
+        ADDOP(c, NO_LOCATION, POP_TOP);
+    }
     NEW_JUMP_TARGET_LABEL(c, exit);
     ADDOP_JUMP(c, NO_LOCATION, JUMP_NO_INTERRUPT, exit);
 
@@ -5297,14 +5326,17 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
     loc = LOC(item->context_expr);
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_I(c, loc, SWAP, 2);
     ADDOP_I(c, loc, COPY, 1);
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AEXIT__);
     ADDOP_I(c, loc, SWAP, 2);
     ADDOP_I(c, loc, SWAP, 3);
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP_I(c, loc, SWAP, 2);
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AENTER__);
     ADDOP_I(c, loc, CALL, 0);
-    ADDOP_I(c, loc, GET_AWAITABLE, 1);
-    ADD_YIELD_FROM(c, loc, 1);
+    RETURN_IF_ERROR(codegen_await_call_result(c, loc, 1));
 
     ADDOP_JUMP(c, loc, SETUP_WITH, final);
 
@@ -5338,8 +5370,7 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
      * call __exit__(None, None, None)
      */
     RETURN_IF_ERROR(codegen_call_exit_with_nones(c, loc));
-    ADDOP_I(c, loc, GET_AWAITABLE, 2);
-    ADD_YIELD_FROM(c, loc, 1);
+    RETURN_IF_ERROR(codegen_await_call_result(c, loc, 2));
 
     ADDOP(c, loc, POP_TOP);
 
@@ -5353,7 +5384,7 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP(c, loc, WITH_EXCEPT_START);
     ADDOP_I(c, loc, GET_AWAITABLE, 2);
     ADD_YIELD_FROM(c, loc, 1);
-    RETURN_IF_ERROR(codegen_with_except_finish(c, cleanup));
+    RETURN_IF_ERROR(codegen_with_except_finish(c, cleanup, 1));
 
     USE_LABEL(c, exit);
     return SUCCESS;
@@ -5450,7 +5481,7 @@ codegen_with_inner(compiler *c, stmt_ty s, int pos)
     ADDOP_JUMP(c, loc, SETUP_CLEANUP, cleanup);
     ADDOP(c, loc, PUSH_EXC_INFO);
     ADDOP(c, loc, WITH_EXCEPT_START);
-    RETURN_IF_ERROR(codegen_with_except_finish(c, cleanup));
+    RETURN_IF_ERROR(codegen_with_except_finish(c, cleanup, 0));
 
     USE_LABEL(c, exit);
     return SUCCESS;
@@ -5536,10 +5567,7 @@ codegen_visit_expr_impl(compiler *c, expr_ty e, bool result_is_unused)
         ADD_YIELD_FROM(c, loc, 0);
         break;
     case Await_kind:
-        VISIT(c, expr, e->v.Await.value);
-        ADDOP_I(c, loc, GET_AWAITABLE, 0);
-        ADD_YIELD_FROM(c, loc, 1);
-        break;
+        return codegen_await(c, e);
     case Compare_kind:
         return codegen_compare(c, e);
     case Call_kind:

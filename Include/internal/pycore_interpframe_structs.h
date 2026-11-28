@@ -24,6 +24,9 @@ enum _frameowner {
     FRAME_OWNED_BY_GENERATOR = 1,
     FRAME_OWNED_BY_FRAME_OBJECT = 2,
     FRAME_OWNED_BY_INTERPRETER = 3,
+    /* A coroutine body running in the frame of the thread, without a
+     * coroutine object; see RETURN_GENERATOR. */
+    FRAME_OWNED_BY_LAZY_CORO = 4,
 };
 
 struct _PyInterpreterFrame {
@@ -44,13 +47,16 @@ struct _PyInterpreterFrame {
     char owner;
     uint8_t visited:1;
     uint8_t external:1; /* Set when the frame was pushed by something other than the VM */
+    uint8_t lazy_coro:1;  /* LAZY_CORO_REQUESTED */
 #ifdef Py_DEBUG
     uint8_t stackpointer_valid:1;
-    uint8_t lltrace:5;
+    uint8_t lltrace:4;
 #endif
     /* Locals and stack */
     _PyStackRef localsplus[1];
 };
+
+#define LAZY_CORO_REQUESTED 1
 
 
 /* _PyGenObject_HEAD defines the initial segment of generator

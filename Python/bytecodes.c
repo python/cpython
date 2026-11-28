@@ -1651,14 +1651,82 @@ dummy_func(
             none = PyStackRef_None;
         }
 
-        inst(GET_AWAITABLE, (iterable -- iter, null, none)) {
-            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable), oparg);
+        op(_GET_AWAITABLE, (iterable -- iter, null, none)) {
+            PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable),
+                                                    oparg & GET_AWAITABLE_WHERE_MASK);
             PyStackRef_CLOSE(iterable);
             ERROR_IF(iter_o == NULL);
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             null = PyStackRef_NULL;
             none = PyStackRef_None;
         }
+
+        // After an awaited call, the SEND loop starts right after
+        // GET_AWAITABLE: SEND is at next_instr and YIELD_VALUE follows its cache.
+        replaced op(_LAZY_CALL_OUTCOME, (lazy_outcome[(oparg >> 2) & 1], res -- lazy_outcome[(oparg >> 2) & 1], res)) {
+            if (oparg & GET_AWAITABLE_AWAITED_CALL) {
+                // The slot is at a fixed offset here: reading it through
+                // lazy_outcome would make the load wait for oparg.
+                _PyStackRef *slot = &stack_pointer[-2];
+                assert(slot == lazy_outcome);
+                (void)lazy_outcome;
+                _PyStackRef outcome = *slot;
+                if (PyStackRef_IsTaggedInt(outcome)) {
+                    *slot = PyStackRef_NULL;
+                    assert(_Py_GetBaseCodeUnit(_PyFrame_GetCode(frame),
+                                               (int)(next_instr - _PyFrame_GetBytecode(frame))).op.code == SEND);
+                    _Py_CODEUNIT *end_send = next_instr + 1 + INLINE_CACHE_ENTRIES_SEND + next_instr->op.arg;
+                    if (end_send->op.code != END_SEND) {
+                        // Emulate the monitoring event of INSTRUMENTED_END_SEND.
+                        int err = monitor_stop_iteration(tstate, frame, end_send,
+                                                         PyStackRef_AsPyObjectBorrow(res));
+                        ERROR_IF(err);
+                    }
+                    _PyStackRef v = res;
+                    DEAD(res);
+                    stack_pointer[-2] = v;
+                    stack_pointer -= 1;
+                    next_instr = end_send + 1;
+                    DISPATCH();
+                }
+                else if (!PyStackRef_IsNull(outcome)) {
+                    _PyInterpreterFrame *lazy_frame = PyStackRef_Unwrap(outcome);
+                    *slot = PyStackRef_NULL;
+                    PyGenObject *gen = _PyEval_MaterializeLazyCoro(tstate, lazy_frame);
+                    _PyStackRef v = res;
+                    DEAD(res);
+                    if (gen == NULL) {
+                        stack_pointer[-1] = PyStackRef_NULL;
+                        frame = _PyEval_ThrowIntoLazyCoro(tstate, lazy_frame, v);
+                        next_instr = frame->instr_ptr;
+                        LOAD_SP();
+                        goto error;
+                    }
+                    stack_pointer[-2] = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
+                    stack_pointer[-1] = PyStackRef_NULL;
+                    stack_pointer[0] = v;
+                    stack_pointer += 1;
+                    next_instr += 1 + INLINE_CACHE_ENTRIES_SEND;
+                    DISPATCH();
+                }
+            }
+        }
+
+        tier2 op(_GUARD_LAZY_OUTCOME_NULL, (lazy_outcome[(oparg >> 2) & 1], unused -- lazy_outcome[(oparg >> 2) & 1], unused)) {
+            EXIT_IF((oparg & GET_AWAITABLE_AWAITED_CALL) &&
+                    !PyStackRef_IsNull(lazy_outcome[0]));
+        }
+
+        op(_POP_LAZY_OUTCOME, (lazy_outcome[(oparg >> 2) & 1], res -- value)) {
+            assert(!(oparg & GET_AWAITABLE_AWAITED_CALL) ||
+                   PyStackRef_IsNull(lazy_outcome[0]));
+            (void)lazy_outcome;
+            DEAD(lazy_outcome);
+            value = res;
+            DEAD(res);
+        }
+
+        macro(GET_AWAITABLE) = _LAZY_CALL_OUTCOME + _POP_LAZY_OUTCOME + _GET_AWAITABLE;
 
         family(SEND, INLINE_CACHE_ENTRIES_SEND) = {
             SEND_GEN,
@@ -1853,28 +1921,45 @@ dummy_func(
             EXIT_IF(what == PYGEN_RETURN);
         }
 
+        replaced op(_CHECK_LAZY_CORO, (--)) {
+        }
+
+        tier2 op(_GUARD_NOT_LAZY_CORO, (--)) {
+            EXIT_IF(frame->owner == FRAME_OWNED_BY_LAZY_CORO);
+        }
+
         op(_YIELD_VALUE, (retval -- value)) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             frame->instr_ptr++;
-            PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
             assert(oparg == 0 || oparg == 1);
             _PyStackRef temp = retval;
             DEAD(retval);
             SAVE_STACK();
             DTRACE_FUNCTION_RETURN();
-            tstate->exc_info = gen->gi_exc_state.previous_item;
-            gen->gi_exc_state.previous_item = NULL;
-            _Py_LeaveRecursiveCallPy(tstate);
-            _PyInterpreterFrame *gen_frame = frame;
-            _PyThreadState_UpdateLastProfiledFrame(tstate, gen_frame, gen_frame->previous);
-            frame = tstate->current_frame = frame->previous;
-            gen_frame->previous = NULL;
-            ((_PyThreadStateImpl *)tstate)->generator_return_kind = GENERATOR_YIELD;
-            FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
+            int offset = 1 + INLINE_CACHE_ENTRIES_SEND;
+            if (frame->owner == FRAME_OWNED_BY_LAZY_CORO) {
+                // The caller's GET_AWAITABLE creates the coroutine. It is
+                // never instrumented, so nothing runs in between.
+                assert(oparg == 1);
+                frame = _PyEval_SuspendLazyCoro(tstate, frame);
+                offset = 0;
+            }
+            else {
+                PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
+                tstate->exc_info = gen->gi_exc_state.previous_item;
+                gen->gi_exc_state.previous_item = NULL;
+                _Py_LeaveRecursiveCallPy(tstate);
+                _PyInterpreterFrame *gen_frame = frame;
+                _PyThreadState_UpdateLastProfiledFrame(tstate, gen_frame, gen_frame->previous);
+                frame = tstate->current_frame = frame->previous;
+                gen_frame->previous = NULL;
+                ((_PyThreadStateImpl *)tstate)->generator_return_kind = GENERATOR_YIELD;
+                FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
+            }
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             #if TIER_ONE && defined(Py_DEBUG)
@@ -1882,16 +1967,22 @@ dummy_func(
                 Py_ssize_t i = frame->instr_ptr - _PyFrame_GetBytecode(frame);
                 assert(i >= 0 && i <= INT_MAX);
                 int opcode = _Py_GetBaseCodeUnit(_PyFrame_GetCode(frame), (int)i).op.code;
-                assert(opcode == SEND || opcode == FOR_ITER);
+                assert(offset == 0 ? opcode == GET_AWAITABLE
+                                   : (opcode == SEND || opcode == FOR_ITER));
             }
             #endif
             RELOAD_STACK();
-            LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
+            LOAD_IP(offset);
             value = temp;
-            LLTRACE_RESUME_FRAME();
+            // After a lazy suspension, the caller's lazy outcome slot holds a
+            // frame pointer, which nothing may see before GET_AWAITABLE runs.
+            if (offset != 0) {
+                LLTRACE_RESUME_FRAME();
+            }
         }
 
         macro(YIELD_VALUE) =
+            _CHECK_LAZY_CORO +
             _MAKE_HEAP_SAFE +
             _YIELD_VALUE;
 
@@ -1911,6 +2002,7 @@ dummy_func(
         }
 
         macro(INSTRUMENTED_YIELD_VALUE) =
+            _CHECK_LAZY_CORO +
             _YIELD_VALUE_EVENT +
             _MAKE_HEAP_SAFE +
             _YIELD_VALUE;
@@ -1967,7 +2059,8 @@ dummy_func(
         tier1 inst(CLEANUP_THROW, (sub_iter, null_in, last_sent_val, exc_value_st -- none, null_out, value)) {
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
             #if !_Py_TAIL_CALL_INTERP
-            assert(throwflag);
+            // _PyEval_ThrowIntoLazyCoro() raises in a lazily run body.
+            assert(throwflag || frame->owner == FRAME_OWNED_BY_LAZY_CORO);
             #endif
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration);
@@ -4318,6 +4411,10 @@ dummy_func(
             CALL_PY_GENERAL,
             CALL_BOUND_METHOD_GENERAL,
             CALL_NON_PY_GENERAL,
+            CALL_PY_EXACT_ARGS_AWAITED,
+            CALL_BOUND_METHOD_EXACT_ARGS_AWAITED,
+            CALL_PY_GENERAL_AWAITED,
+            CALL_BOUND_METHOD_GENERAL_AWAITED,
         };
 
         specializing op(_SPECIALIZE_CALL, (counter/1, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
@@ -4375,6 +4472,9 @@ dummy_func(
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
                     ERROR_NO_POP();
+                }
+                if (IS_AWAITED_CALL() && opcode != INSTRUMENTED_CALL) {
+                    MAYBE_START_LAZY_CORO(new_frame);
                 }
                 frame->return_offset = INSTRUCTION_SIZE;
                 DISPATCH_INLINED(new_frame);
@@ -4467,6 +4567,17 @@ dummy_func(
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
+        macro(CALL_PY_GENERAL_AWAITED) =
+            _RECORD_CALLABLE +
+            unused/1 +
+            _CHECK_PEP_523 +
+            _CHECK_FUNCTION_VERSION +
+            _CHECK_RECURSION_REMAINING +
+            _PY_FRAME_GENERAL +
+            _START_LAZY_CORO +
+            _SAVE_RETURN_OFFSET +
+            _PUSH_FRAME;
+
         op(_CHECK_METHOD_VERSION, (func_version/2, callable, null, unused[oparg] -- callable, null, unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
 
@@ -4497,6 +4608,19 @@ dummy_func(
             flush + // so that self is in the argument array
             _CHECK_RECURSION_REMAINING +
             _PY_FRAME_GENERAL +
+            _SAVE_RETURN_OFFSET +
+            _PUSH_FRAME;
+
+        macro(CALL_BOUND_METHOD_GENERAL_AWAITED) =
+            _RECORD_BOUND_METHOD +
+            unused/1 +
+            _CHECK_PEP_523 +
+            _CHECK_METHOD_VERSION +
+            _EXPAND_METHOD +
+            flush +
+            _CHECK_RECURSION_REMAINING +
+            _PY_FRAME_GENERAL +
+            _START_LAZY_CORO +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
@@ -4620,6 +4744,26 @@ dummy_func(
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
+        macro(CALL_BOUND_METHOD_EXACT_ARGS_AWAITED) =
+            _RECORD_BOUND_METHOD +
+            unused/1 +
+            _CHECK_PEP_523 +
+            _CHECK_CALL_BOUND_METHOD_EXACT_ARGS +
+            _INIT_CALL_BOUND_METHOD_EXACT_ARGS +
+            flush +
+            _CHECK_FUNCTION_VERSION +
+            _CHECK_FUNCTION_EXACT_ARGS +
+            _CHECK_STACK_SPACE +
+            _CHECK_RECURSION_REMAINING +
+            _INIT_CALL_PY_EXACT_ARGS +
+            _START_LAZY_CORO +
+            _SAVE_RETURN_OFFSET +
+            _PUSH_FRAME;
+
+        replaced op(_START_LAZY_CORO, (new_frame -- new_frame)) {
+            MAYBE_START_LAZY_CORO(PyStackRef_Unwrap(new_frame));
+        }
+
         macro(CALL_PY_EXACT_ARGS) =
             _RECORD_CALLABLE +
             unused/1 + // Skip over the counter
@@ -4629,6 +4773,19 @@ dummy_func(
             _CHECK_STACK_SPACE +
             _CHECK_RECURSION_REMAINING +
             _INIT_CALL_PY_EXACT_ARGS +
+            _SAVE_RETURN_OFFSET +
+            _PUSH_FRAME;
+
+        macro(CALL_PY_EXACT_ARGS_AWAITED) =
+            _RECORD_CALLABLE +
+            unused/1 +
+            _CHECK_PEP_523 +
+            _CHECK_FUNCTION_VERSION +
+            _CHECK_FUNCTION_EXACT_ARGS +
+            _CHECK_STACK_SPACE +
+            _CHECK_RECURSION_REMAINING +
+            _INIT_CALL_PY_EXACT_ARGS +
+            _START_LAZY_CORO +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
@@ -5354,6 +5511,8 @@ dummy_func(
             CALL_KW_BOUND_METHOD,
             CALL_KW_PY,
             CALL_KW_NON_PY,
+            CALL_KW_PY_AWAITED,
+            CALL_KW_BOUND_METHOD_AWAITED,
         };
 
         op(_MONITOR_CALL_KW, (callable, self_or_null, args[oparg], unused -- callable, self_or_null, args[oparg], unused)) {
@@ -5420,6 +5579,9 @@ dummy_func(
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
                     ERROR_NO_POP();
+                }
+                if (IS_AWAITED_CALL() && opcode != INSTRUMENTED_CALL_KW) {
+                    MAYBE_START_LAZY_CORO(new_frame);
                 }
                 assert(INSTRUCTION_SIZE == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
                 frame->return_offset = INSTRUCTION_SIZE;
@@ -5489,6 +5651,17 @@ dummy_func(
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
+        macro(CALL_KW_PY_AWAITED) =
+            _RECORD_CALLABLE_KW +
+            unused/1 +
+            _CHECK_PEP_523 +
+            _CHECK_FUNCTION_VERSION_KW +
+            _CHECK_RECURSION_REMAINING +
+            _PY_FRAME_KW +
+            _START_LAZY_CORO +
+            _SAVE_RETURN_OFFSET +
+            _PUSH_FRAME;
+
         op(_CHECK_METHOD_VERSION_KW, (func_version/2, callable, null, unused[oparg], unused -- callable, null, unused[oparg], unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
 
@@ -5518,6 +5691,18 @@ dummy_func(
             _EXPAND_METHOD_KW +
             flush + // so that self is in the argument array
             _PY_FRAME_KW +
+            _SAVE_RETURN_OFFSET +
+            _PUSH_FRAME;
+
+        macro(CALL_KW_BOUND_METHOD_AWAITED) =
+            _RECORD_CALLABLE_KW +
+            unused/1 +
+            _CHECK_PEP_523 +
+            _CHECK_METHOD_VERSION_KW +
+            _EXPAND_METHOD_KW +
+            flush +
+            _PY_FRAME_KW +
+            _START_LAZY_CORO +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
@@ -5666,6 +5851,9 @@ dummy_func(
                     if (new_frame == NULL) {
                         ERROR_NO_POP();
                     }
+                    if (IS_AWAITED_CALL()) {
+                        MAYBE_START_LAZY_CORO(new_frame);
+                    }
                     assert(INSTRUCTION_SIZE == 1 + INLINE_CACHE_ENTRIES_CALL_FUNCTION_EX);
                     frame->return_offset = INSTRUCTION_SIZE;
                     DISPATCH_INLINED(new_frame);
@@ -5738,6 +5926,7 @@ dummy_func(
             _MAKE_CALLARGS_A_TUPLE +
             _CHECK_IS_PY_CALLABLE_EX +
             _PY_FRAME_EX +
+            _MAYBE_LAZY_CORO +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
@@ -5810,25 +5999,60 @@ dummy_func(
         inst(RETURN_GENERATOR, (-- res)) {
             assert(PyStackRef_FunctionCheck(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
-            ERROR_IF(gen == NULL);
-            assert(STACK_LEVEL() <= 2);
-            SAVE_STACK();
-            _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
-            frame->instr_ptr++;
-            _PyFrame_Copy(frame, gen_frame);
-            assert(frame->frame_obj == NULL);
-            gen->gi_frame_state = FRAME_CREATED;
-            gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
-            _Py_LeaveRecursiveCallPy(tstate);
-            _PyInterpreterFrame *prev = frame->previous;
-            _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
-            _PyThreadState_PopFrame(tstate, frame);
-            frame = tstate->current_frame = prev;
-            LOAD_IP(frame->return_offset);
-            RELOAD_STACK();
-            res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
-            LLTRACE_RESUME_FRAME();
+            _PyErr_StackItem *exc_info = NULL;
+            #if TIER_ONE
+            if (frame->lazy_coro == LAZY_CORO_REQUESTED) {
+                /* The body's exception state, as SEND_GEN would push. */
+                exc_info = (_PyErr_StackItem *)_PyThreadState_PushFrame(
+                    tstate, sizeof(_PyErr_StackItem) / sizeof(PyObject *));
+                if (exc_info == NULL) {
+                    _PyErr_Clear(tstate);
+                }
+            }
+            #endif
+            if (exc_info != NULL) {
+                exc_info->exc_value = NULL;
+                exc_info->previous_item = tstate->exc_info;
+                tstate->exc_info = exc_info;
+                frame->owner = FRAME_OWNED_BY_LAZY_CORO;
+                /* While the body runs, the caller is at the await, as at
+                 * SEND on the eager path. */
+                _PyInterpreterFrame *caller = frame->previous;
+                caller->instr_ptr += caller->return_offset;
+                caller->return_offset = 0;
+                _Py_CODEUNIT *send = caller->instr_ptr + 1;
+                if (send->op.code == INSTRUMENTED_LINE && !tstate->tracing) {
+                    /* The LINE event of the await, which the eager path
+                     * emits at SEND before the body runs. */
+                    int err = _Py_call_instrumentation_line(
+                        tstate, caller, send, caller->instr_ptr) < 0;
+                    ERROR_IF(err);
+                }
+                /* The following POP_TOP discards this. */
+                res = PyStackRef_None;
+            }
+            else {
+                frame->lazy_coro = 0;
+                PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
+                ERROR_IF(gen == NULL);
+                assert(STACK_LEVEL() <= 2);
+                SAVE_STACK();
+                _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
+                frame->instr_ptr++;
+                _PyFrame_Copy(frame, gen_frame);
+                assert(frame->frame_obj == NULL);
+                gen->gi_frame_state = FRAME_CREATED;
+                gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
+                _Py_LeaveRecursiveCallPy(tstate);
+                _PyInterpreterFrame *prev = frame->previous;
+                _PyThreadState_UpdateLastProfiledFrame(tstate, frame, prev);
+                _PyThreadState_PopFrame(tstate, frame);
+                frame = tstate->current_frame = prev;
+                LOAD_IP(frame->return_offset);
+                RELOAD_STACK();
+                res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
+                LLTRACE_RESUME_FRAME();
+            }
         }
 
         inst(BUILD_SLICE, (args[oparg] -- slice)) {
@@ -6105,6 +6329,12 @@ dummy_func(
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, framesize));
         }
 
+        replaced op(_MAYBE_LAZY_CORO, (new_frame -- new_frame)) {
+            if (IS_AWAITED_CALL()) {
+                MAYBE_START_LAZY_CORO(PyStackRef_Unwrap(new_frame));
+            }
+        }
+
         op(_SAVE_RETURN_OFFSET, (--)) {
             #if TIER_ONE
             frame->return_offset = (uint16_t)(next_instr - this_instr);
@@ -6235,7 +6465,7 @@ dummy_func(
         tier2 op(_COLD_EXIT, ( -- )) {
             _PyExitData *exit = tstate->jit_exit;
             assert(exit != NULL);
-            assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
             _Py_BackoffCounter temperature = exit->temperature;
             _PyExecutorObject *executor;

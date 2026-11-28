@@ -457,7 +457,7 @@ gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *stat
         }
 
         for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
-            if (f->owner >= FRAME_OWNED_BY_INTERPRETER) {
+            if (f->owner == FRAME_OWNED_BY_INTERPRETER) {
                 continue;
             }
 
@@ -855,7 +855,7 @@ gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, gc_mark_args_t *ar
     int err = 0;
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
-            if (f->owner >= FRAME_OWNED_BY_INTERPRETER) {
+            if (f->owner == FRAME_OWNED_BY_INTERPRETER) {
                 continue;
             }
 

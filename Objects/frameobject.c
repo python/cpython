@@ -13,6 +13,7 @@
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
+#include "pycore_opcode_utils.h"   // GET_AWAITABLE_AWAITED_CALL
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateDependency()
 #include "pycore_pystate.h"       // _PyEval_StopTheWorld()
 #include "pycore_tstate.h"        // _PyThreadStateImpl
@@ -1588,6 +1589,29 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[j] = next_stack;
                     stacks[next_i] = next_stack;
                     break;
+                case GET_AWAITABLE:
+                {
+                    /* (lazy_outcome, res) after an awaited call, else (res);
+                     * pushes (iter, NULL, None). After an awaited call it may
+                     * also jump to YIELD_VALUE with (coroutine, NULL, res),
+                     * as left by SEND. */
+                    int awaited_call = oparg & GET_AWAITABLE_AWAITED_CALL;
+                    next_stack = pop_value(next_stack);
+                    if (awaited_call) {
+                        next_stack = pop_value(next_stack);
+                    }
+                    next_stack = push_value(next_stack, Object);
+                    next_stack = push_value(next_stack, Object);
+                    next_stack = push_value(next_stack, Object);
+                    if (awaited_call) {
+                        j = next_i + 1 + INLINE_CACHE_ENTRIES_SEND;
+                        assert(j < len);
+                        assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
+                        stacks[j] = next_stack;
+                    }
+                    stacks[next_i] = next_stack;
+                    break;
+                }
                 case JUMP_FORWARD:
                     j = oparg + i + 1;
                     assert(j < len);
@@ -1808,7 +1832,16 @@ marklines(PyCodeObject *code, int len)
     while (_PyLineTable_NextAddressRange(&bounds)) {
         assert(bounds.ar_start / (int)sizeof(_Py_CODEUNIT) < len);
         if (bounds.ar_line != last_line && bounds.ar_line != -1) {
-            linestarts[bounds.ar_start / sizeof(_Py_CODEUNIT)] = bounds.ar_line;
+            int i = bounds.ar_start / (int)sizeof(_Py_CODEUNIT);
+            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(code, i);
+            if (inst.op.code == GET_AWAITABLE &&
+                (inst.op.arg & GET_AWAITABLE_AWAITED_CALL))
+            {
+                /* Its lazy outcome slot must hold NULL or an outcome,
+                 * so jump to the SEND that follows it instead. */
+                i++;
+            }
+            linestarts[i] = bounds.ar_line;
             last_line = bounds.ar_line;
         }
     }
@@ -1920,6 +1953,20 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
             PyErr_SetString(PyExc_SystemError,
                 "unexpected event type");
             return -1;
+    }
+
+    if (!is_suspended) {
+        _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(
+            code, _PyInterpreterFrame_LASTI(self->f_frame));
+        if (inst.op.code == GET_AWAITABLE &&
+            (inst.op.arg & GET_AWAITABLE_AWAITED_CALL))
+        {
+            /* The LINE event of an await, emitted before a lazily run
+             * body starts, when the stack is not as at a line start. */
+            PyErr_SetString(PyExc_ValueError,
+                "can't jump from the await of a lazily run coroutine");
+            return -1;
+        }
     }
 
     int new_lineno;
@@ -2226,7 +2273,9 @@ frame_clear_impl(PyFrameObject *self)
             return NULL;
         }
     }
-    else if (self->f_frame->owner == FRAME_OWNED_BY_THREAD) {
+    else if (self->f_frame->owner == FRAME_OWNED_BY_THREAD ||
+             self->f_frame->owner == FRAME_OWNED_BY_LAZY_CORO)
+    {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot clear an executing frame");
         return NULL;

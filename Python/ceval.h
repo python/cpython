@@ -229,7 +229,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
                     int oparg)
 {
     int offset = 0;
-    if (frame->owner < FRAME_OWNED_BY_INTERPRETER) {
+    if (frame->owner != FRAME_OWNED_BY_INTERPRETER) {
         dump_stack(frame, stack_pointer);
         offset = (int)(next_instr - _PyFrame_GetBytecode(frame));
     }
@@ -288,7 +288,7 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, PyObject *globals)
     if (globals == NULL) {
         return 0;
     }
-    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
+    if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
         return 0;
     }
     int r = PyDict_Contains(globals, &_Py_ID(__lltrace__));
@@ -304,6 +304,8 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, PyObject *globals)
             lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
         }
     }
+    // 5 is the highest level; it must fit in frame->lltrace
+    lltrace = Py_MIN(lltrace, 5);
     if (lltrace >= 5) {
         lltrace_resume_frame(frame);
     }
