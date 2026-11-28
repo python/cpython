@@ -9,6 +9,7 @@
 #include "pycore_lazyimportobject.h"
 #include "pycore_long.h"
 #include "pycore_moduleobject.h"
+#include "pycore_pylifecycle.h"
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_pyerrors.h"
 #include "pycore_traceback.h"
@@ -364,6 +365,41 @@ _PyLazyImport_IsResolving(PyThreadState *tstate, PyObject *op)
     return active;
 }
 
+static void
+lazy_import_set_cycle_error(PyLazyImportObject *lz)
+{
+    PyLazyImportObject *root = lz;
+    while (PyLazyImport_CheckExact(root->lz_from)) {
+        root = (PyLazyImportObject *)root->lz_from;
+    }
+    PyObject *name = lazy_import_name(lz);
+    if (name == NULL) {
+        return;
+    }
+    PyObject *errmsg = PyUnicode_FromFormat(
+        "cannot import name %R (most likely due to a circular import)",
+        name);
+    Py_DECREF(name);
+    if (errmsg != NULL) {
+        PyErr_SetImportErrorSubclass(PyExc_ImportCycleError, errmsg,
+                                     root->lz_from, NULL);
+        Py_DECREF(errmsg);
+    }
+}
+
+static int
+lazy_import_has_deadlock_error(PyThreadState *tstate)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    PyObject *deadlock_error = PyObject_GetAttrString(
+        tstate->interp->imports.importlib, "_DeadlockError");
+    int matches = exc != NULL && deadlock_error != NULL &&
+        PyErr_GivenExceptionMatches(exc, deadlock_error);
+    Py_XDECREF(deadlock_error);
+    PyErr_SetRaisedException(exc);
+    return matches;
+}
+
 static PyObject *
 lazy_import_resolve_impl(PyThreadState *tstate, PyObject *lazy_import,
                          PyObject **imported_module)
@@ -385,19 +421,7 @@ lazy_import_resolve_impl(PyThreadState *tstate, PyObject *lazy_import,
     }
 
     if (_PyLazyImport_IsResolving(tstate, lazy_import)) {
-        PyObject *name = lazy_import_name(lz);
-        if (name == NULL) {
-            return NULL;
-        }
-        PyObject *errmsg = PyUnicode_FromFormat(
-            "cannot import name %R (most likely due to a circular import)",
-            name);
-        Py_DECREF(name);
-        if (errmsg != NULL) {
-            PyErr_SetImportErrorSubclass(PyExc_ImportCycleError, errmsg,
-                                         root->lz_from, NULL);
-            Py_DECREF(errmsg);
-        }
+        lazy_import_set_cycle_error(lz);
         return NULL;
     }
     if (_Py_EnterRecursiveCallTstate(tstate, " while resolving a lazy import")) {
@@ -670,14 +694,76 @@ PyObject *
 _PyLazyImport_Reify(PyThreadState *tstate, PyObject *placeholder,
                     PyObject *name, PyObject *namespace)
 {
+    PyObject *lock = NULL;
+    PyObject *current = NULL;
     PyObject *imported_module = NULL;
-    PyObject *value = lazy_import_resolve_impl(
+    PyObject *retry = NULL;
+    PyObject *value = NULL;
+    int rc;
+    if (tstate->interp->imports.importlib != NULL) {
+        lock = PyObject_CallMethod(
+            tstate->interp->imports.importlib, "_get_module_lock", "O",
+            placeholder);
+        if (lock == NULL) {
+            if (_Py_IsInterpreterFinalizing(tstate->interp)) {
+                PyErr_Clear();
+            }
+            else {
+                return NULL;
+            }
+        }
+    }
+    if (lock != NULL) {
+        PyObject *acquired = PyObject_CallMethod(lock, "acquire", NULL);
+        if (acquired == NULL) {
+            if (_Py_IsInterpreterFinalizing(tstate->interp)) {
+                PyErr_Clear();
+                Py_CLEAR(lock);
+                goto unlocked;
+            }
+            Py_DECREF(lock);
+            if (lazy_import_has_deadlock_error(tstate)) {
+                PyErr_Clear();
+                lazy_import_set_cycle_error(
+                    PyLazyImportObject_CAST(placeholder));
+            }
+            return NULL;
+        }
+        else {
+            Py_DECREF(acquired);
+        }
+    }
+
+unlocked:
+    if (PyDict_CheckExact(namespace)) {
+        rc = PyDict_GetItemRef(namespace, name, &current);
+    }
+    else {
+        rc = PyMapping_GetOptionalItem(namespace, name, &current);
+    }
+    if (rc < 0) {
+        goto release;
+    }
+    if (current != NULL && current != placeholder) {
+        if (PyLazyImport_CheckExact(current)) {
+            retry = current;
+            current = NULL;
+        }
+        goto release;
+    }
+    Py_CLEAR(current);
+
+    value = lazy_import_resolve_impl(
         tstate, placeholder, &imported_module);
     if (value == NULL) {
+        if (lock != NULL && lazy_import_has_deadlock_error(tstate)) {
+            PyErr_Clear();
+            lazy_import_set_cycle_error(
+                PyLazyImportObject_CAST(placeholder));
+        }
         Py_XDECREF(imported_module);
-        return NULL;
+        goto release;
     }
-    int rc;
     if (PyDict_CheckExact(namespace)) {
         rc = _PyDict_ReplaceItemIf(namespace, name, placeholder, value);
         if (rc == 0 && imported_module != NULL) {
@@ -689,7 +775,7 @@ _PyLazyImport_Reify(PyThreadState *tstate, PyObject *placeholder,
              Py_TYPE(namespace)->tp_as_mapping->mp_ass_subscript == NULL) {
         // Read-only namespaces can resolve a value without caching it.
         Py_XDECREF(imported_module);
-        return value;
+        goto release;
     }
     else {
         // Custom namespaces retain their mapping protocol. Atomic replacement
@@ -707,6 +793,33 @@ _PyLazyImport_Reify(PyThreadState *tstate, PyObject *placeholder,
         Py_CLEAR(value);
     }
     Py_XDECREF(imported_module);
+
+release:
+    if (current != NULL) {
+        value = current;
+    }
+    if (lock == NULL) {
+        if (retry != NULL) {
+            value = _PyLazyImport_Reify(tstate, retry, name, namespace);
+            Py_DECREF(retry);
+        }
+        return value;
+    }
+    PyObject *exc = PyErr_GetRaisedException();
+    PyObject *released = PyObject_CallMethod(lock, "release", NULL);
+    Py_DECREF(lock);
+    if (released == NULL) {
+        Py_XDECREF(exc);
+        Py_XDECREF(retry);
+        Py_XDECREF(value);
+        return NULL;
+    }
+    Py_DECREF(released);
+    PyErr_SetRaisedException(exc);
+    if (retry != NULL) {
+        value = _PyLazyImport_Reify(tstate, retry, name, namespace);
+        Py_DECREF(retry);
+    }
     return value;
 }
 
