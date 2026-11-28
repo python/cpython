@@ -170,9 +170,8 @@ def run_multiline_interactive_console(
             console.write("\n")
             console._excepthook(type(exc), exc, tb=None)  # type: ignore[attr-defined] # hides traceback
             console.resetbuffer()
-        except MemoryError as exc:
-            console.write("\n")
-            console._excepthook(type(exc), exc, tb=None)  # type: ignore[attr-defined] # hides traceback
+        except MemoryError:
+            console.write("\nMemoryError\n")  # trivial write to use less memory
             console.resetbuffer()
         except SystemExit:
             raise
