@@ -1,0 +1,2 @@
+Add :class:`tkinter.systray.NotificationHandler` -- a :mod:`logging` handler
+which shows log records as desktop notifications.
