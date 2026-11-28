@@ -33,6 +33,8 @@ typedef struct {
     PyObject* pattern; /* pattern source (or None) */
     int flags; /* flags used when compiling pattern source */
     PyObject *weakreflist; /* List of weak references */
+    PyObject *cached_match; /* dead match object kept for reuse; owns only
+                               a reference to its type */
     int isbytes; /* pattern type (1 - bytes, 0 - string, -1 - None) */
 #ifdef Py_DEBUG
     /* for simulation of user interruption */
