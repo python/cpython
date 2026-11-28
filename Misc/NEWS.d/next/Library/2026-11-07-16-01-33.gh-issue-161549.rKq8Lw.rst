@@ -1,0 +1,2 @@
+Fix a file descriptor leak when :mod:`!_pyrepl.readline` is re-imported in
+a terminal.
