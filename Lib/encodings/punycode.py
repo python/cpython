@@ -226,15 +226,22 @@ class Codec(codecs.Codec):
         res = punycode_decode(input, errors)
         return res, len(input)
 
-class IncrementalEncoder(codecs.IncrementalEncoder):
-    def encode(self, input, final=False):
-        return punycode_encode(input)
+class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
+    def _buffer_encode(self, input, errors, final):
+        if not final:
+            # The encoding of each character depends on the whole string,
+            # so keep the input until the last call
+            return (b'', 0)
+        return (punycode_encode(input), len(input))
 
-class IncrementalDecoder(codecs.IncrementalDecoder):
-    def decode(self, input, final=False):
-        if self.errors not in ('strict', 'replace', 'ignore'):
-            raise UnicodeError(f"Unsupported error handling: {self.errors}")
-        return punycode_decode(input, self.errors)
+class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
+    def _buffer_decode(self, input, errors, final):
+        if errors not in ('strict', 'replace', 'ignore'):
+            raise UnicodeError(f"Unsupported error handling: {errors}")
+        if not final:
+            # Keep the input until the last call, as in IncrementalEncoder
+            return ('', 0)
+        return (punycode_decode(input, errors), len(input))
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass
