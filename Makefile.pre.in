@@ -3543,6 +3543,7 @@ MODULE_DEPS_SHARED=@MODULE_DEPS_SHARED@
 MODULE__CURSES_DEPS=$(srcdir)/Include/py_curses.h
 MODULE__CURSES_PANEL_DEPS=$(srcdir)/Include/py_curses.h
 MODULE__DATETIME_DEPS=$(srcdir)/Include/datetime.h
+MODULE_BINASCII_DEPS=$(srcdir)/Modules/binascii_neon.h
 MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_PYEXPAT_DEPS=@LIBEXPAT_INTERNAL@

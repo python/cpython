@@ -454,6 +454,33 @@ class BinASCIITest(unittest.TestCase):
         with self.assertRaises(TypeError):
             binascii.a2b_base64(data, alphabet=bytearray(alphabet))
 
+    def test_base64_long_inputs(self):
+        # Cover all lengths and positions of a bad character across the
+        # block sizes of the vectorized code paths.
+        alphabets = [
+            (b'!"#$%&\'()*+,-012345689@'
+             b'ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr'),
+            bytes(range(0x80, 0xc0)),
+        ]
+        raw = bytes(range(256)) * 2
+        for n in range(len(raw) + 1):
+            data = self.type2test(raw[:n])
+            encoded = binascii.b2a_base64(data, newline=False)
+            self.assertEqual(binascii.a2b_base64(encoded), raw[:n])
+            for alphabet in alphabets:
+                encoded = binascii.b2a_base64(data, newline=False,
+                                              alphabet=alphabet)
+                decoded = binascii.a2b_base64(encoded, alphabet=alphabet)
+                self.assertEqual(decoded, raw[:n])
+
+        encoded = binascii.b2a_base64(raw[:150], newline=False)
+        for i in range(len(encoded) + 1):
+            for c in b'*', b'\x80':
+                bad = self.type2test(encoded[:i] + c + encoded[i:])
+                self.assertEqual(binascii.a2b_base64(bad), raw[:150])
+                with self.assertRaises(binascii.Error):
+                    binascii.a2b_base64(bad, strict_mode=True)
+
     def test_ascii85_valid(self):
         # Test Ascii85 with valid data
         ASCII85_PREFIX = b"<~"

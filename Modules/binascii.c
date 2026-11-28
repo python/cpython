@@ -127,6 +127,14 @@ base64_encode_trio(const unsigned char *in, unsigned char *out,
     out[3] = table[combined & 0x3f];
 }
 
+#include "binascii_neon.h"
+
+#ifdef BINASCII_HAVE_NEON
+/* Shorter inputs are faster with the scalar loops alone. */
+#  define BASE64_NEON_MIN_ENCODE 24
+#  define BASE64_NEON_MIN_DECODE 32
+#endif
+
 /* Encode multiple complete 3-byte groups.
  * Returns the number of input bytes processed (always a multiple of 3).
  */
@@ -134,6 +142,16 @@ static inline Py_ssize_t
 base64_encode_fast(const unsigned char *in, Py_ssize_t in_len,
                    unsigned char *out, const unsigned char *table)
 {
+    Py_ssize_t done = 0;
+#ifdef BINASCII_HAVE_NEON
+    if (in_len >= BASE64_NEON_MIN_ENCODE) {
+        done = base64_encode_neon(in, in_len, out, table);
+        in += done;
+        out += done / 3 * 4;
+        in_len -= done;
+    }
+#endif
+
     Py_ssize_t n_trios = in_len / 3;
     const unsigned char *in_end = in + n_trios * 3;
 
@@ -143,7 +161,7 @@ base64_encode_fast(const unsigned char *in, Py_ssize_t in_len,
         out += 4;
     }
 
-    return n_trios * 3;
+    return done + n_trios * 3;
 }
 
 /* Decode 4 base64 characters into 3 bytes.
@@ -176,6 +194,17 @@ static inline Py_ssize_t
 base64_decode_fast(const unsigned char *in, Py_ssize_t in_len,
                    unsigned char *out, const unsigned char *table)
 {
+    Py_ssize_t done = 0;
+#ifdef BINASCII_HAVE_NEON
+    if (in_len >= BASE64_NEON_MIN_DECODE) {
+        done = base64_decode_neon(in, in_len, out, table,
+                                  table == table_a2b_base64);
+        in += done;
+        out += done / 4 * 3;
+        in_len -= done;
+    }
+#endif
+
     Py_ssize_t n_quads = in_len / 4;
     Py_ssize_t i;
 
@@ -185,7 +214,7 @@ base64_decode_fast(const unsigned char *in, Py_ssize_t in_len,
         }
     }
 
-    return i * 4;
+    return done + i * 4;
 }
 
 

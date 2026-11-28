@@ -264,6 +264,9 @@
     <ClInclude Include="..\Modules\_math.h">
       <Filter>Modules</Filter>
     </ClInclude>
+    <ClInclude Include="..\Modules\binascii_neon.h">
+      <Filter>Modules</Filter>
+    </ClInclude>
     <ClInclude Include="..\Modules\rotatingtree.h">
       <Filter>Modules</Filter>
     </ClInclude>
