@@ -1014,7 +1014,7 @@ class MarshalTests(_GetXIDataTests):
     def test_module(self):
         assert type(sys) is types.ModuleType, type(sys)
         assert type(defs) is types.ModuleType, type(defs)
-        assert type(unittest) is types.ModuleType, type(defs)
+        assert type(unittest) is types.ModuleType, type(unittest)
 
         assert 'emptymod' not in sys.modules
         with import_helper.ready_to_import('emptymod', ''):
@@ -1425,7 +1425,7 @@ class ShareableTypeTests(_GetXIDataTests):
     def test_module(self):
         assert type(sys) is types.ModuleType, type(sys)
         assert type(defs) is types.ModuleType, type(defs)
-        assert type(unittest) is types.ModuleType, type(defs)
+        assert type(unittest) is types.ModuleType, type(unittest)
 
         assert 'emptymod' not in sys.modules
         with import_helper.ready_to_import('emptymod', ''):
