@@ -1410,6 +1410,31 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         td = SubclassDate(2010, 10, day=10)
         self.assertEqual(repr(td), "SubclassDate(2010, 10, 10)")
 
+    def test_unpickle_invalid_state(self):
+        # gh-160358: Out-of-range year and day states must not create
+        # corrupted date/datetime objects or cause assertion failures.
+        is_date = (self.theclass is date or issubclass(self.theclass, date) and not issubclass(self.theclass, datetime))
+        suffix = b"" if is_date else b"\x00\x00\x00\x00\x00\x00"
+
+        invalid_states = [
+            b'\x00\x00\x01\x01' + suffix,  # year 0
+            b'\x27\x10\x01\x01' + suffix,  # year 10000 (MAXYEAR is 9999)
+            b'\x07\xe8\x01\x00' + suffix,  # day 0
+            b'\x07\xe8\x01\x20' + suffix,  # day 32 in Jan
+            b'\x07\xe8\x02\x1e' + suffix,  # day 30 in Feb (leap year 2024)
+            b'\x07\xe7\x02\x1d' + suffix,  # day 29 in Feb (non-leap year 2023)
+        ]
+        if not is_date:
+            invalid_states.extend([
+                b'\x07\xe8\x01\x01\x18\x00\x00\x00\x00\x00',  # hour 24
+                b'\x07\xe8\x01\x01\x00\x3c\x00\x00\x00\x00',  # minute 60
+                b'\x07\xe8\x01\x01\x00\x00\x3c\x00\x00\x00',  # second 60
+                b'\x07\xe8\x01\x01\x00\x00\x00\x0f\x42\x40',  # microsecond 1000000
+            ])
+        for state in invalid_states:
+            with self.subTest(state=state):
+                self.assertRaises(TypeError, self.theclass, state)
+
     def test_ordinal_conversions(self):
         # Check some fixed values.
         for y, m, d, n in [(1, 1, 1, 1),      # calendar origin
@@ -2168,10 +2193,9 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         # mistake) pass a string directly, which (if it's the right length)
         # will get treated like a pickle, and bypass the normal sanity
         # checks in the constructor.  This can create insane objects.
-        # The constructor doesn't want to burn the time to validate all
-        # fields, but does check the month field.  This stops, e.g.,
-        # datetime.datetime('1995-03-25') from yielding an insane object.
-        base = b'1995-03-25'
+        # The constructor validates fields (year, month, day, time).
+        # This stops, e.g., datetime.datetime('1995-03-25') from yielding an insane object.
+        base = b'\x07\xe8\x01\x01\x00\x00\x00\x00\x00\x00'
         if not issubclass(self.theclass, datetime):
             base = base[:4]
         for month_byte in b'9', b'\0', b'\r', b'\xff':
@@ -2183,10 +2207,12 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 self.theclass(bytes([1] * len(base)), 'EST')
 
         for ord_byte in range(1, 13):
-            # This shouldn't blow up because of the month byte alone.  If
-            # the implementation changes to do more-careful checking, it may
-            # blow up because other fields are insane.
             self.theclass(base[:2] + bytes([ord_byte]) + base[3:])
+
+        # Arbitrary ASCII strings of matching length with out-of-range fields
+        # (e.g. '1995' or '1995-03-25') must be rejected as invalid states.
+        bad_ascii = b'1995-03-25' if issubclass(self.theclass, datetime) else b'1995'
+        self.assertRaises(TypeError, self.theclass, bad_ascii)
 
     def test_valuerror_messages(self):
         pattern = re.compile(
