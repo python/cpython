@@ -80,11 +80,7 @@ typedef BOOL (__stdcall *PGetPhysicallyInstalledSystemMemory)( PULONGLONG TotalM
 
 // Load a library
 static HMODULE mi_win_loadlibrary(const TCHAR* library) {
-  #if MI_WIN_DESKTOP
-    return LoadLibrary(library);
-  #else
-    return LoadPackagedLibrary(library, 0);
-  #endif
+  return LoadLibrary(library);
 }
 
 // Get a library handle (and possibly load it)
