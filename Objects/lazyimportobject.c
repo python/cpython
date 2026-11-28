@@ -366,7 +366,7 @@ _PyLazyImport_IsResolving(PyThreadState *tstate, PyObject *op)
 
 static PyObject *
 lazy_import_resolve_impl(PyThreadState *tstate, PyObject *lazy_import,
-                         PyObject **imported_module)
+                         PyObject **imported_module, PyObject *globals)
 {
     PyObject *obj = NULL;
     PyObject *fromlist = NULL;
@@ -428,9 +428,11 @@ lazy_import_resolve_impl(PyThreadState *tstate, PyObject *lazy_import,
         goto done;
     }
 
-    PyObject *globals = PyEval_GetGlobals();
     if (globals == NULL) {
-        globals = Py_None;
+        globals = PyEval_GetGlobals();
+        if (globals == NULL) {
+            globals = Py_None;
+        }
     }
 
     if (PyMapping_GetOptionalItem(root->lz_builtins, &_Py_ID(__import__),
@@ -564,7 +566,7 @@ done:
 PyObject *
 _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 {
-    return lazy_import_resolve_impl(tstate, lazy_import, NULL);
+    return lazy_import_resolve_impl(tstate, lazy_import, NULL, NULL);
 }
 
 // Resolve a pending child as an aliased import, preserving its declaration.
@@ -671,8 +673,9 @@ _PyLazyImport_Reify(PyThreadState *tstate, PyObject *placeholder,
                     PyObject *name, PyObject *namespace)
 {
     PyObject *imported_module = NULL;
+    PyObject *globals = PyDict_Check(namespace) ? namespace : NULL;
     PyObject *value = lazy_import_resolve_impl(
-        tstate, placeholder, &imported_module);
+        tstate, placeholder, &imported_module, globals);
     if (value == NULL) {
         Py_XDECREF(imported_module);
         return NULL;

@@ -564,6 +564,30 @@ class IndependentSubmoduleTests(LazyImportTestCase):
             exec('assert xml.dom.__name__ == "xml.dom"', first)
         """)
 
+    def test_import_hook_receives_binding_globals(self):
+        self.check("""
+            import builtins, types
+            owner = types.ModuleType('owner')
+            calls = []
+            def import_hook(
+                name, globals=None, locals=None, fromlist=(), level=0,
+            ):
+                calls.append((globals is owner.__dict__, locals is globals))
+                module = types.ModuleType(name)
+                module.value = 42
+                return module
+            owner.__dict__['__builtins__'] = dict(
+                vars(builtins), __import__=import_hook)
+            exec('lazy import target', owner.__dict__)
+            consumer = {
+                '__name__': 'consumer',
+                '__builtins__': vars(builtins),
+                'owner': owner,
+            }
+            exec('assert owner.target.value == 42', consumer)
+            assert calls == [(True, True)], calls
+        """)
+
     def test_retry_after_recursive_access(self):
         self.check("""
             import sys, xml
