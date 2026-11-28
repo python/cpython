@@ -561,6 +561,16 @@ class BaseMemorySliceSliceTests:
 class BytesMemoryviewTest(unittest.TestCase,
     BaseMemoryviewTests, BaseBytesMemoryTests):
 
+    def test_compare_byte_views(self):
+        for fmt in ('B', 'b', 'c'):
+            with self.subTest(format=fmt):
+                packed = memoryview(b'ab').cast(fmt)
+                spaced = memoryview(b'axb').cast(fmt)[::2]
+                self.assertEqual(packed, spaced)
+                self.assertEqual(spaced, packed)
+                self.assertEqual(packed, memoryview(bytearray(b'ab')).cast(fmt))
+                self.assertNotEqual(packed, memoryview(b'ax').cast(fmt))
+
     def test_comparison_release_during_buffer_callback(self):
         # Releasing the view from inside the other operand's __buffer__
         # succeeds, but the buffer stays pinned until the comparison ends:
