@@ -1341,6 +1341,34 @@ class PathTest(PurePathTest):
         if hasattr(source_st, 'st_flags'):
             self.assertEqual(source_st.st_flags, target_st.st_flags)
 
+    @os_helper.skip_unless_hardlink
+    def test_copy_file_to_hardlink_with_stale_info(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'copyA'
+        source.write_bytes(b'original data')
+        target.write_bytes(b'old backup')
+        target.info.is_file()
+        target.unlink()
+        target.hardlink_to(source)
+        self.assertTrue(source.samefile(target))
+        self.assertRaises(OSError, source.copy, target)
+        self.assertEqual(source.read_bytes(), b'original data')
+
+    @os_helper.skip_unless_hardlink
+    def test_copy_file_from_hardlink_with_stale_info(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'copyA'
+        target.write_bytes(b'original data')
+        source.write_bytes(b'old backup')
+        source.info.is_file()
+        source.unlink()
+        source.hardlink_to(target)
+        self.assertTrue(source.samefile(target))
+        self.assertRaises(OSError, source.copy, target)
+        self.assertEqual(target.read_bytes(), b'original data')
+
     @needs_symlinks
     def test_copy_file_to_existing_symlink(self):
         base = self.cls(self.base)
