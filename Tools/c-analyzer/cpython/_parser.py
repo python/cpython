@@ -49,6 +49,7 @@ def format_tsv_lines(lines):
 EXCLUDED = format_conf_lines([
     # macOS
     'Modules/_scproxy.c',              # SystemConfiguration/SystemConfiguration.h
+    'Modules/_multiprocessing/semaphore_macosx.h',  # <sys/sysctl.h> no longer exists in linux
 
     # Windows
     'Modules/_winapi.c',               # windows.h
