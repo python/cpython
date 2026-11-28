@@ -28,6 +28,16 @@ module _operator
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=672ecf48487521e7]*/
 
+/*[clinic input]
+class _operator.itemgetter "itemgetterobject *" "type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=419d278df02ea948]*/
+
+/*[clinic input]
+class _operator.attrgetter "attrgetterobject *" "type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c6efaf5380908852]*/
+
 PyDoc_STRVAR(operator_doc,
 "Operator interface.\n\
 \n\
@@ -1029,34 +1039,45 @@ itemgetter_vectorcall(PyObject *, PyObject *const *, size_t, PyObject *);
 static PyObject *
 itemgetter_call_impl(itemgetterobject *, PyObject *);
 
-/* AC 3.5: treats first argument as an iterable, otherwise uses *args */
+/*[clinic input]
+@vectorcall
+@classmethod
+_operator.itemgetter.__new__ as itemgetter_type_new
+    *items: array
+[clinic start generated code]*/
+
 static PyObject *
-itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+itemgetter_type_new_impl(PyTypeObject *type, PyObject * const *items,
+                         Py_ssize_t items_length)
+/*[clinic end generated code: output=b449203c8dbfacf8 input=af4aec330543c134]*/
 {
     itemgetterobject *ig;
     PyObject *item;
-    Py_ssize_t nitems;
     Py_ssize_t index;
 
-    if (!_PyArg_NoKeywords("itemgetter", kwds))
+    if (items_length < 1) {
+        PyErr_SetString(PyExc_TypeError, "itemgetter expected 1 argument, got 0");
         return NULL;
-
-    nitems = PyTuple_GET_SIZE(args);
-    if (nitems <= 1) {
-        if (!PyArg_UnpackTuple(args, "itemgetter", 1, 1, &item))
+    }
+    if (items_length == 1) {
+        item = Py_NewRef(items[0]);
+    }
+    else {
+        item = PyTuple_FromArray(items, items_length);
+        if (item == NULL) {
             return NULL;
-    } else {
-        item = args;
+        }
     }
     _operator_state *state = _PyType_GetModuleState(type);
     /* create itemgetterobject structure */
     ig = PyObject_GC_New(itemgetterobject, (PyTypeObject *) state->itemgetter_type);
     if (ig == NULL) {
+        Py_DECREF(item);
         return NULL;
     }
 
-    ig->item = Py_NewRef(item);
-    ig->nitems = nitems;
+    ig->item = item;
+    ig->nitems = items_length;
     ig->index = -1;
     if (PyLong_CheckExact(item)) {
         index = PyLong_AsSsize_t(item);
@@ -1225,7 +1246,8 @@ static PyType_Slot itemgetter_type_slots[] = {
     {Py_tp_methods, itemgetter_methods},
     {Py_tp_members, itemgetter_members},
     {Py_tp_getset, common_getset},
-    {Py_tp_new, itemgetter_new},
+    {Py_tp_new, itemgetter_type_new},
+    {Py_tp_vectorcall, itemgetter_type_vectorcall},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, itemgetter_repr},
     {0, 0}
@@ -1257,31 +1279,35 @@ attrgetter_vectorcall(PyObject *, PyObject *const *, size_t, PyObject *);
 static PyObject *
 attrgetter_call_impl(attrgetterobject *, PyObject *);
 
-/* AC 3.5: treats first argument as an iterable, otherwise uses *args */
+/*[clinic input]
+@vectorcall
+@classmethod
+_operator.attrgetter.__new__ as attrgetter_type_new
+    *attrs: array
+[clinic start generated code]*/
+
 static PyObject *
-attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+attrgetter_type_new_impl(PyTypeObject *type, PyObject * const *attrs,
+                         Py_ssize_t attrs_length)
+/*[clinic end generated code: output=5d014e36ea7aba23 input=b3a21a0100fbeba8]*/
 {
     attrgetterobject *ag;
     PyObject *attr;
-    Py_ssize_t nattrs, idx, char_idx;
+    Py_ssize_t idx, char_idx;
 
-    if (!_PyArg_NoKeywords("attrgetter", kwds))
+    if (attrs_length < 1) {
+        PyErr_SetString(PyExc_TypeError, "attrgetter expected 1 argument, got 0");
         return NULL;
-
-    nattrs = PyTuple_GET_SIZE(args);
-    if (nattrs <= 1) {
-        if (!PyArg_UnpackTuple(args, "attrgetter", 1, 1, &attr))
-            return NULL;
     }
 
-    attr = PyTuple_New(nattrs);
+    attr = PyTuple_New(attrs_length);
     if (attr == NULL)
         return NULL;
 
     /* prepare attr while checking args */
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    for (idx = 0; idx < nattrs; ++idx) {
-        PyObject *item = PyTuple_GET_ITEM(args, idx);
+    for (idx = 0; idx < attrs_length; ++idx) {
+        PyObject *item = attrs[idx];
         int dot_count;
 
         if (!PyUnicode_Check(item)) {
@@ -1359,7 +1385,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     ag->attr = attr;
-    ag->nattrs = nattrs;
+    ag->nattrs = attrs_length;
     ag->vectorcall = attrgetter_vectorcall;
 
     PyObject_GC_Track(ag);
@@ -1592,7 +1618,8 @@ static PyType_Slot attrgetter_type_slots[] = {
     {Py_tp_methods, attrgetter_methods},
     {Py_tp_members, attrgetter_members},
     {Py_tp_getset, common_getset},
-    {Py_tp_new, attrgetter_new},
+    {Py_tp_new, attrgetter_type_new},
+    {Py_tp_vectorcall, attrgetter_type_vectorcall},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_repr, attrgetter_repr},
     {0, 0}

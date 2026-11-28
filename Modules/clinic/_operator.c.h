@@ -4,6 +4,7 @@ preserve
 
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 PyDoc_STRVAR(_operator_truth__doc__,
 "truth($module, a, /)\n"
@@ -1507,4 +1508,100 @@ _operator__compare_digest(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=972e2543c4fcf1ba input=a9049054013a1b77]*/
+
+static PyObject *
+itemgetter_type_new_impl(PyTypeObject *type, PyObject * const *items,
+                         Py_ssize_t items_length);
+
+static PyObject *
+itemgetter_type_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = type;
+    PyObject * const *items;
+    Py_ssize_t items_length;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("itemgetter", kwargs)) {
+        goto exit;
+    }
+    items = _PyTuple_ITEMS(args);
+    items_length = PyTuple_GET_SIZE(args);
+    return_value = itemgetter_type_new_impl(type, items, items_length);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+itemgetter_type_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject * const *items;
+    Py_ssize_t items_length;
+
+    assert(_PyType_CAST(type)->tp_new == itemgetter_type_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("itemgetter", kwnames)) {
+        goto exit;
+    }
+    items = args;
+    items_length = nargs;
+    return_value = itemgetter_type_new_impl(_PyType_CAST(type), items, items_length);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+attrgetter_type_new_impl(PyTypeObject *type, PyObject * const *attrs,
+                         Py_ssize_t attrs_length);
+
+static PyObject *
+attrgetter_type_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = type;
+    PyObject * const *attrs;
+    Py_ssize_t attrs_length;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("attrgetter", kwargs)) {
+        goto exit;
+    }
+    attrs = _PyTuple_ITEMS(args);
+    attrs_length = PyTuple_GET_SIZE(args);
+    return_value = attrgetter_type_new_impl(type, attrs, attrs_length);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+attrgetter_type_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject * const *attrs;
+    Py_ssize_t attrs_length;
+
+    assert(_PyType_CAST(type)->tp_new == attrgetter_type_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (!_PyArg_NoKwnames("attrgetter", kwnames)) {
+        goto exit;
+    }
+    attrs = args;
+    attrs_length = nargs;
+    return_value = attrgetter_type_new_impl(_PyType_CAST(type), attrs, attrs_length);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=a009773fbb99d7f3 input=a9049054013a1b77]*/
