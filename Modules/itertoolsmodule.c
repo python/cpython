@@ -3758,12 +3758,12 @@ typedef struct {
 @classmethod
 itertools.repeat.__new__ as repeat_new
     object as element: object
-    times: object(c_default="NULL") = None
+    times: object = NULL
 [clinic start generated code]*/
 
 static PyObject *
 repeat_new_impl(PyTypeObject *type, PyObject *element, PyObject *times)
-/*[clinic end generated code: output=4ef9bd3593335622 input=c0eafe81f60ae9e6]*/
+/*[clinic end generated code: output=4ef9bd3593335622 input=57cee9a4aba720da]*/
 {
     repeatobject *ro;
     Py_ssize_t cnt = -1;
