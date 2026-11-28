@@ -1,0 +1,2 @@
+Add :func:`winreg.GetValue` function to retrieve registry values without opening
+keys first. Includes RRF_* constants for type restriction flags.
