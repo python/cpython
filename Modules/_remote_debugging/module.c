@@ -607,7 +607,8 @@ read_interp_state_and_maybe_thread_frame(
     }
     if (aliased == 0) {
         if (prefetch->tstate_addr != 0) {
-            size_t tstate_size = (size_t)unwinder->debug_offsets.thread_state.size;
+            size_t tstate_size =
+                (size_t)unwinder->debug_offsets.thread_state.size;
             int rc = _Py_RemoteDebug_AliasedReadRemoteMemory(
                 &unwinder->handle, prefetch->tstate_addr, tstate_size,
                 tstate_buffer);
@@ -1372,7 +1373,9 @@ RemoteUnwinder_dealloc(PyObject *op)
     PyTypeObject *tp = Py_TYPE(self);
 
 #ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
-    if (self->threads_stopped && !_Py_RemoteDebug_HandleIsInherited(&self->handle)) {
+    if (self->threads_stopped
+        && !_Py_RemoteDebug_HandleIsInherited(&self->handle))
+    {
         _Py_RemoteDebug_ResumeAllThreads(self, &self->threads_state);
         self->threads_stopped = 0;
     }

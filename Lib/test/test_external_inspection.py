@@ -503,9 +503,13 @@ class TestUnwinderAfterFork(unittest.TestCase):
                 assert unwinder.get_stack_trace()
             else:
                 check = unittest.TestCase()
-                for name in ("get_stats", "get_stack_trace", "get_async_stack_trace",
-                             "get_all_awaited_by", "pause_threads", "resume_threads"):
-                    with check.assertRaisesRegex(RuntimeError, "after fork", msg=name):
+                for name in (
+                    "get_stats", "get_stack_trace", "get_async_stack_trace",
+                    "get_all_awaited_by", "pause_threads", "resume_threads",
+                ):
+                    with check.assertRaisesRegex(
+                        RuntimeError, "after fork", msg=name
+                    ):
                         getattr(unwinder, name)()
                 with check.assertRaisesRegex(RuntimeError, "after fork"):
                     unwinder.__init__(os.getpid())

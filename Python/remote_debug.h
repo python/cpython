@@ -1612,6 +1612,7 @@ static alias_page_entry_t *
 alias_find_entry(proc_handle_t *handle, uintptr_t page_base)
 {
     alias_read_cache_t *cache = &handle->alias;
+
     for (int i = 0; i < MAX_ALIAS_PAGES; i++) {
         alias_page_entry_t *entry = &cache->pages[i];
         if (entry->valid && entry->remote_page_base == page_base) {
@@ -1625,6 +1626,7 @@ static void
 _Py_RemoteDebug_AliasCacheClear(proc_handle_t *handle)
 {
     alias_read_cache_t *cache = &handle->alias;
+
     for (int i = 0; i < MAX_ALIAS_PAGES; i++) {
         alias_invalidate_entry(&cache->pages[i]);
     }
@@ -1652,6 +1654,7 @@ static void
 alias_cache_init(proc_handle_t *handle)
 {
     alias_read_cache_t *cache = &handle->alias;
+
     cache->initialized = 1;
     cache->probe_mask = ALIAS_PROBE_DEFAULT_MASK;
 
@@ -1686,6 +1689,7 @@ static int
 alias_maybe_probe_entry(proc_handle_t *handle, alias_page_entry_t *entry)
 {
     alias_read_cache_t *cache = &handle->alias;
+
     if (--entry->probe_countdown != 0) {
         return 1;
     }
@@ -1782,10 +1786,12 @@ alias_remap_page(proc_handle_t *handle,
     alias_read_cache_t *cache = &handle->alias;
     alias_page_entry_t *entry = alias_alloc_entry(handle);
     kern_return_t kr = alias_map_readonly_page(handle, page_base, entry);
+
     if (kr != KERN_SUCCESS) {
         alias_invalidate_entry(entry);
         if (kr == MACH_SEND_INVALID_DEST || kr == KERN_TERMINATED
-                || kr == KERN_NOT_SUPPORTED) {
+            || kr == KERN_NOT_SUPPORTED)
+        {
             alias_disable_runtime(handle);
         }
         return -1;
@@ -1816,6 +1822,7 @@ alias_lookup_page(proc_handle_t *handle,
                   alias_page_entry_t **entry_out)
 {
     alias_read_cache_t *cache = &handle->alias;
+
     if (!cache->initialized) {
         alias_cache_init(handle);
     }
@@ -1846,6 +1853,11 @@ alias_lookup_page(proc_handle_t *handle,
     return 0;
 }
 
+#undef MAX_ALIAS_PAGES
+#undef ALIAS_PROBE_DEFAULT_MASK
+#undef ALIAS_PROBE_MIN_MASK
+#undef ALIAS_PROBE_MAX_MASK
+
 #endif /* defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX */
 
 // Optional fast path: serve the read from a mapping of the remote pages when
@@ -1854,10 +1866,13 @@ alias_lookup_page(proc_handle_t *handle,
 // recycled under the sample. Only for memory whose mapping is stable for the
 // lifetime of the target structure; data stack chunks are not.
 UNUSED static int
-_Py_RemoteDebug_AliasedReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* dst)
+_Py_RemoteDebug_AliasedReadRemoteMemory(proc_handle_t *handle,
+                                        uintptr_t remote_address,
+                                        size_t len, void *dst)
 {
 #if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
     size_t page_size = handle->page_size;
+
     if (len == 0 || len > 2 * page_size) {
         return 1;
     }
@@ -1876,7 +1891,8 @@ _Py_RemoteDebug_AliasedReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_
         if (rc != 0) {
             return rc;
         }
-        memcpy(out, (const char *)alias->local_page_base + offset_in_page, span);
+        memcpy(out, (const char *)alias->local_page_base + offset_in_page,
+               span);
         addr += span;
         out += span;
         remaining -= span;
@@ -1903,7 +1919,8 @@ _Py_RemoteDebug_PagedReadRemoteMemory(proc_handle_t *handle,
 
     // Aliases copy only the requested bytes, with no page snapshot, so
     // repeated reads of one page within a sample may differ.
-    int aliased = _Py_RemoteDebug_AliasedReadRemoteMemory(handle, addr, size, out);
+    int aliased =
+        _Py_RemoteDebug_AliasedReadRemoteMemory(handle, addr, size, out);
     if (aliased <= 0) {
         return aliased;
     }
