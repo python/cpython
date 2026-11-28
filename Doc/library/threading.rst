@@ -505,8 +505,12 @@ There is the possibility that "dummy thread objects" are created. These are
 thread objects corresponding to "alien threads", which are threads of control
 started outside the threading module, such as directly from C code.  Dummy
 thread objects have limited functionality; they are always considered alive and
-daemonic, and cannot be :ref:`joined <meth-thread-join>`.  They are never deleted,
-since it is impossible to detect the termination of alien threads.
+daemonic, and cannot be :ref:`joined <meth-thread-join>`.  They are removed from
+the list of active threads when their alien threads terminate.
+
+.. versionchanged:: 3.13
+   Dummy thread objects are now removed from the list of active threads when
+   their alien threads terminate.
 
 
 .. class:: Thread(group=None, target=None, name=None, args=(), kwargs={}, *, \
