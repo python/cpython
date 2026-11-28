@@ -1,0 +1,2 @@
+Colorize :exc:`KeyboardInterrupt` and :exc:`MemoryError` messages displayed
+during input handling in PyREPL. Patch by Bartosz Sławecki.
