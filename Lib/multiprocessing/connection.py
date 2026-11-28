@@ -47,6 +47,11 @@ CONNECTION_TIMEOUT = 20.
 _mmap_counter = itertools.count()
 _MAX_PIPE_ATTEMPTS = 100
 
+# WriteFile() takes a DWORD byte count, and Windows refuses a pipe write of
+# more than this many bytes (ERROR_INVALID_PARAMETER).  The limit is not
+# documented; it was measured on Windows 11 version 26H2.
+_MAX_PIPE_MESSAGE_SIZE = 0xFFFFFFFF - 48
+
 default_family = 'AF_INET'
 families = ['AF_INET']
 
@@ -297,6 +302,11 @@ if _winapi:
                 # A connection should only be used by a single thread
                 raise ValueError("concurrent send_bytes() calls "
                                  "are not supported")
+            if len(buf) > _MAX_PIPE_MESSAGE_SIZE:
+                # Windows would refuse the write, but could already have
+                # completed a waiting reader's read with ERROR_MORE_DATA.
+                raise ValueError("message too large for a pipe: "
+                                 f"{len(buf)} bytes")
             ov, err = _winapi.WriteFile(self._handle, buf, overlapped=True)
             self._send_ov = ov
             try:

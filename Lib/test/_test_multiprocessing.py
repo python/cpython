@@ -6110,6 +6110,55 @@ class TestInvalidFamily(unittest.TestCase):
             multiprocessing.connection.Listener('/var/test.pipe')
 
 #
+# gh-161668: a message too large for a Windows pipe is refused before
+# anything is written, so a receiver that is already waiting gets the next
+# message
+#
+
+@unittest.skipUnless(WIN32, "skipped on non-Windows platforms")
+class TestPipeMessageTooLarge(unittest.TestCase):
+
+    def check_refused(self, size):
+        reader, writer = multiprocessing.Pipe(duplex=False)
+        with reader, writer:
+            received = []
+            def receive():
+                try:
+                    received.append(reader.recv_bytes())
+                except Exception as exc:
+                    received.append(exc)
+            thread = threading.Thread(target=receive)
+            thread.start()
+            try:
+                # Give the receiver time to block in recv_bytes(), where a
+                # refused write used to break it.
+                time.sleep(0.1)
+                with self.assertRaisesRegex(ValueError, 'too large'):
+                    writer.send_bytes(bytes(size))
+            finally:
+                writer.send_bytes(b'after')
+                threading_helper.join_thread(thread)
+            self.assertEqual(received, [b'after'])
+
+    def test_send_bytes_too_large(self):
+        limit = 100
+        with support.swap_attr(multiprocessing.connection,
+                               '_MAX_PIPE_MESSAGE_SIZE', limit):
+            self.check_refused(limit + 1)
+            reader, writer = multiprocessing.Pipe(duplex=False)
+            with reader, writer:
+                writer.send_bytes(bytes(limit))
+                self.assertEqual(reader.recv_bytes(), bytes(limit))
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @support.bigmemtest(size=support._4G, memuse=1, dry_run=False)
+    def test_send_bytes_too_large_for_windows(self, size):
+        # 0xFFFFFFD0 is the smallest write that Windows refuses.
+        for n in (0xFFFFFFD0, size):
+            with self.subTest(n=n):
+                self.check_refused(n)
+
+#
 # Issue 12098: check sys.flags of child matches that for parent
 #
 
