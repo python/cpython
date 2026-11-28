@@ -1,0 +1,4 @@
+Fix use-after-free crashes in :mod:`signal`.  On all builds, a signal
+handler that replaces itself is now kept alive until it returns.  On the
+:term:`free-threaded build`, :func:`signal.getsignal` no longer crashes
+when another thread replaces the handler.
