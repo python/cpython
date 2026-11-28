@@ -641,6 +641,35 @@ class BaseTestTaskGroup:
         self.assertEqual(len(contexts), 1)
         self.assertIsInstance(contexts[0]['exception'], ZeroDivisionError)
 
+    def test_taskgroup_20c(self):
+        # gh-162492: A SystemExit raised by a child task propagates out of the
+        # TaskGroup, so it must not also be reported to the exception
+        # handler as an exception that was not propagated.
+        async def crash():
+            await asyncio.sleep(0)
+            raise SystemExit(3)
+
+        async def runner():
+            async with taskgroups.TaskGroup() as g:
+                g.create_task(crash())
+                await asyncio.sleep(10)
+
+        loop = self.loop_factory()
+        try:
+            contexts = []
+            loop.set_exception_handler(
+                lambda loop, context: contexts.append(context))
+            task = loop.create_task(runner())
+            # The SystemExit escapes run_until_complete() once from the
+            # child task and once more from the parent task.
+            while not task.done():
+                with self.assertRaises(SystemExit):
+                    loop.run_until_complete(task)
+            self.assertIsInstance(task.exception(), SystemExit)
+            self.assertEqual(contexts, [])
+        finally:
+            loop.close()
+
     async def _test_taskgroup_21(self):
         # This test doesn't work as asyncio, currently, doesn't
         # correctly propagate KeyboardInterrupt (or SystemExit) --

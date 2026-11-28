@@ -1,0 +1,3 @@
+Fix :class:`asyncio.TaskGroup` reporting a :exc:`SystemExit` or
+:exc:`KeyboardInterrupt` raised by a child task to the event loop's
+exception handler as not propagated, while propagating it.
