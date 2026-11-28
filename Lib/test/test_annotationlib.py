@@ -1423,6 +1423,35 @@ class TestGetAnnotations(unittest.TestCase):
             with self.assertRaises(DemoException):
                 get_annotations(f, format=fmt)
 
+    def test_value_call_skipped(self):
+        # Test that Format.VALUE isn't called twice when using
+        # get_annotations with ForwardRef format  on an object
+        # with a custom `__annotate__` callable
+        calls = []
+        def annotate(format, /):
+            nonlocal calls
+            calls.append(format)
+
+            if format == Format.VALUE:
+                raise NameError('x')
+            elif format == Format.VALUE_WITH_FAKE_GLOBALS:
+                return {'x': str}
+            else:
+                raise NotImplementedError(format)
+
+        class Example:
+            pass
+
+        Example.__annotate__ = annotate
+
+        annos = get_annotations(Example, format=Format.FORWARDREF)
+        self.assertEqual(annos, {'x': str})
+
+        self.assertEqual(
+            calls,
+            [Format.VALUE, Format.FORWARDREF, Format.VALUE_WITH_FAKE_GLOBALS]
+        )
+
 
 class TestCallEvaluateFunction(unittest.TestCase):
     def test_evaluation(self):
@@ -1491,6 +1520,34 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
         self.assertEqual(annotations, {"x": str})
 
+    def test_user_annotate_failure(self):
+        # Test that if Format.FORWARDREF is used but no formats are supported
+        # the error returned is from trying Format.VALUE again
+        called_formats = []
+        def annotate(format, /):
+            nonlocal called_formats
+            called_formats.append(format)
+            if format == Format.VALUE:
+                raise NameError("x")
+            else:
+                raise NotImplementedError(format)
+
+        with self.assertRaises(NameError):
+            _ = annotationlib.call_annotate_function(
+                annotate,
+                format=Format.FORWARDREF,
+            )
+
+        self.assertEqual(
+            called_formats,
+            [
+                Format.FORWARDREF,
+                Format.VALUE,
+                Format.VALUE_WITH_FAKE_GLOBALS,
+                Format.VALUE,
+            ]
+        )
+
     def test_user_annotate_forwardref_supported(self):
         # If Format.FORWARDREF is supported prefer it over Format.VALUE
         def annotate(format, /, __Format=Format, __NotImplementedError=NotImplementedError):
@@ -1511,19 +1568,45 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertEqual(annotations, {"x": float})
 
     def test_user_annotate_forwardref_fakeglobals(self):
-        # If Format.FORWARDREF is not supported, use Format.VALUE_WITH_FAKE_GLOBALS
-        # before falling back to Format.VALUE
-        def annotate(format, /, __Format=Format, __NotImplementedError=NotImplementedError):
-            if format == __Format.VALUE:
-                return {'x': str}
-            elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
-                return {'x': int}
-            else:
-                raise __NotImplementedError(format)
+        # If Format.FORWARDREF is not supported,
+        # try Format.VALUE before using Format.VALUE_WITH_FAKE_GLOBALS
+        def _make_annotate(
+            *,
+            break_value=False,
+        ):
+            def annotate(
+                format,
+                /,
+                __break_value=break_value,
+                __Format=Format,
+                __NotImplementedError=NotImplementedError,
+                __NameError=NameError,
+            ):
+                if format == __Format.VALUE:
+                    if __break_value:
+                        raise __NameError("x")
+                    else:
+                        return {'x': str}
+                elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
+                    return {'x': int}
+                else:
+                    raise __NotImplementedError(format)
+            return annotate
 
+        annotate = _make_annotate()
+
+        # Format.VALUE is used first
         annotations = annotationlib.call_annotate_function(
             annotate,
-            Format.FORWARDREF
+            Format.FORWARDREF,
+        )
+        self.assertEqual(annotations, {"x": str})
+
+        # If Format.VALUE fails, confirm the value is from fake globals
+        annotate = _make_annotate(break_value=True)
+        annotations = annotationlib.call_annotate_function(
+            annotate,
+            Format.FORWARDREF,
         )
 
         self.assertEqual(annotations, {"x": int})
@@ -1628,10 +1711,16 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
     def test_basic_non_function_annotate(self):
         class Annotate:
+            def __init__(self, block_value=False):
+                self.block_value = block_value
+
             def __call__(self, format, /, __Format=Format,
                          __NotImplementedError=NotImplementedError):
                 if format == __Format.VALUE:
-                    return {'x': str}
+                    if self.block_value:
+                        raise NameError("x")
+                    else:
+                        return {'x': str}
                 elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
                     return {'x': int}
                 elif format == __Format.STRING:
@@ -1645,9 +1734,14 @@ class TestCallAnnotateFunction(unittest.TestCase):
         annotations = annotationlib.call_annotate_function(Annotate(), Format.STRING)
         self.assertEqual(annotations, {"x": "float"})
 
+        annotations = annotationlib.call_annotate_function(
+            Annotate(), Format.FORWARDREF
+        )
+        self.assertEqual(annotations, {"x": str})
+
         with self.assertRaises(AttributeError) as cm:
             annotations = annotationlib.call_annotate_function(
-                Annotate(), Format.FORWARDREF
+                Annotate(block_value=True), Format.FORWARDREF
             )
 
         self.assertEqual(cm.exception.name, "__builtins__")
@@ -1658,7 +1752,9 @@ class TestCallAnnotateFunction(unittest.TestCase):
             local = str
 
             class Annotate:
-                called_formats = []
+                def __init__(self):
+                    self.called_formats = []
+                    self.block_value = False
 
                 def __call__(self, format=None, *, _self=None):
                     nonlocal local
@@ -1667,7 +1763,10 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
                     self.called_formats.append(format)
                     if format == 1:  # VALUE
-                        return {"x": MyClass, "y": int, "z": local}
+                        if self.block_value:
+                            raise NameError("x")
+                        else:
+                            return {"x": MyClass, "y": int, "z": local}
                     if format == 2:  # VALUE_WITH_FAKE_GLOBALS
                         return {"w": unknown, "x": MyClass, "y": int, "z": local}
                     raise NotImplementedError
@@ -1688,21 +1787,39 @@ class TestCallAnnotateFunction(unittest.TestCase):
             annotationlib.call_annotate_function(annotate, Format.VALUE),
             {"x": MyClass, "y": int, "z": str}
         )
-        self.assertEqual(annotate.called_formats[-1], Format.VALUE)
+        self.assertEqual(annotate.called_formats, [Format.VALUE])
 
+        # Reset the called formats
+        annotate.called_formats = []
         self.assertEqual(
             annotationlib.call_annotate_function(annotate, Format.STRING),
             {"w": "unknown", "x": "MyClass", "y": "int", "z": "local"}
         )
-        self.assertIn(Format.STRING, annotate.called_formats)
-        self.assertEqual(annotate.called_formats[-1], Format.VALUE_WITH_FAKE_GLOBALS)
+        # VALUE_WITH_FAKE_GLOBALS is called twice, first to test it is supported
+        # and then again in the fake globals context.
+        self.assertEqual(
+            annotate.called_formats,
+            [Format.STRING, Format.VALUE_WITH_FAKE_GLOBALS, Format.VALUE_WITH_FAKE_GLOBALS]
+        )
 
+        # With unblocked value
+        annotate.called_formats = []
+        self.assertEqual(
+            annotationlib.call_annotate_function(annotate, Format.FORWARDREF),
+            {"x": MyClass, "y": int, "z": str}
+        )
+        self.assertEqual(annotate.called_formats, [Format.FORWARDREF, Format.VALUE])
+
+        # With blocked value
+        annotate.called_formats = []
+        annotate.block_value = True
         self.assertEqual(
             annotationlib.call_annotate_function(annotate, Format.FORWARDREF),
             {"w": support.EqualToForwardRef("unknown"), "x": MyClass, "y": int, "z": str}
         )
-        self.assertIn(Format.FORWARDREF, annotate.called_formats)
-        self.assertEqual(annotate.called_formats[-1], Format.VALUE_WITH_FAKE_GLOBALS)
+        self.assertEqual(annotate.called_formats, [Format.FORWARDREF, Format.VALUE, Format.VALUE_WITH_FAKE_GLOBALS])
+
+
 
     def test_error_from_value_raised(self):
         # Test that the error from format.VALUE is raised
