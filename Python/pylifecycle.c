@@ -917,10 +917,12 @@ pycore_init_builtins(PyThreadState *tstate)
     interp->callable_cache.object__getattribute__ = object__getattribute__;
 
     if (_PyType_InitSlotDefs(interp) < 0) {
+        Py_XDECREF(bimod);
         return _PyStatus_ERR("failed to init slotdefs");
     }
 
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
+        Py_XDECREF(bimod);
         return _PyStatus_ERR("failed to add exceptions to builtins");
     }
 
@@ -1837,8 +1839,12 @@ finalize_clear_modules_dict(PyObject *modules)
         PyDict_Clear(modules);
     }
     else {
-        if (PyObject_CallMethodNoArgs(modules, &_Py_ID(clear)) == NULL) {
+        PyObject *res = PyObject_CallMethodNoArgs(modules, &_Py_ID(clear));
+        if (res == NULL) {
             PyErr_FormatUnraisable("Exception ignored while clearing sys.modules");
+        }
+        else {
+            Py_DECREF(res);
         }
     }
 }
@@ -2943,6 +2949,7 @@ add_main_module(PyInterpreterState *interp)
             return _PyStatus_ERR("Failed to retrieve builtins module");
         }
         if (PyDict_SetItemString(d, "__builtins__", bimod) < 0) {
+            Py_DECREF(bimod);
             return _PyStatus_ERR("Failed to initialize __main__.__builtins__");
         }
         Py_DECREF(bimod);
@@ -2966,6 +2973,7 @@ add_main_module(PyInterpreterState *interp)
             return _PyStatus_ERR("Failed to retrieve BuiltinImporter");
         }
         if (PyDict_SetItemString(d, "__loader__", loader) < 0) {
+            Py_DECREF(loader);
             return _PyStatus_ERR("Failed to initialize __main__.__loader__");
         }
         Py_DECREF(loader);
