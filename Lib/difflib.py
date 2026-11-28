@@ -570,7 +570,9 @@ class SequenceMatcher:
           ('equal', 35, 38, 31, 34)]]
         """
 
-        codes = self.get_opcodes()
+        # Copy, since get_opcodes() returns the cached list and it is
+        # modified below.
+        codes = list(self.get_opcodes())
         if not codes:
             codes = [("equal", 0, 1, 0, 1)]
         # Fixup leading and trailing groups if they show no changes.
