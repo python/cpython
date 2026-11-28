@@ -1,0 +1,2 @@
+:mod:`venv`: a symbolic link in place of ``pyvenv.cfg``, ``.gitignore`` or
+an activation script is now replaced instead of written through.
