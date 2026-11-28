@@ -1597,7 +1597,7 @@ static mi_page_t* mi_segment_huge_page_alloc(size_t size, size_t page_alignment,
   if (segment == NULL || page==NULL) return NULL;
   mi_assert_internal(segment->used==1);
   mi_assert_internal(mi_page_block_size(page) >= size);
-  #if MI_HUGE_PAGE_ABANDON
+  #ifdef MI_HUGE_PAGE_ABANDON
   segment->thread_id = 0; // huge segments are immediately abandoned
   #endif
 
@@ -1624,7 +1624,7 @@ static mi_page_t* mi_segment_huge_page_alloc(size_t size, size_t page_alignment,
   return page;
 }
 
-#if MI_HUGE_PAGE_ABANDON
+#ifdef MI_HUGE_PAGE_ABANDON
 // free huge block from another thread
 void _mi_segment_huge_page_free(mi_segment_t* segment, mi_page_t* page, mi_block_t* block) {
   // huge page segments are always abandoned and can be freed immediately by any thread

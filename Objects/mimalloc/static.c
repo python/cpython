@@ -36,6 +36,6 @@ terms of the MIT license. A copy of the license can be found in the file
 #include "segment-map.c"
 #include "stats.c"
 #include "prim/prim.c"
-#if MI_OSX_ZONE
+#ifdef MI_OSX_ZONE
 #include "prim/osx/alloc-override-zone.c"
 #endif

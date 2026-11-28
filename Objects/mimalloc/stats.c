@@ -536,7 +536,7 @@ static void mi_heap_buf_print_count_bin(mi_heap_buf_t* hbuf, const char* prefix,
   const size_t binsize = _mi_bin_size(bin);
   const size_t pagesize = (binsize <= MI_SMALL_OBJ_SIZE_MAX ? MI_SMALL_PAGE_SIZE :
                             (binsize <= MI_MEDIUM_OBJ_SIZE_MAX ? MI_MEDIUM_PAGE_SIZE :
-                              #if MI_LARGE_PAGE_SIZE
+                              #ifdef MI_LARGE_PAGE_SIZE
                               (binsize <= MI_LARGE_OBJ_SIZE_MAX ? MI_LARGE_PAGE_SIZE : 0)
                               #else
                               0
