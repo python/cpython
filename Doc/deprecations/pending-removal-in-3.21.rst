@@ -18,6 +18,13 @@ Pending removal in Python 3.21
   * The ``dims`` property of ``ast.Tuple`` will be removed in Python 3.21. Use
     the ``ast.Tuple.elts`` property instead.
 
+* :mod:`collections`:
+
+  * The undocumented ``maxsplit`` keyword parameter of
+    :meth:`!collections.UserString.replace` has been deprecated since
+    Python 3.16. Pass the count as a positional argument or use the
+    ``count`` keyword parameter instead.
+
 * :mod:`functools`:
 
   * Using a return annotation to infer the dispatch type for
