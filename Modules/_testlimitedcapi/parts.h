@@ -24,6 +24,9 @@
 #  error "Py_BUILD_CORE macro must not be defined"
 #endif
 
+// Definition (and token) of the _testlimitedcapi module
+extern PyModuleDef _Py_TestLimitedCAPI_ModuleDef;
+
 int _PyTestLimitedCAPI_Init_Abstract(PyObject *module);
 int _PyTestLimitedCAPI_Init_ByteArray(PyObject *module);
 int _PyTestLimitedCAPI_Init_Bytes(PyObject *module);
@@ -40,6 +43,7 @@ int _PyTestLimitedCAPI_Init_List(PyObject *module);
 int _PyTestLimitedCAPI_Init_Long(PyObject *module);
 int _PyTestLimitedCAPI_Init_PyOS(PyObject *module);
 int _PyTestLimitedCAPI_Init_Set(PyObject *module);
+int _PyTestLimitedCAPI_Init_Slice(PyObject *module);
 int _PyTestLimitedCAPI_Init_Slots(PyObject *module);
 int _PyTestLimitedCAPI_Init_Sys(PyObject *module);
 int _PyTestLimitedCAPI_Init_ThreadState(PyObject *module);
@@ -51,5 +55,7 @@ int _PyTestLimitedCAPI_Init_File(PyObject *module);
 int _PyTestLimitedCAPI_Init_Weakref(PyObject *module);
 int _PyTestLimitedCAPI_Init_Run(PyObject *module);
 int _PyTestLimitedCAPI_Init_Type(PyObject *module);
+int _PyTestLimitedCAPI_Init_Hash(PyObject *module);
+int _PyTestLimitedCAPI_Init_Build(PyObject *module);
 
 #endif // Py_TESTLIMITEDCAPI_PARTS_H

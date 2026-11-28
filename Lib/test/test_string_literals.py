@@ -54,6 +54,10 @@ h = '\U0001d120'
 assert ord(h) == 0x1d120
 i = r'\U0001d120'
 assert list(map(ord, i)) == [92, 85, 48, 48, 48, 49, 100, 49, 50, 48]
+j = 'ä'
+assert list(map(ord, j)) == [228]
+k = '\ä'
+assert list(map(ord, k)) == [92, 228]
 """
 
 
@@ -76,7 +80,7 @@ class TestLiterals(unittest.TestCase):
         # Check that the template doesn't contain any non-printables
         # except for \n.
         for c in TEMPLATE:
-            assert c == '\n' or ' ' <= c <= '~', repr(c)
+            assert c == '\n' or ' ' <= c <= '~' or c == 'ä', repr(c)
 
     def test_eval_str_normal(self):
         self.assertEqual(eval(""" 'x' """), 'x')
@@ -88,6 +92,21 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(eval(""" '\u1881' """), chr(0x1881))
         self.assertEqual(eval(r""" '\U0001d120' """), chr(0x1d120))
         self.assertEqual(eval(""" '\U0001d120' """), chr(0x1d120))
+        # Lone "\" character at the end
+        self.assertEqual(eval(r"'abc\\'"), 'abc\\')
+
+    def test_eval_str_unicode(self):
+        for s in (
+            'ϼўТλФЙ',
+            'A͏B ﬖ̳AA̝',
+            '\U00100000\U0010ffff\U0010fffd',
+            'ä',
+            '\\ä',
+            "\\П",
+            "áàäéèęöő.\\n",
+        ):
+            with self.subTest(s=s):
+                self.assertEqual(eval(f"{s!r}"), s)
 
     def test_eval_str_incomplete(self):
         self.assertRaises(SyntaxError, eval, r""" '\x' """)

@@ -421,6 +421,60 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.assertEqual(self.loop.call_exception_handler.call_count, 1)
         self.assertEqual(self.loop.call_later.call_count, 1)
 
+    def test_accept_connection2_factory_error_closes_conn(self):
+        # gh-155934: if the transport was never created, the accepted
+        # socket is closed and the error is reported even when debug
+        # mode is disabled.
+        self.loop.set_debug(False)
+        conn = mock.Mock()
+
+        def factory():
+            raise RuntimeError("protocol_factory failed")
+
+        self.loop.call_exception_handler = mock.Mock()
+        self.loop.run_until_complete(
+            self.loop._accept_connection2(factory, conn, {}))
+
+        self.assertTrue(conn.close.called)
+        self.loop.call_exception_handler.assert_called_once()
+
+    def test_accept_connection2_transport_error_closes_conn(self):
+        # gh-155934: same when the transport creation itself fails.
+        self.loop.set_debug(False)
+        conn = mock.Mock()
+        self.loop._make_socket_transport = mock.Mock(
+            side_effect=ZeroDivisionError)
+        self.loop.call_exception_handler = mock.Mock()
+
+        self.loop.run_until_complete(
+            self.loop._accept_connection2(mock.Mock(), conn, {}))
+
+        self.assertTrue(conn.close.called)
+        self.loop.call_exception_handler.assert_called_once()
+
+    def test_accept_connection2_waiter_error_stays_debug_only(self):
+        # Once the transport exists it owns the socket: waiter failures
+        # (e.g. SSL handshake errors) close the transport and stay
+        # debug-only, and the accepted socket is not closed directly.
+        self.loop.set_debug(False)
+        conn = mock.Mock()
+        transport = mock.Mock()
+
+        def make_transport(conn, protocol, waiter=None, **kwargs):
+            waiter.set_exception(OSError("handshake failed"))
+            return transport
+
+        self.loop._make_socket_transport = make_transport
+        self.loop.call_exception_handler = mock.Mock()
+
+        self.loop.run_until_complete(
+            self.loop._accept_connection2(mock.Mock(), conn, {}))
+
+        self.assertTrue(transport.close.called)
+        self.assertFalse(conn.close.called)
+        self.assertFalse(self.loop.call_exception_handler.called)
+
+
 class SelectorTransportTests(test_utils.TestCase):
 
     def setUp(self):
@@ -801,14 +855,23 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertEqual(list_to_buffer([b'data']), transport._buffer)
 
     def test_write_tryagain(self):
-        self.sock.send.side_effect = BlockingIOError
-
         data = b'data'
-        transport = self.socket_transport()
-        transport.write(data)
+        for buf in data, bytearray(data), memoryview(data):
+            with self.subTest(type=type(buf).__name__):
+                self.sock.send.side_effect = BlockingIOError
 
-        self.loop.assert_writer(7, transport._write_ready)
-        self.assertEqual(list_to_buffer([b'data']), transport._buffer)
+                transport = self.socket_transport()
+                transport.write(buf)
+
+                self.loop.assert_writer(7, transport._write_ready)
+                self.assertEqual(list_to_buffer([b'data']), transport._buffer)
+                # gh-159503: the data is buffered as a view, not a copy
+                self.assertIsInstance(transport._buffer[0], memoryview)
+                self.assertIs(transport._buffer[0].obj, memoryview(buf).obj)
+                if isinstance(buf, bytearray):
+                    # The buffered view pins the bytearray against resizing.
+                    with self.assertRaises(BufferError):
+                        buf.append(0)
 
     def test_write_sendmsg_no_data(self):
         self.sock.sendmsg = mock.Mock()
@@ -860,6 +923,18 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         transport.writelines([data])
         self.assertTrue(self.sock.send.called)
         self.assertTrue(self.loop.writers)
+
+    def test_writelines_send_tryagain(self):
+        self.sock.send.side_effect = BlockingIOError
+
+        transport = self.socket_transport()
+        transport.write(b'data1')
+        transport.writelines([b'data2', b'data3'])
+
+        self.loop.assert_writer(7, transport._write_ready)
+        self.assertEqual(list_to_buffer([b'data1', b'data2', b'data3']),
+                         transport._buffer)
+        self.assertEqual(transport.get_write_buffer_size(), 15)
 
     def test_writelines_pauses_protocol(self):
         data = memoryview(b'data')
@@ -1042,13 +1117,15 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.sock.send.side_effect = BlockingIOError
 
         transport = self.socket_transport()
-        buffer = list_to_buffer([b'data1', b'data2'])
-        transport._buffer = buffer
+        transport._buffer = list_to_buffer([b'data1', b'data2'])
+        transport._buffer_size = 10
         self.loop._add_writer(7, transport._write_ready)
         transport._write_ready()
 
         self.loop.assert_writer(7, transport._write_ready)
-        self.assertEqual(buffer, transport._buffer)
+        self.assertEqual(list_to_buffer([b'data1', b'data2']),
+                         transport._buffer)
+        self.assertEqual(transport.get_write_buffer_size(), 10)
 
     def test_write_ready_exception(self):
         err = self.sock.send.side_effect = OSError()
@@ -1140,6 +1217,49 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
         self.assertEqual(transport.get_write_buffer_size(), 0)
         self.assertTrue(self.protocol.connection_lost.called)
+
+    def test_write_ready_resume_writing_closes(self):
+        # gh-156512: closing from resume_writing() must not lose the connection twice
+        self.sock.send.return_value = 2
+
+        def _resume_writing():
+            transport.close()
+
+        self.protocol.resume_writing.side_effect = _resume_writing
+        self.loop.call_exception_handler = mock.Mock()
+
+        transport = self.socket_transport()
+        transport.set_write_buffer_limits(high=1, low=0)
+        transport.write(b'data')
+
+        self.loop.writers[7]._run()
+        test_utils.run_briefly(self.loop)
+
+        self.assertEqual(self.protocol.connection_lost.call_count, 1)
+        self.loop.call_exception_handler.assert_not_called()
+
+    @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
+    def test_write_sendmsg_resume_writing_closes(self):
+        # gh-156512: same as above, for the sendmsg write path
+        self.sock.send.return_value = 2
+        self.sock.sendmsg.return_value = 2
+
+        def _resume_writing():
+            transport.close()
+
+        self.protocol.resume_writing.side_effect = _resume_writing
+        self.loop.call_exception_handler = mock.Mock()
+
+        transport = self.socket_transport(sendmsg=True)
+        transport.set_write_buffer_limits(high=1, low=0)
+        transport.write(b'data')
+
+        self.loop.writers[7]._run()
+        test_utils.run_briefly(self.loop)
+
+        self.assertEqual(self.protocol.connection_lost.call_count, 1)
+        self.loop.call_exception_handler.assert_not_called()
+
 
 class SelectorSocketTransportBufferedProtocolTests(test_utils.TestCase):
 

@@ -25,8 +25,9 @@
 
 /*[clinic input]
 module _json
+class _json.make_encoder "PyEncoderObject *" ""
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=549fa53592c925b2]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f3373cb3d646c5f1]*/
 
 typedef struct _PyScannerObject {
     PyObject_HEAD
@@ -98,8 +99,6 @@ scanner_dealloc(PyObject *self);
 static int
 scanner_clear(PyObject *self);
 
-static PyObject *
-encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static void
 encoder_dealloc(PyObject *self);
 static int
@@ -1306,21 +1305,30 @@ static PyType_Spec PyScannerType_spec = {
     .slots = PyScannerType_slots,
 };
 
+/*[clinic input]
+@vectorcall
+@classmethod
+_json.make_encoder.__new__ as encoder_new
+
+    markers: object
+    default as defaultfn: object
+    encoder: object
+    indent: object
+    key_separator: unicode
+    item_separator: unicode
+    sort_keys: bool
+    skipkeys: bool
+    allow_nan: bool
+[clinic start generated code]*/
+
 static PyObject *
-encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+encoder_new_impl(PyTypeObject *type, PyObject *markers, PyObject *defaultfn,
+                 PyObject *encoder, PyObject *indent,
+                 PyObject *key_separator, PyObject *item_separator,
+                 int sort_keys, int skipkeys, int allow_nan)
+/*[clinic end generated code: output=46071d17c87596ef input=d3e48f5426deb209]*/
 {
-    static char *kwlist[] = {"markers", "default", "encoder", "indent", "key_separator", "item_separator", "sort_keys", "skipkeys", "allow_nan", NULL};
-
     PyEncoderObject *s;
-    PyObject *markers, *defaultfn, *encoder, *indent, *key_separator;
-    PyObject *item_separator;
-    int sort_keys, skipkeys, allow_nan;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOUUppp:make_encoder", kwlist,
-        &markers, &defaultfn, &encoder, &indent,
-        &key_separator, &item_separator,
-        &sort_keys, &skipkeys, &allow_nan))
-        return NULL;
 
     if (markers != Py_None && !PyDict_Check(markers)) {
         PyErr_Format(PyExc_TypeError,
@@ -1558,8 +1566,11 @@ encoder_write_string(PyEncoderObject *s, PyUnicodeWriter *writer, PyObject *obj)
 static int
 _steal_accumulate(PyUnicodeWriter *writer, PyObject *stolen)
 {
-    /* Append stolen and then decrement its reference count */
-    int rval = PyUnicodeWriter_WriteStr(writer, stolen);
+    /* Append stolen and then decrement its reference count.
+       gh-148241: Avoid PyUnicodeWriter_WriteStr() which calls str(obj)
+       on str subclasses. */
+    assert(PyUnicode_Check(stolen));
+    int rval = _PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer, stolen);
     Py_DECREF(stolen);
     return rval;
 }
@@ -1712,7 +1723,8 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
         }
     }
     else {
-        if (PyUnicodeWriter_WriteStr(writer, item_separator) < 0) {
+        if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer,
+                                      item_separator) < 0) {
             Py_DECREF(keystr);
             return -1;
         }
@@ -1724,7 +1736,8 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
     if (rv < 0) {
         return -1;
     }
-    if (PyUnicodeWriter_WriteStr(writer, s->key_separator) < 0) {
+    if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer,
+                                  s->key_separator) < 0) {
         return -1;
     }
     if (encoder_listencode_obj(s, writer, value, indent_level, indent_cache) < 0) {
@@ -1802,7 +1815,10 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *ident = NULL;
     bool first = true;
 
-    if (PyDict_GET_SIZE(dct) == 0) {
+    // Only take the fast path for exact dicts: a subclass may keep its
+    // contents outside the dict storage, so PyDict_GET_SIZE could be 0 while
+    // the mapping is non-empty (gh-110941).
+    if (PyAnyDict_CheckExact(dct) && PyDict_GET_SIZE(dct) == 0) {
         /* Fast path */
         return PyUnicodeWriter_WriteASCII(writer, "{}", 2);
     }
@@ -1896,7 +1912,8 @@ _encoder_iterate_fast_seq_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
         // that mutates the sequence, invalidating this borrowed ref.
         Py_INCREF(obj);
         if (i) {
-            if (PyUnicodeWriter_WriteStr(writer, separator) < 0) {
+            if (_PyUnicodeWriter_WriteStr((_PyUnicodeWriter*)writer,
+                                          separator) < 0) {
                 Py_DECREF(obj);
                 return -1;
             }
@@ -2039,6 +2056,7 @@ static PyType_Slot PyEncoderType_slots[] = {
     {Py_tp_clear, encoder_clear},
     {Py_tp_members, encoder_members},
     {Py_tp_new, encoder_new},
+    {Py_tp_vectorcall, encoder_vectorcall},
     {0, 0}
 };
 
@@ -2046,7 +2064,7 @@ static PyType_Spec PyEncoderType_spec = {
     .name = "_json.Encoder",
     .basicsize = sizeof(PyEncoderObject),
     .itemsize = 0,
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = PyEncoderType_slots
 };
 

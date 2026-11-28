@@ -1,4 +1,0 @@
-Coalesce consecutive identical stack frames in Tachyon, so aggregating
-collectors (pstats, collapsed, flamegraph, gecko) receive one collect.
-Improves sample rate 3x, error rate and missed rate drop by 70%. Patch by
-Maurycy Pawłowski-Wieroński.

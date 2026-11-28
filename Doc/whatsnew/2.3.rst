@@ -1357,7 +1357,7 @@ complete list of changes, or look through the CVS logs for all the details.
   other than ``e`` and ``10``.  (Contributed by Raymond Hettinger.)
 
 * Several new POSIX functions (:func:`!getpgid`, :func:`!killpg`, :func:`!lchown`,
-  :func:`!loadavg`, :func:`!major`, :func:`!makedev`, :func:`!minor`, and
+  :func:`!getloadavg`, :func:`!major`, :func:`!makedev`, :func:`!minor`, and
   :func:`!mknod`) were added to the :mod:`posix` module that underlies the
   :mod:`os` module. (Contributed by Gustavo Niemeyer, Geert Jansen, and Denis S.
   Otkidach.)
@@ -1658,7 +1658,7 @@ complete list of changes, or look through the CVS logs for all the details.
   has been added. The "idna" encoding can be used to convert between a Unicode
   domain name and the ASCII-compatible encoding (ACE) of that name. ::
 
-     >{}>{}> u"www.Alliancefrançaise.nu".encode("idna")
+     >>> u"www.Alliancefrançaise.nu".encode("idna")
      'www.xn--alliancefranaise-npb.nu'
 
   The :mod:`socket` module has also been extended to transparently convert
@@ -1941,10 +1941,10 @@ Support for a port to IBM's OS/2 using the EMX runtime environment was merged
 into the main Python source tree.  EMX is a POSIX emulation layer over the OS/2
 system APIs.  The Python port for EMX tries to support all the POSIX-like
 capability exposed by the EMX runtime, and mostly succeeds; :func:`!fork` and
-:func:`fcntl` are restricted by the limitations of the underlying emulation
-layer.  The standard OS/2 port, which uses IBM's Visual Age compiler, also
-gained support for case-sensitive import semantics as part of the integration of
-the EMX port into CVS.  (Contributed by Andrew MacIntyre.)
+:func:`~fcntl.fcntl` are restricted by the limitations of the underlying
+emulation layer.  The standard OS/2 port, which uses IBM's Visual Age compiler,
+also gained support for case-sensitive import semantics as part of the
+integration of the EMX port into CVS.  (Contributed by Andrew MacIntyre.)
 
 On MacOS, most toolbox modules have been weaklinked to improve backward
 compatibility.  This means that modules will no longer fail to load if a single

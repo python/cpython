@@ -517,7 +517,11 @@ The following types can be pickled:
 * classes accessible from the top level of a module;
 
 * instances of such classes for which the result of calling :meth:`~object.__getstate__`
-  is picklable  (see section :ref:`pickle-inst` for details).
+  is picklable  (see section :ref:`pickle-inst` for details);
+
+* weak references and the weak containers from the :mod:`weakref` module,
+  provided that the weakly referenced objects are strongly referenced
+  elsewhere in the same pickle (see :class:`weakref.ref`).
 
 Attempts to pickle unpicklable objects will raise the :exc:`PicklingError`
 exception; when this happens, an unspecified number of bytes may have already
@@ -920,6 +924,7 @@ If both the :attr:`~Pickler.dispatch_table` and
    exact instances of :class:`int`, :class:`float`, :class:`bytes`,
    :class:`str`, :class:`dict`, :class:`set`, :class:`frozenset`, :class:`list`
    and :class:`tuple`.
+   It is never called for :class:`copyreg.Proxy` objects.
 
 Here is a simple example where we allow pickling and reconstructing
 a given class::

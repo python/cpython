@@ -1,0 +1,3 @@
+Fix the C :mod:`json` encoder writing the :meth:`~object.__str__` result of
+:class:`str` subclasses used as *separators*, which produced invalid JSON.
+It now writes their characters, like the pure Python encoder.

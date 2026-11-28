@@ -188,6 +188,9 @@ typedef struct {
     /* copyreg._inverted_registry, {code: (module_name, function_name)} */
     PyObject *inverted_registry;
 
+    /* copyreg.Proxy */
+    PyObject *Proxy_type;
+
     /* Import mappings for compatibility with Python 2.x */
 
     /* _compat_pickle.NAME_MAPPING,
@@ -254,6 +257,7 @@ _Pickle_ClearState(PickleState *st)
     Py_CLEAR(st->extension_registry);
     Py_CLEAR(st->extension_cache);
     Py_CLEAR(st->inverted_registry);
+    Py_CLEAR(st->Proxy_type);
     Py_CLEAR(st->name_mapping_2to3);
     Py_CLEAR(st->import_mapping_2to3);
     Py_CLEAR(st->name_mapping_3to2);
@@ -320,6 +324,9 @@ _Pickle_InitState(PickleState *st)
                      "not %.200s", Py_TYPE(st->extension_cache)->tp_name);
         goto error;
     }
+    st->Proxy_type = PyObject_GetAttrString(copyreg, "Proxy");
+    if (!st->Proxy_type)
+        goto error;
     Py_CLEAR(copyreg);
 
     /* Load the 2.x -> 3.x stdlib module mapping tables */
@@ -603,6 +610,13 @@ typedef struct {
     Py_ssize_t me_value;
 } PyMemoEntry;
 
+/* The top bit of me_value flags an object reached so far only through a weak
+   reference (memo indices are small non-negative ints, so it is free);
+   MEMO_INDEX() masks it out.  Bit math in size_t; the store back into the
+   signed field relies on two's complement. */
+#define MEMO_WEAK_ONLY  ((size_t)1 << (sizeof(size_t) * 8 - 1))
+#define MEMO_INDEX(v)   ((Py_ssize_t)((size_t)(v) & ~MEMO_WEAK_ONLY))
+
 typedef struct {
     size_t mt_mask;
     size_t mt_used;
@@ -647,6 +661,10 @@ typedef struct PicklerObject {
     int running;                /* True when a method of Pickler is executing. */
     PyObject *fast_memo;
     PyObject *buffer_callback;  /* Callback for out-of-band buffers, or NULL */
+
+    Py_ssize_t weak_only_count; /* Number of memo entries flagged weak-only;
+                                   any left at the end of dump() are pickling
+                                   errors. */
 } PicklerObject;
 
 typedef struct UnpicklerObject {
@@ -740,6 +758,8 @@ typedef struct {
 
 /* Forward declarations */
 static int save(PickleState *state, PicklerObject *, PyObject *, int);
+static int save_object(PickleState *state, PicklerObject *, PyObject *,
+                       int pers_save, int weak);
 static int save_reduce(PickleState *, PicklerObject *, PyObject *, PyObject *);
 
 #include "clinic/_pickle.c.h"
@@ -1170,6 +1190,7 @@ _Pickler_New(PickleState *st)
     self->running = 0;
     self->fast_memo = NULL;
     self->buffer_callback = NULL;
+    self->weak_only_count = 0;
 
     PyObject_GC_Track(self);
     return self;
@@ -1748,16 +1769,16 @@ _Unpickler_NewMemo(Py_ssize_t new_size)
     return memo;
 }
 
-/* Free the unpickler's memo, taking care to decref any items left in it. */
+/* Replace the unpickler's memo and release the old entries. */
 static void
-_Unpickler_MemoCleanup(UnpicklerObject *self)
+_Unpickler_MemoCleanup(UnpicklerObject *self, PyObject **replacement)
 {
     Py_ssize_t i;
     PyObject **memo = self->memo;
 
-    if (self->memo == NULL)
+    self->memo = replacement;
+    if (memo == NULL)
         return;
-    self->memo = NULL;
     i = self->memo_size;
     while (--i >= 0) {
         Py_XDECREF(memo[i]);
@@ -1908,25 +1929,26 @@ memo_get(PickleState *st, PicklerObject *self, PyObject *key)
         PyErr_SetObject(PyExc_KeyError, key);
         return -1;
     }
+    Py_ssize_t idx = MEMO_INDEX(*value);   /* mask off the weak-only flag bit */
 
     if (!self->bin) {
         pdata[0] = GET;
         PyOS_snprintf(pdata + 1, sizeof(pdata) - 1,
-                      "%zd\n", *value);
+                      "%zd\n", idx);
         len = strlen(pdata);
     }
     else {
-        if (*value < 256) {
+        if (idx < 256) {
             pdata[0] = BINGET;
-            pdata[1] = (unsigned char)(*value & 0xff);
+            pdata[1] = (unsigned char)(idx & 0xff);
             len = 2;
         }
-        else if ((size_t)*value <= 0xffffffffUL) {
+        else if ((size_t)idx <= 0xffffffffUL) {
             pdata[0] = LONG_BINGET;
-            pdata[1] = (unsigned char)(*value & 0xff);
-            pdata[2] = (unsigned char)((*value >> 8) & 0xff);
-            pdata[3] = (unsigned char)((*value >> 16) & 0xff);
-            pdata[4] = (unsigned char)((*value >> 24) & 0xff);
+            pdata[1] = (unsigned char)(idx & 0xff);
+            pdata[2] = (unsigned char)((idx >> 8) & 0xff);
+            pdata[3] = (unsigned char)((idx >> 16) & 0xff);
+            pdata[4] = (unsigned char)((idx >> 24) & 0xff);
             len = 5;
         }
         else { /* unlikely */
@@ -4620,8 +4642,105 @@ save_reduce(PickleState *st, PicklerObject *self, PyObject *args,
     return 0;
 }
 
+/* Weak-only objects are flagged in place in the memo (the MEMO_WEAK_ONLY bit
+   of the value, see PyMemoEntry); self->weak_only_count tracks how many.  The
+   value pointer comes from PyMemoTable_Get() and must not be held across an
+   insertion into the table (it may rehash). */
+
+static void
+memo_set_weak_only(PicklerObject *self, Py_ssize_t *value)
+{
+    if (*value >= 0) {          /* not already flagged */
+        *value = (Py_ssize_t)((size_t)*value | MEMO_WEAK_ONLY);
+        self->weak_only_count++;
+    }
+}
+
+static void
+memo_clear_weak_only(PicklerObject *self, Py_ssize_t *value)
+{
+    if (*value < 0) {           /* flagged */
+        *value = MEMO_INDEX(*value);
+        self->weak_only_count--;
+    }
+}
+
+/* A copyreg.Proxy is pickled as its wrapped object, pickled *weakly* (no
+   anchoring).  The object is tagged weak-only only after its whole subtree,
+   so a strong cycle inside it cannot anchor it.  See Lib/pickle.py. */
 static int
-save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
+save_proxy(PickleState *st, PicklerObject *self, PyObject *obj)
+{
+    PyObject *wrapped = PyObject_GetAttr(obj, &_Py_ID(obj));
+    if (wrapped == NULL)
+        return -1;
+
+    /* An object already in the memo is anchored or already tracked;
+       otherwise it is tagged below, until a strong save of it. */
+    int anchored = PyMemoTable_Get(self->memo, wrapped) != NULL;
+    int status = save_object(st, self, wrapped, 0, 1);
+    if (status == 0 && !anchored) {
+        Py_ssize_t *value = PyMemoTable_Get(self->memo, wrapped);
+        if (value != NULL)
+            memo_set_weak_only(self, value);
+    }
+    Py_DECREF(wrapped);
+    return status;
+}
+
+/* Build a sorted ", "-joined string of the distinct type names of the memo
+   objects still flagged weak-only, for the dump() error. */
+static PyObject *
+weak_only_type_names(PicklerObject *self)
+{
+    PyObject *names = PySet_New(NULL);
+    if (names == NULL)
+        return NULL;
+
+    PyMemoTable *memo = self->memo;
+    if (memo && memo->mt_table) {
+        for (size_t i = 0; i < memo->mt_allocated; i++) {
+            PyObject *key = memo->mt_table[i].me_key;
+            if (key == NULL || memo->mt_table[i].me_value >= 0)
+                continue;               /* absent or not flagged weak-only */
+            PyObject *tname = PyType_GetFullyQualifiedName(Py_TYPE(key));
+            if (tname == NULL)
+                goto error;
+            int r = PySet_Add(names, tname);
+            Py_DECREF(tname);
+            if (r < 0)
+                goto error;
+        }
+    }
+
+    PyObject *lst = PySequence_List(names);
+    Py_CLEAR(names);
+    if (lst == NULL)
+        return NULL;
+    if (PyList_Sort(lst) < 0) {
+        Py_DECREF(lst);
+        return NULL;
+    }
+    PyObject *sep = PyUnicode_FromString(", ");
+    if (sep == NULL) {
+        Py_DECREF(lst);
+        return NULL;
+    }
+    PyObject *joined = PyUnicode_Join(sep, lst);
+    Py_DECREF(sep);
+    Py_DECREF(lst);
+    return joined;
+
+  error:
+    Py_DECREF(names);
+    return NULL;
+}
+
+/* `weak` is true only for save_proxy's immediate save of the wrapped object;
+   it does not propagate to nested saves.  All other callers go through save(). */
+static int
+save_object(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save,
+            int weak)
 {
     PyTypeObject *type;
     PyObject *reduce_func = NULL;
@@ -4668,7 +4787,11 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
     /* Check the memo to see if it has the object. If so, generate
        a GET (or BINGET) opcode, instead of pickling the object
        once again. */
-    if (PyMemoTable_Get(self->memo, obj)) {
+    Py_ssize_t *memo_value = PyMemoTable_Get(self->memo, obj);
+    if (memo_value != NULL) {
+        /* A strong reference anchors the object: no longer weak-only. */
+        if (!weak)
+            memo_clear_weak_only(self, memo_value);
         return memo_get(st, self, obj);
     }
 
@@ -4683,6 +4806,11 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
        types above are pickled faster. */
     if (_Py_EnterRecursiveCall(" while pickling an object")) {
         return -1;
+    }
+
+    if (type == (PyTypeObject *)st->Proxy_type) {
+        status = save_proxy(st, self, obj);
+        goto done;
     }
 
     if (type == &PyDict_Type) {
@@ -4745,17 +4873,9 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
      * __reduce_ex__ method, or the object's __reduce__ method.
      */
     if (self->dispatch_table == NULL) {
-        reduce_func = PyDict_GetItemWithError(st->dispatch_table,
-                                              (PyObject *)type);
-        if (reduce_func == NULL) {
-            if (PyErr_Occurred()) {
-                goto error;
-            }
-        } else {
-            /* PyDict_GetItemWithError() returns a borrowed reference.
-               Increase the reference count to be consistent with
-               PyObject_GetItem and _PyObject_GetAttrId used below. */
-            Py_INCREF(reduce_func);
+        if (PyDict_GetItemRef(st->dispatch_table, (PyObject *)type,
+                              &reduce_func) < 0) {
+            goto error;
         }
     }
     else if (PyMapping_GetOptionalItem(self->dispatch_table, (PyObject *)type,
@@ -4827,6 +4947,14 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
     if (status < 0) {
         _PyErr_FormatNote("when serializing %T object", obj);
     }
+    else if (!weak) {
+        /* A completed non-weak save anchors obj.  Only save_reduce()
+           memoizes an object after its arguments, so only here can a weak
+           reference to a still-in-progress obj have tagged it. */
+        Py_ssize_t *value = PyMemoTable_Get(self->memo, obj);
+        if (value != NULL)
+            memo_clear_weak_only(self, value);
+    }
 
     if (0) {
   error:
@@ -4841,10 +4969,35 @@ save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
     return status;
 }
 
+static int
+save(PickleState *st, PicklerObject *self, PyObject *obj, int pers_save)
+{
+    return save_object(st, self, obj, pers_save, 0);
+}
+
 static PyObject *
 persistent_id(PyObject *self, PyObject *obj)
 {
     Py_RETURN_NONE;
+}
+
+static PyObject *Pickler_getattr(PyObject *self, PyObject *name);
+
+/* Like PyObject_GetOptionalAttr(), but avoids creating an AttributeError
+   for a missing attribute.  Must not be used for "persistent_id". */
+static int
+pickler_get_optional_attr(PicklerObject *self, PyObject *name,
+                          PyObject **result)
+{
+    if (Py_TYPE(self)->tp_getattro == Pickler_getattr) {
+        *result = _PyObject_GenericGetAttrWithDict((PyObject *)self, name,
+                                                   NULL, 1);
+        if (*result != NULL) {
+            return 1;
+        }
+        return PyErr_Occurred() ? -1 : 0;
+    }
+    return PyObject_GetOptionalAttr((PyObject *)self, name, result);
 }
 
 static int
@@ -4868,8 +5021,8 @@ dump(PickleState *state, PicklerObject *self, PyObject *obj)
     Py_XSETREF(self->persistent_id, tmp);
 
     /* Cache the reducer_override method, if it exists. */
-    if (PyObject_GetOptionalAttr((PyObject *)self, &_Py_ID(reducer_override),
-                             &tmp) < 0) {
+    if (pickler_get_optional_attr(self, &_Py_ID(reducer_override),
+                                  &tmp) < 0) {
         goto error;
     }
     Py_XSETREF(self->reducer_override, tmp);
@@ -4886,8 +5039,22 @@ dump(PickleState *state, PicklerObject *self, PyObject *obj)
             self->framing = 1;
     }
 
-    if (save(state, self, obj, 0) < 0 ||
-        _Pickler_Write(self, &stop_op, 1) < 0 ||
+    if (save(state, self, obj, 0) < 0)
+        goto error;
+
+    if (self->weak_only_count > 0) {
+        /* These referents would be collected right after loading. */
+        PyObject *names = weak_only_type_names(self);
+        if (names == NULL)
+            goto error;
+        PyErr_Format(state->PicklingError,
+                     "cannot pickle weak reference(s) whose referent(s) have "
+                     "no strong reference in the pickle: %U", names);
+        Py_DECREF(names);
+        goto error;
+    }
+
+    if (_Pickler_Write(self, &stop_op, 1) < 0 ||
         _Pickler_CommitFrame(self) < 0)
         goto error;
 
@@ -4926,6 +5093,7 @@ _pickle_Pickler_clear_memo_impl(PicklerObject *self)
 {
     if (self->memo)
         PyMemoTable_Clear(self->memo);
+    self->weak_only_count = 0;
 
     Py_RETURN_NONE;
 }
@@ -5028,6 +5196,8 @@ Pickler_clear(PyObject *op)
         self->memo = NULL;
         PyMemoTable_Del(memo);
     }
+    /* The weak-only flags lived in the memo entries just freed. */
+    self->weak_only_count = 0;
     return 0;
 }
 
@@ -5149,8 +5319,8 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
     self->fast_memo = NULL;
 
     if (self->dispatch_table == NULL) {
-        if (PyObject_GetOptionalAttr((PyObject *)self, &_Py_ID(dispatch_table),
-                                &self->dispatch_table) < 0) {
+        if (pickler_get_optional_attr(self, &_Py_ID(dispatch_table),
+                                      &self->dispatch_table) < 0) {
             goto error;
         }
     }
@@ -5215,7 +5385,7 @@ _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self)
             if (key == NULL) {
                 goto error;
             }
-            value = Py_BuildValue("nO", entry.me_value, entry.me_key);
+            value = Py_BuildValue("nO", MEMO_INDEX(entry.me_value), entry.me_key);
             if (value == NULL) {
                 Py_DECREF(key);
                 goto error;
@@ -7557,7 +7727,7 @@ Unpickler_clear(PyObject *op)
     }
 
     Py_CLEAR(self->memo_dict);
-    _Unpickler_MemoCleanup(self);
+    _Unpickler_MemoCleanup(self, NULL);
     PyMem_Free(self->marks);
     self->marks = NULL;
     PyMem_Free(self->input_line);
@@ -7704,10 +7874,16 @@ static PyObject *
 _pickle_UnpicklerMemoProxy_clear_impl(UnpicklerMemoProxyObject *self)
 /*[clinic end generated code: output=d20cd43f4ba1fb1f input=b1df7c52e7afd9bd]*/
 {
-    _Unpickler_MemoCleanup(self->unpickler);
-    self->unpickler->memo = _Unpickler_NewMemo(self->unpickler->memo_size);
-    if (self->unpickler->memo == NULL)
+    UnpicklerObject *unpickler = self->unpickler;
+    PyObject **memo = _Unpickler_NewMemo(unpickler->memo_size);
+    if (memo == NULL) {
         return NULL;
+    }
+    PyObject *memo_dict = unpickler->memo_dict;
+    unpickler->memo_dict = NULL;
+    unpickler->memo_len = 0;
+    _Unpickler_MemoCleanup(unpickler, memo);
+    Py_XDECREF(memo_dict);
     Py_RETURN_NONE;
 }
 
@@ -7912,7 +8088,7 @@ Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
         return -1;
     }
 
-    _Unpickler_MemoCleanup(self);
+    _Unpickler_MemoCleanup(self, NULL);
     self->memo_size = new_memo_size;
     self->memo = new_memo;
 
@@ -8281,6 +8457,7 @@ pickle_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->PicklingError);
     Py_VISIT(st->UnpicklingError);
     Py_VISIT(st->dispatch_table);
+    Py_VISIT(st->Proxy_type);
     Py_VISIT(st->extension_registry);
     Py_VISIT(st->extension_cache);
     Py_VISIT(st->inverted_registry);

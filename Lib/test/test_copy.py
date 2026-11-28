@@ -869,6 +869,24 @@ class TestCopy(unittest.TestCase):
     def test_deepcopy_weakref(self):
         self._check_weakref(copy.deepcopy)
 
+    def test_copy_proxy(self):
+        class C:
+            pass
+        x = C()
+        self.assertIs(copy.copy(copyreg.Proxy(x)), x)
+
+    def test_deepcopy_proxy(self):
+        # A Proxy is replaced by the deep copy of the wrapped object.
+        class C:
+            pass
+        x = C()
+        y, z = copy.deepcopy([x, copyreg.Proxy(x)])
+        self.assertIsNot(y, x)
+        self.assertIs(z, y)
+        z, y = copy.deepcopy([copyreg.Proxy(x), x])
+        self.assertIsNot(y, x)
+        self.assertIs(z, y)
+
     def _check_copy_weakdict(self, _dicttype):
         class C(object):
             pass
@@ -950,6 +968,17 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(g.m, g.b)
         self.assertIs(g.b.__self__, g)
         g.b()
+
+    def test_deepcopy_memo_none_result(self):
+        # Objects whose deepcopy result is None must still be memoized.
+        class C:
+            call_count = 0
+            def __deepcopy__(self, memo):
+                C.call_count += 1
+                return None
+        obj = C()
+        copy.deepcopy([obj, obj, obj])
+        self.assertEqual(C.call_count, 1)
 
 
 class TestReplace(unittest.TestCase):

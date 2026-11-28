@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 
 PyDoc_STRVAR(delta_new__doc__,
 "timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0,\n"
@@ -24,7 +25,8 @@ delta_new_impl(PyTypeObject *type, PyObject *days, PyObject *seconds,
                PyObject *minutes, PyObject *hours, PyObject *weeks);
 
 static PyObject *
-delta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+delta_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -56,8 +58,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[7];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    Py_ssize_t noptargs = nargs + nkw - 0;
     PyObject *days = NULL;
     PyObject *seconds = NULL;
     PyObject *microseconds = NULL;
@@ -66,7 +67,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *hours = NULL;
     PyObject *weeks = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 7, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -115,6 +116,72 @@ skip_optional_pos:
     return_value = delta_new_impl(type, days, seconds, microseconds, milliseconds, minutes, hours, weeks);
 
 exit:
+    return return_value;
+}
+
+static PyObject *
+delta_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return delta_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+delta_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *days = NULL;
+    PyObject *seconds = NULL;
+    PyObject *microseconds = NULL;
+    PyObject *milliseconds = NULL;
+    PyObject *minutes = NULL;
+    PyObject *hours = NULL;
+    PyObject *weeks = NULL;
+
+    assert(_PyType_CAST(type)->tp_new == delta_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs > 7) {
+        return delta_new_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    days = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    seconds = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    microseconds = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    milliseconds = args[3];
+    if (nargs < 5) {
+        goto skip_optional;
+    }
+    minutes = args[4];
+    if (nargs < 6) {
+        goto skip_optional;
+    }
+    hours = args[5];
+    if (nargs < 7) {
+        goto skip_optional;
+    }
+    weeks = args[6];
+skip_optional:
+    return_value = delta_new_impl(_PyType_CAST(type), days, seconds, microseconds, milliseconds, minutes, hours, weeks);
+
     return return_value;
 }
 
@@ -667,7 +734,8 @@ static PyObject *
 timezone_new_impl(PyTypeObject *type, PyObject *offset, PyObject *name);
 
 static PyObject *
-timezone_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+timezone_new_helper(PyTypeObject *type, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -699,12 +767,11 @@ timezone_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    Py_ssize_t noptargs = nargs + nkw - 1;
     PyObject *offset;
     PyObject *name = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -724,6 +791,53 @@ timezone_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     name = fastargs[1];
 skip_optional_pos:
     return_value = timezone_new_impl(type, offset, name);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+timezone_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    return timezone_new_helper(type, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+timezone_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *offset;
+    PyObject *name = NULL;
+
+    assert(_PyType_CAST(type)->tp_new == timezone_new);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs < 1 || nargs > 2) {
+        return timezone_new_helper(_PyType_CAST(type), args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+    }
+    if (!PyObject_TypeCheck(args[0], DELTA_TYPE(NO_STATE))) {
+        _PyArg_BadArgument("timezone", "argument 'offset'", (DELTA_TYPE(NO_STATE))->tp_name, args[0]);
+        goto exit;
+    }
+    offset = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("timezone", "argument 'name'", "str", args[1]);
+        goto exit;
+    }
+    name = args[1];
+skip_optional:
+    return_value = timezone_new_impl(_PyType_CAST(type), offset, name);
 
 exit:
     return return_value;
@@ -957,13 +1071,8 @@ datetime_time_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         _PyArg_BadArgument("isoformat", "argument 'timespec'", "str", args[0]);
         goto exit;
     }
-    Py_ssize_t timespec_length;
-    timespec = PyUnicode_AsUTF8AndSize(args[0], &timespec_length);
+    timespec = _PyUnicode_AsUTF8NoNUL(args[0]);
     if (timespec == NULL) {
-        goto exit;
-    }
-    if (strlen(timespec) != (size_t)timespec_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -1816,13 +1925,8 @@ datetime_datetime_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t na
         _PyArg_BadArgument("isoformat", "argument 'timespec'", "str", args[1]);
         goto exit;
     }
-    Py_ssize_t timespec_length;
-    timespec = PyUnicode_AsUTF8AndSize(args[1], &timespec_length);
+    timespec = _PyUnicode_AsUTF8NoNUL(args[1]);
     if (timespec == NULL) {
-        goto exit;
-    }
-    if (strlen(timespec) != (size_t)timespec_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -2091,4 +2195,4 @@ datetime_datetime___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return datetime_datetime___reduce___impl((PyDateTime_DateTime *)self);
 }
-/*[clinic end generated code: output=8f63509398651723 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=380121f4e088e032 input=a9049054013a1b77]*/

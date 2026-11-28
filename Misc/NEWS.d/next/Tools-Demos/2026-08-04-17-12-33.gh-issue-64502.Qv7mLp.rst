@@ -1,3 +1,0 @@
-Fix Argument Clinic support of parameters with a default value used together
-with optional groups.
-Such parameters were always required in the generated parsing code.

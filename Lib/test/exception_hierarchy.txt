@@ -14,7 +14,7 @@ BaseException
       ├── EOFError
       ├── ExceptionGroup [BaseExceptionGroup]
       ├── ImportError
-      │    └── ImportCycleError
+      │    ├── ImportCycleError
       │    └── ModuleNotFoundError
       ├── LookupError
       │    ├── IndexError

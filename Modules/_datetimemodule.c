@@ -52,6 +52,9 @@ typedef struct {
 
     /* The interned Unix epoch datetime instance */
     PyObject *epoch;
+
+    PyObject *time_struct_time;
+    PyObject *time_strftime;
 } datetime_state;
 
 /* The module has a fixed number of static objects, due to being exposed
@@ -460,124 +463,57 @@ days_before_month(int year, int month)
     return days;
 }
 
-/* year -> number of days before January 1st of year.  Remember that we
- * start with year 1, so days_before_year(1) == 0.
- */
-static int
-days_before_year(int year)
-{
-    int y = year - 1;
-    /* This is incorrect if year <= 0; we really want the floor
-     * here.  But so long as MINYEAR is 1, the smallest year this
-     * can see is 1.
-     */
-    assert (year >= 1);
-    return y*365 + y/4 - y/100 + y/400;
-}
 
 /* Number of days in 4, 100, and 400 year cycles.  That these have
  * the correct values is asserted in the module init function.
  */
-#define DI4Y    1461    /* days_before_year(5); days in 4 years */
-#define DI100Y  36524   /* days_before_year(101); days in 100 years */
-#define DI400Y  146097  /* days_before_year(401); days in 400 years  */
+#define DI4Y    1461    /* _PyTime_DaysBeforeYear(5); days in 4 years */
+#define DI100Y  36524   /* _PyTime_DaysBeforeYear(101); days in 100 years */
+#define DI400Y  146097  /* _PyTime_DaysBeforeYear(401); days in 400 years  */
 
-/* ordinal -> year, month, day, considering 01-Jan-0001 as day 1. */
+/* ordinal -> year, month, day, considering 01-Jan-0001 as day 1.
+ *
+ * Neri and Schneider's algorithm, https://doi.org/10.1002/spe.3172; see
+ * _ord2ymd() in Lib/_pydatetime.py for an explanation of the steps.
+ *
+ * The intermediate values only fit in 32 bits for small ordinals;
+ * iso_to_ymd() passes the largest, MAXORDINAL + 2 (10000-01-02).
+ */
 static void
 ord_to_ymd(int ordinal, int *year, int *month, int *day)
 {
-    int n, n1, n4, n100, n400, leapyear, preceding;
-
-    /* ordinal is a 1-based index, starting at 1-Jan-1.  The pattern of
-     * leap years repeats exactly every 400 years.  The basic strategy is
-     * to find the closest 400-year boundary at or before ordinal, then
-     * work with the offset from that boundary to ordinal.  Life is much
-     * clearer if we subtract 1 from ordinal first -- then the values
-     * of ordinal at 400-year boundaries are exactly those divisible
-     * by DI400Y:
-     *
-     *    D  M   Y            n              n-1
-     *    -- --- ----        ----------     ----------------
-     *    31 Dec -400        -DI400Y       -DI400Y -1
-     *     1 Jan -399         -DI400Y +1   -DI400Y      400-year boundary
-     *    ...
-     *    30 Dec  000        -1             -2
-     *    31 Dec  000         0             -1
-     *     1 Jan  001         1              0          400-year boundary
-     *     2 Jan  001         2              1
-     *     3 Jan  001         3              2
-     *    ...
-     *    31 Dec  400         DI400Y        DI400Y -1
-     *     1 Jan  401         DI400Y +1     DI400Y      400-year boundary
-     */
-    assert(ordinal >= 1);
-    --ordinal;
-    n400 = ordinal / DI400Y;
-    n = ordinal % DI400Y;
-    *year = n400 * 400 + 1;
-
-    /* Now n is the (non-negative) offset, in days, from January 1 of
-     * year, to the desired date.  Now compute how many 100-year cycles
-     * precede n.
-     * Note that it's possible for n100 to equal 4!  In that case 4 full
-     * 100-year cycles precede the desired day, which implies the
-     * desired day is December 31 at the end of a 400-year cycle.
-     */
-    n100 = n / DI100Y;
-    n = n % DI100Y;
-
-    /* Now compute how many 4-year cycles precede it. */
-    n4 = n / DI4Y;
-    n = n % DI4Y;
-
-    /* And now how many single years.  Again n1 can be 4, and again
-     * meaning that the desired day is December 31 at the end of the
-     * 4-year cycle.
-     */
-    n1 = n / 365;
-    n = n % 365;
-
-    *year += n100 * 100 + n4 * 4 + n1;
-    if (n1 == 4 || n100 == 4) {
-        assert(n == 0);
-        *year -= 1;
-        *month = 12;
-        *day = 31;
-        return;
+    assert(1 <= ordinal && ordinal <= MAXORDINAL + 2);
+    const uint32_t days = (uint32_t)ordinal + 305;
+    const uint32_t century = (4 * days + 3) / DI400Y;
+    const uint32_t day_of_century = (4 * days + 3) % DI400Y / 4;
+    const uint32_t year_of_century = (4 * day_of_century + 3) / DI4Y;
+    const uint32_t day_of_year = (4 * day_of_century + 3) % DI4Y / 4;
+    const uint32_t m = (5 * day_of_year + 461) / 153;
+    const uint32_t d = (5 * day_of_year + 461) % 153 / 5 + 1;
+    const uint32_t y = 100 * century + year_of_century;
+    if (m > 12) {  /* January or February */
+        *year = (int)(y + 1);
+        *month = (int)(m - 12);
     }
-
-    /* Now the year is correct, and n is the offset from January 1.  We
-     * find the month via an estimate that's either exact or one too
-     * large.
-     */
-    leapyear = n1 == 3 && (n4 != 24 || n100 == 3);
-    assert(leapyear == is_leap(*year));
-    *month = (n + 50) >> 5;
-    preceding = (_days_before_month[*month] + (*month > 2 && leapyear));
-    if (preceding > n) {
-        /* estimate is too large */
-        *month -= 1;
-        preceding -= days_in_month(*year, *month);
+    else {
+        *year = (int)y;
+        *month = (int)m;
     }
-    n -= preceding;
-    assert(0 <= n);
-    assert(n < days_in_month(*year, *month));
-
-    *day = n + 1;
+    *day = (int)d;
 }
 
 /* year, month, day -> ordinal, considering 01-Jan-0001 as day 1. */
 static int
 ymd_to_ord(int year, int month, int day)
 {
-    return days_before_year(year) + days_before_month(year, month) + day;
+    return _PyTime_DaysBeforeYear(year) + days_before_month(year, month) + day;
 }
 
 /* Day of week, where Monday==0, ..., Sunday==6.  1/1/1 was a Monday. */
 static int
 weekday(int year, int month, int day)
 {
-    return (ymd_to_ord(year, month, day) + 6) % 7;
+    return _PyTime_Weekday(year, days_before_month(year, month) + day);
 }
 
 /* Ordinal of the Monday starting week 1 of the ISO year.  Week 1 is the
@@ -676,6 +612,18 @@ check_date_args(int year, int month, int day)
                      day, dim, month, year);
         return -1;
     }
+    return 0;
+}
+
+static int
+year_from_tm(const struct tm *tm, int *year)
+{
+    if (tm->tm_year > INT_MAX - 1900) {
+        PyErr_Format(PyExc_ValueError, "year must be in %d..%d, not %lld",
+                     MINYEAR, MAXYEAR, (long long)tm->tm_year + 1900);
+        return -1;
+    }
+    *year = tm->tm_year + 1900;
     return 0;
 }
 
@@ -988,6 +936,10 @@ parse_isoformat_date(const char *dtstr, const size_t len, int *year, int *month,
             iso_day = 1;
         }
 
+        if ((size_t)(p - dtstr) != len) {
+            return -1;
+        }
+
         int rv = iso_to_ymd(*year, iso_week, iso_day, year, month, day);
         if (rv) {
             return -3 + rv;
@@ -1006,6 +958,9 @@ parse_isoformat_date(const char *dtstr, const size_t len, int *year, int *month,
     }
     p = parse_digits(p, day, 2);
     if (p == NULL) {
+        return -1;
+    }
+    if ((size_t)(p - dtstr) != len) {
         return -1;
     }
     return 0;
@@ -1043,8 +998,11 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
             }
             break;
         }
-        else if (p >= p_end) {
-            return c != '\0';
+        else if (p > p_end) {
+            return 0;  // Stopped at p_end: an offset designator or NUL
+        }
+        else if (p == p_end) {
+            return 1;  // Stray character just before p_end
         }
         else if (has_separator && (c == ':')) {
             if (i == 2) {
@@ -1084,8 +1042,8 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         ++p; // skip truncated digits
     }
 
-    // Return 1 if it's not the end of the string
-    return *p != '\0';
+    // Return 1 if there is unparsed text before p_end
+    return p != p_end;
 }
 
 static int
@@ -1119,15 +1077,11 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     if (rv < 0) {
         return rv;
     }
+    else if (rv == 1) {
+        return -5;  // Unparsed text after the time
+    }
     else if (tzinfo_pos == p_end) {
-        // We know that there's no time zone, so if there's stuff at the
-        // end of the string it's an error.
-        if (rv == 1) {
-            return -5;
-        }
-        else {
-            return 0;
-        }
+        return 0;
     }
 
     // Special case UTC / Zulu time.
@@ -1780,17 +1734,19 @@ inline static int
 normalize_century(void)
 {
     static int cache = -1;
-    if (cache < 0) {
+    int res = FT_ATOMIC_LOAD_INT_RELAXED(cache);
+    if (res < 0) {
         char year[5];
         struct tm date = {
             .tm_year = -1801,
             .tm_mon = 0,
             .tm_mday = 1
         };
-        cache = (strftime(year, sizeof(year), "%Y", &date) &&
-                 strcmp(year, "0099") != 0);
+        res = (strftime(year, sizeof(year), "%Y", &date) &&
+               strcmp(year, "0099") != 0);
+        FT_ATOMIC_STORE_INT_RELAXED(cache, res);
     }
-    return cache;
+    return res;
 }
 
 static PyObject *
@@ -1861,12 +1817,17 @@ static PyObject *
 make_freplacement(PyObject *object)
 {
     char freplacement[64];
-    if (PyTime_Check(object))
-        sprintf(freplacement, "%06d", TIME_GET_MICROSECOND(object));
-    else if (PyDateTime_Check(object))
-        sprintf(freplacement, "%06d", DATE_GET_MICROSECOND(object));
-    else
-        sprintf(freplacement, "%06d", 0);
+    if (PyTime_Check(object)) {
+        PyOS_snprintf(freplacement, sizeof(freplacement),
+                      "%06d", TIME_GET_MICROSECOND(object));
+    }
+    else if (PyDateTime_Check(object)) {
+        PyOS_snprintf(freplacement, sizeof(freplacement),
+                      "%06d", DATE_GET_MICROSECOND(object));
+    }
+    else {
+        PyOS_snprintf(freplacement, sizeof(freplacement), "%06d", 0);
+    }
 
     return PyUnicode_FromString(freplacement);
 }
@@ -1892,10 +1853,12 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
 
-    PyObject *strftime = PyImport_ImportModuleAttrString("time", "strftime");
-    if (strftime == NULL) {
+    PyObject *current_mod = NULL;
+    datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
         return NULL;
     }
+    PyObject *strftime = st->time_strftime;
 
     /* Scan the input format, looking for %z/%Z/%f escapes, building
      * a new format.  Since computing the replacements for those codes
@@ -1963,6 +1926,29 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                     goto Error;
             }
             replacement = freplacement;
+        }
+        else if (ch >= '1' && ch <= '6'
+                 && i < flen && PyUnicode_READ_CHAR(format, i) == 'f')
+        {
+            /* %Nf -> first N digits of microseconds */
+            i++;
+            if (freplacement == NULL) {
+                freplacement = make_freplacement(object);
+                if (freplacement == NULL) {
+                    goto Error;
+                }
+            }
+            if (PyUnicodeWriter_WriteSubstring(writer, format, start, end) < 0) {
+                goto Error;
+            }
+            start = i;
+            Py_ssize_t precision = ch - '0';
+            if (PyUnicodeWriter_WriteSubstring(writer, freplacement,
+                                               0, precision) < 0)
+            {
+                goto Error;
+            }
+            continue;
         }
         else if (normalize_century()
                  && (ch == 'Y' || ch == 'G' || ch == 'F' || ch == 'C'))
@@ -2055,7 +2041,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     Py_XDECREF(zreplacement);
     Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
-    Py_XDECREF(strftime);
+    RELEASE_CURRENT_STATE(st, current_mod);
     return result;
 
  Error:
@@ -2068,41 +2054,26 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
  * from C.  Perhaps they should be.
  */
 
-/* Call time.time() and return its result (a Python float). */
-static PyObject *
-time_time(void)
-{
-    PyObject *result = NULL;
-    PyObject *time = PyImport_ImportModuleAttrString("time", "time");
-
-    if (time != NULL) {
-        result = PyObject_CallNoArgs(time);
-        Py_DECREF(time);
-    }
-    return result;
-}
-
 /* Build a time.struct_time.  The weekday and day number are automatically
  * computed from the y,m,d args.
  */
 static PyObject *
 build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
 {
-    PyObject *struct_time;
-    PyObject *result;
-
-    struct_time = PyImport_ImportModuleAttrString("time", "struct_time");
-    if (struct_time == NULL) {
+    PyObject *current_mod = NULL;
+    datetime_state *st = GET_CURRENT_STATE(current_mod);
+    if (st == NULL) {
         return NULL;
     }
 
-    result = PyObject_CallFunction(struct_time, "((iiiiiiiii))",
+    PyObject *result = PyObject_CallFunction(st->time_struct_time,
+                         "((iiiiiiiii))",
                          y, m, d,
                          hh, mm, ss,
                          weekday(y, m, d),
                          days_before_month(y, m) + d,
                          dstflag);
-    Py_DECREF(struct_time);
+    RELEASE_CURRENT_STATE(st, current_mod);
     return result;
 }
 
@@ -2130,15 +2101,25 @@ diff_to_bool(int diff, int op)
 /* Convert a timedelta to a number of us,
  *      (24*3600*self.days + self.seconds)*1000000 + self.microseconds
  * as a Python int.
- * Doing mixed-radix arithmetic by hand instead is excruciating in C,
- * due to ubiquitous overflow possibilities.
+ * The number of whole seconds always fits in int64_t, and so does the
+ * number of microseconds unless the delta is very large, so compute it
+ * in C when possible and fall back to Python int arithmetic otherwise.
+ * One second is reserved at the limit so that adding the microseconds
+ * field cannot overflow.
  */
 static PyObject *
 delta_to_microseconds(PyDateTime_Delta *self)
 {
+    const int64_t max_seconds = INT64_MAX / 1000000 - 1;
+    int64_t seconds = (int64_t)GET_TD_DAYS(self) * (24 * 3600)
+                      + GET_TD_SECONDS(self);
+    if (-max_seconds <= seconds && seconds <= max_seconds) {
+        return PyLong_FromInt64(seconds * 1000000
+                                + GET_TD_MICROSECONDS(self));
+    }
+
     PyObject *x1 = NULL;
     PyObject *x2 = NULL;
-    PyObject *x3 = NULL;
     PyObject *result = NULL;
 
     PyObject *current_mod;
@@ -2147,42 +2128,23 @@ delta_to_microseconds(PyDateTime_Delta *self)
         return NULL;
     }
 
-    x1 = PyLong_FromLong(GET_TD_DAYS(self));
+    x1 = PyLong_FromInt64(seconds);     /* days and seconds in seconds */
     if (x1 == NULL)
         goto Done;
-    x2 = PyNumber_Multiply(x1, CONST_SEC_PER_DAY(st));        /* days in seconds */
+    x2 = PyNumber_Multiply(x1, CONST_US_PER_SECOND(st));          /* us */
     if (x2 == NULL)
         goto Done;
-    Py_SETREF(x1, NULL);
 
-    /* x2 has days in seconds */
-    x1 = PyLong_FromLong(GET_TD_SECONDS(self));         /* seconds */
+    /* x2 has days+seconds in us */
+    Py_SETREF(x1, PyLong_FromLong(GET_TD_MICROSECONDS(self)));
     if (x1 == NULL)
         goto Done;
-    x3 = PyNumber_Add(x1, x2);          /* days and seconds in seconds */
-    if (x3 == NULL)
-        goto Done;
-    Py_DECREF(x1);
-    Py_DECREF(x2);
-    /* x1 = */ x2 = NULL;
-
-    /* x3 has days+seconds in seconds */
-    x1 = PyNumber_Multiply(x3, CONST_US_PER_SECOND(st));          /* us */
-    if (x1 == NULL)
-        goto Done;
-    Py_SETREF(x3, NULL);
-
-    /* x1 has days+seconds in us */
-    x2 = PyLong_FromLong(GET_TD_MICROSECONDS(self));
-    if (x2 == NULL)
-        goto Done;
-    result = PyNumber_Add(x1, x2);
+    result = PyNumber_Add(x2, x1);
     assert(result == NULL || PyLong_CheckExact(result));
 
 Done:
     Py_XDECREF(x1);
     Py_XDECREF(x2);
-    Py_XDECREF(x3);
     RELEASE_CURRENT_STATE(st, current_mod);
     return result;
 }
@@ -2809,6 +2771,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
 }
 
 /*[clinic input]
+@vectorcall
 @classmethod
 datetime.timedelta.__new__ as delta_new
 
@@ -2830,14 +2793,24 @@ static PyObject *
 delta_new_impl(PyTypeObject *type, PyObject *days, PyObject *seconds,
                PyObject *microseconds, PyObject *milliseconds,
                PyObject *minutes, PyObject *hours, PyObject *weeks)
-/*[clinic end generated code: output=61d7e02a92a97700 input=e8cd54819295d34b]*/
+/*[clinic end generated code: output=61d7e02a92a97700 input=8aebc4cdef360d1f]*/
 {
+    /* vectorcall passes borrowed references; hold strong references before
+       any conversion can execute arbitrary Python code. */
+    Py_XINCREF(days);
+    Py_XINCREF(seconds);
+    Py_XINCREF(microseconds);
+    Py_XINCREF(milliseconds);
+    Py_XINCREF(minutes);
+    Py_XINCREF(hours);
+    Py_XINCREF(weeks);
+
     PyObject *self = NULL;
 
     PyObject *current_mod;
     datetime_state *st = GET_CURRENT_STATE(current_mod);
     if (st == NULL) {
-        return NULL;
+        goto Done;
     }
 
     PyObject *x = NULL;         /* running sum of microseconds */
@@ -2923,7 +2896,16 @@ delta_new_impl(PyTypeObject *type, PyObject *days, PyObject *seconds,
     Py_DECREF(x);
 
 Done:
-    RELEASE_CURRENT_STATE(st, current_mod);
+    Py_XDECREF(days);
+    Py_XDECREF(seconds);
+    Py_XDECREF(microseconds);
+    Py_XDECREF(milliseconds);
+    Py_XDECREF(minutes);
+    Py_XDECREF(hours);
+    Py_XDECREF(weeks);
+    if (st != NULL) {
+        RELEASE_CURRENT_STATE(st, current_mod);
+    }
     return self;
 
 #undef CLEANUP
@@ -3158,6 +3140,7 @@ static PyTypeObject PyDateTime_DeltaType = {
     0,                                                  /* tp_alloc */
     delta_new,                                          /* tp_new */
     0,                                                  /* tp_free */
+    .tp_vectorcall = delta_vectorcall,
 };
 
 // XXX Can we make this const?
@@ -3290,14 +3273,18 @@ date_fromtimestamp(PyTypeObject *cls, PyObject *obj)
 {
     struct tm tm;
     time_t t;
+    int year;
 
     if (_PyTime_ObjectToTime_t(obj, &t, _PyTime_ROUND_FLOOR) == -1)
         return NULL;
 
     if (_PyTime_localtime(t, &tm) != 0)
         return NULL;
+    if (year_from_tm(&tm, &year) < 0) {
+        return NULL;
+    }
 
-    return new_date_subclass_ex(tm.tm_year + 1900,
+    return new_date_subclass_ex(year,
                                 tm.tm_mon + 1,
                                 tm.tm_mday,
                                 cls);
@@ -3337,7 +3324,11 @@ datetime_date_today_impl(PyTypeObject *type)
                            type);
     }
 
-    PyObject *time = time_time();
+    PyTime_t ts;
+    if (PyTime_Time(&ts) < 0) {
+        return NULL;
+    }
+    PyObject *time = PyFloat_FromDouble(PyTime_AsSecondsDouble(ts));
     if (time == NULL) {
         return NULL;
     }
@@ -3412,7 +3403,16 @@ datetime_date_fromordinal_impl(PyTypeObject *type, int ordinal)
         PyErr_SetString(PyExc_ValueError, "ordinal must be >= 1");
         return NULL;
     }
-    ord_to_ymd(ordinal, &year, &month, &day);
+    if (ordinal <= MAXORDINAL) {
+        ord_to_ymd(ordinal, &year, &month, &day);
+    }
+    else {
+        /* Out of range, but compute the year for the error message.
+         * The calendar repeats every 400 years (DI400Y days). */
+        int cycles = (ordinal - 1) / DI400Y;
+        ord_to_ymd(ordinal - cycles * DI400Y, &year, &month, &day);
+        year += 400 * cycles;
+    }
     return new_date_subclass_ex(year, month, day, type);
 }
 
@@ -3520,6 +3520,11 @@ datetime_date_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
 /*[clinic end generated code: output=454d473bee2d5161 input=2db8f0b2b5242deb]*/
 {
+    _PyTime_StrptimeFields fields;
+    if (type == DATE_TYPE(NO_STATE) &&
+        _PyTime_Strptime(string, format, &fields)) {
+        return new_date_ex(fields.year, fields.month, fields.day, type);
+    }
     PyObject *result;
 
     PyObject *module = PyImport_Import(&_Py_ID(_strptime));
@@ -4348,6 +4353,7 @@ static PyTypeObject PyDateTime_TZInfoType = {
 };
 
 /*[clinic input]
+@vectorcall
 @classmethod
 datetime.timezone.__new__ as timezone_new
 
@@ -4359,7 +4365,7 @@ Fixed offset from UTC implementation of tzinfo.
 
 static PyObject *
 timezone_new_impl(PyTypeObject *type, PyObject *offset, PyObject *name)
-/*[clinic end generated code: output=41a2dda500424187 input=d51255afe60382cd]*/
+/*[clinic end generated code: output=41a2dda500424187 input=8901a8befbc52561]*/
 {
     return new_timezone(offset, name);
 }
@@ -4549,6 +4555,22 @@ static PyMethodDef timezone_methods[] = {
     {NULL, NULL}
 };
 
+static PyObject *
+timezone_name(PyObject *op, void *Py_UNUSED(closure))
+{
+    PyDateTime_TimeZone *self = PyTimeZone_CAST(op);
+    if (self->name == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(self->name);
+}
+
+static PyGetSetDef timezone_getset[] = {
+    {"name", timezone_name, NULL,
+     PyDoc_STR("Name given when the timezone was created.")},
+    {NULL}
+};
+
 static PyTypeObject PyDateTime_TimeZoneType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "datetime.timezone",              /* tp_name */
@@ -4579,7 +4601,7 @@ static PyTypeObject PyDateTime_TimeZoneType = {
     0,                                /* tp_iternext */
     timezone_methods,                 /* tp_methods */
     0,                                /* tp_members */
-    0,                                /* tp_getset */
+    timezone_getset,                  /* tp_getset */
     &PyDateTime_TZInfoType,           /* tp_base */
     0,                                /* tp_dict */
     0,                                /* tp_descr_get */
@@ -4588,6 +4610,7 @@ static PyTypeObject PyDateTime_TimeZoneType = {
     0,                                /* tp_init */
     0,                                /* tp_alloc */
     timezone_new,                     /* tp_new */
+    .tp_vectorcall = timezone_vectorcall,
 };
 
 // XXX Can we make this const?
@@ -4792,6 +4815,20 @@ datetime_time_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
 /*[clinic end generated code: output=ae05a9bc0241d3bf input=f01d0b9eb5383da5]*/
 {
+    _PyTime_StrptimeFields fields;
+    if (type == TIME_TYPE(NO_STATE) &&
+        _PyTime_Strptime(string, format, &fields)) {
+        PyObject *tzinfo = tzinfo_from_isoformat_results(
+            fields.gmtoff != INT_MIN, fields.gmtoff, 0);
+        if (tzinfo == NULL) {
+            return NULL;
+        }
+        PyObject *result = new_time_ex(
+            fields.hour, fields.minute, fields.second, fields.fraction,
+            tzinfo, type);
+        Py_DECREF(tzinfo);
+        return result;
+    }
     PyObject *result;
 
     PyObject *module = PyImport_Import(&_Py_ID(_strptime));
@@ -5057,22 +5094,33 @@ time_richcompare(PyObject *self, PyObject *other, int op)
     }
     /* The hard case: both aware with different UTC offsets */
     else if (offset1 != Py_None && offset2 != Py_None) {
-        int offsecs1, offsecs2;
+        long long norm_us1, norm_us2;
         assert(offset1 != offset2); /* else last "if" handled it */
-        offsecs1 = TIME_GET_HOUR(self) * 3600 +
-                   TIME_GET_MINUTE(self) * 60 +
-                   TIME_GET_SECOND(self) -
-                   GET_TD_DAYS(offset1) * 86400 -
-                   GET_TD_SECONDS(offset1);
-        offsecs2 = TIME_GET_HOUR(other) * 3600 +
-                   TIME_GET_MINUTE(other) * 60 +
-                   TIME_GET_SECOND(other) -
-                   GET_TD_DAYS(offset2) * 86400 -
-                   GET_TD_SECONDS(offset2);
-        diff = offsecs1 - offsecs2;
-        if (diff == 0)
-            diff = TIME_GET_MICROSECOND(self) -
-                   TIME_GET_MICROSECOND(other);
+        norm_us1 =
+            ((TIME_GET_HOUR(self) * 3600 +
+              TIME_GET_MINUTE(self) * 60 +
+              TIME_GET_SECOND(self)) * 1000000LL +
+             TIME_GET_MICROSECOND(self)) -
+            ((GET_TD_DAYS(offset1) * 86400LL +
+              GET_TD_SECONDS(offset1)) * 1000000LL +
+             GET_TD_MICROSECONDS(offset1));
+        norm_us2 =
+            ((TIME_GET_HOUR(other) * 3600 +
+              TIME_GET_MINUTE(other) * 60 +
+              TIME_GET_SECOND(other)) * 1000000LL +
+             TIME_GET_MICROSECOND(other)) -
+            ((GET_TD_DAYS(offset2) * 86400LL +
+              GET_TD_SECONDS(offset2)) * 1000000LL +
+             GET_TD_MICROSECONDS(offset2));
+        if (norm_us1 < norm_us2) {
+            diff = -1;
+        }
+        else if (norm_us1 > norm_us2) {
+            diff = 1;
+        }
+        else {
+            diff = 0;
+        }
         result = diff_to_bool(diff, op);
     }
     else if (op == Py_EQ) {
@@ -5618,7 +5666,9 @@ datetime_from_timet_and_us(PyTypeObject *cls, TM_FUNC f, time_t timet, int us,
     if (f(timet, &tm) != 0)
         return NULL;
 
-    year = tm.tm_year + 1900;
+    if (year_from_tm(&tm, &year) < 0) {
+        return NULL;
+    }
     month = tm.tm_mon + 1;
     day = tm.tm_mday;
     hour = tm.tm_hour;
@@ -5861,6 +5911,22 @@ datetime_datetime_strptime_impl(PyTypeObject *type, PyObject *string,
                                 PyObject *format)
 /*[clinic end generated code: output=af2c2d024f3203f5 input=ef7807589f1d50e7]*/
 {
+    /* Subclasses retain the Python parser's constructor arguments. */
+    _PyTime_StrptimeFields fields;
+    if (type == DATETIME_TYPE(NO_STATE) &&
+        _PyTime_Strptime(string, format, &fields)) {
+        PyObject *tzinfo = tzinfo_from_isoformat_results(
+            fields.gmtoff != INT_MIN, fields.gmtoff, 0);
+        if (tzinfo == NULL) {
+            return NULL;
+        }
+        PyObject *result = new_datetime_ex(
+            fields.year, fields.month, fields.day,
+            fields.hour, fields.minute, fields.second, fields.fraction,
+            tzinfo, type);
+        Py_DECREF(tzinfo);
+        return result;
+    }
     PyObject *result;
 
     PyObject *module = PyImport_Import(&_Py_ID(_strptime));
@@ -6767,6 +6833,9 @@ local_timezone_from_timestamp(time_t timestamp)
     struct tm local_time_tm;
     PyObject *nameo = NULL;
     const char *zone = NULL;
+#ifndef HAVE_STRUCT_TM_TM_ZONE
+    char buf[100];  // for zone, which is used after the block below
+#endif
 
     if (_PyTime_localtime(timestamp, &local_time_tm) != 0)
         return NULL;
@@ -6777,9 +6846,9 @@ local_timezone_from_timestamp(time_t timestamp)
     {
         PyObject *local_time, *utc_time;
         struct tm utc_time_tm;
-        char buf[100];
-        strftime(buf, sizeof(buf), "%Z", &local_time_tm);
-        zone = buf;
+        if (strftime(buf, sizeof(buf), "%Z", &local_time_tm) != 0) {
+            zone = buf;
+        }
         local_time = new_datetime(local_time_tm.tm_year + 1900,
                                   local_time_tm.tm_mon + 1,
                                   local_time_tm.tm_mday,
@@ -6789,8 +6858,10 @@ local_timezone_from_timestamp(time_t timestamp)
         if (local_time == NULL) {
             return NULL;
         }
-        if (_PyTime_gmtime(timestamp, &utc_time_tm) != 0)
+        if (_PyTime_gmtime(timestamp, &utc_time_tm) != 0) {
+            Py_DECREF(local_time);
             return NULL;
+        }
         utc_time = new_datetime(utc_time_tm.tm_year + 1900,
                                 utc_time_tm.tm_mon + 1,
                                 utc_time_tm.tm_mday,
@@ -7449,6 +7520,8 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
             .us_per_week = Py_NewRef(st_old->us_per_week),
             .seconds_per_day = Py_NewRef(st_old->seconds_per_day),
             .epoch = Py_NewRef(st_old->epoch),
+            .time_struct_time = Py_NewRef(st_old->time_struct_time),
+            .time_strftime = Py_NewRef(st_old->time_strftime),
         };
         return 0;
     }
@@ -7493,6 +7566,15 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
         return -1;
     }
 
+    st->time_struct_time = PyImport_ImportModuleAttrString("time", "struct_time");
+    if (st->time_struct_time == NULL) {
+        return -1;
+    }
+    st->time_strftime = PyImport_ImportModuleAttrString("time", "strftime");
+    if (st->time_strftime == NULL) {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -7501,6 +7583,9 @@ traverse_state(datetime_state *st, visitproc visit, void *arg)
 {
     /* heap types */
     Py_VISIT(st->isocalendar_date_type);
+
+    Py_VISIT(st->time_struct_time);
+    Py_VISIT(st->time_strftime);
 
     return 0;
 }
@@ -7517,6 +7602,8 @@ clear_state(datetime_state *st)
     Py_CLEAR(st->us_per_week);
     Py_CLEAR(st->seconds_per_day);
     Py_CLEAR(st->epoch);
+    Py_CLEAR(st->time_struct_time);
+    Py_CLEAR(st->time_strftime);
     return 0;
 }
 
@@ -7661,19 +7748,19 @@ _datetime_exec(PyObject *module)
      * pasting together 4 single years.
      */
     static_assert(DI4Y == 4 * 365 + 1, "DI4Y");
-    assert(DI4Y == days_before_year(4+1));
+    assert(DI4Y == _PyTime_DaysBeforeYear(4+1));
 
     /* Similarly, a 400-year cycle has an extra leap day over what we'd
      * get from pasting together 4 100-year cycles.
      */
     static_assert(DI400Y == 4 * DI100Y + 1, "DI400Y");
-    assert(DI400Y == days_before_year(400+1));
+    assert(DI400Y == _PyTime_DaysBeforeYear(400+1));
 
     /* OTOH, a 100-year cycle has one fewer leap day than we'd get from
      * pasting together 25 4-year cycles.
      */
     static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
-    assert(DI100Y == days_before_year(100+1));
+    assert(DI100Y == _PyTime_DaysBeforeYear(100+1));
 
     if (set_current_module(interp, module) < 0) {
         goto error;
