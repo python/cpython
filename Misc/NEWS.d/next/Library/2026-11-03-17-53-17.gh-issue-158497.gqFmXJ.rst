@@ -1,0 +1,3 @@
+Fix :meth:`Executor.map() <concurrent.futures.Executor.map>` of a
+:class:`~concurrent.futures.ProcessPoolExecutor` losing the traceback of an
+exception raised in a worker process.
