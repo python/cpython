@@ -1,0 +1,2 @@
+Fix :meth:`xml.etree.ElementTree.TreeBuilder.start` sharing the input attribute
+dictionary with created elements when using the default element factory.
