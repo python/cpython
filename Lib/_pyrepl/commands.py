@@ -36,6 +36,7 @@ from .trace import trace
 
 # types
 lazy from .historical_reader import HistoricalReader
+lazy from .reader import Reader
 
 
 class Command:
@@ -500,17 +501,31 @@ class paste_mode(Command):
         self.reader.invalidate_prompt()
 
 
+def read_bracketed_paste(reader: Reader) -> str:
+    """Read a bracketed paste from the console and return its contents.
+
+    Input that arrives after the closing marker in the same read (for
+    example the Enter key) is pushed back into the console's input queue so
+    that it is processed as normal input instead of becoming part of the
+    pasted text.
+    """
+    done = "\x1b[201~"
+    data = ""
+    start = time.time()
+    while done not in data:
+        ev = reader.console.getpending()
+        data += ev.data
+    trace(
+        "bracketed pasting of {l} chars done in {s:.2f}s",
+        l=len(data),
+        s=time.time() - start,
+    )
+    paste, _, trailing = data.partition(done)
+    if trailing:
+        reader.console.pushback(trailing)
+    return paste
+
+
 class perform_bracketed_paste(Command):
     def do(self) -> None:
-        done = "\x1b[201~"
-        data = ""
-        start = time.time()
-        while done not in data:
-            ev = self.reader.console.getpending()
-            data += ev.data
-        trace(
-            "bracketed pasting of {l} chars done in {s:.2f}s",
-            l=len(data),
-            s=time.time() - start,
-        )
-        self.reader.insert(data.replace(done, ""))
+        self.reader.insert(read_bracketed_paste(self.reader))

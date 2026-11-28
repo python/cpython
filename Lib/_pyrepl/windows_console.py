@@ -628,6 +628,11 @@ class WindowsConsole(Console):
         """
         raise NotImplementedError("push_char not supported on Windows")
 
+    def pushback(self, data: str) -> None:
+        """Push characters back into the input queue."""
+        for char in data:
+            self.event_queue.insert(Event("key", char))
+
     def beep(self) -> None:
         self.__write("\x07")
 

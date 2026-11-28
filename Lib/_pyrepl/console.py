@@ -156,6 +156,12 @@ class Console(ABC):
         ...
 
     @abstractmethod
+    def pushback(self, data: str) -> None:
+        """Push characters back into the input queue so they are processed
+        as normal input."""
+        ...
+
+    @abstractmethod
     def beep(self) -> None: ...
 
     @abstractmethod

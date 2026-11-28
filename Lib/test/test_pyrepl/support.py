@@ -1,4 +1,5 @@
 from code import InteractiveConsole
+from collections import deque
 from functools import partial
 from typing import Iterable
 from unittest.mock import MagicMock
@@ -132,8 +133,11 @@ class FakeConsole(Console):
         self.width = 80
         self.posxy = (0, 0)
         self._redraw_visual_cycle = 0
+        self._pushed_back: deque[Event] = deque()
 
     def get_event(self, block: bool = True) -> Event | None:
+        if self._pushed_back:
+            return self._pushed_back.popleft()
         return next(self.events)
 
     def getpending(self) -> Event:
@@ -159,6 +163,12 @@ class FakeConsole(Console):
 
     def push_char(self, char: int | bytes) -> None:
         pass
+
+    def pushback(self, data: str) -> None:
+        for char in data:
+            self._pushed_back.append(
+                Event("key", char, bytearray(char.encode(self.encoding, "replace")))
+            )
 
     def beep(self) -> None:
         pass
