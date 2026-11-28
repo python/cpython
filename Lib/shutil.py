@@ -611,10 +611,14 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
             else:
                 # Will raise a SpecialFileError for unsupported file types
                 copy_function(srcobj, dstname)
-        # catch the Error from the recursive copytree so that we can
-        # continue with other files
+        # catch the Error from the recursive copytree (or any other
+        # shutil.Error that copytree raises, e.g. SameFileError)
+        # so that we can continue with other files
         except Error as err:
-            errors.extend(err.args[0])
+            if err.args and isinstance(err.args[0], list):
+                errors.extend(err.args[0])
+            else:
+                errors.append((srcname, dstname, str(err)))
         except OSError as why:
             errors.append((srcname, dstname, str(why)))
     try:
