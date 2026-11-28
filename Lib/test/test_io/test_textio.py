@@ -1040,6 +1040,33 @@ class TextIOWrapperTest:
         txt.write('5')
         self.assertEqual(b''.join(raw._write_stack), b'123\n45')
 
+    def test_rawio_short_write(self):
+        class ShortWriter(self.MockRawIO):
+            def write(self, b):
+                return super().write(b[:2])
+
+        raw = ShortWriter()
+        with self.TextIOWrapper(raw, encoding='utf-8', write_through=True) as txt:
+            self.assertEqual(txt.write('a\u20acb'), 3)
+            self.assertEqual(b''.join(raw._write_stack), b'a\xe2\x82\xacb')
+
+    def test_rawio_write_none(self):
+        raw = self.MockRawIO()
+        raw.write = raw._write_stack.append
+        with self.TextIOWrapper(raw, encoding='ascii', write_through=True) as txt:
+            self.assertEqual(txt.write('abc'), 3)
+            self.assertEqual(raw._write_stack, [b'abc'])
+
+    def test_rawio_write_invalid_result(self):
+        for result, error in ((0, OSError), (-1, OSError), (4, OSError),
+                              ('1', TypeError), (1.5, TypeError)):
+            with self.subTest(result=result):
+                raw = self.MockRawIO()
+                raw.write = lambda b: result
+                with self.TextIOWrapper(raw, encoding='ascii',
+                                        write_through=True) as txt:
+                    self.assertRaises(error, txt.write, 'abc')
+
     def test_bufio_write_through(self):
         # Issue #21396: write_through=True doesn't force a flush()
         # on the underlying binary buffered object.
