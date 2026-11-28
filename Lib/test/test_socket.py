@@ -600,6 +600,13 @@ class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
         cid = get_cid()
         if cid in (socket.VMADDR_CID_HOST, socket.VMADDR_CID_ANY):
             cid = socket.VMADDR_CID_LOCAL
+        self.cli = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
+        self.addCleanup(self.cli.close)
+        try:
+            self.cli.connect((cid, VSOCKPORT))
+        except OSError as e:
+            if e.errno == errno.ENODEV:
+                self.skipTest(str(e))
         try:
             self.serv.bind((cid, VSOCKPORT))
         except OSError as exc:
