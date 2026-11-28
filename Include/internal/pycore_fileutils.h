@@ -314,6 +314,11 @@ PyAPI_FUNC(char*) _Py_UniversalNewlineFgetsWithSize(char *, int, FILE*, PyObject
 
 extern int _PyFile_Flush(PyObject *);
 
+// Write a private list of strings to an exact TextIOWrapper.
+// Return 1 on success, 0 to use write() instead, or a negative value on error.
+// -2 means preparing the output failed before any write was attempted.
+extern int _PyTextIOWrapper_WriteList(PyObject *file, PyObject *strlist);
+
 #ifndef MS_WINDOWS
 extern int _Py_GetTicksPerSecond(long *ticks_per_second);
 #endif

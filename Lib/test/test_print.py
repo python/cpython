@@ -1,8 +1,12 @@
-import unittest
+import codecs
+import io
 import sys
+import unittest
 from io import StringIO
+from unittest.mock import Mock, call
 
 from test import support
+from test.support import import_helper
 
 NotDefined = object()
 
@@ -99,6 +103,120 @@ class TestPrint(unittest.TestCase):
         self.assertRaises(TypeError, print, '', sep=3)
         self.assertRaises(TypeError, print, '', end=3)
         self.assertRaises(AttributeError, print, '', file='')
+
+    def test_print_single_write(self):
+        class Str(str):
+            def __str__(self):
+                raise AssertionError('unexpected conversion')
+
+        file = Mock()
+        print(ClassWith__str__(Str('value')), 2, sep=Str('|'), end=Str('!'),
+              file=file)
+        file.write.assert_called_once_with('value|2!')
+
+    def test_print_str_error(self):
+        file = Mock()
+        with self.assertRaises(TypeError):
+            print('first', ClassWith__str__(42), file=file, flush=True)
+        self.assertEqual(file.method_calls,
+                         [call.write('first '), call.flush()])
+
+        file.write.side_effect = OSError
+        with self.assertRaises(OSError) as cm:
+            print('first', ClassWith__str__(42), file=file)
+        self.assertIsInstance(cm.exception.__context__, TypeError)
+
+    def test_print_str_error_read_ahead(self):
+        with io.TextIOWrapper(io.BytesIO(b'abcdef'), encoding='utf-8') as file:
+            self.assertEqual(file.read(1), 'a')
+            file.flush = Mock(wraps=file.flush)
+            with self.assertRaises(TypeError):
+                print(ClassWith__str__(42), file=file, flush=True)
+            file.flush.assert_not_called()
+            self.assertEqual(file.read(), 'bcdef')
+
+    @support.nomemtest
+    def test_print_allocation_error(self):
+        import _testcapi
+
+        class Value:
+            def __str__(self):
+                # Fail the first allocation after collecting the parts.
+                _testcapi.set_nomemory(0, 1)
+                return 'second'
+
+        file = Mock()
+        raw = io.BytesIO()
+        with io.TextIOWrapper(raw, encoding='utf-8') as text:
+            for dest in (file, text):
+                try:
+                    with self.assertRaises(MemoryError):
+                        print('first', Value(), file=dest, flush=True)
+                finally:
+                    _testcapi.remove_mem_hooks()
+            self.assertEqual(file.method_calls, [
+                call.write('first'), call.write(' '), call.write('second'),
+                call.write('\n'), call.flush(),
+            ])
+            self.assertEqual(raw.getvalue(), b'first second\n')
+
+    def test_print_textio_write_error(self):
+        raw = io.BytesIO()
+        raw.write = Mock(side_effect=MemoryError)
+        with io.TextIOWrapper(raw, encoding='utf-8',
+                              line_buffering=True) as file:
+            with self.assertRaises(MemoryError):
+                print('first', 'second', file=file)
+            # Retrying individual parts could duplicate output.
+            raw.write.assert_called_once_with(b'first second\n')
+
+    def test_print_textio_newline(self):
+        for encoding in ('utf-8', 'latin-1', 'utf-16'):
+            with self.subTest(encoding=encoding):
+                raw = io.BytesIO()
+                with io.TextIOWrapper(raw, encoding=encoding, newline='\r\n',
+                                      line_buffering=True) as file:
+                    print('café', 2, sep='\n', end='', file=file)
+                    self.assertEqual(raw.getvalue(),
+                                     'café\r\n2'.encode(encoding))
+
+    def test_print_textio_write_override(self):
+        with io.TextIOWrapper(io.BytesIO(), encoding='utf-8') as file:
+            file.write = Mock()
+            print('first', 'second', file=file)
+            file.write.assert_called_once_with('first second\n')
+
+    @support.cpython_only
+    def test_print_textio_utf8_cache(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        data = 'a\0€'.encode()
+        cached, uncached = data.decode(), data.decode()
+        _testcapi.unicode_asutf8(cached, len(data))
+        size = sys.getsizeof(uncached)
+        raw = io.BytesIO()
+        with io.TextIOWrapper(raw, encoding='utf-8') as file:
+            print(cached, uncached, file=file, flush=True)
+            self.assertEqual(raw.getvalue(), data + b' ' + data + b'\n')
+        self.assertEqual(sys.getsizeof(uncached), size)
+
+    @support.thread_unsafe("modifies the global 'strict' error handler")
+    def test_print_textio_strict_error_handler(self):
+        def handler(error):
+            self.assertEqual(error.object, 'first \ud800\r\n')
+            file.reconfigure(newline='\r')
+            return '!', error.end
+
+        self.addCleanup(codecs.register_error, 'strict',
+                        codecs.lookup_error('strict'))
+        codecs.register_error('strict', handler)
+        for errors, expected in [('replace', b'first ?\r\n'),
+                                 ('strict', b'first !\r\n')]:
+            with self.subTest(errors=errors):
+                raw = io.BytesIO()
+                with io.TextIOWrapper(raw, encoding='utf-8', errors=errors,
+                                      newline='\r\n') as file:
+                    print('first', '\ud800', file=file, flush=True)
+                    self.assertEqual(raw.getvalue(), expected)
 
     def test_print_flush(self):
         # operation of the flush flag
