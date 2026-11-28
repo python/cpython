@@ -47,6 +47,8 @@ If you need to add or remove at both ends, consider using a
      - *O*\ (1)
    * - Delete item (``del l[k]``) [2]_
      - *O*\ (*n* - *k*)
+   * - Discard (``l.discard(x)``, ``l.remove(x)``)
+     - *O*\ (*n*)
    * - Iteration
      - *O*\ (*n*)
    * - Get slice (``l[i:j]``)

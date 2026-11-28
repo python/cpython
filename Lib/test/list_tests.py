@@ -373,6 +373,66 @@ class CommonTest(seq_tests.CommonTest):
             # verify that original order and values are retained.
             self.assertIs(x, y)
 
+    def test_discard(self):
+        a = self.type2test([0, 0, 1])
+        self.assertIs(a.discard(1), True)
+        self.assertEqual(a, self.type2test([0, 0]))
+        self.assertIs(a.discard(0), True)
+        self.assertEqual(a, self.type2test([0]))
+        self.assertIs(a.discard(0), True)
+        self.assertEqual(a, self.type2test([]))
+        self.assertIs(a.discard(0), False)
+        self.assertEqual(a, self.type2test([]))
+
+        self.assertRaises(TypeError, a.discard)
+
+        a = self.type2test([1, 2])
+        a.discard(NEVER_EQ)
+        self.assertEqual(a, self.type2test([1, 2]))
+        a.discard(ALWAYS_EQ)
+        self.assertEqual(a, self.type2test([2]))
+        a = self.type2test([ALWAYS_EQ])
+        a.discard(1)
+        self.assertEqual(a, self.type2test([]))
+        a = self.type2test([ALWAYS_EQ])
+        a.discard(NEVER_EQ)
+        self.assertEqual(a, self.type2test([]))
+        a = self.type2test([NEVER_EQ])
+        a.discard(ALWAYS_EQ)
+        self.assertEqual(a, self.type2test([NEVER_EQ]))
+
+        class BadExc(Exception):
+            pass
+
+        class BadCmp:
+            def __eq__(self, other):
+                if other == 2:
+                    raise BadExc()
+                return False
+
+        a = self.type2test([0, 1, 2, 3])
+        self.assertRaises(BadExc, a.discard, BadCmp())
+
+        class BadCmp2:
+            def __eq__(self, other):
+                raise BadExc()
+
+        d = self.type2test('abcdefghcij')
+        d.discard('c')
+        self.assertEqual(d, self.type2test('abdefghcij'))
+        d.discard('c')
+        self.assertEqual(d, self.type2test('abdefghij'))
+        d.discard('c')
+        self.assertEqual(d, self.type2test('abdefghij'))
+
+        # Handle comparison errors
+        d = self.type2test(['a', 'b', BadCmp2(), 'c'])
+        e = self.type2test(d)
+        self.assertRaises(BadExc, d.discard, 'c')
+        for x, y in zip(d, e):
+            # verify that original order and values are retained.
+            self.assertIs(x, y)
+
     def test_index(self):
         super().test_index()
         a = self.type2test([-2, -1, 0, 0, 1, 2])

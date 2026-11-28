@@ -165,9 +165,9 @@ intermediate states since they modify multiple elements in place:
    lst.pop(idx)           # idx not at the end of the list, shifts elements
    lst *= x               # copies elements in place
 
-The :meth:`~list.remove` method may allow concurrent modifications since
-element comparison may execute arbitrary Python code (via
-:meth:`~object.__eq__`).
+The :meth:`~list.remove` and :meth:`~list.discard` methods may allow
+concurrent modifications since element comparison may execute arbitrary
+Python code (via :meth:`~object.__eq__`).
 
 :meth:`~list.extend` is safe to call from multiple threads.  However, its
 guarantees depend on the iterable passed to it. If it is a :class:`list`, a
