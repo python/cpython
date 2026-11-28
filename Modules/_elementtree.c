@@ -571,45 +571,56 @@ element_get_attrib(ElementObject* self)
 }
 
 LOCAL(PyObject*)
+element_get_joined(ElementObject* self, PyObject **slot)
+{
+    /* return new reference to the text or tail attribute stored in *slot,
+       joining a list of chunks left there by the tree builder on first
+       access. */
+
+    PyObject *res;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = *slot;
+    if (JOIN_GET(res) && PyList_CheckExact(JOIN_OBJ(res))) {
+        /* The critical section may be suspended while PyUnicode_Join()
+           locks the list, letting another thread join and release it
+           first: hold a reference and re-check *slot before storing. */
+        PyObject *list = Py_NewRef(JOIN_OBJ(res));
+        PyObject *joined = list_join(list);
+        if (joined == NULL) {
+            res = NULL;
+        }
+        else if (*slot == res) {
+            _set_joined_ptr(slot, joined);
+            res = joined;
+        }
+        else {
+            Py_DECREF(joined);
+            res = JOIN_OBJ(*slot);
+        }
+        Py_DECREF(list);
+    }
+    else {
+        res = JOIN_OBJ(res);
+    }
+    Py_XINCREF(res);
+    Py_END_CRITICAL_SECTION();
+
+    return res;
+}
+
+LOCAL(PyObject*)
 element_get_text(ElementObject* self)
 {
     /* return new reference to text attribute */
-
-    PyObject *res = self->text;
-
-    if (JOIN_GET(res)) {
-        res = JOIN_OBJ(res);
-        if (PyList_CheckExact(res)) {
-            PyObject *tmp = list_join(res);
-            if (!tmp)
-                return NULL;
-            self->text = tmp;
-            Py_SETREF(res, tmp);
-        }
-    }
-
-    return Py_NewRef(res);
+    return element_get_joined(self, &self->text);
 }
 
 LOCAL(PyObject*)
 element_get_tail(ElementObject* self)
 {
     /* return new reference to tail attribute */
-
-    PyObject *res = self->tail;
-
-    if (JOIN_GET(res)) {
-        res = JOIN_OBJ(res);
-        if (PyList_CheckExact(res)) {
-            PyObject *tmp = list_join(res);
-            if (!tmp)
-                return NULL;
-            self->tail = tmp;
-            Py_SETREF(res, tmp);
-        }
-    }
-
-    return Py_NewRef(res);
+    return element_get_joined(self, &self->tail);
 }
 
 /*[clinic input]
