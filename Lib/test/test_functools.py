@@ -3496,6 +3496,28 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(types_union(1), "types.UnionType")
         self.assertEqual(types_union(None), "types.UnionType")
 
+    def test_union_abc_cache_invalidation(self):
+        # gh-162703: registering an ABC as part of a union must still
+        # invalidate the dispatch cache when the ABC gains a virtual subclass.
+        class A(abc.ABC):
+            pass
+
+        class B:
+            pass
+
+        @functools.singledispatch
+        def f(arg):
+            return "default"
+
+        @f.register
+        def _(arg: A | bytes):
+            return "A | bytes"
+
+        b = B()
+        self.assertEqual(f(b), "default")
+        A.register(B)
+        self.assertEqual(f(b), "A | bytes")
+
     def test_register_genericalias(self):
         @functools.singledispatch
         def f(arg):

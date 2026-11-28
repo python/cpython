@@ -1,0 +1,3 @@
+Fix :func:`functools.singledispatch` not invalidating its dispatch cache
+after :meth:`abc.ABCMeta.register` when the abstract base class was
+registered as part of a union type.
