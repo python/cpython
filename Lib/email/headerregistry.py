@@ -543,6 +543,17 @@ class ReferencesHeader:
         kwds['decoded'] = str(parse_tree)
         kwds['defects'].extend(parse_tree.all_defects)
 
+    def init(self, *args, **kw):
+        super().init(*args, **kw)
+        # Comments and folding whitespace around a msg-id are not part of it.
+        self._message_ids = tuple(
+            ''.join(str(token) for token in msg_id if token.token_type != 'cfws')
+            for msg_id in self._parse_tree.message_ids)
+
+    @property
+    def message_ids(self):
+        return self._message_ids
+
 
 # The header factory #
 

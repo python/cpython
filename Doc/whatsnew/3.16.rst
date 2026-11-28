@@ -499,6 +499,16 @@ difflib
   (Contributed by Tomasz Kazimierczak in :gh:`118150`.)
 
 
+email
+-----
+
+* :class:`email.headerregistry.ReferencesHeader`, used for the
+  :mailheader:`In-Reply-To` and :mailheader:`References` headers, has a new
+  :attr:`~email.headerregistry.ReferencesHeader.message_ids` attribute: a tuple
+  of the message identifiers the header holds.
+  (Contributed by Sudeep Gowda in :gh:`148797`.)
+
+
 encodings
 ---------
 
