@@ -52,7 +52,6 @@ CERT_REQUIRED - certificates are required, and will be validated, and
 
 The following constants identify various SSL protocol variants:
 
-PROTOCOL_SSLv2
 PROTOCOL_SSLv3
 PROTOCOL_SSLv23
 PROTOCOL_TLS
@@ -61,6 +60,9 @@ PROTOCOL_TLS_SERVER
 PROTOCOL_TLSv1
 PROTOCOL_TLSv1_1
 PROTOCOL_TLSv1_2
+
+PROTOCOL_SSLv3, PROTOCOL_TLSv1, PROTOCOL_TLSv1_1 and PROTOCOL_TLSv1_2 are
+deprecated, and are not available if Python is built with OpenSSL 4.0 or later.
 
 The following constants identify various SSL alert message descriptions as per
 http://www.iana.org/assignments/tls-parameters/tls-parameters.xml#tls-parameters-6
