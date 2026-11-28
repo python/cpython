@@ -464,10 +464,14 @@ The same applies for :func:`entry_points` and :func:`files`.
    accordingly have the same attributes.
 
    .. staticmethod:: at(path)
+
+      Return a :class:`!Distribution` instance for the distribution metadata
+      located at *path*, which may be a :class:`str` or path-like object.
+
    .. classmethod:: from_name(name)
 
-      Return a :class:`!Distribution` instance at the given path or
-      with the given name.
+      Return a :class:`!Distribution` instance for the installed distribution
+      named *name*.
 
    .. classmethod:: discover(*, context=None, **kwargs)
 
