@@ -92,6 +92,7 @@ static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
 PyAPI_DATA(double) _PyLong_Frexp(PyLongObject *a, int64_t *e);
 
 extern PyObject* _PyLong_FromBytes(const char *, Py_ssize_t, int);
+extern PyObject* _PyLong_FromByteArrayString(PyObject *, int);
 
 // _PyLong_DivmodNear.  Given integers a and b, compute the nearest
 // integer q to the exact quotient a / b, rounding to the nearest even integer

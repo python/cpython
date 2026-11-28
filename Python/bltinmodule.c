@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_Validate()
+#include "pycore_bytesobject.h"   // _PyByteArray_GetByte()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_cell.h"          // PyCell_GetRef()
 #include "pycore_ceval.h"         // _PyEval_Vector()
@@ -2173,11 +2174,10 @@ builtin_ord(PyObject *module, PyObject *c)
         }
     }
     else if (PyByteArray_Check(c)) {
-        /* XXX Hopefully this is temporary */
-        size = PyByteArray_GET_SIZE(c);
+        char ch = 0;
+        size = _PyByteArray_GetByte(c, &ch);
         if (size == 1) {
-            ord = (long)((unsigned char)*PyByteArray_AS_STRING(c));
-            return PyLong_FromLong(ord);
+            return PyLong_FromLong((unsigned char)ch);
         }
     }
     else {

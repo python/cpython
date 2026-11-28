@@ -184,7 +184,9 @@ class char_converter(CConverter):
             self.c_default = "'" + r + "'"
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
-        if self.format_unit == 'c':
+        if self.format_unit == 'c' and not limited_capi:
+            self.add_include('pycore_bytesobject.h',
+                             '_PyByteArray_GetByte()')
             return self.format_code("""
                 if (PyBytes_Check({argname})) {{{{
                     if (PyBytes_GET_SIZE({argname}) != 1) {{{{
@@ -197,14 +199,13 @@ class char_converter(CConverter):
                     {paramname} = PyBytes_AS_STRING({argname})[0];
                 }}}}
                 else if (PyByteArray_Check({argname})) {{{{
-                    if (PyByteArray_GET_SIZE({argname}) != 1) {{{{
+                    Py_ssize_t {paramname}_size = _PyByteArray_GetByte({argname}, &{paramname});
+                    if ({paramname}_size != 1) {{{{
                         PyErr_Format(PyExc_TypeError,
                             "{{name}}(): {displayname} must be a byte string of length 1, "
-                            "not a bytearray object of length %zd",
-                            PyByteArray_GET_SIZE({argname}));
+                            "not a bytearray object of length %zd", {paramname}_size);
                         goto exit;
                     }}}}
-                    {paramname} = PyByteArray_AS_STRING({argname})[0];
                 }}}}
                 else {{{{
                     {bad_argument}

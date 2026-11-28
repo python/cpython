@@ -1,0 +1,3 @@
+Fix unsafe reads of :class:`bytearray` storage during concurrent mutation
+in free-threaded builds. Also prevent use-after-free when :func:`compile`
+or :class:`int` calls Python code that resizes its :class:`bytearray` input.

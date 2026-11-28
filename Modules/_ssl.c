@@ -4722,39 +4722,12 @@ typedef struct {
 } _PySSLPasswordInfo;
 
 static int
-_pwinfo_set(_PySSLPasswordInfo *pw_info, PyObject* password,
-            const char *bad_type_error)
+_pwinfo_copy(_PySSLPasswordInfo *pw_info, const char *data, Py_ssize_t size)
 {
-    /* Set the password and size fields of a _PySSLPasswordInfo struct
-       from a unicode, bytes, or byte array object.
-       The password field will be dynamically allocated and must be freed
-       by the caller */
-    PyObject *password_bytes = NULL;
-    const char *data = NULL;
-    Py_ssize_t size;
-
-    if (PyUnicode_Check(password)) {
-        password_bytes = PyUnicode_AsUTF8String(password);
-        if (!password_bytes) {
-            goto error;
-        }
-        data = PyBytes_AS_STRING(password_bytes);
-        size = PyBytes_GET_SIZE(password_bytes);
-    } else if (PyBytes_Check(password)) {
-        data = PyBytes_AS_STRING(password);
-        size = PyBytes_GET_SIZE(password);
-    } else if (PyByteArray_Check(password)) {
-        data = PyByteArray_AS_STRING(password);
-        size = PyByteArray_GET_SIZE(password);
-    } else {
-        PyErr_SetString(PyExc_TypeError, bad_type_error);
-        goto error;
-    }
-
-    if (size > (Py_ssize_t)INT_MAX) {
+    if (size > INT_MAX) {
         PyErr_Format(PyExc_ValueError,
                      "password cannot be longer than %d bytes", INT_MAX);
-        goto error;
+        return 0;
     }
 
     PyMem_Free(pw_info->password);
@@ -4762,16 +4735,39 @@ _pwinfo_set(_PySSLPasswordInfo *pw_info, PyObject* password,
     if (!pw_info->password) {
         PyErr_SetString(PyExc_MemoryError,
                         "unable to allocate password buffer");
-        goto error;
+        return 0;
     }
     memcpy(pw_info->password, data, size);
     pw_info->size = (int)size;
-
-    Py_XDECREF(password_bytes);
     return 1;
+}
 
-error:
-    Py_XDECREF(password_bytes);
+static int
+_pwinfo_set(_PySSLPasswordInfo *pw_info, PyObject *password,
+            const char *bad_type_error)
+{
+    /* The caller must free the allocated password buffer. */
+    if (PyUnicode_Check(password)) {
+        PyObject *bytes = PyUnicode_AsUTF8String(password);
+        if (bytes == NULL) {
+            return 0;
+        }
+        int ok = _pwinfo_copy(pw_info, PyBytes_AS_STRING(bytes),
+                              PyBytes_GET_SIZE(bytes));
+        Py_DECREF(bytes);
+        return ok;
+    } else if (PyBytes_Check(password)) {
+        return _pwinfo_copy(pw_info, PyBytes_AS_STRING(password),
+                            PyBytes_GET_SIZE(password));
+    } else if (PyByteArray_Check(password)) {
+        int ok;
+        Py_BEGIN_CRITICAL_SECTION(password);
+        ok = _pwinfo_copy(pw_info, PyByteArray_AS_STRING(password),
+                          PyByteArray_GET_SIZE(password));
+        Py_END_CRITICAL_SECTION();
+        return ok;
+    }
+    PyErr_SetString(PyExc_TypeError, bad_type_error);
     return 0;
 }
 

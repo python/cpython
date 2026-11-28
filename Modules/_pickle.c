@@ -2793,9 +2793,16 @@ save_bytearray(PickleState *state, PicklerObject *self, PyObject *obj)
         return status;
     }
     else {
-        return _save_bytearray_data(state, self, obj,
-                                    PyByteArray_AS_STRING(obj),
-                                    PyByteArray_GET_SIZE(obj));
+        /* Export the buffer so the data cannot be freed by a resize
+           while it is written. */
+        Py_buffer view;
+        if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) < 0) {
+            return -1;
+        }
+        int rc = _save_bytearray_data(state, self, obj,
+                                      (const char *)view.buf, view.len);
+        PyBuffer_Release(&view);
+        return rc;
     }
 }
 

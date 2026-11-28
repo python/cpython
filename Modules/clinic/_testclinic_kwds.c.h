@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_bytesobject.h"   // _PyByteArray_GetByte()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
@@ -189,4 +190,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ad46500147228faf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=96f663aec33b061c input=a9049054013a1b77]*/

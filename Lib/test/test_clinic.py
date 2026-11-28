@@ -4736,6 +4736,9 @@ class ClinicFunctionalTest(unittest.TestCase):
         chars = [b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'0', b'a', b'b', b'c', b'd']
         expected = tuple(ord(c) for c in chars)
         self.assertEqual(ac_tester.char_converter(*chars), expected)
+        self.assertEqual(ac_tester.char_converter(*map(bytearray, chars)), expected)
+        with self.assertRaisesRegex(TypeError, 'bytearray object of length 2'):
+            ac_tester.char_converter(bytearray(b'ab'))
 
     def test_unsigned_char_converter(self):
         from _testcapi import UCHAR_MAX

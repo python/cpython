@@ -106,6 +106,7 @@ Local naming conventions:
 #endif
 
 #include "Python.h"
+#include "pycore_bytesobject.h"   // _PyBytes_FromByteArray()
 #include "pycore_capsule.h"       // _PyCapsule_SetTraverse()
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
@@ -1816,8 +1817,15 @@ idna_converter(PyObject *obj, void *arg)
         len = PyBytes_Size(obj);
     }
     else if (PyByteArray_Check(obj)) {
-        data->buf = PyByteArray_AsString(obj);
-        len = PyByteArray_Size(obj);
+        /* Copy: the name is used after the GIL is released, while
+           another thread could resize the bytearray. */
+        obj2 = _PyBytes_FromByteArray(obj);
+        if (obj2 == NULL) {
+            return 0;
+        }
+        data->obj = obj2;
+        data->buf = PyBytes_AS_STRING(obj2);
+        len = PyBytes_GET_SIZE(obj2);
     }
     else if (PyUnicode_Check(obj)) {
         if (PyUnicode_IS_COMPACT_ASCII(obj)) {

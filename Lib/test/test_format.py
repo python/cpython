@@ -451,6 +451,8 @@ class FormatTest(unittest.TestCase):
         fb = FakeBytes()
         testcommon(b"%b", b"abc", b"abc")
         testcommon(b"%b", bytearray(b"def"), b"def")
+        testcommon(b"%4.2b", bytearray(b"def"), b"  de")
+        testcommon(b"%-4.0b", bytearray(b"def"), b"    ")
         testcommon(b"%b", fb, b"123")
         testcommon(b"%b", memoryview(b"abc"), b"abc")
         # # %s is an alias for %b -- should only be used for Py2/3 code
