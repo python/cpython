@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, script_helper
 
 
 def _create_file_shallow_equal(template_path, new_path):
@@ -365,6 +365,74 @@ class DirCompareTestCase(unittest.TestCase):
             dircmp_report()
             report_lines = stdout.getvalue().strip().split('\n')
             self.assertEqual(report_lines, expected_report_lines)
+
+
+@support.requires_subprocess()
+class FilecmpCommandLineTestCase(unittest.TestCase):
+    def setUp(self):
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        self.left = os.path.join(temp_dir.name, 'left dir')
+        self.right = os.path.join(temp_dir.name, 'right dir')
+        os.mkdir(self.left)
+        os.mkdir(self.right)
+
+    def _write_file(self, directory, name, contents):
+        with open(os.path.join(directory, name), 'w', encoding='utf-8') as f:
+            f.write(contents)
+
+    def test_directory_report(self):
+        for directory in (self.left, self.right):
+            self._write_file(directory, 'same.txt', 'same')
+        self._write_file(self.left, 'different.txt', 'left')
+        self._write_file(self.right, 'different.txt', 'right side')
+        self._write_file(self.left, 'left.txt', 'left only')
+        self._write_file(self.right, 'right.txt', 'right only')
+
+        _, stdout, stderr = script_helper.assert_python_ok(
+            '-m', 'filecmp', self.left, self.right
+        )
+        self.assertEqual(stderr, b'')
+        self.assertEqual(os.fsdecode(stdout).splitlines(), [
+            f'diff {self.left} {self.right}',
+            f"Only in {self.left} : ['left.txt']",
+            f"Only in {self.right} : ['right.txt']",
+            "Identical files : ['same.txt']",
+            "Differing files : ['different.txt']",
+        ])
+
+    def test_recursive_report(self):
+        left_subdir = os.path.join(self.left, 'nested')
+        right_subdir = os.path.join(self.right, 'nested')
+        os.mkdir(left_subdir)
+        os.mkdir(right_subdir)
+        self._write_file(left_subdir, 'left.txt', 'left only')
+
+        _, stdout, _ = script_helper.assert_python_ok(
+            '-m', 'filecmp', self.left, self.right
+        )
+        self.assertEqual(os.fsdecode(stdout).splitlines(), [
+            f'diff {self.left} {self.right}',
+            "Common subdirectories : ['nested']",
+        ])
+
+        _, stdout, stderr = script_helper.assert_python_ok(
+            '-m', 'filecmp', '-r', self.left, self.right
+        )
+        self.assertEqual(stderr, b'')
+        self.assertEqual(os.fsdecode(stdout).splitlines(), [
+            f'diff {self.left} {self.right}',
+            "Common subdirectories : ['nested']",
+            '',
+            f'diff {left_subdir} {right_subdir}',
+            f"Only in {left_subdir} : ['left.txt']",
+        ])
+
+    def test_missing_arguments(self):
+        _, stdout, stderr = script_helper.assert_python_failure('-m', 'filecmp')
+        self.assertEqual(stdout, b'')
+        self.assertIn(b'getopt.GetoptError', stderr)
+        self.assertIn(b'need exactly two args', stderr)
 
 
 if __name__ == "__main__":
