@@ -652,11 +652,21 @@ backslash at the end escapes the closing quote character, leaving an
 unterminated string.
 
 Raw strings were designed to ease creating input for processors (chiefly regular
-expression engines) that want to do their own backslash escape processing. Such
-processors consider an unmatched trailing backslash to be an error anyway, so
-raw strings disallow that.  In return, they allow you to pass on the string
-quote character by escaping it with a backslash.  These rules work well when
-r-strings are used for their intended purpose.
+expression engines) that want to do their own backslash escape processing, so
+backslashes are generally not processed specially at the syntax level.  However,
+there needs to be a way to include the string's quote character itself inside a
+raw string.  Because these processors do their own backslash handling, it is
+safe to send them an extra backslash before a quote character.  Python therefore
+interprets a backslash followed by the quote that opened the string as two
+literal characters in the string's value: the backslash is retained.  For
+example, ``r"\""`` contains a backslash and a double quote, not just a double
+quote.
+
+Because of this interpretation, a backslash followed by a closing quote already
+has a meaning: the quote does not end the string.  Consequently no syntax can
+express a single trailing backslash in a raw string, and a quote character can
+only appear when preceded by a literal backslash in the string's value.  The
+same rules apply to triple-quoted raw strings.
 
 If you're trying to build Windows pathnames, note that all Windows system calls
 accept forward slashes too::
