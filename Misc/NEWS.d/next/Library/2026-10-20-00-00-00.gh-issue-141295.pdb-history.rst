@@ -1,0 +1,4 @@
+Save and restore :mod:`pdb` command history when using PyREPL. The new
+:envvar:`PYTHON_HISTORY_PDB` environment variable overrides the default
+history path: :envvar:`PYTHON_HISTORY` with ``.pdb`` appended, or
+``.python_history.pdb`` in the user's home directory.
