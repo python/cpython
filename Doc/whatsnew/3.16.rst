@@ -199,6 +199,19 @@ bz2
   (Contributed by Serhiy Storchaka in :gh:`117404`.)
 
 
+code
+----
+
+* The :meth:`code.InteractiveConsole.interact` method and the :func:`code.interact`
+  function now support a *use_pyrepl* parameter to control whether to use the
+  pyrepl-based REPL. By default, *use_pyrepl* is ``False``, using the basic
+  readline-based REPL. When set to ``True``, pyrepl is used if available.
+  When set to ``None``, pyrepl is used automatically if available and the
+  :envvar:`PYTHON_BASIC_REPL` environment variable is not set. *use_pyrepl* is
+  passed as ``True`` when envoking :mod:`code` from the command line.
+  (Contributed by Long Tan in :gh:`148261`.)
+
+
 codecs
 ------
 
