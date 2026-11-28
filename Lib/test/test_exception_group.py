@@ -913,6 +913,38 @@ class NestedExceptionGroupSplitTest(ExceptionGroupSplitTestBase):
         self.assertNotHasAttr(match, '__notes__')
         self.assertNotHasAttr(rest, '__notes__')
 
+    def test_split_and_subgroup_traceback_from_derive_is_replaced(self):
+        # gh-162455: when the original group has no traceback, split()
+        # and subgroup() must not keep the traceback that derive() set.
+        # The docs say these fields are copied from the original group,
+        # "so these fields do not need to be updated by derive".
+        class TracedGroup(ExceptionGroup):
+            def derive(self, excs):
+                g = TracedGroup(self.message, excs)
+                try:
+                    raise g
+                except TracedGroup as x:
+                    return x
+
+        eg = TracedGroup("eg", [ValueError(1), TypeError(2)])
+        self.assertIsNone(eg.__traceback__)
+        match, rest = eg.split(ValueError)
+        self.assertIsNone(match.__traceback__)
+        self.assertIsNone(rest.__traceback__)
+        self.assertIsNone(eg.subgroup(ValueError).__traceback__)
+
+    def test_split_and_subgroup_copy_traceback(self):
+        # The original group's traceback is copied to the split parts.
+        try:
+            raise ExceptionGroup("eg", [ValueError(1), TypeError(2)])
+        except ExceptionGroup as eg:
+            tb = eg.__traceback__
+            self.assertIsNotNone(tb)
+            match, rest = eg.split(ValueError)
+            self.assertIs(match.__traceback__, tb)
+            self.assertIs(rest.__traceback__, tb)
+            self.assertIs(eg.subgroup(ValueError).__traceback__, tb)
+
     def test_drive_invalid_return_value(self):
         class MyEg(ExceptionGroup):
             def derive(self, excs):

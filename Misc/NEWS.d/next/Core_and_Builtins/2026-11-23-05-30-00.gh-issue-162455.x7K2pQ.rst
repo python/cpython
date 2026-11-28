@@ -1,0 +1,1 @@
+Fix ``BaseExceptionGroup.split`` and ``BaseExceptionGroup.subgroup`` keeping the traceback set by ``BaseExceptionGroup.derive`` when the original group has no traceback. The split parts now have no traceback, matching the documented behaviour.
