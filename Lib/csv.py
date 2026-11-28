@@ -124,8 +124,21 @@ class Dialect:
             raise TypeError(f'__replace__() got an unexpected keyword '
                             f'argument {min(unexpected)!r}')
         new = object.__new__(self.__class__)
-        new.__dict__.update(self.__dict__)
-        new.__dict__.update(changes)
+        if hasattr(self, '__dict__'):
+            new.__dict__.update(self.__dict__)
+        # Copy slot-backed dialect attributes from the instance's MRO.
+        for cls in type(self).__mro__:
+            slots = getattr(cls, '__slots__', ())
+            if isinstance(slots, str):
+                slots = (slots,)
+            for attr in slots:
+                if attr in _dialect_attributes and attr not in changes:
+                    try:
+                        setattr(new, attr, getattr(self, attr))
+                    except AttributeError:
+                        pass
+        for attr, value in changes.items():
+            setattr(new, attr, value)
         new._validate()
         return new
 
