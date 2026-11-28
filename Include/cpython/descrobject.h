@@ -55,6 +55,7 @@ typedef struct {
     PyDescr_COMMON;
     struct wrapperbase *d_base;
     void *d_wrapped; /* This can be any function pointer */
+    vectorcallfunc vectorcall;
 } PyWrapperDescrObject;
 
 PyAPI_FUNC(PyObject *) PyDescr_NewWrapper(PyTypeObject *,

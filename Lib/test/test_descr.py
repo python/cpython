@@ -1,5 +1,6 @@
 import builtins
 import copyreg
+import functools
 import gc
 import itertools
 import math
@@ -3791,6 +3792,8 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         bytearray.__init__(ba, 'abc\xbd\u20ac',
                            encoding='latin1', errors='replace')
         self.assertEqual(ba, b'abc\xbd?')
+        with self.assertRaisesRegex(TypeError, 'takes no keyword arguments'):
+            int.__add__(1, 2, x=1)
 
     @support.skip_if_huge_c_stack()
     @support.skip_wasi_stack_overflow()
@@ -5200,6 +5203,22 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         foo = Foo()
         self.assertRaises(RecursionError, str, foo)
         self.assertRaises(RecursionError, repr, foo)
+
+    def test_slot_wrapper_holds_self(self):
+        # Make sure wrapper takes a strong reference to itself when called.
+        # cmp_to_key() does not own the objects passed to it. Custom list type
+        # so we can take a weakref.
+        class L(list):
+            pass
+        class Evil:
+            def __eq__(evil, other):
+                k.obj = None
+                self.assertIsNotNone(wr())
+                return True
+        K = functools.cmp_to_key(list.__eq__)
+        k = K(L([Evil()]))
+        wr = weakref.ref(k.obj)
+        k < K([1])
 
     def test_mixing_slot_wrappers(self):
         class X(dict):
