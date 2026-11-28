@@ -3,6 +3,7 @@
 import asyncio
 import unittest
 from types import GenericAlias
+from test import support
 
 
 def tearDownModule():
@@ -430,6 +431,147 @@ class QueuePutTests(unittest.IsolatedAsyncioTestCase):
         # If the ValueError is silenced we should catch a CancelledError.
         with self.assertRaises(asyncio.CancelledError):
             await put_task
+
+    async def test_put_nowait_does_not_steal_slot_from_woken_putter(self):
+        # gh-83055: the slot freed by get_nowait() belongs to the
+        # woken putter until it runs.
+        q = asyncio.Queue(1)
+        q.put_nowait(0)
+        put_1 = asyncio.create_task(q.put(1))
+        put_2 = asyncio.create_task(q.put(2))
+        await asyncio.sleep(0)
+
+        self.assertEqual(q.get_nowait(), 0)
+        self.assertTrue(q.full())
+        with self.assertRaises(asyncio.QueueFull):
+            q.put_nowait(3)
+
+        self.assertEqual(await q.get(), 1)
+        self.assertEqual(await q.get(), 2)
+        await put_1
+        await put_2
+        self.assertFalse(q._reserved)
+
+    async def test_put_nowait_uses_unreserved_slots(self):
+        q = asyncio.Queue(2)
+        q.put_nowait(1)
+        q.put_nowait(2)
+        put_3 = asyncio.create_task(q.put(3))
+        await asyncio.sleep(0)
+
+        # Two free slots, only one of them is reserved for put_3.
+        q.get_nowait()
+        q.get_nowait()
+        self.assertFalse(q.full())
+        q.put_nowait(4)
+        self.assertTrue(q.full())
+
+        await put_3
+        self.assertEqual(sorted([q.get_nowait(), q.get_nowait()]), [3, 4])
+        self.assertFalse(q._reserved)
+
+    async def test_put_order_with_many_putters(self):
+        # gh-83055: items must be got in the order put() was called.
+        q = asyncio.Queue(3)
+        counter = 0
+
+        async def putter(n):
+            nonlocal counter
+            for i in range(50):
+                item = counter
+                counter += 1
+                await q.put(item)
+                if (i + n) % 3 == 0:
+                    await asyncio.sleep(0)
+
+        async with asyncio.TaskGroup() as tg:
+            for n in range(10):
+                tg.create_task(putter(n))
+            items = []
+            for i in range(500):
+                items.append(await q.get())
+                if i % 2:
+                    await asyncio.sleep(0)
+
+        self.assertEqual(items, sorted(items))
+        self.assertFalse(q._reserved)
+
+    async def test_cancelled_woken_putter_passes_slot_to_next(self):
+        q = asyncio.Queue(1)
+        q.put_nowait(0)
+        put_1 = asyncio.create_task(q.put(1))
+        put_2 = asyncio.create_task(q.put(2))
+        await asyncio.sleep(0)
+
+        q.get_nowait()
+        put_1.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await put_1
+        await put_2
+        self.assertEqual(q.get_nowait(), 2)
+        self.assertFalse(q._reserved)
+        self.assertFalse(q.full())
+
+    async def test_shutdown_with_woken_putter(self):
+        q = asyncio.Queue(1)
+        q.put_nowait(0)
+        put_1 = asyncio.create_task(q.put(1))
+        await asyncio.sleep(0)
+
+        q.get_nowait()
+        q.shutdown()
+        with self.assertRaises(asyncio.QueueShutDown):
+            await put_1
+        self.assertFalse(q._reserved)
+
+    async def test_subclass_with_own_put_loop(self):
+        # A subclass that waits in self._putters with its own futures
+        # gets no reserved slot, so it cannot deadlock.
+        class Q(asyncio.Queue):
+            async def put(self, item):
+                while self.full():
+                    putter = self._get_loop().create_future()
+                    self._putters.append(putter)
+                    await putter
+                self.put_nowait(item)
+
+        q = Q(2)
+
+        async def producer():
+            for i in range(10):
+                await q.put(i)
+
+        async with asyncio.timeout(support.SHORT_TIMEOUT):
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(producer())
+                items = [await q.get() for _ in range(10)]
+        self.assertEqual(items, list(range(10)))
+        self.assertFalse(q._reserved)
+
+    async def test_subclass_waking_putters_itself(self):
+        # A put() woken by a subclass without a freed slot was not
+        # reserved one, so it must not release one either.
+        class Q(asyncio.Queue):
+            def peek_nowait(self):
+                self._wakeup_next(self._putters)
+                return self._queue[0]
+
+        q = Q(2)
+        q.put_nowait(0)
+        q.put_nowait(1)
+        put_2 = asyncio.create_task(q.put(2))
+        await asyncio.sleep(0)
+
+        self.assertEqual(q.peek_nowait(), 0)
+        await asyncio.sleep(0)
+        self.assertFalse(put_2.done())
+        self.assertEqual(q.qsize(), 2)
+        self.assertFalse(q._reserved)
+
+        self.assertEqual(q.get_nowait(), 0)
+        await put_2
+        self.assertEqual(list(q._queue), [1, 2])
+        self.assertFalse(q._reserved)
 
 
 class LifoQueueTests(unittest.IsolatedAsyncioTestCase):

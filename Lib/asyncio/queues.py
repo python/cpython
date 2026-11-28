@@ -49,6 +49,13 @@ class Queue(mixins._LoopBoundMixin):
         self._getters = collections.deque()
         # Futures.
         self._putters = collections.deque()
+        # Futures of waiting put() calls.  Subclasses may add their own
+        # futures to self._putters; those never get a reserved slot.
+        self._own_putters = set()
+        # Futures of put() calls that were woken up for a freed slot but
+        # have not run yet.  Counting them in full() keeps a newcomer from
+        # taking the slot and overtaking the waiting putters.
+        self._reserved = set()
         self._unfinished_tasks = 0
         self._finished = locks.Event()
         self._finished.set()
@@ -114,13 +121,25 @@ class Queue(mixins._LoopBoundMixin):
     def full(self):
         """Return True if there are maxsize items in the queue.
 
+        Free slots reserved for waiting put() calls count as items.
+
         Note: if the Queue was initialized with maxsize=0 (the default),
         then full() is never True.
         """
         if self._maxsize <= 0:
             return False
         else:
-            return self.qsize() >= self._maxsize
+            return self.qsize() + len(self._reserved) >= self._maxsize
+
+    def _wakeup_next_putter(self):
+        if not self._is_shutdown and not self.full():
+            while self._putters:
+                putter = self._putters.popleft()
+                if not putter.done():
+                    putter.set_result(None)
+                    if putter in self._own_putters:
+                        self._reserved.add(putter)
+                    break
 
     async def put(self, item):
         """Put an item into the queue.
@@ -135,6 +154,7 @@ class Queue(mixins._LoopBoundMixin):
                 raise QueueShutDown
             putter = self._get_loop().create_future()
             self._putters.append(putter)
+            self._own_putters.add(putter)
             try:
                 await putter
             except:
@@ -146,11 +166,15 @@ class Queue(mixins._LoopBoundMixin):
                     # The putter could be removed from self._putters by a
                     # previous get_nowait call or a shutdown call.
                     pass
-                if not self.full() and not putter.cancelled():
+                if putter in self._reserved:
                     # We were woken up by get_nowait(), but can't take
-                    # the call.  Wake up the next in line.
-                    self._wakeup_next(self._putters)
+                    # the call.  Pass the reserved slot to the next in line.
+                    self._reserved.remove(putter)
+                    self._wakeup_next_putter()
                 raise
+            finally:
+                self._own_putters.discard(putter)
+            self._reserved.discard(putter)
         return self.put_nowait(item)
 
     def put_nowait(self, item):
@@ -214,7 +238,7 @@ class Queue(mixins._LoopBoundMixin):
                 raise QueueShutDown
             raise QueueEmpty
         item = self._get()
-        self._wakeup_next(self._putters)
+        self._wakeup_next_putter()
         return item
 
     def task_done(self):
@@ -262,6 +286,7 @@ class Queue(mixins._LoopBoundMixin):
         is reduced to zero, callers of Queue.join are unblocked.
         """
         self._is_shutdown = True
+        self._reserved.clear()
         if immediate:
             while not self.empty():
                 self._get()
