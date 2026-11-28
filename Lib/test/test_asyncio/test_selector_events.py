@@ -924,6 +924,18 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertTrue(self.sock.send.called)
         self.assertTrue(self.loop.writers)
 
+    def test_writelines_send_tryagain(self):
+        self.sock.send.side_effect = BlockingIOError
+
+        transport = self.socket_transport()
+        transport.write(b'data1')
+        transport.writelines([b'data2', b'data3'])
+
+        self.loop.assert_writer(7, transport._write_ready)
+        self.assertEqual(list_to_buffer([b'data1', b'data2', b'data3']),
+                         transport._buffer)
+        self.assertEqual(transport.get_write_buffer_size(), 15)
+
     def test_writelines_pauses_protocol(self):
         data = memoryview(b'data')
         self.sock.send.return_value = 2
@@ -1105,13 +1117,15 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.sock.send.side_effect = BlockingIOError
 
         transport = self.socket_transport()
-        buffer = list_to_buffer([b'data1', b'data2'])
-        transport._buffer = buffer
+        transport._buffer = list_to_buffer([b'data1', b'data2'])
+        transport._buffer_size = 10
         self.loop._add_writer(7, transport._write_ready)
         transport._write_ready()
 
         self.loop.assert_writer(7, transport._write_ready)
-        self.assertEqual(buffer, transport._buffer)
+        self.assertEqual(list_to_buffer([b'data1', b'data2']),
+                         transport._buffer)
+        self.assertEqual(transport.get_write_buffer_size(), 10)
 
     def test_write_ready_exception(self):
         err = self.sock.send.side_effect = OSError()

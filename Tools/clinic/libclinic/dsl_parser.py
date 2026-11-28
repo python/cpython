@@ -996,7 +996,7 @@ class DSLParser:
 
         # handle "as" for  parameters too
         c_name = None
-        m = re.match(r'(?:\* *)?\w+( +as +(\w+))', line)
+        m = re.match(r'(?:\*{1,2} *)?\w+( +as +(\w+))', line)
         if m:
             c_name = m[2]
             line = line[:m.start(1)] + line[m.end(1):]
@@ -1642,6 +1642,9 @@ class DSLParser:
         for i, p in enumerate(self.function.parameters.values()):
             if p.group:
                 fail("@vectorcall does not support optional groups",
+                     line_number=lineno)
+            if p.deprecated_positional or p.deprecated_keyword:
+                fail("@vectorcall does not support deprecated parameters",
                      line_number=lineno)
             if p.is_vararg() or p.is_var_keyword():
                 continue

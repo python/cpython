@@ -16,7 +16,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsASCIIString()
-#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "_iomodule.h"
 
@@ -229,6 +228,7 @@ struct nldecoder_object {
 #define nldecoder_object_CAST(op)   ((nldecoder_object *)(op))
 
 /*[clinic input]
+@vectorcall
 _io.IncrementalNewlineDecoder.__init__
     decoder: object
     translate: bool
@@ -248,7 +248,7 @@ static int
 _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
                                             PyObject *decoder, int translate,
                                             PyObject *errors)
-/*[clinic end generated code: output=fbd04d443e764ec2 input=ed547aa257616b0e]*/
+/*[clinic end generated code: output=fbd04d443e764ec2 input=7fd0efad15bc0b69]*/
 {
 
     if (errors == NULL) {
@@ -731,8 +731,6 @@ struct textio
     /* Cache raw object if it's a FileIO object */
     PyObject *raw;
 
-    PyObject *weakreflist;
-    PyObject *dict;
 
     _PyIO_State *state;
 };
@@ -1153,7 +1151,10 @@ _io.TextIOWrapper.__init__
 Character and line based layer over a BufferedIOBase object, buffer.
 
 encoding gives the name of the encoding that the stream will be
-decoded or encoded with. It defaults to locale.getencoding().
+decoded or encoded with. It defaults to UTF-8; if UTF-8 Mode is
+disabled, the encoding returned by locale.getencoding() is used
+instead.  See the codecs module for the list of supported
+encodings.
 
 errors determines the strictness of encoding and decoding (see
 help(codecs.Codec) or the documentation for codecs.register) and
@@ -1185,7 +1186,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                                 const char *encoding, PyObject *errors,
                                 const char *newline, int line_buffering,
                                 int write_through)
-/*[clinic end generated code: output=72267c0c01032ed2 input=0f077220214c40a4]*/
+/*[clinic end generated code: output=72267c0c01032ed2 input=4f0bee5a0b2302fd]*/
 {
     PyObject *raw, *codec_info = NULL;
     PyObject *res;
@@ -1542,7 +1543,7 @@ textiowrapper_clear(PyObject *op)
     Py_CLEAR(self->errors);
     Py_CLEAR(self->raw);
 
-    Py_CLEAR(self->dict);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
@@ -1556,7 +1557,7 @@ textiowrapper_dealloc(PyObject *op)
         return;
     self->ok = 0;
     _PyObject_GC_UNTRACK(self);
-    FT_CLEAR_WEAKREFS(op, self->weakreflist);
+    PyObject_ClearWeakRefs(op);
     (void)textiowrapper_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1578,8 +1579,7 @@ textiowrapper_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(self->errors);
     Py_VISIT(self->raw);
 
-    Py_VISIT(self->dict);
-    return 0;
+    return PyObject_VisitManagedDict(op, visit, arg);
 }
 
 static PyObject *
@@ -3525,6 +3525,7 @@ static PyType_Slot nldecoder_slots[] = {
     {Py_tp_traverse, incrementalnewlinedecoder_traverse},
     {Py_tp_clear, incrementalnewlinedecoder_clear},
     {Py_tp_init, _io_IncrementalNewlineDecoder___init__},
+    {Py_tp_vectorcall, _io_IncrementalNewlineDecoder_vectorcall},
     {0, NULL},
 };
 
@@ -3565,8 +3566,6 @@ static PyMemberDef textiowrapper_members[] = {
     {"line_buffering", Py_T_BOOL, offsetof(textio, line_buffering), Py_READONLY},
     {"write_through", Py_T_BOOL, offsetof(textio, write_through), Py_READONLY},
     {"_finalizing", Py_T_BOOL, offsetof(textio, finalizing), 0},
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(textio, weakreflist), Py_READONLY},
-    {"__dictoffset__", Py_T_PYSSIZET, offsetof(textio, dict), Py_READONLY},
     {NULL}
 };
 

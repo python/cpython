@@ -170,7 +170,11 @@ AC_ARG_WITH([build-python],
     dnl Build Python interpreter is used for regeneration and freezing.
     ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
     PYTHON_FOR_FREEZE="$with_build_python"
-    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) _PYTHON_SYSCONFIGDATA_PATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`) '$with_build_python
+    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) PYTHONPATH=$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) _PYTHON_SYSCONFIGDATA_PATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`) '$with_build_python
+    dnl _PYTHON_HOST_PLATFORM is only set when cross compiling.
+    AS_VAR_IF([cross_compiling], [yes],
+      [PYTHON_FOR_BUILD='_PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) '"$PYTHON_FOR_BUILD"]
+    )
     AC_MSG_RESULT([$with_build_python])
   ], [
     AS_VAR_IF([cross_compiling], [yes],
@@ -181,6 +185,13 @@ AC_ARG_WITH([build-python],
   ]
 )
 AC_SUBST([PYTHON_FOR_BUILD])
+
+# Module import checks must run with the target interpreter on native builds.
+AS_VAR_IF([cross_compiling], [yes],
+  [MODULE_CHECK_COMMAND='$(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --cross-compiling'],
+  [MODULE_CHECK_COMMAND='$(RUNSHARED) ./$(BUILDPYTHON) -E $(srcdir)/Tools/build/check_extension_modules.py --no-cross-compiling']
+)
+AC_SUBST([MODULE_CHECK_COMMAND])
 
 AC_MSG_CHECKING([for Python interpreter freezing])
 AC_MSG_RESULT([$PYTHON_FOR_FREEZE])
@@ -1758,6 +1769,18 @@ if test "x$enable_profiling" = xyes; then
   BASECFLAGS="-pg $BASECFLAGS"
   LDFLAGS="-pg $LDFLAGS"
 fi
+
+AC_MSG_CHECKING([for --enable-relocatable])
+AC_ARG_ENABLE([relocatable],
+  [AS_HELP_STRING([--enable-relocatable],
+                  [make the installation easier to relocate
+                   (work in progress; default is no)])],
+  [], [enable_relocatable=no])
+AS_CASE([$enable_relocatable],
+  [yes|no], [],
+  [AC_MSG_ERROR([--enable-relocatable must be yes or no])])
+AC_MSG_RESULT([$enable_relocatable])
+AC_SUBST([RELOCATABLE], [$enable_relocatable])
 
 AC_MSG_CHECKING([LDLIBRARY])
 
@@ -5788,6 +5811,49 @@ PY_CHECK_FUNC_PRIVATE([freadlink], [@%:@include <unistd.h>])
 PY_CHECK_FUNC_PRIVATE([strerror_r], [@%:@include <string.h>])
 # FreeBSD pthread_attr_get_np()
 PY_CHECK_FUNC_PRIVATE([pthread_attr_get_np], [@%:@include <pthread_np.h>])
+
+# Detect musl's behaviour of reporting the current allocated stack size for
+# the main thread, rather than the max size, in pthread_getattr_np.
+AS_IF([test "$ac_cv_func_pthread_getattr_np" = yes],
+  [AC_CACHE_CHECK([whether pthread_getattr_np reports the main thread stack unreliably],
+    [ac_cv_unreliable_pthread_getattr_np],
+    [# Run the test with a finite stack limit (1 MiB),
+     # so the result does not depend on the limit configure runs under.
+     py_save_stack_limit=`ulimit -S -s 2>/dev/null`
+     ulimit -S -s 1024 2>/dev/null
+     AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#define _GNU_SOURCE
+#include <pthread.h>
+#include <stdlib.h>
+#include <sys/resource.h>
+
+int main(void) {
+    pthread_attr_t attr;
+    void *stack_addr;
+    size_t stack_size, guard_size;
+    struct rlimit rl;
+
+    if (pthread_getattr_np(pthread_self(), &attr) != 0) return 1;
+    if (pthread_attr_getstack(&attr, &stack_addr, &stack_size) != 0 ||
+        pthread_attr_getguardsize(&attr, &guard_size) != 0) {
+        pthread_attr_destroy(&attr);
+        return 1;
+    }
+    pthread_attr_destroy(&attr);
+    if (getrlimit(RLIMIT_STACK, &rl) != 0) return 1;
+    if (rl.rlim_cur == RLIM_INFINITY) return 0;
+    return (stack_size >= rl.rlim_cur / 2) ? 0 : 1;
+}
+      ]])],
+      [ac_cv_unreliable_pthread_getattr_np=no],
+      [ac_cv_unreliable_pthread_getattr_np=yes],
+      [ac_cv_unreliable_pthread_getattr_np=no])
+     AS_IF([test -n "$py_save_stack_limit"],
+       [ulimit -S -s "$py_save_stack_limit" 2>/dev/null])])
+   AS_VAR_IF([ac_cv_unreliable_pthread_getattr_np], [yes],
+     [AC_DEFINE([_Py_HAVE_UNRELIABLE_PTHREAD_GETATTR_NP], [1],
+       [Define if pthread_getattr_np under-reports the main thread's stack size (musl behaviour).])])])
+
 PY_CHECK_FUNC_PRIVATE([getdents64], [@%:@include <dirent.h>])
 PY_CHECK_FUNC_PRIVATE([gettid], [@%:@include <unistd.h>])
 PY_CHECK_FUNC_PRIVATE([if_indextoname], [@%:@include <net/if.h>])
@@ -7261,7 +7327,7 @@ AS_VAR_IF([with_readline], [no], [
       )
     ])
     AS_VAR_IF([ac_cv_readline_rl_change_environment], [yes], [
-      AC_DEFINE([HAVE_RL_CHANGE_ENVIRONMENT], [1], [Define if you have readline 6.3])
+      AC_DEFINE([_Py_HAVE_RL_CHANGE_ENVIRONMENT], [1], [Define if you have readline 6.3])
     ])
 
     # check for readline 4.2
@@ -7666,6 +7732,7 @@ dnl lacks, for example term_attrs() in the narrow ncurses library.
 AC_DEFUN([PY_CHECK_CURSES_FUNC],
 [ AS_VAR_PUSHDEF([py_var], [ac_cv_lib_curses_$1])
   AS_VAR_PUSHDEF([py_define], [HAVE_CURSES_]m4_toupper($1))
+  AS_VAR_PUSHDEF([py_define], m4_ifblank([$3], [[HAVE_CURSES_]m4_toupper($1)], [$3]))
   AC_CACHE_CHECK(
     [for curses function $1],
     [py_var],
@@ -7684,6 +7751,13 @@ AC_DEFUN([PY_CHECK_CURSES_FUNC],
     [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
   AS_VAR_POPDEF([py_var])
   AS_VAR_POPDEF([py_define])
+])
+
+dnl PY_CHECK_CURSES_FUNC_PRIVATE(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
+dnl Similar to PY_CHECK_CURSES_FUNC but define macro _Py_HAVE_CURSES_xxx,
+dnl instead of HAVE_CURSES_xxx
+AC_DEFUN([PY_CHECK_CURSES_FUNC_PRIVATE],
+[ PY_CHECK_CURSES_FUNC([$1], [$2], m4_ifblank([$3], [[_Py_HAVE_CURSES_]m4_toupper($1)], [$3]))
 ])
 
 dnl PY_CHECK_CURSES_VAR(VARIABLE)
@@ -7718,35 +7792,36 @@ PY_CHECK_CURSES_FUNC([immedok])
 PY_CHECK_CURSES_FUNC([syncok])
 PY_CHECK_CURSES_FUNC([wchgat])
 PY_CHECK_CURSES_FUNC([filter])
-PY_CHECK_CURSES_FUNC([nofilter])
 PY_CHECK_CURSES_FUNC([has_key])
-PY_CHECK_CURSES_FUNC([has_mouse])
-PY_CHECK_CURSES_FUNC([is_keypad])
-PY_CHECK_CURSES_FUNC([is_leaveok])
 PY_CHECK_CURSES_FUNC([typeahead])
 PY_CHECK_CURSES_FUNC([use_env])
-PY_CHECK_CURSES_FUNC([new_prescr])
-PY_CHECK_CURSES_FUNC([use_screen])
-PY_CHECK_CURSES_FUNC([use_window])
-PY_CHECK_CURSES_FUNC([key_defined])
-PY_CHECK_CURSES_FUNC([term_attrs])
-PY_CHECK_CURSES_FUNC([define_key])
-PY_CHECK_CURSES_FUNC([keyok])
 PY_CHECK_CURSES_FUNC([set_escdelay])
 PY_CHECK_CURSES_FUNC([set_tabsize])
 dnl The X/Open attr_t and soft-label attribute functions are absent on old
 dnl SVr4 curses (e.g. illumos).
-PY_CHECK_CURSES_FUNC([wattr_get])
-PY_CHECK_CURSES_FUNC([wattr_set])
-PY_CHECK_CURSES_FUNC([wattr_on])
-PY_CHECK_CURSES_FUNC([wattr_off])
-PY_CHECK_CURSES_FUNC([wcolor_set])
-PY_CHECK_CURSES_FUNC([slk_attr_on])
-PY_CHECK_CURSES_FUNC([slk_attr_off])
-PY_CHECK_CURSES_FUNC([slk_attr_set])
-PY_CHECK_CURSES_FUNC([slk_color])
 PY_CHECK_CURSES_VAR([ESCDELAY])
 PY_CHECK_CURSES_VAR([TABSIZE])
+
+PY_CHECK_CURSES_FUNC_PRIVATE([define_key])
+PY_CHECK_CURSES_FUNC_PRIVATE([has_mouse])
+PY_CHECK_CURSES_FUNC_PRIVATE([is_keypad])
+PY_CHECK_CURSES_FUNC_PRIVATE([is_leaveok])
+PY_CHECK_CURSES_FUNC_PRIVATE([key_defined])
+PY_CHECK_CURSES_FUNC_PRIVATE([keyok])
+PY_CHECK_CURSES_FUNC_PRIVATE([new_prescr])
+PY_CHECK_CURSES_FUNC_PRIVATE([nofilter])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_attr_off])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_attr_on])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_attr_set])
+PY_CHECK_CURSES_FUNC_PRIVATE([slk_color])
+PY_CHECK_CURSES_FUNC_PRIVATE([term_attrs])
+PY_CHECK_CURSES_FUNC_PRIVATE([use_screen])
+PY_CHECK_CURSES_FUNC_PRIVATE([use_window])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_get])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_off])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_on])
+PY_CHECK_CURSES_FUNC_PRIVATE([wattr_set])
+PY_CHECK_CURSES_FUNC_PRIVATE([wcolor_set])
 
 dnl Probe for the X/Open getmouse(MEVENT *) signature specifically: PDCurses
 dnl declares an incompatible getmouse(void) unless built for the ncurses mouse API.
@@ -7762,8 +7837,9 @@ AS_VAR_IF([ac_cv_lib_curses_getmouse], [yes],
 
 dnl scr_dump gates scr_dump/scr_restore/scr_init; scr_set is separate, since
 dnl old SVr4 curses (e.g. illumos) has the former but not scr_set.
-PY_CHECK_CURSES_FUNC([scr_dump])
-PY_CHECK_CURSES_FUNC([scr_set])
+PY_CHECK_CURSES_FUNC_PRIVATE([scr_dump])
+PY_CHECK_CURSES_FUNC_PRIVATE([scr_set])
+
 CPPFLAGS=$ac_save_cppflags
 ])dnl have_curses != no
 ])dnl save env

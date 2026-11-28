@@ -1,0 +1,4 @@
+Use the newly built interpreter to check extension modules in native builds
+configured with :option:`--with-build-python`. This also applies when
+generating missing standard library module information. Cross builds continue
+to use the build interpreter without importing target extension modules.

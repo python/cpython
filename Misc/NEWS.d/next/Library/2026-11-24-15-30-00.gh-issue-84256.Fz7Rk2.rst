@@ -1,0 +1,3 @@
+Fix a crash in :mod:`tkinter` on Windows when a Tk event handler, such as
+a ``<Configure>`` binding, is called while another event loop is running,
+for example when the window is resized while a native dialog is shown.
