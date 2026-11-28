@@ -110,6 +110,7 @@ class TestWeakSet(unittest.TestCase):
     def test_isdisjoint(self):
         self.assertTrue(self.s.isdisjoint(WeakSet(self.items2)))
         self.assertTrue(not self.s.isdisjoint(WeakSet(self.letters)))
+        self.assertFalse(self.s.isdisjoint(map(ustr, 'abc')))
 
     def test_and(self):
         i = self.s.intersection(self.items2)

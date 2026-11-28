@@ -1,0 +1,2 @@
+Fix :meth:`!weakref.WeakSet.isdisjoint` returning :const:`True` for iterators
+that yield temporary objects equal to members of the set.
