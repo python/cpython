@@ -198,9 +198,9 @@ class PrettyPrinter:
             self._recursive = True
             self._readable = False
             return
-        rep = self._repr(object, context, level)
         max_width = self._width - indent - prefix_len - allowance
-        if len(rep) > max_width:
+        rep = self._repr_if_fits(object, context, level, max_width)
+        if rep is None or len(rep) > max_width:
             p = self._dispatch.get(type(object).__repr__, None)
             # Lazy import to improve module import time
             from dataclasses import is_dataclass
@@ -220,6 +220,8 @@ class PrettyPrinter:
                 self._pprint_dataclass(object, stream, indent, allowance, context, level + 1)
                 del context[objid]
                 return
+            if rep is None:
+                rep = self._repr(object, context, level)
         stream.write(rep)
 
     def _format_block_start(self, start_str, indent):
@@ -626,8 +628,8 @@ class PrettyPrinter:
                 max_width -= allowance
                 width -= allowance
             if self._compact:
-                rep = self._repr(ent, context, level)
-                w = len(rep) + 2
+                rep = self._repr_if_fits(ent, context, level, max_width - 2)
+                w = max_width + 1 if rep is None else len(rep) + 2
                 if width < w:
                     width = max_width
                     if delim:
@@ -654,6 +656,33 @@ class PrettyPrinter:
         if recursive:
             self._recursive = True
         return repr
+
+    # Set by _repr_if_fits() for the duration of its _repr() call and
+    # consumed by _safe_repr(), which raises _TooWide as soon as the
+    # representation of a container grows beyond it.  Finding out that an
+    # object does not fit on one line thus costs no more than the width of
+    # the line, instead of the size of the object, for each level of nesting.
+    # It is an attribute, not an argument, because subclasses override
+    # format() with its existing signature.
+    _max_width = None
+
+    def _repr_if_fits(self, object, context, level, max_width):
+        # Return the repr of object, or None if building it was cut short
+        # because it cannot fit in max_width.  A completed repr is returned
+        # even when it is too wide, so that _format() does not have to
+        # build it again when it writes it.
+        if type(self).format is not PrettyPrinter.format:
+            # An override may shorten what PrettyPrinter.format() returns,
+            # so only the complete result can tell whether it fits.
+            return self._repr(object, context, level)
+        saved = self._max_width
+        self._max_width = max_width
+        try:
+            return self._repr(object, context, level)
+        except _TooWide:
+            return None
+        finally:
+            self._max_width = saved
 
     def format(self, object, context, maxlevels, level):
         """Format object for a specific context, returning a string
@@ -852,6 +881,12 @@ class PrettyPrinter:
             components = []
             append = components.append
             level += 1
+            max_width = self._max_width
+            width = 0
+            if max_width is not None and 4 * len(object) > max_width:
+                # Every item costs at least "k: v, ": do not bother
+                # formatting (and sorting) them.
+                raise _TooWide
             if self._sort_dicts:
                 items = sorted(object.items(), key=_safe_tuple)
             else:
@@ -865,6 +900,10 @@ class PrettyPrinter:
                 readable = readable and kreadable and vreadable
                 if krecur or vrecur:
                     recursive = True
+                if max_width is not None:
+                    width += len(krepr) + len(vrepr) + 4
+                    if width > max_width:
+                        raise _TooWide
             del context[objid]
             rep = "{%s}" % ", ".join(components)
             if is_frozendict:
@@ -894,6 +933,8 @@ class PrettyPrinter:
             components = []
             append = components.append
             level += 1
+            max_width = self._max_width
+            width = 0
             for o in object:
                 orepr, oreadable, orecur = self.format(
                     o, context, maxlevels, level)
@@ -902,6 +943,10 @@ class PrettyPrinter:
                     readable = False
                 if orecur:
                     recursive = True
+                if max_width is not None:
+                    width += len(orepr) + 2
+                    if width > max_width:
+                        raise _TooWide
             del context[objid]
             return format % ", ".join(components), readable, recursive
 
@@ -923,6 +968,9 @@ class PrettyPrinter:
                 #  We have a view that somehow has lost its type's _mapping, raise
                 #  an error by calling repr() instead of failing cryptically later
                 return repr(object), True, False
+            max_width = self._max_width
+            if max_width is not None and 2 * len(object) > max_width:
+                raise _TooWide
             if self._sort_dicts:
                 object = sorted(object, key=key)
             context[objid] = 1
@@ -931,6 +979,7 @@ class PrettyPrinter:
             components = []
             append = components.append
             level += 1
+            width = 0
             for val in object:
                 vrepr, vreadable, vrecur = self.format(
                     val, context, maxlevels, level)
@@ -938,6 +987,10 @@ class PrettyPrinter:
                 readable = readable and vreadable
                 if vrecur:
                     recursive = True
+                if max_width is not None:
+                    width += len(vrepr) + 2
+                    if width > max_width:
+                        raise _TooWide
             del context[objid]
             return typ.__name__ + '([%s])' % ", ".join(components), readable, recursive
 
@@ -952,6 +1005,13 @@ _builtin_scalars = frozenset({str, bytes, bytearray, float, complex,
 def _recursion(object):
     return ("<Recursion on %s with id=%s>"
             % (type(object).__name__, id(object)))
+
+
+class _TooWide(BaseException):
+    """Raised by _safe_repr() when the representation it is building is
+    already wider than PrettyPrinter._max_width.  It is not an Exception,
+    so that "except Exception" handlers it passes through do not catch it.
+    """
 
 
 def _wrap_bytes_repr(object, width, allowance):

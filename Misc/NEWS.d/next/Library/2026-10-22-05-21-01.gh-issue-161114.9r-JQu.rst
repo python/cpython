@@ -1,0 +1,4 @@
+Improve performance of :func:`pprint.pformat`, :func:`pprint.pprint` and
+:class:`pprint.PrettyPrinter` for deeply nested containers that do not fit on
+one line. Formatting time no longer grows with the size of the data multiplied
+by its nesting depth.
