@@ -463,7 +463,13 @@ class TCPServer(BaseServer):
         May be overridden.
 
         """
-        if self.allow_reuse_address and hasattr(socket, "SO_REUSEADDR"):
+        # SO_REUSEADDR is only useful when rebinding a fixed port that may
+        # still have connections in TIME_WAIT. For port 0 the kernel only
+        # hands out ports that are not in use, so setting it just lets
+        # another process claim the port between bind() and listen().
+        if (self.allow_reuse_address and hasattr(socket, "SO_REUSEADDR")
+                and not (self.address_family in (socket.AF_INET, socket.AF_INET6)
+                         and self.server_address[1] == 0)):
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         # Since Linux 6.12.9, SO_REUSEPORT is not allowed
         # on other address families than AF_INET/AF_INET6.
