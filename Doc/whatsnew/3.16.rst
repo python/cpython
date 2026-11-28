@@ -1000,6 +1000,13 @@ tkinter
   the :class:`~tkinter.Text` widget.
   (Contributed by Serhiy Storchaka in :gh:`159301`.)
 
+* Added support for Tcl :ref:`channels <tkinter-channels>`.
+  A channel lets the Tk mainloop do the I/O on a file, a pipe or a socket,
+  and call a handler when data can be read or written.
+  Unlike :ref:`file handlers <tkinter-file-handlers>`,
+  channels also work on Windows.
+  (Contributed by Serhiy Storchaka in :gh:`162537`.)
+
 
 turtle
 ------

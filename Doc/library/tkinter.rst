@@ -6847,6 +6847,7 @@ Only one handler may be registered per file descriptor. Example code::
    widget.tk.deletefilehandler(file)
 
 This feature is not available on Windows.
+For portable code, use :ref:`channels <tkinter-channels>` instead.
 
 Since you don't know how many bytes are available for reading, you may not
 want to use the :class:`~io.BufferedIOBase` or :class:`~io.TextIOBase`
@@ -6871,6 +6872,112 @@ use raw reads or ``os.read(file.fileno(), maxbytecount)``.
 .. method:: Widget.tk.deletefilehandler(file)
 
    Unregisters a file handler.
+
+
+.. _tkinter-channels:
+
+Channels
+^^^^^^^^
+
+A channel lets the Tk mainloop do the I/O on a file, a pipe or a socket,
+and call a handler when data can be read or written.
+Unlike file handlers, channels work on all platforms, including Windows.
+Example code::
+
+   import tkinter
+   widget = tkinter.Tk()
+   channel = widget.tk.createchannel(sock, 'rw')
+
+   def callback(channel, mask):
+       data = channel.read()
+       if data == b'':
+           channel.close()
+       elif data is not None:
+           ...
+
+   channel.createhandler(tkinter.READABLE, callback)
+
+The channel uses a duplicate of the file descriptor, the handle or the socket,
+so closing the channel does not close the original object, and vice versa.
+But Tcl may read ahead from the duplicate,
+so do all I/O through the channel once it is created.
+The duplicate shares the blocking mode with the original,
+so the original socket, and on POSIX also the original file or pipe,
+is switched to non-blocking mode and stays in it after the channel is closed.
+Closing the channel shuts down reading from a socket,
+so the original socket can still send but no longer receive data.
+
+
+.. method:: Widget.tk.createchannel(file, mode='r', /)
+
+   Create a channel and return it as a :class:`!tkchannel` object.
+   *file* is a :class:`socket.socket` object,
+   an object with a :meth:`~io.IOBase.fileno` method,
+   or an integer file descriptor.
+   *mode* is ``'r'``, ``'w'`` or ``'rw'``.
+   Only stream sockets, such as TCP or UNIX sockets, are supported.
+   On Windows, pass the socket object, not the result of its
+   :meth:`~socket.socket.fileno` method.
+
+   The channel is binary and non-blocking.
+
+   .. versionadded:: next
+
+
+.. method:: tkchannel.read(size=-1, /)
+
+   Read up to *size* bytes, or all available bytes if *size* is negative.
+   Return ``b''`` at end of file and ``None`` if no data is available.
+
+
+.. method:: tkchannel.write(data, /)
+
+   Write the :term:`bytes-like object` *data*.
+   Data which cannot be written at once is written in the background.
+
+
+.. method:: tkchannel.flush()
+
+   Flush the output buffer.
+
+
+.. method:: tkchannel.eof()
+
+   Return ``True`` if the last read reached the end of file.
+
+
+.. method:: tkchannel.createhandler(mask, func, /)
+
+   Register the handler callback function *func*,
+   replacing the previous handler, if any.
+   *mask* is an ORed combination of :data:`READABLE` and :data:`WRITABLE`.
+   The callback is called as follows::
+
+      callback(channel, mask)
+
+
+.. method:: tkchannel.deletehandler()
+
+   Unregister the handler.
+
+
+.. method:: tkchannel.close()
+
+   Close the channel.
+   The original file, pipe or socket stays open.
+   Channels are also context managers which close the channel on exit.
+
+
+.. attribute:: tkchannel.name
+
+   The name of the channel in Tcl,
+   which can be passed to Tcl commands and Tk options which take a channel,
+   such as the *channel* option of :meth:`Canvas.postscript`.
+
+
+.. attribute:: tkchannel.closed
+
+   ``True`` if the channel is closed.
 
 
 .. data:: READABLE

@@ -382,6 +382,7 @@ Modules/_testcapi/monitoring.c	-	PyCodeLike_Type	-
 ## heap types
 Modules/_tkinter.c	-	PyTclObject_Type	-
 Modules/_tkinter.c	-	Tkapp_Type	-
+Modules/_tkinter.c	-	Tkch_Type	-
 Modules/_tkinter.c	-	Tktt_Type	-
 Modules/xxlimited_35.c	-	Xxo_Type	-
 

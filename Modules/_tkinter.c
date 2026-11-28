@@ -26,9 +26,7 @@ Copyright (C) 1994 Steen Lumholt.
 #endif
 
 #include "Python.h"
-#ifdef MS_WINDOWS
-#  include "pycore_fileutils.h"   // _Py_stat()
-#endif
+#include "pycore_fileutils.h"     // _Py_stat(), _Py_dup()
 
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_INT_RELAXED()
@@ -601,8 +599,9 @@ module _tkinter
 class _tkinter.tkapp "TkappObject *" "&Tkapp_Type_spec"
 class _tkinter.Tcl_Obj "PyTclObject *" "&PyTclObject_Type_spec"
 class _tkinter.tktimertoken "TkttObject *" "&Tktt_Type_spec"
+class _tkinter.tkchannel "TkchObject *" "&Tkch_Type_spec"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b1ebf15c162ee229]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b3fcd661a3bda284]*/
 
 /**** Tkapp Object ****/
 
@@ -2948,6 +2947,596 @@ _tkinter_tkapp_deletefilehandler_impl(TkappObject *self, PyObject *file)
 #endif /* HAVE_CREATEFILEHANDLER */
 
 
+/**** Tkch Object (channel) ****/
+
+static PyObject *Tkch_Type;
+#define TkchObject_Check(op)    \
+    PyObject_TypeCheck((op), (PyTypeObject *)Tkch_Type)
+
+typedef struct {
+    PyObject_HEAD
+    TkappObject *app;
+    Tcl_Channel channel;    /* NULL after close() */
+    PyObject *name;
+    PyObject *func;         /* the handler callback, or NULL */
+} TkchObject;
+
+#define TkchObject_CAST(op) (assert(TkchObject_Check(op)), (TkchObject *)(op))
+
+static int
+check_channel(TkchObject *self)
+{
+    if (self->channel == NULL) {
+        PyErr_SetString(PyExc_ValueError, "I/O operation on closed channel");
+        return -1;
+    }
+    return check_tcl_appartment(self->app);
+}
+
+static PyObject *
+channel_error(int err)
+{
+    errno = err;
+    return PyErr_SetFromErrno(PyExc_OSError);
+}
+
+static void
+ChannelHandler(ClientData clientData, int mask)
+{
+    TkchObject *self = TkchObject_CAST(clientData);
+    PyObject *func, *res;
+
+    ENTER_PYTHON
+    func = self->func;
+    if (func != NULL) {
+        /* The callback can delete the handler or close the channel. */
+        Py_INCREF(self);
+        Py_INCREF(func);
+        res = PyObject_CallFunction(func, "Oi", (PyObject *)self, mask);
+        Py_DECREF(func);
+        if (res == NULL) {
+            Py_XSETREF(excInCmd, PyErr_GetRaisedException());
+        }
+        Py_XDECREF(res);
+        Py_DECREF(self);
+    }
+    LEAVE_PYTHON
+}
+
+/* Must be called with the GIL held, in the interpreter's thread. */
+static void
+Tkch_DeleteHandler(TkchObject *self)
+{
+    PyObject *func = self->func;
+    if (func != NULL) {
+        Tcl_DeleteChannelHandler(self->channel, ChannelHandler,
+                                 (ClientData)self);
+        self->func = NULL;
+        Py_DECREF(func);
+        Py_DECREF(self); /* See createhandler() */
+    }
+}
+
+/* Unregister the channel from the interpreter (unless a Tcl script has
+   already closed it there) and drop our own reference, which closes it.
+   Return the errno of a failed close, or 0. */
+static int
+Tkch_Close(TkchObject *self)
+{
+    Tcl_Channel channel = self->channel;
+    Tcl_Interp *interp = self->app->interp;
+    int err = 0;
+
+    self->channel = NULL;
+    ENTER_TCL
+    (void)Tcl_UnregisterChannel(interp, channel);
+    if (Tcl_UnregisterChannel(NULL, channel) != TCL_OK) {
+        err = Tcl_GetErrno();
+    }
+    LEAVE_TCL
+    return err;
+}
+
+/*[clinic input]
+_tkinter.tkapp.createchannel
+
+    file: object
+    mode: str = "r"
+    /
+
+Create a Tcl channel for a file, a pipe or a socket.
+
+The channel uses a duplicate of the file descriptor, the handle or
+the socket, so closing the channel does not close file, and vice
+versa.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_tkapp_createchannel_impl(TkappObject *self, PyObject *file,
+                                  const char *mode)
+/*[clinic end generated code: output=f8ffd257e4efa44f input=785b4482f4b2aade]*/
+{
+    int tmode = 0;
+    Tcl_Channel channel = NULL;
+    PyObject *socktype, *dupsock = NULL;
+    TkchObject *v;
+    int r;
+
+    CHECK_TCL_APPARTMENT(self);
+
+    for (const char *p = mode; *p; p++) {
+        if (*p == 'r' && !(tmode & TCL_READABLE)) {
+            tmode |= TCL_READABLE;
+        }
+        else if (*p == 'w' && !(tmode & TCL_WRITABLE)) {
+            tmode |= TCL_WRITABLE;
+        }
+        else {
+            tmode = 0;
+            break;
+        }
+    }
+    if (tmode == 0) {
+        PyErr_Format(PyExc_ValueError, "invalid mode: '%s'", mode);
+        return NULL;
+    }
+
+    socktype = PyImport_ImportModuleAttrString("_socket", "socket");
+    if (socktype == NULL) {
+        return NULL;
+    }
+    r = PyObject_IsInstance(file, socktype);
+    Py_DECREF(socktype);
+    if (r < 0) {
+        return NULL;
+    }
+    if (r) {
+        /* Keep the duplicate in a socket object until the channel owns it,
+           so that it is closed on error. */
+        PyObject *res;
+        long long sock;
+
+        dupsock = PyObject_CallMethod(file, "dup", NULL);
+        if (dupsock == NULL) {
+            return NULL;
+        }
+        res = PyObject_CallMethod(dupsock, "fileno", NULL);
+        if (res == NULL) {
+            Py_DECREF(dupsock);
+            return NULL;
+        }
+        sock = PyLong_AsLongLong(res);
+        Py_DECREF(res);
+        if (sock == -1 && PyErr_Occurred()) {
+            Py_DECREF(dupsock);
+            return NULL;
+        }
+        ENTER_TCL
+        channel = Tcl_MakeTcpClientChannel((ClientData)(intptr_t)sock);
+        LEAVE_TCL
+        if (channel == NULL) {
+            Py_DECREF(dupsock);
+            PyErr_SetString(Tkinter_TclError,
+                            "cannot create a channel for the socket");
+            return NULL;
+        }
+        res = PyObject_CallMethod(dupsock, "detach", NULL);
+        Py_DECREF(dupsock);
+        if (res == NULL) {
+            /* Cannot happen: the socket is open. */
+            return NULL;
+        }
+        Py_DECREF(res);
+    }
+    else {
+        int fd = PyObject_AsFileDescriptor(file);
+        if (fd < 0) {
+            return NULL;
+        }
+#ifdef MS_WINDOWS
+        HANDLE handle, duphandle;
+        handle = _Py_get_osfhandle(fd);
+        if (handle == INVALID_HANDLE_VALUE) {
+            return NULL;
+        }
+        if (!DuplicateHandle(GetCurrentProcess(), handle,
+                             GetCurrentProcess(), &duphandle,
+                             0, FALSE, DUPLICATE_SAME_ACCESS)) {
+            return PyErr_SetFromWindowsErr(0);
+        }
+        ENTER_TCL
+        channel = Tcl_MakeFileChannel((ClientData)duphandle, tmode);
+        LEAVE_TCL
+        if (channel == NULL) {
+            CloseHandle(duphandle);
+        }
+#else
+        int dupfd = _Py_dup(fd);
+        if (dupfd < 0) {
+            return NULL;
+        }
+        ENTER_TCL
+        channel = Tcl_MakeFileChannel((ClientData)(intptr_t)dupfd, tmode);
+        LEAVE_TCL
+        if (channel == NULL) {
+            close(dupfd);
+        }
+#endif
+        if (channel == NULL) {
+            PyErr_SetString(Tkinter_TclError,
+                            "cannot create a channel for the file");
+            return NULL;
+        }
+    }
+
+    ENTER_TCL
+    /* One reference for the interpreter, so that Tcl commands can use the
+       channel by name, and one for the Python object, so that the channel
+       stays valid if a Tcl script closes it. */
+    Tcl_RegisterChannel(self->interp, channel);
+    Tcl_RegisterChannel(NULL, channel);
+    r = Tcl_SetChannelOption(NULL, channel, "-translation", "binary");
+    if (r == TCL_OK) {
+        r = Tcl_SetChannelOption(NULL, channel, "-blocking", "0");
+    }
+    LEAVE_TCL
+
+    PyTypeObject *tp = (PyTypeObject *)Tkch_Type;
+    v = (TkchObject *)tp->tp_alloc(tp, 0);
+    if (v == NULL) {
+        ENTER_TCL
+        (void)Tcl_UnregisterChannel(self->interp, channel);
+        (void)Tcl_UnregisterChannel(NULL, channel);
+        LEAVE_TCL
+        return NULL;
+    }
+    v->app = (TkappObject *)Py_NewRef(self);
+    v->channel = channel;
+    v->func = NULL;
+    v->name = PyUnicode_FromString(Tcl_GetChannelName(channel));
+    if (v->name == NULL) {
+        Py_DECREF(v);
+        return NULL;
+    }
+    if (r != TCL_OK) {
+        Py_DECREF(v);
+        PyErr_SetString(Tkinter_TclError, "cannot configure the channel");
+        return NULL;
+    }
+    return (PyObject *)v;
+}
+
+/*[clinic input]
+_tkinter.tkchannel.read
+
+    size: Py_ssize_t = -1
+    /
+
+Read up to size bytes.
+
+With a negative size, read all available bytes.  Return b'' at end
+of file and None if no data is available.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_tkchannel_read_impl(TkchObject *self, Py_ssize_t size)
+/*[clinic end generated code: output=9c72ae541ae58ba1 input=37265648be02b246]*/
+{
+    PyBytesWriter *writer;
+    Py_ssize_t total = 0;
+    Tcl_Size chunk, n;
+    int blocked = 0, err = 0;
+
+    if (check_channel(self) < 0) {
+        return NULL;
+    }
+    chunk = size < 0 ? 8192 : (Tcl_Size)Py_MIN(size, TCL_SIZE_MAX);
+    writer = PyBytesWriter_Create(chunk);
+    if (writer == NULL) {
+        return NULL;
+    }
+    for (;;) {
+        char *buf = (char *)PyBytesWriter_GetData(writer) + total;
+        ENTER_TCL
+        n = Tcl_Read(self->channel, buf, chunk);
+        if (n < 0) {
+            blocked = Tcl_InputBlocked(self->channel);
+            err = Tcl_GetErrno();
+        }
+        else if (n == 0) {
+            blocked = Tcl_InputBlocked(self->channel);
+        }
+        LEAVE_TCL
+        if (n < 0 && !blocked) {
+            PyBytesWriter_Discard(writer);
+            return channel_error(err);
+        }
+        if (n > 0) {
+            total += n;
+        }
+        if (size >= 0 || n < chunk) {
+            break;
+        }
+        if (PyBytesWriter_Resize(writer, total + chunk) < 0) {
+            PyBytesWriter_Discard(writer);
+            return NULL;
+        }
+    }
+    if (total == 0 && blocked) {
+        PyBytesWriter_Discard(writer);
+        Py_RETURN_NONE;
+    }
+    return PyBytesWriter_FinishWithSize(writer, total);
+}
+
+/*[clinic input]
+_tkinter.tkchannel.write
+
+    data: Py_buffer
+    /
+
+Write data to the channel.
+
+The channel is non-blocking: data which cannot be written at once is
+written in the background.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_tkchannel_write_impl(TkchObject *self, Py_buffer *data)
+/*[clinic end generated code: output=05507c2564ff1a04 input=d9ea686cd61b205d]*/
+{
+    Tcl_Size n;
+    int err = 0;
+
+    if (check_channel(self) < 0) {
+        return NULL;
+    }
+    if (data->len > TCL_SIZE_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "data is too large");
+        return NULL;
+    }
+    ENTER_TCL
+    n = Tcl_Write(self->channel, (const char *)data->buf,
+                  (Tcl_Size)data->len);
+    if (n < 0) {
+        err = Tcl_GetErrno();
+    }
+    LEAVE_TCL
+    if (n < 0) {
+        return channel_error(err);
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_tkinter.tkchannel.flush
+
+Flush the output buffer.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_tkchannel_flush_impl(TkchObject *self)
+/*[clinic end generated code: output=4ef476dc7d8d7f32 input=4e10a23c59b2b40c]*/
+{
+    int r, err = 0;
+
+    if (check_channel(self) < 0) {
+        return NULL;
+    }
+    ENTER_TCL
+    r = Tcl_Flush(self->channel);
+    if (r != TCL_OK) {
+        err = Tcl_GetErrno();
+    }
+    LEAVE_TCL
+    if (r != TCL_OK) {
+        return channel_error(err);
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_tkinter.tkchannel.eof
+
+Return True if the end of file was reached by the last read.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_tkchannel_eof_impl(TkchObject *self)
+/*[clinic end generated code: output=afb48cb23f1ea841 input=ca58827bcfe19239]*/
+{
+    if (check_channel(self) < 0) {
+        return NULL;
+    }
+    return PyBool_FromLong(Tcl_Eof(self->channel));
+}
+
+/*[clinic input]
+_tkinter.tkchannel.createhandler
+
+    mask: int
+    func: object
+    /
+
+Set a handler called as func(channel, mask).
+
+It is called when the channel becomes readable or writable, as
+specified by mask.  Replace the previous handler, if any.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_tkchannel_createhandler_impl(TkchObject *self, int mask,
+                                      PyObject *func)
+/*[clinic end generated code: output=22a099f226080691 input=176e86e542abec23]*/
+{
+    if (check_channel(self) < 0) {
+        return NULL;
+    }
+    if (mask == 0 || (mask & ~(TCL_READABLE | TCL_WRITABLE))) {
+        PyErr_SetString(PyExc_ValueError,
+                        "mask must be a combination of READABLE and WRITABLE");
+        return NULL;
+    }
+    if (!PyCallable_Check(func)) {
+        PyErr_SetString(PyExc_TypeError, "func must be callable");
+        return NULL;
+    }
+    TRACE(self->app, ("((ssOiO))", "#", "createhandler", self->name,
+                      mask, func));
+    Tkch_DeleteHandler(self);
+    /* Extra reference, deleted with the handler: the Tcl event loop
+       owns the object while the handler is registered. */
+    Py_INCREF(self);
+    self->func = Py_NewRef(func);
+    Tcl_CreateChannelHandler(self->channel, mask, ChannelHandler,
+                             (ClientData)self);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_tkinter.tkchannel.deletehandler
+
+Delete the handler.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_tkchannel_deletehandler_impl(TkchObject *self)
+/*[clinic end generated code: output=a68f273a10e5eaa9 input=bf864f1f389cf59e]*/
+{
+    if (check_channel(self) < 0) {
+        return NULL;
+    }
+    TRACE(self->app, ("((ssO))", "#", "deletehandler", self->name));
+    Tkch_DeleteHandler(self);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_tkinter.tkchannel.close
+
+Close the channel.
+
+The file, the pipe or the socket from which the channel was created
+stays open.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_tkchannel_close_impl(TkchObject *self)
+/*[clinic end generated code: output=91067e8aadb114d2 input=5bb6577964a28ad4]*/
+{
+    int err;
+
+    if (self->channel == NULL) {
+        Py_RETURN_NONE;
+    }
+    CHECK_TCL_APPARTMENT(self->app);
+    Tkch_DeleteHandler(self);
+    err = Tkch_Close(self);
+    if (err) {
+        return channel_error(err);
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_tkinter.tkchannel.__enter__
+
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_tkchannel___enter___impl(TkchObject *self)
+/*[clinic end generated code: output=aee3228087c0983b input=044c80da55f94457]*/
+{
+    if (check_channel(self) < 0) {
+        return NULL;
+    }
+    return Py_NewRef(self);
+}
+
+/*[clinic input]
+_tkinter.tkchannel.__exit__
+
+    exc_type: object
+    exc_value: object
+    traceback: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_tkchannel___exit___impl(TkchObject *self, PyObject *exc_type,
+                                 PyObject *exc_value, PyObject *traceback)
+/*[clinic end generated code: output=68ec14704240ad21 input=07736895fe718905]*/
+{
+    return _tkinter_tkchannel_close_impl(self);
+}
+
+static PyObject *
+Tkch_get_closed(PyObject *op, void *Py_UNUSED(closure))
+{
+    return PyBool_FromLong(TkchObject_CAST(op)->channel == NULL);
+}
+
+static PyObject *
+Tkch_get_name(PyObject *op, void *Py_UNUSED(closure))
+{
+    return Py_NewRef(TkchObject_CAST(op)->name);
+}
+
+/* Plain casts in the GC slots, as for Tktt (see there). */
+
+static int
+Tkch_Clear(PyObject *op)
+{
+    TkchObject *self = (TkchObject *)op;
+    Py_CLEAR(self->func);
+    return 0;
+}
+
+static int
+Tkch_Traverse(PyObject *op, visitproc visit, void *arg)
+{
+    TkchObject *self = (TkchObject *)op;
+    Py_VISIT(Py_TYPE(op));
+    Py_VISIT(self->app);
+    /* Not the extra reference of a registered handler: it is owned by the
+       Tcl event loop, so the channel is a GC root, not part of a cycle. */
+    Py_VISIT(self->func);
+    return 0;
+}
+
+static void
+Tkch_Dealloc(PyObject *op)
+{
+    TkchObject *self = (TkchObject *)op;
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    /* No handler can be registered here: it owns a reference.
+       Tcl can only be called from the interpreter's thread; in another
+       thread the channel is left open in the interpreter. */
+    if (self->channel != NULL && self->app != NULL
+        && self->app->thread_id == Tcl_GetCurrentThread())
+    {
+        (void)Tkch_Close(self);
+    }
+    (void)Tkch_Clear(op);
+    Py_CLEAR(self->app);
+    Py_CLEAR(self->name);
+    tp->tp_free(op);
+    Py_DECREF(tp);
+}
+
+static PyObject *
+Tkch_Repr(PyObject *op)
+{
+    TkchObject *self = TkchObject_CAST(op);
+    if (self->channel == NULL) {
+        return PyUnicode_FromFormat("<closed tkchannel %R>", self->name);
+    }
+    return PyUnicode_FromFormat("<tkchannel %R>", self->name);
+}
+
+
 /**** Tktt Object (timer token) ****/
 
 static PyObject *Tktt_Type;
@@ -3626,6 +4215,48 @@ static PyType_Spec Tktt_Type_spec = {
     .slots = Tktt_Type_slots,
 };
 
+static PyMethodDef Tkch_methods[] =
+{
+    _TKINTER_TKCHANNEL_READ_METHODDEF
+    _TKINTER_TKCHANNEL_WRITE_METHODDEF
+    _TKINTER_TKCHANNEL_FLUSH_METHODDEF
+    _TKINTER_TKCHANNEL_EOF_METHODDEF
+    _TKINTER_TKCHANNEL_CREATEHANDLER_METHODDEF
+    _TKINTER_TKCHANNEL_DELETEHANDLER_METHODDEF
+    _TKINTER_TKCHANNEL_CLOSE_METHODDEF
+    _TKINTER_TKCHANNEL___ENTER___METHODDEF
+    _TKINTER_TKCHANNEL___EXIT___METHODDEF
+    {NULL, NULL}
+};
+
+static PyGetSetDef Tkch_getset[] = {
+    {"name", Tkch_get_name, NULL, "the name of the Tcl channel"},
+    {"closed", Tkch_get_closed, NULL, "True if the channel is closed"},
+    {NULL}
+};
+
+static PyType_Slot Tkch_Type_slots[] = {
+    {Py_tp_dealloc, Tkch_Dealloc},
+    {Py_tp_traverse, Tkch_Traverse},
+    {Py_tp_clear, Tkch_Clear},
+    {Py_tp_repr, Tkch_Repr},
+    {Py_tp_methods, Tkch_methods},
+    {Py_tp_getset, Tkch_getset},
+    {0, 0}
+};
+
+static PyType_Spec Tkch_Type_spec = {
+    .name = "_tkinter.tkchannel",
+    .basicsize = sizeof(TkchObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC
+    ),
+    .slots = Tkch_Type_slots,
+};
+
 
 /**** Tkapp Method List ****/
 
@@ -3658,6 +4289,7 @@ static PyMethodDef Tkapp_methods[] =
     _TKINTER_TKAPP_DELETECOMMAND_METHODDEF
     _TKINTER_TKAPP_CREATEFILEHANDLER_METHODDEF
     _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
+    _TKINTER_TKAPP_CREATECHANNEL_METHODDEF
     _TKINTER_TKAPP_CREATETIMERHANDLER_METHODDEF
     _TKINTER_TKAPP_MAINLOOP_METHODDEF
     _TKINTER_TKAPP_DOONEEVENT_METHODDEF
@@ -3844,6 +4476,7 @@ module_clear(PyObject *Py_UNUSED(mod))
     Py_CLEAR(Tkinter_TclError);
     Py_CLEAR(Tkapp_Type);
     Py_CLEAR(Tktt_Type);
+    Py_CLEAR(Tkch_Type);
     Py_CLEAR(PyTclObject_Type);
     return 0;
 }
@@ -3854,6 +4487,7 @@ module_traverse(PyObject *Py_UNUSED(module), visitproc visit, void *arg)
     Py_VISIT(Tkinter_TclError);
     Py_VISIT(Tkapp_Type);
     Py_VISIT(Tktt_Type);
+    Py_VISIT(Tkch_Type);
     Py_VISIT(PyTclObject_Type);
     return 0;
 }
@@ -3958,6 +4592,12 @@ PyInit__tkinter(void)
 
     Tktt_Type = PyType_FromSpec(&Tktt_Type_spec);
     if (PyModule_AddObjectRef(m, "TkttType", Tktt_Type)) {
+        Py_DECREF(m);
+        return NULL;
+    }
+
+    Tkch_Type = PyType_FromSpec(&Tkch_Type_spec);
+    if (PyModule_AddObjectRef(m, "TkchannelType", Tkch_Type)) {
         Py_DECREF(m);
         return NULL;
     }
