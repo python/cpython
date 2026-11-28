@@ -9,7 +9,7 @@
 --------------
 
 SAX parsers implement the :class:`XMLReader` interface. They are implemented in
-a Python module, which must provide a function :func:`create_parser`. This
+a Python module, which must provide a function :func:`!create_parser`. This
 function is invoked by  :func:`xml.sax.make_parser` with no arguments to create
 a new  parser object.
 
@@ -23,9 +23,9 @@ a new  parser object.
 
    In some cases, it is desirable not to parse an input source at once, but to feed
    chunks of the document as they get available. Note that the reader will normally
-   not read the entire file, but read it in chunks as well; still :meth:`parse`
+   not read the entire file, but read it in chunks as well; still :meth:`~XMLReader.parse`
    won't return until the entire document is processed. So these interfaces should
-   be used if the blocking behaviour of :meth:`parse` is not desirable.
+   be used if the blocking behaviour of :meth:`~XMLReader.parse` is not desirable.
 
    When the parser is instantiated it is ready to begin accepting data from the
    feed method immediately. After parsing has been finished with a call to close
@@ -70,7 +70,7 @@ a new  parser object.
 
    This is an implementation of the :class:`Attributes` interface (see section
    :ref:`attributes-objects`).  This is a dictionary-like object which
-   represents the element attributes in a :meth:`startElement` call. In addition
+   represents the element attributes in a :meth:`~xml.sax.handler.ContentHandler.startElement` call. In addition
    to the most useful dictionary operations, it supports a number of other
    methods as described by the interface. Objects of this class should be
    instantiated by readers; *attrs* must be a dictionary-like object containing
@@ -80,7 +80,7 @@ a new  parser object.
 .. class:: AttributesNSImpl(attrs, qnames)
 
    Namespace-aware variant of :class:`AttributesImpl`, which will be passed to
-   :meth:`startElementNS`. It is derived from :class:`AttributesImpl`, but
+   :meth:`~xml.sax.handler.ContentHandler.startElementNS`. It is derived from :class:`AttributesImpl`, but
    understands attribute names as two-tuples of *namespaceURI* and
    *localname*. In addition, it provides a number of methods expecting qualified
    names as they appear in the original document.  This class implements the
@@ -171,29 +171,29 @@ The :class:`XMLReader` interface supports the following methods:
 .. method:: XMLReader.getFeature(featurename)
 
    Return the current setting for feature *featurename*.  If the feature is not
-   recognized, :exc:`SAXNotRecognizedException` is raised. The well-known
+   recognized, :exc:`~xml.sax.SAXNotRecognizedException` is raised. The well-known
    featurenames are listed in the module :mod:`xml.sax.handler`.
 
 
 .. method:: XMLReader.setFeature(featurename, value)
 
    Set the *featurename* to *value*. If the feature is not recognized,
-   :exc:`SAXNotRecognizedException` is raised. If the feature or its setting is not
-   supported by the parser, *SAXNotSupportedException* is raised.
+   :exc:`~xml.sax.SAXNotRecognizedException` is raised. If the feature or its setting is not
+   supported by the parser, :exc:`~xml.sax.SAXNotSupportedException` is raised.
 
 
 .. method:: XMLReader.getProperty(propertyname)
 
    Return the current setting for property *propertyname*. If the property is not
-   recognized, a :exc:`SAXNotRecognizedException` is raised. The well-known
+   recognized, a :exc:`~xml.sax.SAXNotRecognizedException` is raised. The well-known
    propertynames are listed in the module :mod:`xml.sax.handler`.
 
 
 .. method:: XMLReader.setProperty(propertyname, value)
 
    Set the *propertyname* to *value*. If the property is not recognized,
-   :exc:`SAXNotRecognizedException` is raised. If the property or its setting is
-   not supported by the parser, *SAXNotSupportedException* is raised.
+   :exc:`~xml.sax.SAXNotRecognizedException` is raised. If the property or its setting is
+   not supported by the parser, :exc:`~xml.sax.SAXNotSupportedException` is raised.
 
 
 .. _incremental-parser-objects:
@@ -339,12 +339,14 @@ InputSource Objects
 The :class:`Attributes` Interface
 ---------------------------------
 
-:class:`Attributes` objects implement a portion of the :term:`mapping protocol
-<mapping>`, including the methods :meth:`~collections.abc.Mapping.copy`,
-:meth:`~collections.abc.Mapping.get`, :meth:`~object.__contains__`,
-:meth:`~collections.abc.Mapping.items`, :meth:`~collections.abc.Mapping.keys`,
-and :meth:`~collections.abc.Mapping.values`.  The following methods
-are also provided:
+.. class:: Attributes()
+
+   :class:`Attributes` objects implement a portion of the :term:`mapping protocol
+   <mapping>`, including the methods :meth:`!copy`,
+   :meth:`!get`, :meth:`~object.__contains__`,
+   :meth:`!items`, :meth:`!keys`,
+   and :meth:`!values`.  The following methods
+   are also provided:
 
 
 .. method:: Attributes.getLength()
@@ -375,11 +377,13 @@ are also provided:
 The :class:`AttributesNS` Interface
 -----------------------------------
 
-This interface is a subtype of the :class:`Attributes` interface (see section
-:ref:`attributes-objects`).  All methods supported by that interface are also
-available on :class:`AttributesNS` objects.
+.. class:: AttributesNS()
 
-The following methods are also available:
+   This interface is a subtype of the :class:`Attributes` interface (see section
+   :ref:`attributes-objects`).  All methods supported by that interface are also
+   available on :class:`AttributesNS` objects.
+
+   The following methods are also available:
 
 
 .. method:: AttributesNS.getValueByQName(name)

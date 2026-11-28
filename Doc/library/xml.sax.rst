@@ -36,7 +36,7 @@ The convenience functions and data are:
    Create and return a SAX :class:`~xml.sax.xmlreader.XMLReader` object.  The
    first parser found will
    be used.  If *parser_list* is provided, it must be an iterable of strings which
-   name modules that have a function named :func:`create_parser`.  Modules listed
+   name modules that have a function named :func:`!create_parser`.  Modules listed
    in *parser_list* will be used before modules in the default list of parsers.
 
    .. versionchanged:: 3.8
