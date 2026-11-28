@@ -2274,6 +2274,17 @@ class TestGetClosureVars(unittest.TestCase):
                          {'x': 3})
         Y(check_y_combinator)
 
+    def test_empty_nonlocal_cell(self):
+        def make_func():
+            bound = 1
+            value = None
+            func = lambda: (bound, value)
+            del value
+            return func
+
+        expected = inspect.ClosureVars({'bound': 1}, {}, {}, {'value'})
+        self.assertEqual(inspect.getclosurevars(make_func()), expected)
+
     def test_getclosurevars_empty(self):
         def foo(): pass
         _empty = inspect.ClosureVars({}, {}, {}, set())

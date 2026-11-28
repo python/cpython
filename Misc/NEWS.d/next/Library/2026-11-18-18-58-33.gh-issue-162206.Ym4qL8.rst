@@ -1,0 +1,2 @@
+Report empty closure cells as unbound in :func:`inspect.getclosurevars`
+instead of raising :exc:`ValueError`. Patch by tonghuaroot.
