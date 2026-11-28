@@ -2058,6 +2058,13 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
         }
         slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
                                          step);
+        /* Make sure e[5:2] = [..] inserts at the right place:
+           before 5, not before 2. */
+        if ((step < 0 && start < stop) ||
+            (step > 0 && start > stop))
+        {
+            stop = start;
+        }
 
         if (step != 1 && newlen != slicelen) {
             Py_DECREF(seq);
