@@ -149,14 +149,19 @@ class EnvBuilder:
                                      f'because {path} is a link.')
             if not os.path.exists(d):
                 os.makedirs(d)
-            elif os.path.islink(d) or os.path.isfile(d):
-                raise ValueError('Unable to create directory %r' % d)
+            elif not os.path.isdir(d):
+                raise ValueError(f'Unable to create directory {d!r}: '
+                                 'the existing file is not a directory')
 
         if os.pathsep in os.fspath(env_dir):
             raise ValueError(f'Refusing to create a venv in {env_dir} because '
                              f'it contains the PATH separator {os.pathsep}.')
-        if os.path.exists(env_dir) and self.clear:
-            self.clear_directory(env_dir)
+        if self.clear:
+            if os.path.islink(env_dir) or (os.path.exists(env_dir) and not os.path.isdir(env_dir)):
+                raise ValueError(f'Unable to create directory {env_dir!r}: '
+                                 'the existing file is not a directory')
+            if os.path.exists(env_dir):
+                self.clear_directory(env_dir)
         context = types.SimpleNamespace()
         context.env_dir = env_dir
         context.env_name = os.path.split(env_dir)[1]
