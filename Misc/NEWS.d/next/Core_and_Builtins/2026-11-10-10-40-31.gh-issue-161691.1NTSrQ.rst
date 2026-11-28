@@ -1,0 +1,2 @@
+Fix use of a released :class:`memoryview` in comparison and in item
+assignment with format ``'c'`` when user code releases the view.
