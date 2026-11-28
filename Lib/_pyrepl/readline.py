@@ -39,6 +39,7 @@ from .completing_reader import CompletingReader, stripcolor
 from .console import Console as ConsoleType
 from ._module_completer import ModuleCompleter, make_default_module_completer
 from .fancycompleter import Completer as FancyCompleter, colorize_matches
+from .utils import gen_colors
 
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -256,23 +257,41 @@ def _get_first_indentation(buffer: list[str]) -> str | None:
 
 
 def _should_auto_indent(buffer: list[str], pos: int) -> bool:
-    # check if last character before "pos" is a colon, ignoring
-    # whitespaces and comments.
-    last_char = None
-    while pos > 0:
-        pos -= 1
-        if last_char is None:
-            if buffer[pos] not in " \t\n#":  # ignore whitespaces and comments
-                last_char = buffer[pos]
-        else:
-            # even if we found a non-whitespace character before
-            # original pos, we keep going back until newline is reached
-            # to make sure we ignore comments
-            if buffer[pos] == "\n":
-                break
-            if buffer[pos] == "#":
-                last_char = None
-    return last_char == ":"
+    buffer_str = ''.join(buffer)
+    colors = tuple(gen_colors(buffer_str))
+    string_spans = tuple(c.span for c in colors if c.tag == "string")
+    comment_spans = tuple(c.span for c in colors if c.tag == "comment")
+    def in_span(i, spans):
+        return any(s.start <= i <= s.end for s in spans)
+    i = pos - 1
+    while i >= 0:
+        if buffer_str[i] in " \t\n":
+            i -= 1
+            continue
+        if in_span(i, comment_spans):
+            i -= 1
+            continue
+        if in_span(i, string_spans):
+            # A string is an expression, whether already closed or still
+            # being typed.  Stop here instead of skipping past it and
+            # reusing a colon from an earlier line or one-line suite.
+            return False
+        break
+    if i < 0 or buffer_str[i] != ":":
+        return False
+
+    # A colon only triggers an indent if the new line is not already deeper
+    # than the line with the colon.  Otherwise a preceding indented line
+    # (for example a comment) has already entered the block, and reusing the
+    # colon would add a second level of indentation.
+    colon_line_start = i
+    while colon_line_start > 0 and buffer_str[colon_line_start - 1] != "\n":
+        colon_line_start -= 1
+    colon_indent = 0
+    while (colon_line_start + colon_indent <= i
+           and buffer_str[colon_line_start + colon_indent] in " \t"):
+        colon_indent += 1
+    return _get_this_line_indent(buffer, pos) <= colon_indent
 
 
 class maybe_accept(commands.Command):

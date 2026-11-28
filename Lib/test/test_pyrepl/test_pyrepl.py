@@ -616,6 +616,25 @@ class TestPyReplAutoindent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
 
+        # fmt: off
+        events = code_to_events(
+            "def f():\n"
+            "# foo\n"
+            "pass\n\n"
+        )
+
+        output_code = (
+            "def f():\n"
+            "    # foo\n"
+            "    pass\n"
+            "    "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
     def test_auto_indent_with_multicomment(self):
         # fmt: off
         events = code_to_events(
@@ -642,6 +661,80 @@ class TestPyReplAutoindent(TestCase):
 
         output_code = (
             "pass  #:"
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_dont_indent_hashtag(self):
+        # fmt: off
+        events = code_to_events(
+            "if ' ' == '#':\n"
+                "pass\n\n"
+        )
+
+        output_code = (
+            "if ' ' == '#':\n"
+            "    pass\n"
+            "    "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_dont_indent_in_multiline_string(self):
+        # fmt: off
+        events = code_to_events(
+            "s = '''\n"
+            "Note:\n"
+            "'''\n\n"
+        )
+
+        output_code = (
+            "s = '''\n"
+            "Note:\n"
+            "'''"
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_dont_reuse_colon_after_complete_string(self):
+        # fmt: off
+        events = code_to_events(
+            "if True:\n"
+                "'s'\n\n"
+        )
+
+        output_code = (
+            "if True:\n"
+            "    's'\n"
+            "    "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_dont_reuse_colon_in_unterminated_string(self):
+        # The colon of a one-line suite must not trigger indentation while
+        # the string that follows it is still being typed.
+        # fmt: off
+        events = code_to_events(
+            "if True: '''s\n"
+            "'''\n\n"
+        )
+
+        output_code = (
+            "if True: '''s\n"
+            "'''\n"
         )
         # fmt: on
 
