@@ -1521,6 +1521,38 @@ class TestBabyl(_TestSingleFile, unittest.TestCase):
         self._box.remove(key1)
         self.assertEqual(set(self._box.get_labels()), set(['blah']))
 
+    def test_labels_read_from_file(self):
+        # Labels read back from the file are strings.
+        msg = mailbox.BabylMessage(self._template % 0)
+        msg.set_labels(['unseen', 'foo'])
+        self._box.add(msg)
+        self._box.add(mailbox.BabylMessage(self._template % 1))
+        self._box.close()
+        self._box = self._factory(self._path)
+        self.assertEqual(sorted(self._box[0].get_labels()), ['foo', 'unseen'])
+        self.assertEqual(self._box.get_labels(), ['foo'])
+        self._box.remove(1)
+        self._box.close()
+        self._box = self._factory(self._path)
+        self.assertEqual(sorted(self._box[0].get_labels()), ['foo', 'unseen'])
+        self.assertEqual(self._box.get_labels(), ['foo'])
+
+    def test_non_utf8_labels(self):
+        # Labels that are not valid UTF-8 are kept as they are.
+        msg = mailbox.BabylMessage(self._template % 0)
+        msg.set_labels(['caf\udce9'])
+        self._box.add(msg)
+        self._box.add(mailbox.BabylMessage(self._template % 1))
+        self._box.close()
+        with open(self._path, 'rb') as f:
+            self.assertIn(b' caf\xe9,', f.read())
+        self._box = self._factory(self._path)
+        self.assertEqual(self._box[0].get_labels(), ['caf\udce9'])
+        self._box.remove(1)
+        self._box.close()
+        with open(self._path, 'rb') as f:
+            self.assertIn(b'Labels:caf\xe9', f.read())
+
     def test_visible_headers(self):
         # gh-157880: visible headers are written to the file and read back
         msg = mailbox.BabylMessage(self._template % 0)
