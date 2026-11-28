@@ -139,7 +139,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_count__doc__,
-"count($self, sub[, start[, end]], /)\n"
+"count($self, sub, start=0, end=sys.maxsize, /)\n"
 "--\n"
 "\n"
 "Return the number of non-overlapping occurrences of substring sub in string S[start:end].\n"
@@ -356,7 +356,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_find__doc__,
-"find($self, sub[, start[, end]], /)\n"
+"find($self, sub, start=0, end=sys.maxsize, /)\n"
 "--\n"
 "\n"
 "Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
@@ -412,7 +412,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_index__doc__,
-"index($self, sub[, start[, end]], /)\n"
+"index($self, sub, start=0, end=sys.maxsize, /)\n"
 "--\n"
 "\n"
 "Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
@@ -1063,7 +1063,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_rfind__doc__,
-"rfind($self, sub[, start[, end]], /)\n"
+"rfind($self, sub, start=0, end=sys.maxsize, /)\n"
 "--\n"
 "\n"
 "Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
@@ -1119,7 +1119,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_rindex__doc__,
-"rindex($self, sub[, start[, end]], /)\n"
+"rindex($self, sub, start=0, end=sys.maxsize, /)\n"
 "--\n"
 "\n"
 "Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
@@ -1897,4 +1897,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=80d039a395f835c3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9e56bbec9d7661e0 input=a9049054013a1b77]*/

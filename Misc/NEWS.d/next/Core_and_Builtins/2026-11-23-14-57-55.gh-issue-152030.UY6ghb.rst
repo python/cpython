@@ -1,0 +1,3 @@
+Support :func:`inspect.signature` for ``count``, ``find``, ``index``,
+``rfind``, and ``rindex`` methods of :class:`str`, :class:`bytes`, and
+:class:`bytearray`.
