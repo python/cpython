@@ -1326,6 +1326,20 @@ class FormatTest:
         a = A.from_float(42)
         self.assertEqual(self.decimal.Decimal, a.a_type)
 
+    def test_format_limits(self):
+        Decimal = self.decimal.Decimal
+        limit = self.decimal.MAX_PREC + 1
+        with self.assertRaises(ValueError):
+            format(Decimal('1.5'), f'{limit}')
+        with self.assertRaises(ValueError):
+            format(Decimal('1.5'), f'.{limit}f')
+        with self.assertRaises(ValueError):
+            format(Decimal('1.5'), f'#0{limit}')
+        # Verify that large padding without thousands separator formats correctly
+        res = format(Decimal('1.5'), '#01000')
+        self.assertEqual(len(res), 1000)
+        self.assertTrue(res.startswith('000') and res.endswith('1.5'))
+
 @requires_cdecimal
 class CFormatTest(FormatTest, unittest.TestCase):
     decimal = C
