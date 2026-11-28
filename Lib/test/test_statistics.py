@@ -2117,6 +2117,52 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
 
 class TestSqrtHelpers(unittest.TestCase):
 
+    def test_decimal_stdev_midpoints(self):
+        cases = (
+            (2, 23, 12), (2, 25, 12),
+            (2, '19.9', 10), (2, 21, 10), (1, 19, 10),  # Powers of ten.
+            (2, 87, 44),  # ROUND_FLOOR gives an initial estimate of 42.
+            (28, 2 * 10**27 + 3, 10**27 + 2),
+        )
+        modes = (
+            decimal.ROUND_HALF_EVEN, decimal.ROUND_HALF_UP,
+            decimal.ROUND_HALF_DOWN, decimal.ROUND_UP, decimal.ROUND_DOWN,
+            decimal.ROUND_CEILING, decimal.ROUND_FLOOR, decimal.ROUND_05UP,
+        )
+        # Both data sets have an exact standard deviation of x/2.
+        for func, zeros in ((statistics.pstdev, 1), (statistics.stdev, 3)):
+            for (prec, x, expected), mode in itertools.product(cases, modes):
+                with (self.subTest(func=func.__name__, prec=prec, x=x, mode=mode),
+                      decimal.localcontext(decimal.DefaultContext, prec=prec,
+                                           rounding=mode)):
+                    data = [Decimal(0)] * zeros + [Decimal(x)]
+                    self.assertEqual(func(data), Decimal(expected))
+
+    def test_decimal_sqrt_subnormal(self):
+        # The spacing is 0.01. Cover zero, subnormals and the normal boundary.
+        with decimal.localcontext(decimal.DefaultContext, prec=2, Emin=-1):
+            cases = ((16, '0'), (25, '0'), (36, '0.01'), (225, '0.02'),
+                     (625, '0.02'), (9025, '0.10'))
+            for n, expected in cases:
+                with self.subTest(n=n):
+                    self.assertEqual(statistics._decimal_sqrt_of_frac(n, 10**6),
+                                     Decimal(expected))
+
+        # ROUND_05UP can round the variance up to the smallest normal value.
+        with decimal.localcontext(decimal.DefaultContext, prec=1, Emin=-4,
+                                  rounding=decimal.ROUND_05UP):
+            self.assertEqual(statistics._decimal_sqrt_of_frac(1, 10**14), 0)
+
+    def test_decimal_sqrt_after_variance_overflow(self):
+        with decimal.localcontext(decimal.DefaultContext, prec=2, Emax=2,
+                                  rounding=decimal.ROUND_DOWN) as ctx:
+            with self.assertRaises(decimal.Overflow):
+                statistics._decimal_sqrt_of_frac(87**2, 4)
+            ctx.clear_flags()
+            ctx.traps[decimal.Overflow] = False
+            self.assertEqual(statistics._decimal_sqrt_of_frac(87**2, 4), 44)
+            self.assertTrue(ctx.flags[decimal.Overflow])
+
     def test_integer_sqrt_of_frac_rto(self):
         for n, m in itertools.product(range(100), range(1, 1000)):
             r = statistics._integer_sqrt_of_frac_rto(n, m)

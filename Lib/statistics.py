@@ -135,7 +135,9 @@ import random
 import sys
 
 from fractions import Fraction
-from decimal import Decimal
+from decimal import (
+    Decimal, MAX_EMAX, MIN_EMIN, ROUND_HALF_EVEN, getcontext, localcontext,
+)
 from itertools import compress, count, groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erfc, log, fsum, sumprod
@@ -1724,31 +1726,38 @@ def _float_sqrt_of_frac(n: int, m: int) -> float:
 
 
 def _decimal_sqrt_of_frac(n: int, m: int) -> Decimal:
-    """Square root of n/m as a Decimal, correctly rounded."""
-    # Premise:  For decimal, computing (n/m).sqrt() can be off
-    #           by 1 ulp from the correctly rounded result.
-    # Method:   Check the result, moving up or down a step if needed.
+    """Square root of n/m as a Decimal, rounded half even like Decimal.sqrt."""
     if n <= 0:
         if not n:
             return Decimal('0.0')
         n, m = -n, -m
 
-    root = (Decimal(n) / Decimal(m)).sqrt()
+    numerator, denominator = Decimal(n), Decimal(m)
+    variance = numerator / denominator
+    context = getcontext()
+    if variance.is_finite() and (
+        context.rounding != ROUND_HALF_EVEN
+        or not context.Emin < variance.adjusted() < context.Emax
+    ):
+        # A half-even division without exponent clipping keeps the square
+        # root within one step. Preserve the original division's signals.
+        with localcontext(rounding=ROUND_HALF_EVEN, Emin=MIN_EMIN, Emax=MAX_EMAX):
+            variance = numerator / denominator
+    root = variance.sqrt()
     nr, dr = root.as_integer_ratio()
 
-    plus = root.next_plus()
-    np, dp = plus.as_integer_ratio()
-    # test: n / m > ((root + plus) / 2) ** 2
-    if 4 * n * (dr*dp)**2 > m * (dr*np + dp*nr)**2:
-        return plus
-
-    minus = root.next_minus()
-    nm, dm = minus.as_integer_ratio()
-    # test: n / m < ((root + minus) / 2) ** 2
-    if 4 * n * (dr*dm)**2 < m * (dr*nm + dm*nr)**2:
-        return minus
-
-    return root
+    diff = n * dr**2 - m * nr**2
+    if not diff:
+        return root
+    neighbor = root.next_plus() if diff > 0 else root.next_minus()
+    nn, dn = neighbor.as_integer_ratio()
+    a, b = nr * dn, nn * dr  # Numerators in a common denominator.
+    # Compare n/m to the squared midpoint. At a tie, measure parity
+    # in units of the gap, including where the spacing changes.
+    midpoint_diff = 4 * n * (dr * dn)**2 - m * (a + b)**2
+    if not midpoint_diff:
+        return neighbor if (a // abs(a - b)) % 2 else root
+    return neighbor if (midpoint_diff > 0) == (diff > 0) else root
 
 
 def _mean_stdev(data):
