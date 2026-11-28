@@ -1,0 +1,3 @@
+Propagate :exc:`InterruptedError` from :meth:`subprocess.Popen.wait` when
+waiting with ``kqueue`` instead of swallowing it as an ordinary operating
+system error.

@@ -2332,6 +2332,8 @@ class Popen:
                                 _MAXIMUM_WAIT_TIMEOUT)
                     try:
                         events = kq.control(changelist, 1, max(delay, 0))
+                    except InterruptedError:
+                        raise
                     except OSError:
                         return False
                     if events:
