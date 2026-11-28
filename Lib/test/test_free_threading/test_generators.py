@@ -6,6 +6,7 @@ from threading import Barrier
 import random
 import time
 
+from test import support
 from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)
@@ -199,19 +200,27 @@ class TestFTGenerators(unittest.TestCase):
 
         g = gen()
         done = threading.Event()
+        yielded = threading.Event()
+        sampled = threading.Event()
 
         def runner():
-            for _ in g:
-                pass
+            for value in g:
+                if value == 0:
+                    # Ensure the reader samples a live generator, even when
+                    # this thread would otherwise finish before it runs.
+                    yielded.set()
+                    self.assertTrue(sampled.wait(support.SHORT_TIMEOUT))
             done.set()
 
         def reader():
+            self.assertTrue(yielded.wait(support.SHORT_TIMEOUT))
             while not done.is_set():
                 frame = g.gi_frame
                 if frame:
                     frame.f_code
                     frame.f_locals
                     frames.add(frame)
+                sampled.set()
             self.assertIsNone(g.gi_frame)
 
         threading_helper.run_concurrently([runner, reader])
