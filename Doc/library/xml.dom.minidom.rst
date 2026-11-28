@@ -38,7 +38,7 @@ The :func:`parse` function can take either a filename or an open file object.
 
 .. function:: parse(filename_or_file, parser=None, bufsize=None)
 
-   Return a :class:`Document` from the given input. *filename_or_file* may be
+   Return a :class:`~xml.dom.Document` from the given input. *filename_or_file* may be
    either a file name, or a file-like object. *parser*, if given, must be a SAX2
    parser object. This function will change the document handler of the parser and
    activate namespace support; other parser configuration (like setting an entity
@@ -50,10 +50,10 @@ instead:
 
 .. function:: parseString(string, parser=None)
 
-   Return a :class:`Document` that represents the *string*. This method creates an
+   Return a :class:`~xml.dom.Document` that represents the *string*. This method creates an
    :class:`io.StringIO` object for the string and passes that on to :func:`parse`.
 
-Both functions return a :class:`Document` object representing the content of the
+Both functions return a :class:`~xml.dom.Document` object representing the content of the
 document.
 
 What the :func:`parse` and :func:`parseString` functions do is connect an XML
@@ -63,10 +63,10 @@ but are easy to grasp when learning the interfaces.  The parsing of the document
 will be completed before these functions return; it's simply that these
 functions do not provide a parser implementation themselves.
 
-You can also create a :class:`Document` by calling a method on a "DOM
+You can also create a :class:`~xml.dom.Document` by calling a method on a "DOM
 Implementation" object.  You can get this object either by calling the
-:func:`getDOMImplementation` function in the :mod:`xml.dom` package or the
-:mod:`!xml.dom.minidom` module.  Once you have a :class:`Document`, you
+:func:`~xml.dom.getDOMImplementation` function in the :mod:`xml.dom` package or the
+:mod:`!xml.dom.minidom` module.  Once you have a :class:`~xml.dom.Document`, you
 can add child nodes to it to populate the DOM::
 
    from xml.dom.minidom import getDOMImplementation
@@ -81,15 +81,15 @@ can add child nodes to it to populate the DOM::
 Once you have a DOM document object, you can access the parts of your XML
 document through its properties and methods.  These properties are defined in
 the DOM specification.  The main property of the document object is the
-:attr:`documentElement` property.  It gives you the main element in the XML
+:attr:`~xml.dom.Document.documentElement` property.  It gives you the main element in the XML
 document: the one that holds all others.  Here is an example program::
 
    dom3 = parseString("<myxml>Some data</myxml>")
    assert dom3.documentElement.tagName == "myxml"
 
 When you are finished with a DOM tree, you may optionally call the
-:meth:`unlink` method to encourage early cleanup of the now-unneeded
-objects.  :meth:`unlink` is an :mod:`!xml.dom.minidom`\ -specific
+:meth:`~Node.unlink` method to encourage early cleanup of the now-unneeded
+objects.  :meth:`~Node.unlink` is an :mod:`!xml.dom.minidom`\ -specific
 extension to the DOM API that renders the node and its descendants
 essentially useless.  Otherwise, Python's garbage collector will
 eventually take care of the objects in the tree.
@@ -116,7 +116,7 @@ module documentation.  This section lists the differences between the API and
    versions of Python without cyclic GC.  Even when cyclic GC is available, using
    this can make large amounts of memory available sooner, so calling this on DOM
    objects as soon as they are no longer needed is good practice.  This only needs
-   to be called on the :class:`Document` object, but may be called on child nodes
+   to be called on the :class:`~xml.dom.Document` object, but may be called on child nodes
    to discard children of that node.
 
    You can avoid calling this method explicitly by using the :keyword:`with`
@@ -131,13 +131,13 @@ module documentation.  This section lists the differences between the API and
                           encoding=None, standalone=None)
 
    Write XML to the writer object.  The writer receives texts but not bytes as input,
-   it should have a :meth:`write` method which matches that of the file object
+   it should have a :meth:`!write` method which matches that of the file object
    interface.  The *indent* parameter is the indentation of the current node.
    The *addindent* parameter is the incremental indentation to use for subnodes
    of the current one.  The *newl* parameter specifies the string to use to
    terminate newlines.
 
-   For the :class:`Document` node, an additional keyword argument *encoding* can
+   For the :class:`~xml.dom.Document` node, an additional keyword argument *encoding* can
    be used to specify the encoding field of the XML header.
 
    Similarly, explicitly stating the *standalone* argument causes the
@@ -246,7 +246,7 @@ rules apply:
 
 * Interfaces are accessed through instance objects. Applications should not
   instantiate the classes themselves; they should use the creator functions
-  available on the :class:`Document` object. Derived interfaces support all
+  available on the :class:`~xml.dom.Document` object. Derived interfaces support all
   operations (and attributes) from the base interfaces, plus any new operations.
 
 * Operations are used as methods. Since the DOM uses only :keyword:`in`
@@ -255,7 +255,7 @@ rules apply:
 
 * IDL attributes map to instance attributes. For compatibility with the OMG IDL
   language mapping for Python, an attribute ``foo`` can also be accessed through
-  accessor methods :meth:`_get_foo` and :meth:`_set_foo`.  ``readonly``
+  accessor methods :meth:`!_get_foo` and :meth:`!_set_foo`.  ``readonly``
   attributes must not be changed; this is not enforced at runtime.
 
 * The types ``short int``, ``unsigned int``, ``unsigned long long``, and
@@ -308,7 +308,7 @@ rules apply:
 
 The following interfaces have no implementation in :mod:`!xml.dom.minidom`:
 
-* :class:`DOMTimeStamp`
+* :class:`!DOMTimeStamp`
 
 This reflects information in the XML document that is not of general
 utility to most DOM users.
