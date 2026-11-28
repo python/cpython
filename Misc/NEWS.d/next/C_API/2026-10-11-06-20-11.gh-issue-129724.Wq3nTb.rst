@@ -1,0 +1,2 @@
+Make :c:func:`PyMarshal_WriteObjectToFile` write nothing to the file if the
+object cannot be marshalled, instead of partial data.

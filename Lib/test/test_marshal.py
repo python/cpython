@@ -1,10 +1,13 @@
 from test import support
 from test.support import is_apple_mobile, os_helper, requires_debug_ranges, is_emscripten
+from test.support import threading_helper
 from test.support.script_helper import assert_python_ok
 import array
 import io
 import marshal
+import struct
 import sys
+import threading
 import unittest
 import os
 import types
@@ -879,6 +882,37 @@ class CAPI_TestCase(unittest.TestCase, HelperMixin):
                 data = f.read()
             os_helper.unlink(os_helper.TESTFN)
             self.assertEqual(marshal.loads(data), obj)
+            self.assertEqual(data, marshal.dumps(obj, v))
+
+            # Larger than a stdio buffer, with references to objects
+            # written long before.
+            shared = (float('1.5'), b'bytes' * 10)
+            big = [shared, 'long line ' * 10_000, shared, [shared] * 10_000]
+            _testcapi.pymarshal_write_object_to_file(big, os_helper.TESTFN, v)
+            with open(os_helper.TESTFN, 'rb') as f:
+                data = f.read()
+            os_helper.unlink(os_helper.TESTFN)
+            self.assertEqual(data, marshal.dumps(big, v))
+            obj2 = marshal.loads(data)
+            self.assertEqual(obj2, big)
+            if v >= 3:
+                self.assertIs(obj2[2], obj2[0])
+                self.assertIs(obj2[3][-1], obj2[0])
+
+            # Nothing is written if the object cannot be marshalled,
+            # even if the error is only detected after more data than
+            # fits in a stdio buffer.
+            for bad in (object(),
+                        [1, 'abc', object()],
+                        [shared, 'long line ' * 10_000, shared, object()]):
+                with self.assertRaisesRegex(ValueError,
+                                            'unmarshallable object'):
+                    _testcapi.pymarshal_write_object_to_file(
+                        bad, os_helper.TESTFN, v)
+                with open(os_helper.TESTFN, 'rb') as f:
+                    data = f.read()
+                os_helper.unlink(os_helper.TESTFN)
+                self.assertEqual(data, b'')
 
     def test_read_short_from_file(self):
         with open(os_helper.TESTFN, 'wb') as f:
@@ -940,6 +974,447 @@ class CAPI_TestCase(unittest.TestCase, HelperMixin):
             with self.assertRaises(EOFError):
                 _testcapi.pymarshal_read_object_from_file(os_helper.TESTFN)
             os_helper.unlink(os_helper.TESTFN)
+
+
+def reachable_objects(obj):
+    """Return a list of all objects marshalled as a part of obj."""
+    result = []
+    seen = set()
+    def visit(x):
+        if id(x) in seen:
+            return
+        seen.add(id(x))
+        result.append(x)
+        if isinstance(x, (tuple, list, set, frozenset)):
+            for item in x:
+                visit(item)
+        elif isinstance(x, (dict, frozendict)):
+            for key, value in x.items():
+                visit(key)
+                visit(value)
+        elif isinstance(x, slice):
+            visit(x.start)
+            visit(x.stop)
+            visit(x.step)
+        elif isinstance(x, types.CodeType):
+            for name in ('co_code', 'co_consts', 'co_names', 'co_varnames',
+                         'co_freevars', 'co_cellvars', 'co_filename',
+                         'co_name', 'co_qualname', 'co_linetable',
+                         'co_exceptiontable'):
+                visit(getattr(x, name))
+    visit(obj)
+    return result
+
+
+class ReferenceTestCase(unittest.TestCase):
+    # The output must only depend on the marshalled objects, not on
+    # the number of references to them in the rest of the process:
+    # an object is written with FLAG_REF if and only if it occurs more
+    # than once in the marshalled object graph.
+
+    FLAG_REF = 0x80
+    # The tests comparing the output with literal data use this version.
+    VERSION = 6
+
+    @staticmethod
+    def make_sample(version=marshal.version):
+        # Create new objects on every call, so that nothing else
+        # refers to them.
+        bigint = int('1234567890' * 4)
+        flt = float('1.25')
+        cplx = complex('1.5+2.5j')
+        data = bytes(range(16))
+        text = ' '.join(['spam', 'eggs'])
+        nonascii = '\u20ac' + text
+        inner = (bigint, flt, cplx, data, text, nonascii)
+        sample = [
+            inner,
+            (flt, (data, (bigint,))),
+            [text, [cplx]],
+            {flt: inner, text: [data]},
+            {(bigint, 1), (data, 2)},
+            frozenset([(text, 1), (flt, 2), nonascii]),
+            (inner, bigint, inner),
+        ]
+        if version >= 5:
+            sample.append(slice(bigint, (flt, text), data))
+        if version >= 6:
+            sample.append(frozendict({text: inner, 'key': (cplx,)}))
+        return sample
+
+    def check_extra_references(self, obj, version):
+        expected = marshal.dumps(obj, version)
+        extra = reachable_objects(obj)
+        self.assertEqual(marshal.dumps(obj, version), expected)
+        extra2 = [list(extra), tuple(extra)]
+        self.assertEqual(marshal.dumps(obj, version), expected)
+        del extra, extra2
+        self.assertEqual(marshal.dumps(obj, version), expected)
+        return expected
+
+    def test_extra_references(self):
+        for version in range(marshal.version + 1):
+            with self.subTest(version=version):
+                sample = self.make_sample(version)
+                data = self.check_extra_references(sample, version)
+                # Equal graphs give equal output.
+                self.assertEqual(marshal.dumps(self.make_sample(version),
+                                               version), data)
+                self.assertEqual(marshal.loads(data), sample)
+
+    def test_extra_references_code(self):
+        source = textwrap.dedent("""
+            def f(a, b=(1, 2.5, 'spam eggs')):
+                x = {'ham', 12345678901234567890, b'bytes'}
+                def g(c):
+                    return (a, b, c, x, (1, 2.5, 'spam eggs'), 6.25j)
+                return g
+            class C:
+                attr = (None, ..., 2**70)
+                def method(self):
+                    return self.attr, 'spam eggs'
+            """)
+        for version in range(marshal.version + 1):
+            with self.subTest(version=version):
+                code = compile(source, '<marshal test>', 'exec')
+                data = self.check_extra_references(code, version)
+                self.assertEqual(marshal.loads(data), code)
+
+    @support.cpython_only
+    def test_single_occurrence_is_not_flagged(self):
+        # No FLAG_REF for an object which occurs only once, even if it is
+        # immortal, interned or referenced from elsewhere.
+        version = self.VERSION
+        interned = sys.intern('marshal_interned_name')
+        referenced = self.make_sample(version)
+        keep = reachable_objects(referenced)
+        for obj, typecode in [
+            (1, 'i'),
+            (2**100, 'l'),
+            (1.5, 'g'),
+            (1.5j, 'y'),
+            (b'', 's'),
+            (b'bytes', 's'),
+            ('', 'Z'),
+            ('a', 'Z'),
+            (interned, 'Z'),
+            (''.join(['\u20ac', 'uro']), 'u'),
+            (' '.join(['not', 'interned']), 'z'),
+            (sys.intern('\u20ac\u20ac'), 't'),
+            ((), ')'),
+            (frozenset(), '>'),
+            (referenced[0], ')'),
+            (referenced[2], '['),
+            (referenced[3], '{'),
+            (referenced[5], '>'),
+            (referenced[7], ':'),
+            (referenced[8], '}'),
+            (self.make_sample.__code__, 'c'),
+        ]:
+            with self.subTest(obj=obj):
+                data = marshal.dumps(obj, version)
+                self.assertEqual(data[0], ord(typecode))
+        data = marshal.dumps(referenced, version)
+        self.assertEqual(marshal.dumps(self.make_sample(version), version),
+                         data)
+        del keep
+        self.assertEqual(marshal.dumps(referenced, version), data)
+
+        a = float('1.5')
+        b = float('2.5')
+        keep = [a, b, a, b]
+        data_a = b'g' + struct.pack('<d', a)
+        data_b = b'g' + struct.pack('<d', b)
+        self.assertEqual(marshal.dumps([a, b], version),
+                         b'[\x02\0\0\0' + data_a + data_b)
+        self.assertEqual(marshal.dumps((1, 'a', interned, None), version),
+                         b')\x04i\x01\0\0\0Z\x01a'
+                         b'Z\x15marshal_interned_nameN')
+        # Also if other objects are referenced.
+        self.assertEqual(marshal.dumps([a, 1, 'a', interned, b, a], version),
+                         b'[\x06\0\0\0\xe7' + struct.pack('<d', a) +
+                         b'i\x01\0\0\0Z\x01a'
+                         b'Z\x15marshal_interned_name' +
+                         data_b + b'r\0\0\0\0')
+
+    @support.cpython_only
+    def test_interned_strings(self):
+        # An interned string is written like any other object: with
+        # FLAG_REF if and only if it occurs more than once.
+        version = self.VERSION
+        once = sys.intern('marshal_interned_once')
+        twice = sys.intern('marshal_interned_twice')
+        nonascii = sys.intern('marshal_interned_\u20ac')
+        data_once = b'Z\x15marshal_interned_once'
+        data_twice = b'\x16marshal_interned_twice'
+        data_nonascii = b'\x14\0\0\0' + nonascii.encode()
+        ref0 = b'r\0\0\0\0'
+        self.assertEqual(marshal.dumps((twice, once, twice), version),
+                         b')\x03\xda' + data_twice + data_once + ref0)
+        self.assertEqual(marshal.dumps((once, twice, twice), version),
+                         b')\x03' + data_once + b'\xda' + data_twice + ref0)
+        self.assertEqual(marshal.dumps((twice, nonascii, twice), version),
+                         b')\x03\xda' + data_twice +
+                         b't' + data_nonascii + ref0)
+        self.assertEqual(marshal.dumps((nonascii, twice, nonascii), version),
+                         b')\x03\xf4' + data_nonascii +
+                         b'Z' + data_twice + ref0)
+
+        # A name which occurs once in a code object.
+        code = compile('marshal_name_once', '<marshal test>', 'eval')
+        self.assertEqual(code.co_names, ('marshal_name_once',))
+        self.assertIs(code.co_names[0], sys.intern('marshal_name_once'))
+        data = marshal.dumps(code, version)
+        self.assertEqual(data.count(b'\x11marshal_name_once'), 1)
+        self.assertIn(b'Z\x11marshal_name_once', data)
+        new = marshal.loads(data)
+        self.assertEqual(new, code)
+        self.assertIs(new.co_names[0], code.co_names[0])
+
+    @support.cpython_only
+    def test_reference_index(self):
+        # Only the objects occurring more than once are numbered, in
+        # the order of their first occurrence.
+        a = float('1.5')
+        b = float('2.5')
+        c = float('3.5')
+        data_a = b'g' + struct.pack('<d', a)
+        data_b = b'g' + struct.pack('<d', b)
+        data_c = b'g' + struct.pack('<d', c)
+        def flagged(data):
+            data = bytearray(data)
+            data[0] |= self.FLAG_REF
+            return bytes(data)
+        def ref(index):
+            return b'r' + struct.pack('<i', index)
+        def dumps(obj):
+            return marshal.dumps(obj, self.VERSION)
+
+        self.assertEqual(dumps([a, a]),
+                         b'[\x02\0\0\0' + flagged(data_a) + ref(0))
+        self.assertEqual(dumps([a, b, b]),
+                         b'[\x03\0\0\0' + data_a + flagged(data_b) + ref(0))
+        self.assertEqual(dumps([a, b, c, c, a, c]),
+                         b'[\x06\0\0\0' + flagged(data_a) + data_b +
+                         flagged(data_c) + ref(1) + ref(0) + ref(1))
+        # A container is numbered before its items.
+        t = (a, b, a)
+        self.assertEqual(dumps([c, t, t, c]),
+                         b'[\x04\0\0\0' + flagged(data_c) +
+                         b'\xa9\x03' + flagged(data_a) + data_b + ref(2) +
+                         ref(1) + ref(0))
+        # Small ints and interned strings are not special.
+        self.assertEqual(dumps((1, 2, 1, 'a', 'a')),
+                         b')\x05\xe9\x01\0\0\0i\x02\0\0\0r\0\0\0\0'
+                         b'\xda\x01ar\x01\0\0\0')
+        # A recursive list refers to itself.
+        lst = [a]
+        lst.append(lst)
+        self.assertEqual(dumps(lst),
+                         b'\xdb\x02\0\0\0' + data_a + ref(0))
+
+    @support.cpython_only
+    def test_many_references(self):
+        # References at every offset in the output, next to each other, far
+        # from the objects they refer to and from each other.
+        a = float('1.5')
+        b = float('2.5')
+        c = float('3.5')
+        keep = [a, b, c]
+        data_a = b'g' + struct.pack('<d', a)
+        data_b = b'g' + struct.pack('<d', b)
+        data_c = b'g' + struct.pack('<d', c)
+        def flagged(data):
+            data = bytearray(data)
+            data[0] |= self.FLAG_REF
+            return bytes(data)
+        def ref(index):
+            return b'r' + struct.pack('<i', index)
+        def dumped(data):
+            return b's' + struct.pack('<i', len(data)) + data
+
+        # b occurs only once: it is not numbered.
+        self.assertEqual(marshal.dumps([b, a] + [a] * 100_000, 4),
+                         b'[' + struct.pack('<i', 100_002) + data_b +
+                         flagged(data_a) + ref(0) * 100_000)
+        self.assertEqual(marshal.dumps([a, b, c] + [c, a] * 50_000, 4),
+                         b'[' + struct.pack('<i', 100_003) +
+                         flagged(data_a) + data_b + flagged(data_c) +
+                         (ref(1) + ref(0)) * 50_000)
+        for count in (1, 2, 3, 254, 255, 256, 257, 510, 511, 512):
+            with self.subTest(count=count):
+                sample = [a, c] + [a] * count + [b] + [c] * count + [a]
+                self.assertEqual(marshal.dumps(sample, 4),
+                                 b'[' + struct.pack('<i', len(sample)) +
+                                 flagged(data_a) + flagged(data_c) +
+                                 ref(0) * count + data_b + ref(1) * count +
+                                 ref(0))
+        for size in (*range(70), *range(235, 260), 1000, 100_000, 1_000_000):
+            with self.subTest(size=size):
+                pad1 = b'1' + bytes(size)
+                pad2 = b'2' + bytes(size)
+                pad3 = b'3' + bytes(size * 3)
+                sample = [b, pad1, a, c, a, pad2, a, c, pad3, c]
+                self.assertEqual(marshal.dumps(sample, 4),
+                                 b'[\x0a\0\0\0' + data_b + dumped(pad1) +
+                                 flagged(data_a) + flagged(data_c) + ref(0) +
+                                 dumped(pad2) + ref(0) + ref(1) +
+                                 dumped(pad3) + ref(1))
+
+    def test_shared_objects(self):
+        # Objects occurring more than once are loaded as a single object.
+        code = compile('x = 1', '<marshal test>', 'exec')
+        objects = [
+            int('1234567890' * 4), float('1.25'), complex('1.5+2.5j'),
+            bytes(range(16)), ' '.join(['spam', 'eggs']),
+            '\u20ac' * 3, (float('1.25'), 'x'), [1, 2], {1: 2}, {1, 2},
+            frozenset([float('1.25'), 2]), code, code.co_code,
+        ]
+        for version in range(3, marshal.version + 1):
+            if version >= 5:
+                objects.append(slice(1, float('1.25')))
+            if version >= 6:
+                objects.append(frozendict(x=[1]))
+            for obj in objects:
+                with self.subTest(version=version, obj=obj):
+                    for sample in ([obj, obj], (obj, [obj], obj),
+                                   {'a': obj, 'b': (obj,)},
+                                   [obj] * 300):
+                        new = marshal.loads(marshal.dumps(sample, version))
+                        self.assertEqual(new, sample)
+                        new = reachable_objects(new)
+                        self.assertEqual(
+                            sum(type(x) is type(obj) and x == obj
+                                for x in new), 1)
+            # All together, in a different order.
+            sample = [objects, list(reversed(objects)), tuple(objects)]
+            new = marshal.loads(marshal.dumps(sample, version))
+            self.assertEqual(new, sample)
+            for x, y, z in zip(new[0], reversed(new[1]), new[2]):
+                self.assertIs(x, y)
+                self.assertIs(x, z)
+
+    def test_shared_objects_old_versions(self):
+        sample = self.make_sample(2)
+        for version in range(3):
+            with self.subTest(version=version):
+                data = marshal.dumps([sample, sample], version)
+                for obj in reachable_objects(sample):
+                    self.assertFalse(
+                        marshal.dumps(obj, version)[0] & self.FLAG_REF)
+                new = marshal.loads(data)
+                self.assertEqual(new, [sample, sample])
+                self.assertIsNot(new[0], new[1])
+
+    def test_nan_in_set(self):
+        # Distinct NaNs are distinct elements of a set, and they have
+        # the same marshalled representation.
+        for kind in set, frozenset:
+            for version in range(marshal.version + 1):
+                with self.subTest(kind=kind, version=version):
+                    nan1 = float('nan')
+                    nan2 = float('nan')
+                    nan3 = float('nan')
+                    s = kind([nan1, 1.5, nan2, nan3])
+                    for sample in (s, [s], [nan1, s], [s, nan2],
+                                   [nan3, s, nan1], [nan1, nan2, nan3, s],
+                                   [s, s], (nan2, [s, nan2], s)):
+                        data = marshal.dumps(sample, version)
+                        self.assertEqual(marshal.dumps(sample, version), data)
+                        new = marshal.loads(data)
+                        self.check_same_structure(new, sample, version >= 3)
+
+    def check_same_structure(self, new, sample, shared):
+        # Both object graphs have the same values and, if shared is true,
+        # share the same objects.  Elements of sets are matched in any
+        # order.
+        def shape(obj):
+            seen = {}
+            result = []
+            def number(x):
+                if shared:
+                    return seen.setdefault(id(x), len(seen))
+            def known(x):
+                if shared:
+                    return seen.get(id(x), -1)
+            def visit(x):
+                if isinstance(x, float):
+                    result.append((repr(x), number(x)))
+                elif isinstance(x, (set, frozenset)):
+                    # Elements are only numbered if they occur elsewhere.
+                    result.append((type(x), number(x),
+                                   sorted((repr(y), known(y)) for y in x)))
+                else:
+                    result.append((type(x), len(x)))
+                    for y in x:
+                        visit(y)
+            visit(obj)
+            # Again, with all objects numbered.
+            result.clear()
+            visit(obj)
+            return result
+        self.assertEqual(shape(new), shape(sample))
+
+    def test_shared_recursion(self):
+        # An object which is referenced several times is not mistaken
+        # for a recursive one, and a recursive one is still detected.
+        a = (float('1.25'),)
+        b = (a, a)
+        sample = [a, b, (b, a), b]
+        keep = reachable_objects(sample)
+        new = marshal.loads(marshal.dumps(sample))
+        self.assertEqual(new, sample)
+        self.assertIs(new[1][0], new[0])
+        self.assertIs(new[2][0], new[1])
+
+        lst = []
+        rec = slice(a, b, lst)
+        lst.append(rec)
+        for sample in (rec, [a, b, rec], (rec, rec)):
+            with self.assertRaises(ValueError):
+                marshal.dumps(sample)
+        lst.clear()
+
+    def test_dump_to_file(self):
+        # dump() writes the same data as dumps(), also if the data is larger
+        # than a buffer and contains references to objects written before.
+        sample = self.make_sample()
+        sample = [sample, 'x' * 100_000, sample, [sample[0]] * 10_000]
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        for version in range(marshal.version + 1):
+            with self.subTest(version=version):
+                if version < 6:
+                    sample[0] = sample[2] = self.make_sample(version)
+                data = marshal.dumps(sample, version)
+                with open(os_helper.TESTFN, 'wb') as f:
+                    marshal.dump(sample, f, version)
+                with open(os_helper.TESTFN, 'rb') as f:
+                    self.assertEqual(f.read(), data)
+                with open(os_helper.TESTFN, 'rb') as f:
+                    self.assertEqual(marshal.load(f), sample)
+                f = io.BytesIO()
+                marshal.dump(sample, f, version)
+                self.assertEqual(f.getvalue(), data)
+
+    @threading_helper.requires_working_threading()
+    def test_threads(self):
+        # The output does not depend on other threads using the same objects.
+        code = compile(textwrap.dedent("""
+            def f(a, b=(1, 2.5, 'spam eggs')):
+                return [a, b, {'ham', 12345678901234567890}, b'bytes']
+            """), '<marshal test>', 'exec')
+        sample = [self.make_sample(), code]
+        expected = marshal.dumps(sample)
+        results = []
+        def work():
+            for i in range(20):
+                keep = reachable_objects(sample)
+                results.append(marshal.dumps(sample))
+        threads = [threading.Thread(target=work) for i in range(4)]
+        with threading_helper.start_threads(threads):
+            pass
+        self.assertEqual(len(results), 80)
+        self.assertEqual(set(results), {expected})
 
 
 if __name__ == "__main__":
