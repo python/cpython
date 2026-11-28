@@ -535,8 +535,13 @@ The following exceptions are the exceptions that are usually raised.
    or :func:`eval`, or when reading the initial script or standard input
    (also interactively).
 
-   The :func:`str` of the exception instance returns only the error message.
-   Details is a tuple whose members are also available as separate attributes.
+   The :func:`str` of the exception instance returns the error message,
+   possibly with the filename, line number, or both.  *details* is a tuple
+   whose members are also available as separate attributes.
+
+   .. attribute:: msg
+
+      The error message.
 
    .. attribute:: filename
 
