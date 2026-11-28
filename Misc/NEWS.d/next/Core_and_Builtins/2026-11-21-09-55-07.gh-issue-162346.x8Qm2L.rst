@@ -1,0 +1,2 @@
+Fix lazy imports raising :exc:`KeyError` when a submodule removes its parent
+package from :data:`sys.modules` during import. Patch by tonghuaroot.
