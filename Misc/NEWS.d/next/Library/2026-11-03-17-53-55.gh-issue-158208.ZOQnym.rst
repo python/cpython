@@ -1,0 +1,2 @@
+Fix :mod:`xml.dom.minidom` writing a duplicate ``xmlns`` attribute for an
+element in no namespace that has its own ``xmlns`` attribute.
