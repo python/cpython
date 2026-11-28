@@ -1,0 +1,5 @@
+Fix the output of :mod:`marshal` for compiled code, and so the content of
+``.pyc`` files, varying with what was imported or compiled earlier in the
+process.  Strings in :class:`slice` constants made only of ASCII letters,
+digits and underscores are now interned in the default build, like those of
+other constants.

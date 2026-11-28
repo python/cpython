@@ -331,6 +331,14 @@ _PyCompile_SetQualname(compiler *c)
     else {
         name = Py_NewRef(u->u_metadata.u_name);
     }
+    // The qualified name is interned when the code object is created,
+    // whatever its content.  The body of a class also has it as a constant,
+    // and intern_final_constants() only interns the constants selected by
+    // _PyCode_ShouldInternString().  Intern the other qualified names now,
+    // so that the same object is always used for both.
+    if (!_PyCode_ShouldInternString(name)) {
+        _PyUnicode_InternMortal(_PyInterpreterState_GET(), &name);
+    }
     u->u_metadata.u_qualname = name;
 
     return SUCCESS;
@@ -1425,6 +1433,147 @@ consts_dict_keys_inorder(PyObject *dict)
     return consts;
 }
 
+/* Intern the strings of the constant *o* which intern_constants() in
+ * codeobject.c would intern when a code object is created.
+ *
+ * The strings of a slice are interned in all builds, although
+ * intern_constants() only looks into slices in the free-threaded build,
+ * so that the constants of a compilation are the same objects in both
+ * builds.
+ *
+ * Return a new reference to the constant to use instead of *o*.  The items
+ * of a tuple are replaced in place.  A frozenset or a slice with an item
+ * to replace cannot be modified: a new object is created and stored in its
+ * entry of *const_cache*, which is where the other users of *o* find it.
+ */
+static PyObject *
+intern_constant(PyObject *const_cache, PyObject *o)
+{
+    if (PyUnicode_CheckExact(o)) {
+        Py_INCREF(o);
+        if (_PyCode_ShouldInternString(o)) {
+            _PyUnicode_InternMortal(_PyInterpreterState_GET(), &o);
+        }
+        return o;
+    }
+    if (PyTuple_CheckExact(o)) {
+        Py_ssize_t len = PyTuple_GET_SIZE(o);
+        for (Py_ssize_t i = 0; i < len; i++) {
+            PyObject *item = PyTuple_GET_ITEM(o, i);
+            PyObject *v = intern_constant(const_cache, item);
+            if (v == NULL) {
+                return NULL;
+            }
+            if (v != item) {
+                // intern_constants() makes the same replacement in the
+                // tuple if it is not made here.
+                PyTuple_SET_ITEM(o, i, v);
+                Py_DECREF(item);
+            }
+            else {
+                Py_DECREF(v);
+            }
+        }
+        return Py_NewRef(o);
+    }
+    if (!PyFrozenSet_CheckExact(o) && !PySlice_Check(o)) {
+        return Py_NewRef(o);
+    }
+
+    // The key of a frozenset or of a slice is a pair whose second item is
+    // the object which stands for all the equal constants.
+    // See _PyCode_ConstantKey().
+    PyObject *key = const_cache_insert(const_cache, o, false);
+    if (key == NULL) {
+        return NULL;
+    }
+    assert(PyTuple_CheckExact(key));
+    assert(PyTuple_GET_SIZE(key) == 2);
+    o = PyTuple_GET_ITEM(key, 1);
+
+    PyObject *items;
+    if (PyFrozenSet_CheckExact(o)) {
+        items = PySequence_Tuple(o);
+    }
+    else {
+        PySliceObject *slice = (PySliceObject *)o;
+        items = PyTuple_Pack(3, slice->start, slice->stop, slice->step);
+    }
+    if (items == NULL) {
+        Py_DECREF(key);
+        return NULL;
+    }
+    bool modified = false;
+    Py_ssize_t len = PyTuple_GET_SIZE(items);
+    for (Py_ssize_t i = 0; i < len; i++) {
+        PyObject *item = PyTuple_GET_ITEM(items, i);
+        PyObject *v = intern_constant(const_cache, item);
+        if (v == NULL) {
+            Py_DECREF(items);
+            Py_DECREF(key);
+            return NULL;
+        }
+        if (v != item) {
+            modified = true;
+        }
+        PyTuple_SET_ITEM(items, i, v);
+        Py_DECREF(item);
+    }
+    if (modified) {
+        PyObject *new;
+        if (PyFrozenSet_CheckExact(o)) {
+            new = PyFrozenSet_New(items);
+        }
+        else {
+            new = PySlice_New(PyTuple_GET_ITEM(items, 0),
+                              PyTuple_GET_ITEM(items, 1),
+                              PyTuple_GET_ITEM(items, 2));
+        }
+        if (new == NULL) {
+            Py_DECREF(items);
+            Py_DECREF(key);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(key, 1, new);
+        Py_DECREF(o);
+        o = new;
+    }
+    Py_DECREF(items);
+    Py_INCREF(o);
+    Py_DECREF(key);
+    return o;
+}
+
+/* Intern the strings of the constants of a code unit, once the optimizer
+ * has removed the constants which are not used.
+ *
+ * intern_constants() in codeobject.c interns the string constants of each
+ * new code object.  When it has to replace a string of a frozenset (or, in
+ * the free-threaded build, of a slice) by a string which is already
+ * interned, it makes a copy of the container for that code object only.
+ * The constants of a code object would then be shared with the other code
+ * objects of the compilation or not depending on which strings happen to
+ * be interned in the process, and so would the output of marshal
+ * (gh-129724).  Replace the strings here instead, where all the code units
+ * get the same container from the constant cache.
+ */
+static int
+intern_final_constants(PyObject *const_cache, PyObject *consts)
+{
+    assert(PyList_CheckExact(consts));
+    Py_ssize_t len = PyList_GET_SIZE(consts);
+    for (Py_ssize_t i = 0; i < len; i++) {
+        PyObject *item = PyList_GET_ITEM(consts, i);
+        PyObject *v = intern_constant(const_cache, item);
+        if (v == NULL) {
+            return ERROR;
+        }
+        PyList_SET_ITEM(consts, i, v);
+        Py_DECREF(item);
+    }
+    return SUCCESS;
+}
+
 static int
 compute_code_flags(compiler *c)
 {
@@ -1489,6 +1638,10 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     if (_PyCfg_OptimizedCfgToInstructionSequence(g, &u->u_metadata,
                                                  &stackdepth, &nlocalsplus,
                                                  &optimized_instrs) < 0) {
+        goto error;
+    }
+
+    if (intern_final_constants(const_cache, consts) < 0) {
         goto error;
     }
 
