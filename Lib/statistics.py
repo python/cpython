@@ -656,6 +656,23 @@ def pstdev(data, mu=None):
 
 ## Statistics for relations between two inputs #############################
 
+def _center(data, n):
+    """Return ``data`` minus its mean, keeping precision for large offsets.
+
+    Subtracting a large common offset first keeps the deviations exact
+    instead of losing them when the mean itself is rounded.
+    """
+    origin = next(iter(data))
+    shifted = [value - origin for value in data]
+    if all(isfinite(value) for value in shifted):
+        mean = fsum(value / n for value in shifted)
+        centered = [value - mean for value in shifted]
+        if all(isfinite(value) for value in centered):
+            return centered
+    mean = fsum(data) / n
+    return [value - mean for value in data]
+
+
 def covariance(x, y, /):
     """Covariance
 
@@ -679,9 +696,9 @@ def covariance(x, y, /):
         raise StatisticsError('covariance requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('covariance requires at least two data points')
-    xbar = fsum(x) / n
-    ybar = fsum(y) / n
-    sxy = sumprod((xi - xbar for xi in x), (yi - ybar for yi in y))
+    x = _center(x, n)
+    y = _center(y, n)
+    sxy = sumprod(x, y)
     return sxy / (n - 1)
 
 
@@ -725,10 +742,8 @@ def correlation(x, y, /, *, method='linear'):
         y = _rank(y, start=start)
 
     else:
-        xbar = fsum(x) / n
-        ybar = fsum(y) / n
-        x = [xi - xbar for xi in x]
-        y = [yi - ybar for yi in y]
+        x = _center(x, n)
+        y = _center(y, n)
 
     sxy = sumprod(x, y)
     sxx = sumprod(x, x)

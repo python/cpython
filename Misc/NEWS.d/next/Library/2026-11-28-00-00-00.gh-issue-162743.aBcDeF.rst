@@ -1,0 +1,3 @@
+Fix :func:`statistics.correlation` and :func:`statistics.covariance`
+returning incorrect results when the data share a large common offset,
+as with timestamp-like values that differ by a small amount.

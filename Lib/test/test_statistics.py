@@ -2747,6 +2747,14 @@ class TestCorrelationAndCovariance(unittest.TestCase):
         self.assertAlmostEqual(statistics.correlation(x, y), 1)
         self.assertAlmostEqual(statistics.covariance(x, y), 0.1)
 
+    def test_large_offset(self):
+        # gh-162743: a large common offset must not swallow the signal.
+        epoch = 1_700_000_000_000_000_000
+        event = [epoch + 256, epoch + 512, epoch + 768]
+        received = [t + 1024 for t in event]
+        self.assertAlmostEqual(statistics.correlation(event, received), 1.0)
+        self.assertAlmostEqual(statistics.covariance(event, received), 65536.0)
+
     def test_sqrtprod_helper_function_fundamentals(self):
         # Verify that results are close to sqrt(x * y)
         for i in range(100):
