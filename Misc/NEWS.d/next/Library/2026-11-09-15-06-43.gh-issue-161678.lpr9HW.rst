@@ -1,0 +1,3 @@
+Fix :mod:`email` dropping non-ASCII whitespace, such as U+00A0 NO-BREAK SPACE,
+that follows a space in address display names and other structured header
+values.
