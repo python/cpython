@@ -1,0 +1,2 @@
+Fix :class:`weakref.WeakSet` intersection and symmetric difference updates
+leaving dead references that were still counted by :func:`len`.

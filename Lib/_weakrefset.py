@@ -110,7 +110,19 @@ class WeakSet:
     def intersection_update(self, other):
         self.__iand__(other)
     def __iand__(self, other):
-        self.data.intersection_update(ref(item) for item in other)
+        # Keep matching referents alive until their callbacks can remove them
+        # from self.data. As with set.intersection_update(), stop when full.
+        matches = {}
+        try:
+            for item in other:
+                itemref = ref(item, self._remove)
+                if itemref in self.data:
+                    matches.setdefault(itemref, item)
+                    if len(matches) >= len(self.data):
+                        break
+            self.data = set(matches)
+        finally:
+            matches.clear()
         return self
 
     def issubset(self, other):
@@ -144,7 +156,14 @@ class WeakSet:
         if self is other:
             self.data.clear()
         else:
-            self.data.symmetric_difference_update(ref(item, self._remove) for item in other)
+            # Retain the first referent for each equal key until the update.
+            items = {}
+            try:
+                for item in other:
+                    items.setdefault(ref(item, self._remove), item)
+                self.data.symmetric_difference_update(items)
+            finally:
+                items.clear()
         return self
 
     def union(self, other):
