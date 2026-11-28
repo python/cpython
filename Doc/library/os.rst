@@ -214,6 +214,11 @@ process and user.
       cause memory leaks.  Refer to the system documentation for
       :c:func:`!putenv`.
 
+   .. warning::
+      Setting or unsetting environment variables from one thread while
+      another thread reads or writes them is not guaranteed to be
+      thread-safe and can crash the process on some platforms.
+
    You can delete items in this mapping to unset environment variables.
    :func:`unsetenv` will be called automatically when an item is deleted from
    :data:`os.environ`, and when one of the :meth:`~dict.pop` or
