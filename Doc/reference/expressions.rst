@@ -318,7 +318,7 @@ Also, template string literals may only be combined with other template
 string literals::
 
    >>> t"Hello" t"{name}!"
-   Template(strings=('Hello', '!'), interpolations=(...))
+   <Template t'Hello{name='Blaise'}!' at 0x...>
 
 Formally:
 
