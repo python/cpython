@@ -1,0 +1,4 @@
+:func:`copy.copy` and :func:`copy.deepcopy` of :class:`weakref.WeakSet`
+now raise :exc:`TypeError` instead of creating a broken copy
+which shares internal state with the original.
+Use the :meth:`!copy` method instead.

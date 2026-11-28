@@ -42,6 +42,12 @@ class WeakSet:
     def __reduce__(self):
         return self.__class__, (list(self),), self.__getstate__()
 
+    def __copy__(self):
+        raise TypeError(f"cannot copy {type(self).__name__!r} object")
+
+    def __deepcopy__(self, memo):
+        raise TypeError(f"cannot copy {type(self).__name__!r} object")
+
     def add(self, item):
         self.data.add(ref(item, self._remove))
 
