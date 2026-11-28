@@ -1,0 +1,4 @@
+Fixed :attr:`ipaddress.IPv6Address.is_global` and
+:attr:`ipaddress.IPv6Address.is_private` for the ``5f00::/16`` (:rfc:`9602`)
+and ``100:0:0:1::/64`` (:rfc:`9780`) special-purpose ranges, which are not
+globally reachable per the IANA registry.
