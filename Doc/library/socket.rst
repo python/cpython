@@ -378,6 +378,13 @@ The AF_* and SOCK_* constants are now :class:`AddressFamily` and
    defined then this protocol is unsupported.  More constants may be available
    depending on the system.
 
+   On Windows, :const:`AF_UNIX` sockets only support the
+   :const:`SOCK_STREAM` type.
+
+   .. versionchanged:: next
+      :const:`AF_UNIX` is now available on Windows. It requires Windows 10
+      version 1803 or newer.
+
 .. data:: AF_UNSPEC
 
    :const:`AF_UNSPEC` means that
@@ -850,7 +857,8 @@ directly; see :ref:`socket-objects` for its parameters and full description.
    Build a pair of connected socket objects using the given address family, socket
    type, and protocol number.  Address family, socket type, and protocol number are
    as for the :func:`~socket.socket` function. The default family is :const:`AF_UNIX`
-   if defined on the platform; otherwise, the default is :const:`AF_INET`.
+   if defined on the platform, except on Windows; otherwise, the default is
+   :const:`AF_INET`.
 
    The newly created sockets are :ref:`non-inheritable <fd_inheritance>`.
 

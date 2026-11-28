@@ -8,7 +8,8 @@ import sys
 import warnings
 import weakref
 
-if hasattr(socket, 'AF_UNIX'):
+# AF_UNIX is available on Windows, but asyncio does not support it there yet.
+if hasattr(socket, 'AF_UNIX') and sys.platform != 'win32':
     __all__ += ('open_unix_connection', 'start_unix_server')
 
 from . import coroutines
@@ -84,7 +85,7 @@ async def start_server(client_connected_cb, host=None, port=None, *,
     return await loop.create_server(factory, host, port, **kwds)
 
 
-if hasattr(socket, 'AF_UNIX'):
+if hasattr(socket, 'AF_UNIX') and sys.platform != 'win32':
     # UNIX Domain Sockets are supported on this platform
 
     async def open_unix_connection(path=None, *,

@@ -1062,6 +1062,9 @@ class EventLoopTestsMixin:
         server.close()
 
     def _make_unix_server(self, factory, **kwargs):
+        if sys.platform == 'win32':
+            raise unittest.SkipTest('AF_UNIX support for asyncio is not '
+                                    'implemented on Windows for now')
         path = test_utils.gen_unix_socket_path()
         self.addCleanup(lambda: os.path.exists(path) and os.unlink(path))
 
@@ -1099,6 +1102,8 @@ class EventLoopTestsMixin:
         server.close()
 
     @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'No UNIX Sockets')
+    @unittest.skipIf(sys.platform == 'win32', 'AF_UNIX support for asyncio is '
+                     'not implemented on Windows for now')
     def test_create_unix_server_path_socket_error(self):
         proto = MyProto(loop=self.loop)
         sock = socket.socket()
