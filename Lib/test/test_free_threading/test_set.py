@@ -57,7 +57,7 @@ class RaceTestBase:
                     s.add(j)
                 for j in range(self.SET_SIZE):
                     s.discard(j)
-                # executes the set_swap_bodies() function
+                # executes the set_replace_body_lock_held() function
                 s.__iand__(set(k for k in range(10, 20)))
             done.set()
 
