@@ -1,0 +1,3 @@
+Add :attr:`email.headerregistry.ReferencesHeader.message_ids`, a tuple of the
+message identifiers in an :mailheader:`In-Reply-To` or :mailheader:`References`
+header.

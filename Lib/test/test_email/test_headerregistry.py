@@ -3,6 +3,8 @@ import textwrap
 import unittest
 from email import errors
 from email import policy
+from email import utils
+from email import message_from_string
 from email.message import Message
 from test.test_email import TestEmailBase, parameterize
 from email import headerregistry
@@ -1686,6 +1688,59 @@ class TestAddressAndGroup(TestEmailBase):
         self.assertNotEqual(Group('foo bar', []), g)
         self.assertFalse(g == object())
         self.assertTrue(g == ALWAYS_EQ)
+
+
+class TestReferencesHeader(TestHeaderBase):
+
+    def test_references_message_ids(self):
+        h = self.make_header('References',
+                             '<a@example.com> (the first)  <b@example.com>')
+        self.assertEqual(h.message_ids, ('<a@example.com>', '<b@example.com>'))
+        self.assertDefectsEqual(h.defects, [])
+
+    def test_in_reply_to_message_ids(self):
+        h = self.make_header('In-Reply-To', ' <a@example.com> ')
+        self.assertEqual(h.message_ids, ('<a@example.com>',))
+
+    def test_message_ids_match_make_msgid(self):
+        msgid = utils.make_msgid()
+        h = self.make_header('In-Reply-To', msgid)
+        self.assertEqual(h.message_ids, (msgid,))
+
+    def test_message_ids_id_right_forms(self):
+        h = self.make_header('References',
+                             '<a@[127.0.0.1]> <b@xn--fa-hia.example>')
+        self.assertEqual(h.message_ids,
+                         ('<a@[127.0.0.1]>', '<b@xn--fa-hia.example>'))
+
+    def test_message_ids_comma_separated(self):
+        h = self.make_header('References', '<a@example.com>,<b@example.com>')
+        self.assertEqual(h.message_ids, ('<a@example.com>', '<b@example.com>'))
+        self.assertDefectsEqual(h.defects, [errors.InvalidHeaderDefect])
+
+    def test_message_ids_skip_invalid(self):
+        h = self.make_header('References', '<a@example.com> not-a-msg-id')
+        self.assertEqual(h.message_ids, ('<a@example.com>',))
+        self.assertDefectsEqual(h.defects, [errors.InvalidHeaderDefect])
+
+    def test_message_ids_from_parsed_message(self):
+        msg = message_from_string(textwrap.dedent('''\
+            In-Reply-To: <b@example.com>
+            References: <a@example.com>
+             <b@example.com>
+
+            body
+            '''), policy=policy.default)
+        [in_reply_to] = msg['In-Reply-To'].message_ids
+        *_, last_reference = msg['References'].message_ids
+        self.assertEqual(in_reply_to, last_reference)
+        self.assertEqual(msg['References'].message_ids,
+                         ('<a@example.com>', '<b@example.com>'))
+
+    def test_message_ids_read_only(self):
+        h = self.make_header('References', '<a@example.com>')
+        with self.assertRaises(AttributeError):
+            h.message_ids = ()
 
 
 class TestFolding(TestHeaderBase):

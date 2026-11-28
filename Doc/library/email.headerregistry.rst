@@ -306,6 +306,22 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
       ``quoted-printable``.  See :rfc:`2045` for more information.
 
 
+.. class:: ReferencesHeader
+
+   Handles the :mailheader:`In-Reply-To` and :mailheader:`References` headers.
+
+   .. attribute:: message_ids
+
+      A tuple of the message identifiers in the header, in order.  Each one is
+      in its ``<id-left@id-right>`` form, without the comments and folding
+      white space that may surround it in the header, so it can be compared
+      with the value of another message's :mailheader:`Message-ID` header or
+      with the result of :func:`email.utils.make_msgid`.  Identifiers that
+      cannot be parsed are left out and reported in :attr:`~BaseHeader.defects`.
+
+      .. versionadded:: next
+
+
 
 .. class:: HeaderRegistry(base_class=BaseHeader, \
                           default_class=UnstructuredHeader, \
@@ -343,6 +359,8 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
       :content-disposition:       ContentDispositionHeader
       :content-transfer-encoding: ContentTransferEncodingHeader
       :message-id:                MessageIDHeader
+      :in-reply-to:               ReferencesHeader
+      :references:                ReferencesHeader
 
     ``HeaderRegistry`` has the following methods:
 
