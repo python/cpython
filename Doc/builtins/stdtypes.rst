@@ -1903,7 +1903,7 @@ objects that compare equal might have different :attr:`~range.start`,
 
 .. seealso::
 
-   * The `linspace recipe <https://code.activestate.com/recipes/579000-equally-spaced-numbers-linspace/>`_
+   * The `linspace recipe <https://github.com/ActiveState/code/tree/master/recipes/Python/579000_Equallyspaced_numbers_linspace/>`_
      shows how to implement a lazy version of range suitable for floating-point
      applications.
 

@@ -140,9 +140,9 @@ thoughts in mind:
      module that uses *bisect* to managed sorted collections of data.
 
    * The `SortedCollection recipe
-     <https://code.activestate.com/recipes/577197-sortedcollection/>`_ uses
+     <https://github.com/ActiveState/code/tree/master/recipes/Python/577197_SortedCollection/>`_ uses
      bisect to build a full-featured collection class with straight-forward search
-     methods and support for a key-function.  The keys are precomputed to save
+     methods and support for a key function.  The keys are precomputed to save
      unnecessary calls to the key function during searches.
 
 

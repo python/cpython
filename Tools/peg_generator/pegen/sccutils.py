@@ -18,7 +18,7 @@ def strongly_connected_components(
       exactly once; vertices not part of a SCC are returned as
       singleton sets.
 
-    From https://code.activestate.com/recipes/578507-strongly-connected-components-of-a-directed-graph/.
+    From https://github.com/ActiveState/code/tree/master/recipes/Python/578507_Strongly_connected_components_directed/.
     """
     identified: set[str] = set()
     stack: list[str] = []

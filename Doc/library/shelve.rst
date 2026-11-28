@@ -113,7 +113,7 @@ Two additional methods are supported:
 
 .. seealso::
 
-   `Persistent dictionary recipe <https://code.activestate.com/recipes/576642-persistent-dict-with-multiple-standard-file-format/>`_
+   `Persistent dictionary recipe <https://github.com/ActiveState/code/tree/master/recipes/Python/576642_Persistent_dict_multiple_standard_file/>`_
    with widely supported storage formats and having the speed of native
    dictionaries.
 
