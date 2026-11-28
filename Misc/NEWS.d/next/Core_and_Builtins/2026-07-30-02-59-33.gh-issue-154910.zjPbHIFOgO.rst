@@ -1,0 +1,4 @@
+The bytecode compiler now constant-folds f-string fields that are
+constants of exact type :class:`str`, :class:`int`, :class:`float` or
+:class:`bool`, so f-strings built entirely from such fields become a
+single string constant.
