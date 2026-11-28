@@ -4,7 +4,7 @@ import sys
 # Write the config.c file
 
 never = ['marshal', '_imp', '_ast', '__main__', 'builtins',
-         'sys', 'gc', '_warnings']
+         'sys', 'gc', '_warnings', 'posix', 'nt']
 
 def makeconfig(infp, outfp, modules, with_ifdef=0):
     m1 = re.compile('-- ADDMODULE MARKER 1 --')

@@ -644,13 +644,11 @@ static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
 
 // --- os module ------------------------------------------------------------
 
+// The module is built as _os and is also registered in sys.modules under
+// its historical platform name.
 #ifdef MS_WINDOWS
-#  define INITFUNC PyInit_nt
-#  define MODNAME "nt"
 #  define MODNAME_OBJ &_Py_ID(nt)
 #else
-#  define INITFUNC PyInit_posix
-#  define MODNAME "posix"
 #  define MODNAME_OBJ &_Py_ID(posix)
 #endif
 
@@ -2576,7 +2574,7 @@ statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     // ht_module doesn't get set in PyStructSequence_NewType(),
     // so we can't use PyType_GetModule().
-    PyObject *mod = PyImport_GetModule(MODNAME_OBJ);
+    PyObject *mod = PyImport_GetModule(&_Py_ID(_os));
     if (mod == NULL) {
         return NULL;
     }
@@ -19107,6 +19105,24 @@ posixmodule_exec(PyObject *m)
 {
     _posixstate *state = get_posix_state(m);
 
+    // Only the _os instance stands in for posix (nt); one loaded under that
+    // name, say by hand from its spec, leaves sys.modules alone.
+    PyObject *spec_name = PyModule_GetNameObject(m);
+    if (spec_name == NULL) {
+        return -1;
+    }
+    int is_os = PyUnicode_EqualToUTF8(spec_name, "_os");
+    Py_DECREF(spec_name);
+
+    // Name the module os before adding functions, so they report os as
+    // their module and pickle as os.<name> on every platform.
+    if (PyObject_SetAttr(m, &_Py_ID(__name__), &_Py_ID(os)) < 0) {
+        return -1;
+    }
+    if (PyModule_AddFunctions(m, posix_methods) < 0) {
+        return -1;
+    }
+
 #if defined(HAVE_PWRITEV)
     if (HAVE_PWRITEV_RUNTIME) {} else {
         PyObject* dct = PyModule_GetDict(m);
@@ -19286,7 +19302,19 @@ posixmodule_exec(PyObject *m)
     assert(state->ticks_per_second >= 1);
 #endif
 
-    return PyModule_Add(m, "_have_functions", list);
+    if (PyModule_Add(m, "_have_functions", list) < 0) {
+        return -1;
+    }
+    if (!is_os) {
+        return 0;
+    }
+
+    // Let import posix (nt) find this module unless that name is taken.
+    if (PyDict_SetDefaultRef(PyImport_GetModuleDict(), MODNAME_OBJ, m,
+                             NULL) < 0) {
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -19300,10 +19328,9 @@ static PyModuleDef_Slot posixmodile_slots[] = {
 
 static struct PyModuleDef posixmodule = {
     PyModuleDef_HEAD_INIT,
-    .m_name = MODNAME,
+    .m_name = "os",
     .m_doc = posix__doc__,
     .m_size = sizeof(_posixstate),
-    .m_methods = posix_methods,
     .m_slots = posixmodile_slots,
     .m_traverse = _posix_traverse,
     .m_clear = _posix_clear,
@@ -19311,7 +19338,7 @@ static struct PyModuleDef posixmodule = {
 };
 
 PyMODINIT_FUNC
-INITFUNC(void)
+PyInit__os(void)
 {
     return PyModuleDef_Init(&posixmodule);
 }

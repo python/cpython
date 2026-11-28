@@ -1,0 +1,3 @@
+Change :mod:`posix` (:mod:`!nt` on Windows) to use the module name :mod:`os`.
+Platform-specific import names keep working and functions now pickle
+as ``os.<name>``.
