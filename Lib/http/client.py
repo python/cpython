@@ -318,6 +318,11 @@ class HTTPResponse(io.BufferedIOBase):
         self.will_close = _UNKNOWN      # conn will close at end of response
         self._max_headers = None        # configured header count limit
 
+    def __repr__(self):
+        if self.status is _UNKNOWN:
+            return f'<{self.__class__.__name__}>'
+        return f'<{self.__class__.__name__} [{self.status} {self.reason}]>'
+
     def _read_status(self):
         line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
         if len(line) > _MAXLINE:
@@ -962,6 +967,13 @@ class HTTPConnection:
         # tests to replace them with a suitable mockup
         self._create_connection = socket.create_connection
         self._select = select.select
+
+    def __repr__(self):
+        if self.port is None:
+            port = self.default_port
+        else:
+            port = self.port
+        return f'<{self.__class__.__name__} {self.host}:{port}>'
 
     def set_tunnel(self, host, port=None, headers=None):
         """Set up host and port for HTTP CONNECT tunnelling.
