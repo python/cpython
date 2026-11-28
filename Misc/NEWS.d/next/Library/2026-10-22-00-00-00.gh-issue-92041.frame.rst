@@ -1,0 +1,3 @@
+Avoid scanning :data:`sys.modules` in :func:`inspect.getmodule` for frames
+and tracebacks whose global namespace and normalized filename match a
+registered module. This match takes precedence over filename-based lookup.
