@@ -111,6 +111,7 @@ reference/expressions.html: generator.__next__
 reference/expressions.html: generator.close
 reference/expressions.html: generator.send
 reference/expressions.html: generator.throw
+reference/expressions.html: examples
 
 # Obsolete sections in 'turtle' docs
 library/turtle.html: changes-since-python-2-6
@@ -126,6 +127,11 @@ library/concurrent.interpreters.html: concurrent.interpreters.QueueFullError
 
 # Removed footnote
 c-api/exceptions.html: win
+
+# Removed grammar snippet tokens:
+reference/expressions.html: grammar-token-python-grammar-yield_from
+reference/expressions.html: grammar-token-python-grammar-yield_list
+reference/simple_stmts.html: grammar-token-python-grammar-yield_stmt
 
 # Classic Mac OS attributes that 'os.stat_result' does not have
 library/os.html: os.stat_result.st_creator
