@@ -227,13 +227,14 @@ Read a keypress and return the resulting character as a byte string.
 Nothing is echoed to the console. This call will block if a keypress is
 not already available, but will not wait for Enter to be pressed. If the
 pressed key was a special function key, this will return '\000' or
-'\xe0'; the next call will return the keycode. The Control-C keypress
-cannot be read with this function.
+'\xe0'; the next call will return the keycode.
+When pressed while this function is waiting for input, Control-C can be
+read as b'\x03' without invoking the signal.SIGINT handler.
 [clinic start generated code]*/
 
 static int
 msvcrt_getch_impl(PyObject *module)
-/*[clinic end generated code: output=a4e51f0565064a7d input=37a40cf0ed0d1153]*/
+/*[clinic end generated code: output=a4e51f0565064a7d input=5c91f51ac2355241]*/
 {
     int ch;
 
