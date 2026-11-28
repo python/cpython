@@ -1,0 +1,3 @@
+macOS framework builds (``--enable-framework``) now produce relocatable
+frameworks that can be moved after installation without requiring
+``install_name_tool`` rewriting.
