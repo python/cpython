@@ -1789,6 +1789,10 @@ Socket Objects
       See the Unix manual page :manpage:`recv(2)` for the meaning of the optional argument
       *flags*; it defaults to zero.
 
+      When the :data:`!socket.MSG_TRUNC` flag is used, only receive up to
+      *bufsize* bytes even if the C function :c:func:`!recv` returns more
+      bytes (the real datagram size).
+
       .. versionchanged:: 3.5
          If the system call is interrupted and the signal handler does not raise
          an exception, the method now retries the system call instead of raising
@@ -1803,6 +1807,10 @@ Socket Objects
       :manpage:`recv(2)` for the meaning of the optional argument *flags*; it defaults
       to zero. The format of *address* depends on the address family --- see
       :ref:`socket-addresses`.
+
+      When the :data:`!socket.MSG_TRUNC` flag is used, only receive up to
+      *bufsize* bytes even if the C function :c:func:`!recvfrom` returns more
+      bytes (the real datagram size).
 
       .. versionchanged:: 3.5
          If the system call is interrupted and the signal handler does not raise

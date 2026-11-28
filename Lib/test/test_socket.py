@@ -51,6 +51,7 @@ support.requires_working_socket(module=True)
 HOST = socket_helper.HOST
 # test unicode string and carriage return
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
+MSG2 = 'Monty Python test'.encode('utf-8')
 
 VSOCKPORT = 1234
 AIX = platform.system() == "AIX"
@@ -3337,6 +3338,65 @@ class BasicUDPTest(ThreadedUDPSocketTest):
         self.assertRaises(ValueError, self.serv.recvfrom, -1)
 
     def _testRecvFromNegative(self):
+        self.cli.sendto(MSG, 0, (HOST, self.port))
+
+    # gh-160622: with MSG_TRUNC, recv() and recvfrom() must not return
+    # more bytes than requested, even if the datagram was longer.
+    @requireAttrs(socket, "MSG_TRUNC")
+    @unittest.skipIf(sys.platform == "win32", "Windows raises WSAEMSGSIZE")
+    def testRecvTrunc(self):
+        # Truncated read where recv() returns the real size of the datagram
+        msg = self.serv.recv(len(MSG) - 5, socket.MSG_TRUNC)
+        self.assertEqual(msg, MSG[:-5])
+
+        # Read the whole second datagram
+        msg = self.serv.recv(len(MSG2) + 5, socket.MSG_TRUNC)
+        self.assertEqual(msg, MSG2)
+
+    def _testRecvTrunc(self):
+        self.cli.sendto(MSG, 0, (HOST, self.port))
+        self.cli.sendto(MSG2, 0, (HOST, self.port))
+
+    @requireAttrs(socket, "MSG_TRUNC")
+    @requireAttrs(socket, "MSG_PEEK")
+    @unittest.skipIf(sys.platform == "win32", "Windows raises WSAEMSGSIZE")
+    def testRecvTruncPeek(self):
+        msg = self.serv.recv(len(MSG) - 5, socket.MSG_TRUNC | socket.MSG_PEEK)
+        self.assertEqual(msg, MSG[:-5])
+
+        msg = self.serv.recv(len(MSG))
+        self.assertEqual(msg, MSG)
+
+    def _testRecvTruncPeek(self):
+        self.cli.sendto(MSG, 0, (HOST, self.port))
+
+    @requireAttrs(socket, "MSG_TRUNC")
+    @unittest.skipIf(sys.platform == "win32", "Windows raises WSAEMSGSIZE")
+    def testRecvFromTrunc(self):
+        # Truncated read where recvfrom() returns the real size of the datagram
+        msg, addr = self.serv.recvfrom(len(MSG) - 5, socket.MSG_TRUNC)
+        self.assertEqual(msg, MSG[:-5])
+
+        # Read the whole second datagram
+        msg, addr = self.serv.recvfrom(len(MSG2) + 5, socket.MSG_TRUNC)
+        self.assertEqual(msg, MSG2)
+
+    def _testRecvFromTrunc(self):
+        self.cli.sendto(MSG, 0, (HOST, self.port))
+        self.cli.sendto(MSG2, 0, (HOST, self.port))
+
+    @requireAttrs(socket, "MSG_TRUNC")
+    @requireAttrs(socket, "MSG_PEEK")
+    @unittest.skipIf(sys.platform == "win32", "Windows raises WSAEMSGSIZE")
+    def testRecvFromTruncPeek(self):
+        msg, addr = self.serv.recvfrom(len(MSG) - 5,
+                                       socket.MSG_TRUNC | socket.MSG_PEEK)
+        self.assertEqual(msg, MSG[:-5])
+
+        msg, addr = self.serv.recvfrom(len(MSG))
+        self.assertEqual(msg, MSG)
+
+    def _testRecvFromTruncPeek(self):
         self.cli.sendto(MSG, 0, (HOST, self.port))
 
 
