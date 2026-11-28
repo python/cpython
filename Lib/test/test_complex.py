@@ -609,6 +609,12 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         check(complex(imag=1.5), 0.0, 1.5)
         check(complex(real=4.25, imag=1.5), 4.25, 1.5)
         check(complex(4.25, imag=1.5), 4.25, 1.5)
+        self.assertRaisesRegex(TypeError, r"given by name \('real'\) and position \(1\)",
+                               complex, 4.25, real=1.5)
+        self.assertRaisesRegex(TypeError, r"takes at most 2 arguments \(3 given\)",
+                               complex, 4.25, 1.5, imag=1.5)
+        self.assertRaisesRegex(TypeError, r"takes at most 2 arguments \(3 given\)",
+                               complex, 1, 2, real=3)
 
         # check that the sign of a zero in the real or imaginary part
         # is preserved when constructing from two floats.
