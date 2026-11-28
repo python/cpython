@@ -1,0 +1,3 @@
+Make the pure-Python loop in ``traceback._compute_suggestion_error()`` give
+the same results as ``_Py_CalculateSuggestions()`` in
+:file:`Python/suggestions.c`.

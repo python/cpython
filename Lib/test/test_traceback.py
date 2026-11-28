@@ -5278,6 +5278,37 @@ class MiscTest(unittest.TestCase):
                 self.assertGreater(res3, threshold, msg=(a, b, threshold))
 
     @cpython_only
+    def test_suggestions_python_fallback_matches_c(self):
+        # The pure Python fallback in traceback.py should pick the same
+        # suggestion as _Py_CalculateSuggestions() in Python/suggestions.c.
+        import _suggestions
+
+        class A:
+            def __init__(self, names):
+                self.names = names
+            def __dir__(self):
+                return self.names
+
+        long_name = 'x' * 41
+        cases = [
+            # (candidates, wrong_name)
+            (['tuple', 'True'], 'ture'),
+            ([long_name + 'y'], long_name),
+            ([f'name{i:03}' for i in range(749)] + ['vvvvv'], 'vvvvx'),
+        ]
+        for candidates, wrong_name in cases:
+            with self.subTest(wrong_name=wrong_name):
+                expected = _suggestions._generate_suggestions(
+                    sorted(candidates), wrong_name)
+                with support.swap_item(sys.modules, '_suggestions', None):
+                    try:
+                        getattr(A(candidates), wrong_name)
+                    except AttributeError as exc:
+                        actual = traceback._compute_suggestion_error(
+                            exc, exc.__traceback__, wrong_name)
+                self.assertEqual(actual, expected)
+
+    @cpython_only
     def test_suggestions_extension(self):
         # Check that the C extension is available
         import _suggestions

@@ -2000,12 +2000,10 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
 
     # Compute closest match
 
-    if len(d) > _MAX_CANDIDATE_ITEMS:
+    if len(d) >= _MAX_CANDIDATE_ITEMS:
         return None
     wrong_name_len = len(wrong_name)
-    if wrong_name_len > _MAX_STRING_SIZE:
-        return None
-    best_distance = wrong_name_len
+    best_distance = sys.maxsize
     suggestion = None
     for possible_name in d:
         if possible_name == wrong_name:
@@ -2040,16 +2038,16 @@ def _levenshtein_distance(a, b, max_cost):
         return 0
 
     # Trim away common affixes
+    a_end = len(a)
+    b_end = len(b)
     pre = 0
-    while a[pre:] and b[pre:] and a[pre] == b[pre]:
+    while pre < a_end and pre < b_end and a[pre] == b[pre]:
         pre += 1
-    a = a[pre:]
-    b = b[pre:]
-    post = 0
-    while a[:post or None] and b[:post or None] and a[post-1] == b[post-1]:
-        post -= 1
-    a = a[:post or None]
-    b = b[:post or None]
+    while a_end > pre and b_end > pre and a[a_end-1] == b[b_end-1]:
+        a_end -= 1
+        b_end -= 1
+    a = a[pre:a_end]
+    b = b[pre:b_end]
     if not a or not b:
         return _MOVE_COST * (len(a) + len(b))
     if len(a) > _MAX_STRING_SIZE or len(b) > _MAX_STRING_SIZE:
