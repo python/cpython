@@ -51,3 +51,29 @@ PyList_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
 
 PyAPI_FUNC(int) PyList_Extend(PyObject *self, PyObject *iterable);
 PyAPI_FUNC(int) PyList_Clear(PyObject *self);
+
+
+/* --- PyListBuilder API -------------------------------------------------- */
+
+typedef struct PyListBuilder PyListBuilder;
+
+PyAPI_FUNC(PyListBuilder*) PyListBuilder_Create(Py_ssize_t size);
+PyAPI_FUNC(PyObject*) PyListBuilder_Finish(PyListBuilder *builder);
+PyAPI_FUNC(void) PyListBuilder_Discard(PyListBuilder *builder);
+PyAPI_FUNC(int) PyListBuilder_Append(
+    PyListBuilder *builder,
+    PyObject *item);
+PyAPI_FUNC(int) PyListBuilder_AppendSteal(
+    PyListBuilder *builder,
+    PyObject *item);
+PyAPI_FUNC(int) PyListBuilder_Extend(
+    PyListBuilder *builder,
+    PyObject *iterable);
+PyAPI_FUNC(int) PyListBuilder_ExtendArray(
+    PyListBuilder *builder,
+    PyObject *const *items,
+    Py_ssize_t nitem);
+PyAPI_FUNC(int) PyListBuilder_ExtendArraySteal(
+    PyListBuilder *builder,
+    PyObject *const *items,
+    Py_ssize_t nitem);

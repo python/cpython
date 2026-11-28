@@ -1,0 +1,15 @@
+Add a new :ref:`PyListBuilder <pylistbuilder>` C API to create a :class:`list`
+object. On Free Threading, it's more efficient than the ``PyList`` C API to
+create a :class:`list`, because it can avoid the critical section on the
+created list. Add functions:
+
+* :c:func:`PyListBuilder_Create`
+* :c:func:`PyListBuilder_Finish`
+* :c:func:`PyListBuilder_Discard`
+* :c:func:`PyListBuilder_Append`
+* :c:func:`PyListBuilder_AppendSteal`
+* :c:func:`PyListBuilder_Extend`
+* :c:func:`PyListBuilder_ExtendArray`
+* :c:func:`PyListBuilder_ExtendArraySteal`
+
+Patch by Victor Stinner.

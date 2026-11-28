@@ -227,3 +227,101 @@ List Objects
 
    Return a new tuple object containing the contents of *list*; equivalent to
    ``tuple(list)``.
+
+
+.. _pylistbuilder:
+
+PyListBuilder
+-------------
+
+The :c:type:`PyListBuilder` API can be used to create a Python :class:`list`
+object.
+
+On Free Threading, it's more efficient than the ``PyList`` C API to create a
+:class:`list`, because it can avoid the critical section on the created list.
+
+.. versionadded:: next
+
+
+.. c:type:: PyListBuilder
+
+   A list builder object.
+
+   The API is **not thread safe**. To share a builder with multiple threads, a
+   critical section or a lock is needed.
+
+   The instance must be destroyed by :c:func:`PyListBuilder_Finish` on
+   success, or :c:func:`PyListBuilder_Discard` on error.
+
+
+.. c:function:: PyListBuilder* PyListBuilder_Create(Py_ssize_t size)
+
+   Create a :c:type:`PyListBuilder` and preallocate *size* items.
+
+   On error, set an exception and return ``NULL``.
+
+   *size* must be positive or zero.
+
+.. c:function:: PyObject* PyListBuilder_Finish(PyListBuilder *builder)
+
+   Finish a :c:type:`PyListBuilder` created by
+   :c:func:`PyListBuilder_Create`.
+
+   On success, return a Python :class:`list` object.
+   On error, set an exception and return ``NULL``.
+
+   The builder instance is invalid after the call in any case.
+   No API can be called on the builder after :c:func:`PyListBuilder_Finish`.
+
+.. c:function:: void PyListBuilder_Discard(PyListBuilder *builder)
+
+   Discard a :c:type:`PyListBuilder` created by :c:func:`PyListBuilder_Create`.
+
+   Do nothing if *builder* is ``NULL``.
+
+   The builder instance is invalid after the call.
+   No API can be called on the builder after :c:func:`PyListBuilder_Discard`.
+
+.. c:function:: int PyListBuilder_Append(PyListBuilder *builder, PyObject *item)
+
+   Append an item to the list builder.
+   Similar to :c:func:`PyList_Append`.
+
+   On success, return ``0``.
+   On error, set an exception, leave the builder unchanged, and return ``-1``.
+
+.. c:function:: int PyListBuilder_AppendSteal(PyListBuilder *builder, PyObject *item)
+
+   Similar to :c:func:`PyListBuilder_Append`, but :term:`steals <steal>` the
+   reference to *item*, instead of creating a new :term:`strong reference`.
+
+.. c:function:: int PyListBuilder_Extend(PyListBuilder *builder, PyObject *iterable)
+
+   Extend the list builder with the contents of *iterable*.
+   Similar to :c:func:`PyList_Extend`.
+
+   On success, return ``0``.
+   On error, set an exception, leave the builder unchanged, and return ``-1``.
+
+   If consuming *iterable* raises an exception, the builder is restored to its
+   previous state: discard added items.
+
+.. c:function:: int PyListBuilder_ExtendArray(PyListBuilder *builder, PyObject *const *items, Py_ssize_t nitem)
+
+   Extend the list builder with the contents of *items*: copy references from
+   *items* to the list builder.
+
+   On success, return ``0``.
+   On error, set an exception, leave the builder unchanged, and return ``-1``.
+
+   *nitem* must not be negative.
+
+   If resizing the builder fails (memory allocation failure), the builder is
+   restored to its previous state: discard added items.
+
+.. c:function:: int PyListBuilder_ExtendArraySteal(PyListBuilder *builder, PyObject *const *items, Py_ssize_t nitem)
+
+   Similar to :c:func:`PyListBuilder_ExtendArray`, but :term:`steal` references
+   instead of copying references.
+
+   On error, all *items* references are also cleared.

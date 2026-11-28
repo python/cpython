@@ -1,13 +1,19 @@
 import sys
+import threading
 import unittest
-from test.support import import_helper
 from collections import UserList
+from test import support
+from test.support import import_helper
+from test.support import threading_helper
+
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+
 
 NULL = None
 PY_SSIZE_T_MIN = _testcapi.PY_SSIZE_T_MIN
 PY_SSIZE_T_MAX = _testcapi.PY_SSIZE_T_MAX
+LIST_SMALL_ALLOCATED = _testcapi.LIST_SMALL_ALLOCATED
 
 class ListSubclass(list):
     pass
@@ -357,6 +363,218 @@ class CAPITest(unittest.TestCase):
     def test_uninitialized_list_repr(self):
         lst = _testlimitedcapi.list_new(3)
         self.assertEqual(repr(lst), '[<NULL>, <NULL>, <NULL>]')
+
+
+class ListBuilderTests(unittest.TestCase):
+    def create_builder(self, size):
+        # Test PyListBuilder_Create()
+        return _testcapi.PyListBuilder(size)
+
+    def list_equal(self, result, expected):
+        if not isinstance(expected, list):
+            expected = list(expected)
+        self.assertEqual(result, expected)
+        self.assertEqual(type(result), list)
+
+    def create_items(self, nitem):
+        # Call object() to create unique objects. Don't use small integers
+        # which are immortal (and so would not check for reference leaks).
+        return tuple(object() for i in range(nitem))
+
+    def test_create_overflow(self):
+        # Test PyListBuilder_Create() check for integer overflow
+        max_nitem = sys.maxsize // _testcapi.SIZEOF_VOID_P
+        self.assertRaises(MemoryError, self.create_builder, max_nitem + 1)
+        self.assertRaises(MemoryError, self.create_builder, sys.maxsize)
+
+    def check_append(self, method):
+        items = self.create_items(3)
+        for size in (0, len(items), len(items) * 10):
+            with self.subTest(size=size):
+                builder = self.create_builder(size)
+                append = getattr(builder, method)
+                for item in items:
+                    append(item)
+                self.list_equal(builder.finish(), items)
+
+        # test MemoryError
+        builder = self.create_builder(0)
+        append = getattr(builder, method)
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                append("alloc failed")
+        for item in items:
+            append(item)
+        self.list_equal(builder.finish(), items)
+
+    def test_append(self):
+        # Test PyListBuilder_Append()
+        self.check_append('append')
+
+    def test_append_steal(self):
+        # Test PyListBuilder_AppendSteal()
+        self.check_append('append_steal')
+
+    def check_extend(self, method):
+        items = self.create_items(5)
+        for size in (0, len(items), len(items) * 10):
+            with self.subTest(size=size):
+                builder = self.create_builder(size)
+                extend = getattr(builder, method)
+                extend(items)
+                self.list_equal(builder.finish(), items)
+
+        # test MemoryError
+        builder = self.create_builder(0)
+        extend = getattr(builder, method)
+        items_error = ("alloc failed",)
+        with self.assertRaises(MemoryError):
+            with support.inject_memory_error_cm():
+                extend(items_error)
+        extend(items)
+        self.list_equal(builder.finish(), items)
+
+    def test_extend(self):
+        # Test PyListBuilder_Extend()
+        self.check_extend('extend')
+
+    def test_extend_iter_error(self):
+        class IterError:
+            def __init__(self):
+                self.index = 1
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                value = self.index
+                self.index += 1
+                if value >= 3:
+                    raise ValueError("iter error")
+                return value
+
+        # On error, restore the builder to its previous state:
+        # discard added items
+        iterable = IterError()
+        builder = self.create_builder(0)
+        builder.append("before")
+        with self.assertRaisesRegex(ValueError, "iter error"):
+            builder.extend(iterable)
+        self.assertEqual(iterable.index, 4)
+        builder.append("after")
+        self.list_equal(builder.finish(), ["before", "after"])
+
+    def test_extend_array(self):
+        # Test PyListBuilder_ExtendArray()
+        self.check_extend('extend_array')
+
+    def test_extend_array_steal(self):
+        # Test PyListBuilder_ExtendArraySteal()
+        self.check_extend('extend_array_steal')
+
+    def test_empty(self):
+        list_get_allocated = _testcapi._list_get_allocated
+        empty_tuple = ()
+
+        for size in (0, LIST_SMALL_ALLOCATED, 1024):
+            with self.subTest(size=size):
+                builder = self.create_builder(size)
+                builder.extend(empty_tuple)
+                builder.extend_array(empty_tuple)
+                builder.extend_array_steal(empty_tuple)
+                result = builder.finish()
+                self.list_equal(result, [])
+
+                if size == 0 or size > LIST_SMALL_ALLOCATED:
+                    expected = 0
+                else:
+                    expected = size
+                self.assertEqual(list_get_allocated(result), expected)
+
+    def test_finish_shrink(self):
+        # PyListBuilder_Finish() shrinks the list if its allocated size
+        # is way too big
+        list_get_allocated = _testcapi._list_get_allocated
+
+        def compute_allocated(size):
+            return (size + (size >> 3) + 6) & ~3
+
+        def check_allocated(items, alloc, expected):
+            builder = self.create_builder(alloc)
+            # Don't use PyListBuilder_Extend() since it can shrink the list
+            for item in items:
+                builder.append(item)
+            result = builder.finish()
+            self.list_equal(result, list(items))
+            self.assertEqual(list_get_allocated(result), expected)
+
+        # small list
+        items = [1, 2, 3]
+        check_allocated(items,
+                        1024,
+                        compute_allocated(len(items)))
+
+        alloc = LIST_SMALL_ALLOCATED
+        check_allocated(items, alloc, alloc)
+
+        # larger list
+        items = tuple(range(100))
+        check_allocated(items,
+                        (len(items) + 1) * 2,
+                        compute_allocated(len(items)))
+
+        alloc = len(items) * 2
+        check_allocated(items, alloc, alloc)
+
+        # do not shrink on MemoryError
+        alloc = 1024
+        builder = self.create_builder(alloc)
+        builder.append(1)
+        with support.inject_memory_error_cm():
+            # list_resize() never fails when shrinking
+            result = builder.finish()
+        self.list_equal(result, [1])
+        self.assertEqual(list_get_allocated(result), alloc)
+
+    def test_combined(self):
+        # Call each method twice: it must not fail/crash.
+        builder = self.create_builder(0)
+        builder.append('a')
+        builder.append_steal('b')
+        builder.extend(('c',))
+        builder.extend_array(('d',))
+        builder.extend_array_steal(('e',))
+        builder.append('A')
+        builder.append_steal('B')
+        builder.extend(('C',))
+        builder.extend_array(('D',))
+        builder.extend_array_steal(('E',))
+        self.list_equal(builder.finish(), list('abcdeABCDE'))
+
+    def test_discard(self):
+        # Test PyListBuilder_Discard(): must not leak memory
+        builder = self.create_builder(0)
+        builder.extend([2, 5, 7])
+        builder.discard()
+
+    @threading_helper.requires_working_threading()
+    def test_thread(self):
+        # PyListBuilder can be used by multiple threads: it's up to the caller
+        # to implement a lock to prevent concurrent accesses.
+        builder = self.create_builder(0)
+
+        def thread_func(builder):
+            builder.append('a')
+            builder.append_steal('b')
+            builder.extend(('c',))
+            builder.extend_array(('d',))
+            builder.extend_array_steal(('e',))
+
+        thread = threading.Thread(target=thread_func, args=(builder,))
+        thread.start()
+        threading_helper.join_thread(thread)
+
+        self.list_equal(builder.finish(), list('abcde'))
 
 
 if __name__ == "__main__":

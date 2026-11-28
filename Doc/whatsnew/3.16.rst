@@ -1607,6 +1607,22 @@ New features
 * Add :c:func:`Py_HashBuffer` to the limited C API.
   (Contributed by Victor Stinner in :gh:`148233`.)
 
+* Add a new :ref:`PyListBuilder <pylistbuilder>` C API to create a :class:`list`
+  object. On Free Threading, it's more efficient than the ``PyList`` C API to
+  create a :class:`list`, because it can avoid the critical section on the
+  created list. Add functions:
+
+  * :c:func:`PyListBuilder_Create`
+  * :c:func:`PyListBuilder_Finish`
+  * :c:func:`PyListBuilder_Discard`
+  * :c:func:`PyListBuilder_Append`
+  * :c:func:`PyListBuilder_AppendSteal`
+  * :c:func:`PyListBuilder_Extend`
+  * :c:func:`PyListBuilder_ExtendArray`
+  * :c:func:`PyListBuilder_ExtendArraySteal`
+
+  (Contributed by Victor Stinner in :gh:`158660`.)
+
 * Add :c:macro:`Py_SETREF` and :c:macro:`Py_XSETREF` macros to the limited C
   API.
   (Contributed by Nathan Goldbaum and Victor Stinner in :gh:`158842`.)
