@@ -49,13 +49,15 @@ class NamedExpressionInvalidTest(unittest.TestCase):
     def test_named_expression_invalid_09(self):
         code = """spam(a=b := 'c')"""
 
-        with self.assertRaisesRegex(SyntaxError, "invalid syntax"):
+        with self.assertRaisesRegex(SyntaxError,
+            "cannot use named expression without parentheses here"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_10(self):
         code = """spam(x = y := f(x))"""
 
-        with self.assertRaisesRegex(SyntaxError, "invalid syntax"):
+        with self.assertRaisesRegex(SyntaxError,
+            "cannot use named expression without parentheses here"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_11(self):

@@ -794,6 +794,7 @@ invalid_arguments_rule(Parser *p)
 //     | 'False' '='
 //     | 'None' '='
 //     | NAME '=' expression for_if_clauses
+//     | NAME '=' NAME ':=' expression
 //     | !(NAME '=') expression '='
 //     | '**' expression '=' expression
 Py_LOCAL_SYMBOL void *
@@ -921,6 +922,42 @@ invalid_kwarg_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_kwarg[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME '=' expression for_if_clauses"));
+    }
+    { // NAME '=' NAME ':=' expression
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_kwarg[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME '=' NAME ':=' expression"));
+        Token * _literal;
+        Token * _literal_1;
+        expr_ty a;
+        expr_ty b;
+        expr_ty name_var;
+        if (
+            (name_var = _PyPegen_name_token(p))  // NAME
+            &&
+            (_literal = _PyPegen_expect_token(p, 22))  // token='='
+            &&
+            (a = _PyPegen_name_token(p))  // NAME
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 53))  // token=':='
+            &&
+            (b = expression_rule(p))  // expression
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_kwarg[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME '=' NAME ':=' expression"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "cannot use named expression without parentheses here" );
+            if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_kwarg[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME '=' NAME ':=' expression"));
     }
     { // !(NAME '=') expression '='
         if (p->error_indicator) {
