@@ -35,7 +35,8 @@ servers written in Python.  Servers can either be free standing, using
    will turn off logging.   The *allow_none* and *encoding* parameters are passed
    on to :mod:`xmlrpc.client` and control the XML-RPC responses that will be returned
    from the server. The *bind_and_activate* parameter controls whether
-   :meth:`server_bind` and :meth:`server_activate` are called immediately by the
+   :meth:`~socketserver.BaseServer.server_bind` and
+   :meth:`~socketserver.BaseServer.server_activate` are called immediately by the
    constructor; it defaults to true. Setting it to false allows code to manipulate
    the *allow_reuse_address* class variable before the address is bound.
    The *use_builtin_types* parameter is passed to the
@@ -96,17 +97,17 @@ alone XML-RPC servers.
 
    Register an object which is used to expose method names which have not been
    registered using :meth:`register_function`.  If *instance* contains a
-   :meth:`_dispatch` method, it is called with the requested method name and the
+   :meth:`!_dispatch` method, it is called with the requested method name and the
    parameters from the request.  Its API is ``def _dispatch(self, method, params)``
    (note that *params* does not represent a variable argument list).  If it calls
    an underlying function to perform its task, that function is called as
    ``func(*params)``, expanding the parameter list. The return value from
-   :meth:`_dispatch` is returned to the client as the result.  If *instance* does
-   not have a :meth:`_dispatch` method, it is searched for an attribute matching
+   :meth:`!_dispatch` is returned to the client as the result.  If *instance* does
+   not have a :meth:`!_dispatch` method, it is searched for an attribute matching
    the name of the requested method.
 
    If the optional *allow_dotted_names* argument is true and the instance does not
-   have a :meth:`_dispatch` method, then if the requested method name contains
+   have a :meth:`!_dispatch` method, then if the requested method name contains
    periods, each component of the method name is searched for individually, with
    the effect that a simple hierarchical search is performed.  The value found from
    this search is then called with the parameters from the request, and the return
@@ -189,7 +190,7 @@ server::
    # Print list of available methods
    print(s.system.listMethods())
 
-:meth:`register_function` can also be used as a decorator. The previous server
+:meth:`SimpleXMLRPCServer.register_function` can also be used as a decorator. The previous server
 example can register functions in a decorator way::
 
    from xmlrpc.server import SimpleXMLRPCServer
@@ -310,9 +311,9 @@ requests sent to Python CGI scripts.
 
    Register an object which is used to expose method names  which have not been
    registered using :meth:`register_function`. If  instance contains a
-   :meth:`_dispatch` method, it is called with the  requested method name and the
+   :meth:`!_dispatch` method, it is called with the  requested method name and the
    parameters from the  request; the return value is returned to the client as the
-   result. If instance does not have a :meth:`_dispatch` method, it is searched
+   result. If instance does not have a :meth:`!_dispatch` method, it is searched
    for an attribute matching the name of the requested method; if  the requested
    method name contains periods, each  component of the method name is searched for
    individually,  with the effect that a simple hierarchical search is performed.
