@@ -962,6 +962,7 @@ LINK_PYTHON_DEPS
 LIBRARY_DEPS
 HOSTRUNNER
 NODE
+RELOCATABLE
 STATIC_LIBPYTHON
 GNULD
 EXPORTSFROM
@@ -1042,6 +1043,7 @@ FREEZE_MODULE
 FREEZE_MODULE_BOOTSTRAP_DEPS
 FREEZE_MODULE_BOOTSTRAP
 PYTHON_FOR_FREEZE
+MODULE_CHECK_COMMAND
 PYTHON_FOR_BUILD
 host_os
 host_vendor
@@ -1114,6 +1116,7 @@ enable_shared
 with_static_libpython
 enable_static_libpython_for_interpreter
 enable_profiling
+enable_relocatable
 enable_gil
 with_pydebug
 with_trace_refs
@@ -1866,6 +1869,8 @@ Optional Features:
                           library)
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
+  --enable-relocatable    make the installation easier to relocate (work in
+                          progress; default is no)
   --disable-gil           enable support for running without the GIL (default
                           is no)
   --enable-pystats        enable internal statistics gathering (default is no)
@@ -3853,6 +3858,17 @@ fi
 esac
 fi
 
+
+
+# Module import checks must run with the target interpreter on native builds.
+if test "x$cross_compiling" = xyes
+then :
+  MODULE_CHECK_COMMAND='$(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --cross-compiling'
+else case e in #(
+  e) MODULE_CHECK_COMMAND='$(RUNSHARED) ./$(BUILDPYTHON) -E $(srcdir)/Tools/build/check_extension_modules.py --no-cross-compiling'
+ ;;
+esac
+fi
 
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for Python interpreter freezing" >&5
@@ -8138,6 +8154,28 @@ if test "x$enable_profiling" = xyes; then
   BASECFLAGS="-pg $BASECFLAGS"
   LDFLAGS="-pg $LDFLAGS"
 fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-relocatable" >&5
+printf %s "checking for --enable-relocatable... " >&6; }
+# Check whether --enable-relocatable was given.
+if test ${enable_relocatable+y}
+then :
+  enableval=$enable_relocatable;
+else case e in #(
+  e) enable_relocatable=no ;;
+esac
+fi
+
+case $enable_relocatable in #(
+  yes|no) :
+     ;; #(
+  *) :
+    as_fn_error $? "--enable-relocatable must be yes or no" "$LINENO" 5 ;;
+esac
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_relocatable" >&5
+printf "%s\n" "$enable_relocatable" >&6; }
+RELOCATABLE=$enable_relocatable
+
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking LDLIBRARY" >&5
 printf %s "checking LDLIBRARY... " >&6; }

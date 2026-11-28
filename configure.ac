@@ -186,6 +186,13 @@ AC_ARG_WITH([build-python],
 )
 AC_SUBST([PYTHON_FOR_BUILD])
 
+# Module import checks must run with the target interpreter on native builds.
+AS_VAR_IF([cross_compiling], [yes],
+  [MODULE_CHECK_COMMAND='$(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --cross-compiling'],
+  [MODULE_CHECK_COMMAND='$(RUNSHARED) ./$(BUILDPYTHON) -E $(srcdir)/Tools/build/check_extension_modules.py --no-cross-compiling']
+)
+AC_SUBST([MODULE_CHECK_COMMAND])
+
 AC_MSG_CHECKING([for Python interpreter freezing])
 AC_MSG_RESULT([$PYTHON_FOR_FREEZE])
 AC_SUBST([PYTHON_FOR_FREEZE])
@@ -1762,6 +1769,18 @@ if test "x$enable_profiling" = xyes; then
   BASECFLAGS="-pg $BASECFLAGS"
   LDFLAGS="-pg $LDFLAGS"
 fi
+
+AC_MSG_CHECKING([for --enable-relocatable])
+AC_ARG_ENABLE([relocatable],
+  [AS_HELP_STRING([--enable-relocatable],
+                  [make the installation easier to relocate
+                   (work in progress; default is no)])],
+  [], [enable_relocatable=no])
+AS_CASE([$enable_relocatable],
+  [yes|no], [],
+  [AC_MSG_ERROR([--enable-relocatable must be yes or no])])
+AC_MSG_RESULT([$enable_relocatable])
+AC_SUBST([RELOCATABLE], [$enable_relocatable])
 
 AC_MSG_CHECKING([LDLIBRARY])
 

@@ -781,20 +781,27 @@ XML_GetIdAttributeIndex(XML_Parser parser);
 /* Parses some input. Returns XML_STATUS_ERROR if a fatal error is
    detected.  The last call to XML_Parse must have isFinal true; len
    may be zero for this call (or any other).
-
-   Though the return values for these functions has always been
-   described as a Boolean value, the implementation, at least for the
-   1.95.x series, has always returned exactly one of the XML_Status
-   values.
 */
 XMLPARSEAPI(enum XML_Status)
 XML_Parse(XML_Parser parser, const char *s, int len, int isFinal);
 
+// Added in Expat 2.11.0.
+XMLPARSEAPI(enum XML_Status)
+XML_Parse64(XML_Parser parser, const char *s, size_t len, XML_Bool isFinal);
+
 XMLPARSEAPI(void *)
 XML_GetBuffer(XML_Parser parser, int len);
 
+// Added in Expat 2.11.0.
+XMLPARSEAPI(void *)
+XML_GetBuffer64(XML_Parser parser, size_t len);
+
 XMLPARSEAPI(enum XML_Status)
 XML_ParseBuffer(XML_Parser parser, int len, int isFinal);
+
+// Added in Expat 2.11.0.
+XMLPARSEAPI(enum XML_Status)
+XML_ParseBuffer64(XML_Parser parser, size_t len, XML_Bool isFinal);
 
 /* Stops parsing, causing XML_Parse() or XML_ParseBuffer() to return.
    Must be called from within a call-back handler, except when aborting
@@ -1147,7 +1154,7 @@ XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
    See https://semver.org
 */
 #  define XML_MAJOR_VERSION 2
-#  define XML_MINOR_VERSION 10
+#  define XML_MINOR_VERSION 11
 #  define XML_MICRO_VERSION 0
 
 #  ifdef __cplusplus

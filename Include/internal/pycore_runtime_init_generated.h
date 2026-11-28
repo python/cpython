@@ -1516,6 +1516,7 @@ extern "C" {
     INIT_ID(__str__), \
     INIT_ID(__sub__), \
     INIT_ID(__subclasscheck__), \
+    INIT_ID(__subclasses__), \
     INIT_ID(__subclasshook__), \
     INIT_ID(__truediv__), \
     INIT_ID(__trunc__), \
@@ -1588,6 +1589,7 @@ extern "C" {
     INIT_ID(all_interpreters), \
     INIT_ID(all_threads), \
     INIT_ID(allow_code), \
+    INIT_ID(allow_nan), \
     INIT_ID(alphabet), \
     INIT_ID(any), \
     INIT_ID(append), \
@@ -1738,6 +1740,7 @@ extern "C" {
     INIT_ID(element_factory), \
     INIT_ID(emptyerror), \
     INIT_ID(encode), \
+    INIT_ID(encoder), \
     INIT_ID(encoding), \
     INIT_ID(end), \
     INIT_ID(end_col_offset), \
@@ -1842,6 +1845,7 @@ extern "C" {
     INIT_ID(in_fd), \
     INIT_ID(include_aliases), \
     INIT_ID(incoming), \
+    INIT_ID(indent), \
     INIT_ID(index), \
     INIT_ID(indexgroup), \
     INIT_ID(inf), \
@@ -1875,6 +1879,7 @@ extern "C" {
     INIT_ID(isolation_level), \
     INIT_ID(istext), \
     INIT_ID(item), \
+    INIT_ID(item_separator), \
     INIT_ID(items), \
     INIT_ID(iter), \
     INIT_ID(iterable), \
@@ -1884,6 +1889,7 @@ extern "C" {
     INIT_ID(jump), \
     INIT_ID(keepends), \
     INIT_ID(key), \
+    INIT_ID(key_separator), \
     INIT_ID(keyfile), \
     INIT_ID(keys), \
     INIT_ID(kind), \
@@ -1918,6 +1924,7 @@ extern "C" {
     INIT_ID(loop), \
     INIT_ID(manual_reset), \
     INIT_ID(mapping), \
+    INIT_ID(markers), \
     INIT_ID(mask), \
     INIT_ID(match), \
     INIT_ID(max_length), \
@@ -2110,9 +2117,11 @@ extern "C" {
     INIT_ID(skip_file_prefixes), \
     INIT_ID(skip_non_matching_threads), \
     INIT_ID(skipinitialspace), \
+    INIT_ID(skipkeys), \
     INIT_ID(sleep), \
     INIT_ID(sock), \
     INIT_ID(sort), \
+    INIT_ID(sort_keys), \
     INIT_ID(source), \
     INIT_ID(source_traceback), \
     INIT_ID(spam), \

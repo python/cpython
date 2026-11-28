@@ -4,9 +4,9 @@ preserve
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_runtime.h"       // _Py_SINGLETON()
 
 PyDoc_STRVAR(mappingproxy_new__doc__,
 "mappingproxy(mapping)\n"
@@ -170,7 +170,8 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
                    PyObject *fdel, PyObject *doc);
 
 static int
-property_init(PyObject *self, PyObject *args, PyObject *kwargs)
+property_init_helper(PyObject *self, PyObject *const *args,
+    Py_ssize_t nargs, Py_ssize_t nkw, PyObject *kwargs, PyObject *kwnames)
 {
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -202,14 +203,13 @@ property_init(PyObject *self, PyObject *args, PyObject *kwargs)
     #undef KWTUPLE
     PyObject *argsbuf[4];
     PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    Py_ssize_t noptargs = nargs + nkw - 0;
     PyObject *fget = NULL;
     PyObject *fset = NULL;
     PyObject *fdel = NULL;
     PyObject *doc = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+    fastargs = _PyArg_UnpackKeywords(args, nargs, kwargs, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
@@ -242,4 +242,78 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=41ae2d4147b31052 input=a9049054013a1b77]*/
+
+static int
+property_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    return property_init_helper(self, _PyTuple_CAST(args)->ob_item,
+        PyTuple_GET_SIZE(args),
+        kwargs ? PyDict_GET_SIZE(kwargs) : 0,
+        kwargs, NULL);
+}
+
+static PyObject *
+property_vectorcall(PyObject *type, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    PyObject *self;
+    int _result;
+    PyObject *fget = NULL;
+    PyObject *fset = NULL;
+    PyObject *fdel = NULL;
+    PyObject *doc = NULL;
+
+    assert(_PyType_CAST(type)->tp_init == property_init);
+    /* Make sure the type object is immutable: the generated
+     * vectorcall doesn't deal e.g. with users reassigning __init__. */
+    assert(PyType_HasFeature(_PyType_CAST(type), Py_TPFLAGS_IMMUTABLETYPE));
+    if (kwnames != NULL || nargs > 4) {
+        self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+            (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
+        if (self == NULL) {
+            return NULL;
+        }
+        _result = property_init_helper(self, args, nargs,
+            kwnames ? PyTuple_GET_SIZE(kwnames) : 0,
+            NULL, kwnames);
+        if (_result != 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        return self;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    fget = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    fset = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    fdel = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    doc = args[3];
+skip_optional:
+    self = _PyType_CAST(type)->tp_new(_PyType_CAST(type),
+        (PyObject *)&_Py_SINGLETON(tuple_empty), NULL);
+    if (self == NULL) {
+        goto exit;
+    }
+    _result = property_init_impl((propertyobject *)self, fget, fset, fdel, doc);
+    if (_result != 0) {
+        Py_DECREF(self);
+        goto exit;
+    }
+    return_value = self;
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=cd59da11d2fc4f7c input=a9049054013a1b77]*/

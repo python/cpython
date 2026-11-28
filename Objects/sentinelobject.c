@@ -63,6 +63,7 @@ sentinel_new_with_module(PyTypeObject *type, PyObject *name, PyObject *module, P
 }
 
 /*[clinic input]
+@vectorcall
 @classmethod
 sentinel.__new__ as sentinel_new
 
@@ -74,7 +75,7 @@ sentinel.__new__ as sentinel_new
 
 static PyObject *
 sentinel_new_impl(PyTypeObject *type, PyObject *name, PyObject *repr)
-/*[clinic end generated code: output=1eb7fab52e57d8c8 input=28cab6c468997b35]*/
+/*[clinic end generated code: output=1eb7fab52e57d8c8 input=af2ba470062edc82]*/
 {
     if (repr == Py_None) {
         repr = NULL;
@@ -218,5 +219,6 @@ PyTypeObject PySentinel_Type = {
     .tp_methods = sentinel_methods,
     .tp_members = sentinel_members,
     .tp_new = sentinel_new,
+    .tp_vectorcall = sentinel_vectorcall,
     .tp_free = PyObject_GC_Del,
 };

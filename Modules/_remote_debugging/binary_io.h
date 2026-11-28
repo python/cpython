@@ -459,10 +459,13 @@ typedef struct {
 #if USE_MMAP
     uint8_t *mapped_data;
     size_t mapped_size;
+    size_t page_size;
 #else
     FILE *fp;
-    uint8_t *file_data;
     size_t file_size;
+    uint8_t *table_data;
+    ByteBuffer sample_window;
+    size_t sample_window_start;
 #endif
 
     /* Decompression state */

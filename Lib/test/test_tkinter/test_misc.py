@@ -6,6 +6,7 @@ import platform
 import signal
 import sys
 import textwrap
+import threading
 import time
 import unittest
 import weakref
@@ -14,7 +15,9 @@ import tkinter
 from tkinter import TclError, ttk
 import enum
 from test import support
+from test.support import import_helper
 from test.support import os_helper
+from test.support import threading_helper
 from test.support.isolation import runInSubprocess
 from test.support.script_helper import assert_python_ok
 from test.test_tkinter.support import setUpModule  # noqa: F401
@@ -712,6 +715,109 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertNotHasAttr(tkinter.Frame, 'tk_print')
         self.assertNotHasAttr(tkinter.Misc, 'tk_print')
 
+    @requires_tk(9, 1)
+    def test_accessible(self):
+        # Without an active screen reader every "tk accessible" call is
+        # a no-op returning 0, so only test that the calls do not raise
+        # and check the values when a screen reader is active.
+        try:
+            sr = self.root.tk_check_screenreader()
+        except tkinter.TclError:
+            # Tk 9.1a0 or Tk compiled without accessibility support
+            # (e.g. without ATK on X11).
+            self.skipTest('the "tk accessible" command is not supported')
+        self.assertIsInstance(sr, bool)
+        f = tkinter.Frame(self.root)
+        acc = f.accessible
+        self.assertIsInstance(acc, tkinter.Accessible)
+        self.assertIs(f.accessible, acc)
+        # The role has to be set first, it creates the table in which
+        # other attributes are stored.
+        acc.role = 'Label'
+        result = acc.role
+        if sr:
+            self.assertEqual(result, 'Label')
+            # Reading an attribute that has not been set raises TclError.
+            with self.assertRaises(tkinter.TclError):
+                acc.help
+        for attr in ('name', 'description', 'value', 'state',
+                     'action', 'help'):
+            with self.subTest(attr=attr):
+                setattr(acc, attr, 'spam')
+                result = getattr(acc, attr)
+                if sr:
+                    self.assertEqual(result, 'spam')
+        acc.add_object()
+        acc.emit_selection_change()
+        if self.root._windowingsystem != 'aqua':
+            acc.emit_focus_change()
+
+    @unittest.skipUnless(sys.platform == 'win32', 'requires Windows')
+    def test_callback_from_foreign_event_loop(self):
+        # gh-84256: Tk can call an event handler when Tcl was not entered
+        # by tkinter, for example when a window message is dispatched
+        # from a foreign event loop while the GIL is released.
+        ctypes = import_helper.import_module('ctypes')
+        from ctypes import wintypes
+        user32 = ctypes.WinDLL('user32')
+        user32.SendMessageW.argtypes = [wintypes.HWND, wintypes.UINT,
+                                        wintypes.WPARAM, wintypes.LPARAM]
+        user32.SetWindowPos.argtypes = [wintypes.HWND, wintypes.HWND,
+                                        ctypes.c_int, ctypes.c_int,
+                                        ctypes.c_int, ctypes.c_int,
+                                        wintypes.UINT]
+        WM_ENTERSIZEMOVE = 0x0231
+        WM_EXITSIZEMOVE = 0x0232
+        SWP_NOMOVE = 0x0002
+        SWP_NOZORDER = 0x0004
+        SWP_NOACTIVATE = 0x0010
+
+        top = tkinter.Toplevel(self.root)
+        top.geometry('200x150')
+        if not wait_until_mapped(top):
+            self.skipTest('the window is not mapped')
+        sizes = []
+        def callback(event):
+            # Call Tcl from the handler.
+            sizes.append((event.width, event.height, top.winfo_width()))
+        top.bind('<Configure>', callback)
+        hwnd = int(top.wm_frame(), 16)
+        # Emulate resizing the window with the mouse: Tk handles the
+        # resulting window messages in its window procedure, outside
+        # of the Tcl event loop run by tkinter.
+        user32.SendMessageW(hwnd, WM_ENTERSIZEMOVE, 0, 0)
+        try:
+            user32.SetWindowPos(hwnd, None, 0, 0, 250, 180,
+                                SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE)
+        finally:
+            user32.SendMessageW(hwnd, WM_EXITSIZEMOVE, 0, 0)
+        self.assertTrue(sizes)
+
+    def test_nested_mainloop(self):
+        # gh-162650: Calls from other thread are still dispatched after
+        # a nested mainloop() exits.
+        root = self.root
+        results = []
+        def call():
+            try:
+                results.append(root.tk.call('expr', '6*7'))
+            except RuntimeError as e:
+                results.append(e)
+        def start():
+            root.after(0, root.quit)
+            root.mainloop()  # nested
+            thread = threading.Thread(target=call)
+            thread.start()
+            def wait():
+                if thread.is_alive():
+                    root.after(10, wait)
+                else:
+                    root.quit()
+            wait()
+        root.after(0, start)
+        root.mainloop()
+        self.assertEqual(results, [42])
+
     def test_wait_variable(self):
         var = tkinter.StringVar(self.root)
         self.assertEqual(self.root.waitvar, self.root.wait_variable)
@@ -898,6 +1004,91 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             iter(widget)
         with self.assertRaisesRegex(TypeError, 'is not a container or iterable'):
             widget in widget
+
+
+@unittest.skipIf(sys.platform == 'darwin',
+                 'Tk only works in the main thread on macOS')
+@threading_helper.requires_working_threading()
+class MainloopThreadsTest(unittest.TestCase):
+    # gh-162647: The mainloop() of Tcl interpreters in different threads
+    # should not affect each other.
+
+    def setUp(self):
+        # Tk objects created in other threads must not become the default
+        # root.
+        self.addCleanup(setattr, tkinter, '_support_default_root',
+                        tkinter._support_default_root)
+        tkinter._support_default_root = False
+        self.roots = {}
+        self.results = []
+
+    def mainloop_thread(self, name, ticking=False):
+        # Return a thread which runs mainloop() of a new Tk.
+        def run():
+            root = tkinter.Tk()
+            root.withdraw()
+            if ticking:
+                def tick():
+                    root.after(20, tick)
+                tick()
+            self.roots[name] = root
+            try:
+                root.mainloop()
+                self.results.append((name, None))
+            except BaseException as e:
+                self.results.append((name, e))
+            finally:
+                # The interpreter should be deleted in its thread.
+                del self.roots[name]
+                root.destroy()
+                del root
+                _tkinter._finalize_thread()
+        return threading.Thread(target=run)
+
+    def wait_mainloop(self, name):
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            if name in self.roots:
+                break
+        # A call from other thread waits until mainloop() runs.
+        self.roots[name].tk.call('info', 'patchlevel')
+
+    def quit_all(self):
+        for root in list(self.roots.values()):
+            root.quit()
+
+    def test_quit(self):
+        threads = [self.mainloop_thread('a'),
+                   self.mainloop_thread('b', ticking=True)]
+        with threading_helper.start_threads(threads, unlock=self.quit_all):
+            self.wait_mainloop('a')
+            self.wait_mainloop('b')
+            # quit() stops the mainloop() of its interpreter even if it
+            # waits for events, and does not stop other mainloop().
+            self.roots['a'].quit()
+            threads[0].join(support.SHORT_TIMEOUT)
+            self.assertEqual(self.results, [('a', None)])
+        self.assertEqual(self.results, [('a', None), ('b', None)])
+
+    def test_callback_error(self):
+        threads = [self.mainloop_thread('b', ticking=True)]
+        with threading_helper.start_threads(threads, unlock=self.quit_all):
+            self.wait_mainloop('b')
+            root = tkinter.Tk()
+            self.addCleanup(root.destroy)
+            root.withdraw()
+            def callback():
+                raise ZeroDivisionError
+            root.tk.createcommand('callback', callback)
+            root.tk.call('after', 0, 'callback')
+            root.update()
+            # Let the mainloop() in other thread run for a while.
+            time.sleep(0.2)
+        # The error was not raised in other thread...
+        self.assertEqual(self.results, [('b', None)])
+        # ...but by the next mainloop() in this thread.
+        root.after(100, root.quit)
+        with self.assertRaises(ZeroDivisionError):
+            root.mainloop()
 
 
 class TkTest(AbstractTkTest, unittest.TestCase):

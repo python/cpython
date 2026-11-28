@@ -57,6 +57,16 @@ NS(XmlGetUtf16InternalEncoding)(void) {
 #  endif
 }
 
+const ENCODING *
+NS(XmlGetUtf16LittleEndianEncoding)(void) {
+  return &ns(little2_encoding).enc;
+}
+
+const ENCODING *
+NS(XmlGetUtf16BigEndianEncoding)(void) {
+  return &ns(big2_encoding).enc;
+}
+
 static const ENCODING *const NS(encodings)[] = {
     &ns(latin1_encoding).enc, &ns(ascii_encoding).enc,
     &ns(utf8_encoding).enc,   &ns(big2_encoding).enc,
