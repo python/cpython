@@ -327,12 +327,13 @@ list_new_prealloc(Py_ssize_t size)
 #ifdef Py_GIL_DISABLED
         _PyListArray *array = list_allocate_array(size);
         if (array == NULL) {
+            op->ob_item = NULL;
             Py_DECREF(op);
             return PyErr_NoMemory();
         }
         op->ob_item = array->ob_item;
 #else
-        op->ob_item = (PyObject **) PyMem_Malloc(size * sizeof(PyObject *));
+        op->ob_item = PyMem_New(PyObject *, size);
         if (op->ob_item == NULL) {
             Py_DECREF(op);
             return PyErr_NoMemory();

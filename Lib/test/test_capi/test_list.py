@@ -381,6 +381,12 @@ class ListBuilderTests(unittest.TestCase):
         # which are immortal (and so would not check for reference leaks).
         return tuple(object() for i in range(nitem))
 
+    def test_create_overflow(self):
+        # Test PyListBuilder_Create() check for integer overflow
+        max_nitem = sys.maxsize // _testcapi.SIZEOF_VOID_P
+        self.assertRaises(MemoryError, self.create_builder, max_nitem + 1)
+        self.assertRaises(MemoryError, self.create_builder, sys.maxsize)
+
     def check_append(self, method):
         items = self.create_items(3)
         for size in (0, len(items), len(items) * 10):
