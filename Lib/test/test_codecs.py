@@ -3454,6 +3454,17 @@ class CodePageTest(unittest.TestCase):
         self.assertRaises(OSError, codecs.code_page_encode, 123, 'a')
         self.assertRaises(OSError, codecs.code_page_decode, 123, b'a')
 
+    def test_lookup_code_page(self):
+        # Code page 0 selects the current Windows ANSI code page.
+        self.assertEqual(codecs.lookup('CP0').name, 'cp0')
+        self.assertEqual(codecs.lookup('windows-1252').name, 'cp1252')
+
+    def test_lookup_invalid_code_page_names(self):
+        # gh-162462: only the canonical cpXXX spelling is accepted.
+        for encoding in ('cp01252', 'cp1_252', 'cp+1252', 'cp-1'):
+            with self.subTest(encoding=encoding):
+                self.assertRaises(LookupError, codecs.lookup, encoding)
+
     def test_code_page_name(self):
         self.assertRaisesRegex(UnicodeEncodeError, 'cp932',
             codecs.code_page_encode, 932, '\xff')
