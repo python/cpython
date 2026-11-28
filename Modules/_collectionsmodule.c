@@ -176,17 +176,11 @@ struct dequeobject {
 
 static inline block *
 newblock(dequeobject *deque) {
-    block *b;
     if (deque->numfreeblocks) {
         deque->numfreeblocks--;
         return deque->freeblocks[deque->numfreeblocks];
     }
-    b = PyMem_Malloc(sizeof(block));
-    if (b != NULL) {
-        return b;
-    }
-    PyErr_NoMemory();
-    return NULL;
+    return PyMem_Malloc(sizeof(block));
 }
 
 static inline void
@@ -213,6 +207,7 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     b = newblock(deque);
     if (b == NULL) {
+        PyErr_NoMemory();
         Py_DECREF(deque);
         return NULL;
     }
@@ -344,6 +339,7 @@ deque_append_lock_held(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
     if (deque->rightindex == BLOCKLEN - 1) {
         block *b = newblock(deque);
         if (b == NULL) {
+            PyErr_NoMemory();
             Py_DECREF(item);
             return -1;
         }
@@ -393,6 +389,7 @@ deque_appendleft_lock_held(dequeobject *deque, PyObject *item,
     if (deque->leftindex == 0) {
         block *b = newblock(deque);
         if (b == NULL) {
+            PyErr_NoMemory();
             Py_DECREF(item);
             return -1;
         }
@@ -747,7 +744,6 @@ deque_clear(PyObject *self)
 
     b = newblock(deque);
     if (b == NULL) {
-        PyErr_Clear();
         goto alternate_method;
     }
 
@@ -858,6 +854,7 @@ deque_inplace_repeat_impl(dequeobject *deque, Py_ssize_t n)
             if (deque->rightindex == BLOCKLEN - 1) {
                 block *b = newblock(deque);
                 if (b == NULL) {
+                    PyErr_NoMemory();
                     Py_SET_SIZE(deque, Py_SIZE(deque) + i);
                     return NULL;
                 }
@@ -978,8 +975,10 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
         if (leftindex == 0) {
             if (b == NULL) {
                 b = newblock(deque);
-                if (b == NULL)
+                if (b == NULL) {
+                    PyErr_NoMemory();
                     goto done;
+                }
             }
             b->rightlink = leftblock;
             CHECK_END(leftblock->leftlink);
@@ -1022,8 +1021,10 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
         if (rightindex == BLOCKLEN - 1) {
             if (b == NULL) {
                 b = newblock(deque);
-                if (b == NULL)
+                if (b == NULL) {
+                    PyErr_NoMemory();
                     goto done;
+                }
             }
             b->leftlink = rightblock;
             CHECK_END(rightblock->rightlink);
