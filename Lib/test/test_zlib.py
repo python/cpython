@@ -1231,6 +1231,29 @@ class ZlibDecompressorTest(unittest.TestCase):
         self.assertEqual(out, self.BIG_TEXT)
         self.assertEqual(zlibd.unused_data, b"")
 
+    def test_decompressor_max_length_zero(self):
+        # max_length=0 buffers the input and never produces output,
+        # however many times it is repeated.
+        zlibd = zlib._ZlibDecompressor()
+        for _ in range(20):
+            self.assertEqual(zlibd.decompress(b'', max_length=0), b'')
+        self.assertEqual(zlibd.decompress(self.DATA, max_length=0), b'')
+        for _ in range(20):
+            self.assertEqual(zlibd.decompress(b'', max_length=0), b'')
+        self.assertFalse(zlibd.needs_input)
+        self.assertFalse(zlibd.eof)
+        self.assertEqual(zlibd.decompress(b''), self.TEXT)
+        self.assertTrue(zlibd.eof)
+
+        # Output pending from an earlier call is kept for later.
+        zlibd = zlib._ZlibDecompressor()
+        out = zlibd.decompress(self.DATA, max_length=1)
+        for _ in range(20):
+            self.assertEqual(zlibd.decompress(b'', max_length=0), b'')
+        self.assertFalse(zlibd.needs_input)
+        self.assertEqual(out + zlibd.decompress(b''), self.TEXT)
+        self.assertTrue(zlibd.eof)
+
     def test_decompressor_inputbuf_1(self):
         # Test reusing input buffer after moving existing
         # contents to beginning

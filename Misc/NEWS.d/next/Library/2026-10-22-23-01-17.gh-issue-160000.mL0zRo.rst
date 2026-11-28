@@ -1,0 +1,5 @@
+Fix :meth:`compression.zstd.ZstdDecompressor.decompress` raising an error when
+called repeatedly with ``max_length=0``. Calling ``decompress()`` with
+``max_length=0`` on the Zstandard decompressor, :class:`bz2.BZ2Decompressor`
+and :class:`!zlib._ZlibDecompressor` now always buffers the input and returns
+``b''`` without decompressing anything.
